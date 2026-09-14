@@ -1,43 +1,56 @@
 <script setup>
-import { computed, onUnmounted, reactive, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowLeft,
-  Check,
-  CheckCircle2,
-  ExternalLink,
+  Buildings,
+  ChatCircleDots,
+  ChevronRight,
+  ClockCounterClockwise,
   Loader2,
-  Mail,
-  MapPin,
-  Phone,
+  LogOut,
+  Palette,
+  PuzzlePiece,
+  Robot,
   ShieldAlert,
-  Users,
-  X,
+  SlidersHorizontal,
+  Storefront,
+  Tray,
+  UsersThree,
 } from '../icons'
 import { initAuth, useAuth } from '../composables/useAuth'
-import { useToast } from '../composables/useToast'
-import {
-  isPlatformAdmin,
-  reviewChurchRequest,
-  subscribeToChurchRequests,
-} from '../api/platformService'
-import { churchOrigin, isValidChurchId, suggestChurchId } from '../../lib/churchId.js'
-import { canSwitchChurchHere, devChurchLink } from '../api/churchService'
+import { useMediaQuery } from '../composables/useMediaQuery'
+import { usePlatformConfig } from '../composables/usePlatformConfig'
+import { isPlatformAdmin, subscribeToChurchRequests } from '../api/platformService'
+import ChurchRequestsAdmin from '../components/platform/ChurchRequestsAdmin.vue'
+import ChurchesAdmin from '../components/platform/ChurchesAdmin.vue'
+import AppCatalogAdmin from '../components/platform/AppCatalogAdmin.vue'
+import SupportRequestsAdmin from '../components/platform/SupportRequestsAdmin.vue'
+import NewChurchDefaultsAdmin from '../components/platform/NewChurchDefaultsAdmin.vue'
+import BrandingAdmin from '../components/platform/BrandingAdmin.vue'
+import PlatformColoursAdmin from '../components/platform/PlatformColoursAdmin.vue'
+import AiAdmin from '../components/platform/AiAdmin.vue'
+import PlatformAdminsAdmin from '../components/platform/PlatformAdminsAdmin.vue'
+import PlatformActivity from '../components/platform/PlatformActivity.vue'
 
-// Where the platform's administrators answer requests for a church.
+// The platform's console: everything the people who run ekkly do, from saying
+// yes to a new church to choosing which AI model writes up minutes.
 //
-// Approving is done by /api/platform with the Admin SDK: it creates the church
-// under the id chosen here, makes the requester its first administrator, and
-// adds the church's address to Firebase's authorised domains so Google sign-in
-// works there. The id is the church's address and cannot be changed after, so
-// it is settled here, by a person, rather than taken on trust from the form.
+// Laid out the way church Settings is — a list of places, each saying where it
+// stands, with the open one beside it on a wide screen — so a platform
+// administrator who also runs a church finds the same furniture in both.
+// The section lives in the URL (?section=), so back, refresh and a shared link
+// all land in the same place.
 
-const toast = useToast()
-const { user } = useAuth()
-const rootDomain = import.meta.env.VITE_ROOT_DOMAIN || ''
+const route = useRoute()
+const router = useRouter()
+const isDesktop = useMediaQuery('(min-width: 1024px)')
+const { user, email, logout } = useAuth()
+const { branding } = usePlatformConfig()
 
 const checking = ref(true)
 const allowed = ref(false)
-const requests = ref([])
+const pendingRequests = ref(0)
 let unsubscribe = null
 
 watch(
@@ -49,9 +62,10 @@ watch(
     checking.value = true
     allowed.value = await isPlatformAdmin(uid)
     checking.value = false
+    // Only the count, for the list's status line; the section keeps its own.
     if (allowed.value) {
       unsubscribe = subscribeToChurchRequests((list) => {
-        requests.value = list
+        pendingRequests.value = list.filter((r) => r.status === 'pending').length
       })
     }
   },
@@ -60,255 +74,242 @@ watch(
 
 onUnmounted(() => unsubscribe?.())
 
-const FILTERS = [
-  { key: 'pending', label: 'Waiting' },
-  { key: 'approved', label: 'Approved' },
-  { key: 'declined', label: 'Declined' },
-]
-const filter = ref('pending')
-const visible = computed(() => requests.value.filter((r) => r.status === filter.value))
-const countOf = (key) => requests.value.filter((r) => r.status === key).length
+const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
 
-/* ------------------------------------------------------------- decisions */
+const GROUPS = computed(() => [
+  {
+    label: 'Churches',
+    items: [
+      {
+        key: 'requests',
+        label: 'Church requests',
+        icon: Tray,
+        status: pendingRequests.value ? plural(pendingRequests.value, 'request waiting', 'requests waiting') : 'Nothing waiting',
+        attention: pendingRequests.value > 0,
+        component: ChurchRequestsAdmin,
+      },
+      {
+        key: 'churches',
+        label: 'Churches',
+        icon: Buildings,
+        status: 'Every church, what it pays and how much it uses',
+        component: ChurchesAdmin,
+      },
+    ],
+  },
+  {
+    label: 'Selling',
+    items: [
+      {
+        key: 'apps',
+        label: 'Apps & prices',
+        icon: Storefront,
+        status: 'What each app costs a month',
+        component: AppCatalogAdmin,
+      },
+      {
+        key: 'support',
+        label: 'Support requests',
+        icon: ChatCircleDots,
+        status: 'New apps, changes and feedback from churches',
+        component: SupportRequestsAdmin,
+      },
+      {
+        key: 'defaults',
+        label: 'New church defaults',
+        icon: PuzzlePiece,
+        status: 'What an approved church starts with',
+        component: NewChurchDefaultsAdmin,
+      },
+    ],
+  },
+  {
+    label: 'Look',
+    items: [
+      {
+        key: 'branding',
+        label: 'Name & front door',
+        icon: SlidersHorizontal,
+        status: branding.value.name,
+        component: BrandingAdmin,
+      },
+      {
+        key: 'colours',
+        label: 'Colours',
+        icon: Palette,
+        status: 'The accent every church starts with',
+        component: PlatformColoursAdmin,
+      },
+    ],
+  },
+  {
+    label: 'Platform',
+    items: [
+      {
+        key: 'ai',
+        label: 'AI',
+        icon: Robot,
+        status: 'Which model each feature runs on',
+        component: AiAdmin,
+      },
+      {
+        key: 'admins',
+        label: 'Platform admins',
+        icon: UsersThree,
+        status: 'Who can run the platform',
+        component: PlatformAdminsAdmin,
+      },
+      {
+        key: 'activity',
+        label: 'Activity',
+        icon: ClockCounterClockwise,
+        status: 'Everything done from this console',
+        component: PlatformActivity,
+      },
+    ],
+  },
+])
 
-// Per request: the id being approved under, a decline note, and what the
-// server said, keyed by request id so a live update does not lose them.
-const ids = reactive({})
-const notes = reactive({})
-const results = reactive({})
-const busy = ref('')
+const ITEMS = computed(() => GROUPS.value.flatMap((g) => g.items))
 
-// The id each request starts from: the one they asked for if it is usable,
-// otherwise one made from the church's name. Set once, so editing it sticks.
-watch(requests, (list) => {
-  list.forEach((request) => {
-    if (ids[request.id] !== undefined) return
-    ids[request.id] = isValidChurchId(request.churchId)
-      ? request.churchId
-      : suggestChurchId(request.churchName)
-  })
-})
+const requested = computed(() =>
+  ITEMS.value.some((item) => item.key === route.query.section) ? route.query.section : ''
+)
+const activeKey = computed(() => requested.value || (isDesktop.value ? 'requests' : ''))
+const active = computed(() => ITEMS.value.find((item) => item.key === activeKey.value) || null)
 
-const approve = async (request) => {
-  const churchId = String(ids[request.id] || '').trim()
-  if (!isValidChurchId(churchId)) {
-    toast.error('That address is not a valid church id.')
-    return
-  }
-  busy.value = request.id
-  try {
-    const result = await reviewChurchRequest('approve', {
-      requestId: request.id,
-      churchId,
-    })
-    results[request.id] = result
-    toast.success(`${request.churchName} is open`)
-  } catch (e) {
-    toast.error(e.message)
-  } finally {
-    busy.value = ''
-  }
+// Pushes rather than replaces, so a phone's back gesture returns to the list.
+const openSection = (key) => {
+  if (key === activeKey.value) return
+  router.push({ query: { ...route.query, section: key } })
 }
 
-const decline = async (request) => {
-  busy.value = request.id
-  try {
-    await reviewChurchRequest('decline', { requestId: request.id, note: notes[request.id] || '' })
-    toast.success('Request declined')
-  } catch (e) {
-    toast.error(e.message)
-  } finally {
-    busy.value = ''
-  }
+const backToList = () => {
+  const { section: _drop, ...rest } = route.query
+  router.push({ query: rest })
 }
-
-// Locally there is no domain, so a church opens on this same address instead.
-const addressOf = (churchId) =>
-  rootDomain ? churchOrigin(churchId, { rootDomain }) : canSwitchChurchHere() ? devChurchLink(churchId) : ''
-
-const formatDate = (date) =>
-  date ? date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''
 </script>
 
 <template>
-  <div class="min-h-dvh bg-gray-50 dark:bg-gray-950">
-    <div class="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-      <RouterLink
-        to="/"
-        class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-      >
-        <ArrowLeft class="h-4 w-4" />
-        Back
-      </RouterLink>
-
-      <h1 class="mt-4 text-xl font-bold text-gray-900 dark:text-white">Church requests</h1>
-      <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-        Approving creates the church and makes the person who asked its first administrator.
-      </p>
-
-      <div v-if="checking" class="flex justify-center py-16">
-        <Loader2 class="h-6 w-6 animate-spin text-gray-400" />
-      </div>
-
-      <div
-        v-else-if="!allowed"
-        class="mt-8 rounded-xl border border-gray-200 bg-white px-4 py-10 text-center dark:border-gray-800 dark:bg-gray-900"
-      >
-        <ShieldAlert class="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600" />
-        <p class="mt-3 text-sm font-medium text-gray-700 dark:text-gray-300">Platform administrators only</p>
-        <p class="mx-auto mt-1 max-w-xs text-xs text-gray-500 dark:text-gray-400">
-          This account is not one. See TENANCY.md for how to make one with
-          scripts/make-platform-admin.mjs.
-        </p>
-      </div>
-
-      <template v-else>
-        <div class="mt-5 flex gap-1.5">
-          <button
-            v-for="item in FILTERS"
-            :key="item.key"
-            :class="[
-              'h-9 rounded-full border px-3.5 text-xs font-semibold transition-colors',
-              filter === item.key
-                ? 'border-primary bg-primary text-white'
-                : 'border-gray-200 bg-white text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400',
-            ]"
-            @click="filter = item.key"
-          >
-            {{ item.label }} <span class="opacity-70">{{ countOf(item.key) }}</span>
-          </button>
-        </div>
-
-        <p
-          v-if="!visible.length"
-          class="mt-6 rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400"
+  <div class="flex h-dvh flex-col bg-gray-50 dark:bg-gray-900">
+    <!-- The platform's own bar. There is no church here, so none of a church's
+         chrome: who is signed in, and the way back to the front door. -->
+    <header class="shrink-0 border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+      <div class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
+        <RouterLink
+          to="/"
+          class="flex min-w-0 items-center gap-2 text-gray-900 dark:text-white"
+          aria-label="Back to the front door"
         >
-          Nothing here.
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-white">
+            <Buildings class="h-4.5 w-4.5" />
+          </span>
+          <span class="truncate text-sm font-bold">{{ branding.name }}</span>
+          <span class="hidden text-sm text-gray-400 sm:inline">Console</span>
+        </RouterLink>
+        <span class="ml-auto hidden min-w-0 truncate text-xs text-gray-500 sm:block dark:text-gray-400">{{ email }}</span>
+        <button
+          v-if="user"
+          type="button"
+          @click="logout"
+          class="ml-auto flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-gray-500 hover:bg-gray-100 sm:ml-0 dark:text-gray-400 dark:hover:bg-gray-800"
+        >
+          <LogOut class="h-4 w-4" />
+          Sign out
+        </button>
+      </div>
+    </header>
+
+    <div v-if="checking" class="flex flex-1 items-center justify-center">
+      <Loader2 class="h-6 w-6 animate-spin text-gray-400" />
+    </div>
+
+    <div v-else-if="!allowed" class="flex flex-1 items-center justify-center px-4">
+      <div class="max-w-sm rounded-xl border border-gray-200 bg-white px-6 py-10 text-center dark:border-gray-700 dark:bg-gray-800">
+        <ShieldAlert class="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600" />
+        <p class="mt-3 text-lg text-gray-700 dark:text-gray-200">Platform administrators only</p>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <template v-if="user">This account is not one. Another platform administrator can add it under Platform admins.</template>
+          <template v-else>Sign in at the front door first, then come back here.</template>
         </p>
+        <RouterLink
+          to="/"
+          class="mt-5 inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-medium text-white hover:bg-primary-hover"
+        >
+          <ArrowLeft class="h-4 w-4" />
+          Front door
+        </RouterLink>
+      </div>
+    </div>
 
-        <ul v-else class="mt-4 space-y-3">
-          <li
-            v-for="request in visible"
-            :key="request.id"
-            class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+    <div v-else class="mx-auto flex min-h-0 w-full max-w-7xl flex-1 px-4 pt-4 sm:px-6 lg:gap-6">
+      <nav
+        v-if="isDesktop || !active"
+        aria-label="Console sections"
+        class="h-full w-full overflow-y-auto pb-6 lg:w-72 lg:shrink-0"
+      >
+        <div v-for="group in GROUPS" :key="group.label" class="mb-4">
+          <h2 class="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            {{ group.label }}
+          </h2>
+          <ul
+            class="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800"
           >
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
-                <p class="text-base font-semibold text-gray-900 dark:text-white">{{ request.churchName }}</p>
-                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                  {{ request.displayName || 'Unnamed' }} &middot; asked {{ formatDate(request.createdAt) }}
-                </p>
-              </div>
-              <a
-                v-if="request.status === 'approved' && request.churchId && addressOf(request.churchId)"
-                :href="addressOf(request.churchId)"
-                target="_blank"
-                rel="noopener"
-                class="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-primary dark:text-primary-light"
+            <li v-for="item in group.items" :key="item.key">
+              <button
+                type="button"
+                @click="openSection(item.key)"
+                :aria-current="activeKey === item.key ? 'page' : undefined"
+                :class="[
+                  'flex w-full items-center gap-3 px-3 py-3 text-left transition-colors',
+                  activeKey === item.key && isDesktop
+                    ? 'bg-primary/5 dark:bg-primary-light/10'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700/50',
+                ]"
               >
-                {{ request.churchId }} <ExternalLink class="h-3.5 w-3.5" />
-              </a>
-            </div>
-
-            <dl class="mt-3 grid gap-1.5 text-sm text-gray-600 dark:text-gray-300 sm:grid-cols-2">
-              <div v-if="request.email" class="flex min-w-0 items-center gap-2">
-                <Mail class="h-4 w-4 shrink-0 text-gray-400" />
-                <a :href="`mailto:${request.email}`" class="truncate hover:underline">{{ request.email }}</a>
-              </div>
-              <div v-if="request.contactNumber" class="flex items-center gap-2">
-                <Phone class="h-4 w-4 shrink-0 text-gray-400" />
-                <span>{{ request.contactNumber }}</span>
-              </div>
-              <div v-if="request.location" class="flex items-center gap-2">
-                <MapPin class="h-4 w-4 shrink-0 text-gray-400" />
-                <span>{{ request.location }}</span>
-              </div>
-              <div v-if="request.size" class="flex items-center gap-2">
-                <Users class="h-4 w-4 shrink-0 text-gray-400" />
-                <span>{{ request.size }}</span>
-              </div>
-            </dl>
-
-            <p
-              v-if="request.message"
-              class="mt-3 whitespace-pre-line rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-            >
-              {{ request.message }}
-            </p>
-
-            <!-- Deciding -->
-            <div v-if="request.status === 'pending'" class="mt-4 space-y-3 border-t border-gray-100 pt-4 dark:border-gray-800">
-              <div>
-                <label :for="`id-${request.id}`" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  Church id and address
-                </label>
-                <div class="mt-1 flex items-center gap-2">
-                  <input
-                    :id="`id-${request.id}`"
-                    :value="ids[request.id]"
-                    type="text"
-                    maxlength="40"
-                    spellcheck="false"
-                    autocapitalize="off"
+                <span
+                  :class="[
+                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+                    activeKey === item.key && isDesktop
+                      ? 'bg-primary text-white dark:bg-primary-light'
+                      : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300',
+                  ]"
+                >
+                  <component :is="item.icon" class="h-4.5 w-4.5" />
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">{{ item.label }}</span>
+                  <span
                     :class="[
-                      'h-10 min-w-0 flex-1 rounded-lg border bg-white px-3 font-mono text-sm text-gray-900 dark:bg-gray-800 dark:text-white',
-                      isValidChurchId(ids[request.id]) ? 'border-gray-200 dark:border-gray-700' : 'border-red-400',
+                      'block truncate text-xs',
+                      item.attention ? 'font-semibold text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400',
                     ]"
-                    @input="ids[request.id] = $event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')"
-                  />
-                  <span v-if="rootDomain" class="shrink-0 font-mono text-xs text-gray-400">.{{ rootDomain }}</span>
-                </div>
-                <p class="mt-1 text-xs text-gray-400">Cannot be changed once the church exists.</p>
-              </div>
+                  >
+                    {{ item.status }}
+                  </span>
+                </span>
+                <ChevronRight class="h-4 w-4 shrink-0 text-gray-300 dark:text-gray-600" />
+              </button>
+            </li>
+          </ul>
+        </div>
+      </nav>
 
-              <input
-                v-model="notes[request.id]"
-                type="text"
-                maxlength="500"
-                placeholder="Reason, if declining (shown to them)"
-                class="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-              />
+      <main v-if="active" class="h-full min-w-0 flex-1 overflow-y-auto pb-6">
+        <button
+          v-if="!isDesktop"
+          type="button"
+          @click="backToList"
+          class="-ml-1 mb-2 flex items-center gap-1 rounded-lg px-1 py-2 text-sm font-medium text-gray-600 dark:text-gray-300"
+        >
+          <ArrowLeft class="h-5 w-5" />
+          Console
+        </button>
 
-              <div class="flex gap-2">
-                <button
-                  type="button"
-                  :disabled="busy === request.id"
-                  class="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-bold text-white hover:bg-primary-hover disabled:opacity-60"
-                  @click="approve(request)"
-                >
-                  <Loader2 v-if="busy === request.id" class="h-4 w-4 animate-spin" />
-                  <Check v-else class="h-4 w-4" />
-                  Approve
-                </button>
-                <button
-                  type="button"
-                  :disabled="busy === request.id"
-                  class="flex h-10 items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-4 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-60 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-                  @click="decline(request)"
-                >
-                  <X class="h-4 w-4" />
-                  Decline
-                </button>
-              </div>
-            </div>
-
-            <!-- What approving did -->
-            <div
-              v-if="results[request.id]"
-              class="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300"
-            >
-              <p class="flex items-center gap-1.5 font-semibold">
-                <CheckCircle2 class="h-4 w-4" /> Created {{ results[request.id].churchId }}
-              </p>
-              <p class="mt-1">Google sign-in at {{ results[request.id].domain || 'its address' }}: {{ results[request.id].authorizedDomain }}</p>
-            </div>
-
-            <p v-if="request.status === 'declined' && request.note" class="mt-3 text-sm text-gray-500 dark:text-gray-400">
-              Declined: &ldquo;{{ request.note }}&rdquo;
-            </p>
-          </li>
-        </ul>
-      </template>
+        <KeepAlive>
+          <component :is="active.component" :key="active.key" />
+        </KeepAlive>
+      </main>
     </div>
   </div>
 </template>

@@ -4,6 +4,7 @@ import { Building2, CheckCircle2, Clock, ExternalLink, Loader2, LogOut, Send, Sh
 import GoogleSignInButton from '../components/auth/GoogleSignInButton.vue'
 import { initAuth, useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
+import { usePlatformConfig } from '../composables/usePlatformConfig'
 import {
   isPlatformAdmin,
   submitChurchRequest,
@@ -23,7 +24,9 @@ import { canSwitchChurchHere, devChurchLink } from '../api/churchService'
 const toast = useToast()
 const { user, isAuthenticated, displayName, email, logout } = useAuth()
 
-const PLATFORM_NAME = import.meta.env.VITE_PLATFORM_NAME || 'Church App'
+// The name and the words come from the console (Name & front door), falling
+// back to VITE_PLATFORM_NAME and the wording the app shipped with.
+const { branding } = usePlatformConfig()
 const rootDomain = import.meta.env.VITE_ROOT_DOMAIN || ''
 
 const ready = ref(false)
@@ -134,7 +137,7 @@ const formatDate = (date) =>
       <div class="mx-auto flex max-w-2xl items-center justify-between gap-3 px-6 py-5">
         <div class="flex items-center gap-2.5 text-white">
           <Building2 class="h-6 w-6" />
-          <span class="text-lg font-black tracking-tight">{{ PLATFORM_NAME }}</span>
+          <span class="text-lg font-black tracking-tight">{{ branding.name }}</span>
         </div>
         <RouterLink
           v-if="admin"
@@ -142,14 +145,16 @@ const formatDate = (date) =>
           class="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-2 text-xs font-bold text-white hover:bg-white/25"
         >
           <ShieldCheck class="h-4 w-4" />
-          Review requests
+          Console
         </RouterLink>
       </div>
       <div class="mx-auto max-w-2xl px-6 pb-10 pt-4">
-        <h1 class="text-3xl font-black tracking-tight text-white">Your church, in one app</h1>
+        <h1 class="text-3xl font-black tracking-tight text-white">{{ branding.frontDoor.headline }}</h1>
         <p class="mt-2 max-w-lg text-sm leading-relaxed text-white/75">
-          Members, events, attendance, schedules, minutes and finances — kept for your
-          congregation alone, at an address of its own.
+          {{ branding.frontDoor.intro }}
+        </p>
+        <p v-if="branding.contactEmail" class="mt-3 text-xs text-white/60">
+          Questions? <a :href="`mailto:${branding.contactEmail}`" class="font-semibold text-white/80 underline underline-offset-2">{{ branding.contactEmail }}</a>
         </p>
       </div>
     </header>

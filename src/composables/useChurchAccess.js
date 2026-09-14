@@ -9,6 +9,7 @@ import { recordSignIn } from '../api/userAccountsService'
 import { setChurchName } from '../api/church'
 import { initAppSettings } from './useAppSettings'
 import { initAppOrder } from './useAppOrder'
+import { initChurchApps } from './useChurchApps'
 
 // Whether the signed-in account may open this church, answered live.
 //
@@ -57,6 +58,7 @@ const onGranted = (user) => {
   grantedFor.add(user.uid)
   initAppSettings()
   initAppOrder()
+  initChurchApps()
   // Deliberately not awaited: a slow write must never hold up the app.
   recordSignIn(user).catch((error) => console.error('Error recording sign-in:', error))
 }

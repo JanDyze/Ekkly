@@ -144,7 +144,7 @@ const confirmationConfig = ref({
   message: '',
   confirmText: 'Confirm',
   cancelText: 'Cancel',
-  confirmButtonClass: 'bg-[#01779b] text-white hover:bg-[#015a77]',
+  confirmButtonClass: 'bg-primary text-white hover:bg-primary-hover',
   onConfirm: null
 })
 

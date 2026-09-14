@@ -11,6 +11,64 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.23.0] — 2026-09-14
+
+A console for running the platform, and churches that pay only for what they
+use. Everything a platform administrator did by hand — Firestore edits,
+scripts, environment variables — now has a screen at `/platform`, and a church
+can switch apps on and off to keep its bill down.
+
+### Added
+- **The platform console** at `/platform`, laid out like church Settings: church
+  requests, churches, apps and prices, support requests, new church defaults,
+  name and front door, colours, AI, platform admins, and an activity log of
+  everything done from it. See "The platform console" in `TENANCY.md`.
+- **A page for each church** (`/platform/churches/:id`): rename it, change its
+  timezone, see its people, accounts and last activity, switch its apps on and
+  off (and lock one off), set its billing, record payments, connect its own
+  domains, and close or reopen it.
+- **Apps a church pays for.** Every page belongs to an app with a monthly price
+  (`lib/apps.js`). An app that is off disappears from the sidebar, bottom bar,
+  home page, dashboard and Claude connector, and its routes redirect home;
+  nothing in it is deleted. A church's administrators choose their apps under
+  **Settings → Apps & plan**, which also shows the bill and what has been paid.
+- **Billing, tracked.** A status, a paid-through date, an optional agreed price
+  and a list of payments per church. Recording a payment moves the date on.
+  Payment is still taken outside the app.
+- **Support requests.** A church's administrators ask for a new app, a change,
+  a fix, or send feedback from Settings; the platform answers with a status and
+  a reply they see there.
+- **Colours.** The platform chooses the accent every church starts with, and a
+  church can choose its own under **Settings → Colours**, with a light and dark
+  preview and a warning when text would be hard to read.
+- **The platform's name and front-door wording** are edited in the console
+  instead of set in `VITE_PLATFORM_NAME`, which is now only the fallback.
+- **AI settings.** Which Claude model writes up minutes, looks up songs and lays
+  out lyrics, and a switch that stops all AI calls at once. Each church's AI
+  calls are counted per month.
+- **Custom domains from the console.** Connecting one maps it to the church,
+  authorises it for Google sign-in, adds it to the Vercel project when
+  `VERCEL_API_TOKEN` and `VERCEL_PROJECT_ID` are set, and shows the DNS record
+  the church has to add.
+- **Platform admins from the console.** The first still comes from
+  `scripts/make-platform-admin.mjs`; the last one cannot be removed.
+- **New church defaults**: timezone, public page, starting apps, trial length,
+  and starter ministries and tags, applied when a request is approved.
+- `CLAUDE.md` and `DESIGN.md`: the rules the code depends on, and the house
+  style every page follows.
+
+### Changed
+- **Breaking:** deploy `firestore.rules` with this release. It adds the
+  platform's collections and makes each church's `subscription`, `payments` and
+  `usage` readable but not writable from the app. Until it is deployed the app
+  uses the built-in name and colours.
+- AI features need both the platform's AI switch and the church's AI assist app.
+  A church with no apps chosen yet has every app, AI included, as before.
+- The sidebar, confirmation buttons and image cropper use the accent colour
+  tokens instead of fixed hex values, so they follow a church's colours.
+- Settings shows the platform's name and version at its foot instead of
+  "UEC Church".
+
 ## [0.22.0] — 2026-09-14
 
 One app for many churches. A single deployment now serves any number of

@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { subscribeToAppSettings, saveAppSettings } from '../api/appSettingsService'
+import { subscribeToAppSettings, saveAppSettings, replaceAppSettingsField } from '../api/appSettingsService'
 import {
   DEFAULT_CATEGORIES,
   withChurchDefaults,
@@ -9,6 +9,7 @@ import { scheduleRolesFrom } from '../data/scheduleRoles'
 import bundledLogo from '../assets/uec-logo.png'
 import { useTheme } from './useTheme'
 import { getChurchId, getChurchName } from '../api/church'
+import { themeForStorage } from '../../lib/platformDefaults.js'
 
 // Module-level with an explicit init, like usePermissions: the church name is
 // needed by plain utility modules (the spreadsheet exporters) that have no
@@ -78,6 +79,9 @@ export function useAppSettings() {
   // congregation would name differently, and read by the MCP connector from
   // the same document through the same defaults.
   const scheduleRoles = computed(() => scheduleRolesFrom(stored.value?.scheduleRoles))
+  // The church's own accent colours, if it chose any. Empty means the
+  // platform's; useBrandTheme does the falling back.
+  const theme = computed(() => stored.value?.theme || {})
 
   // True once the document exists; until then the views run on defaults.
   const isConfigured = computed(() => stored.value !== null)
@@ -93,6 +97,9 @@ export function useAppSettings() {
   // The whole list every time, for the same reason: its order is the order a
   // service is shown in, and a merge cannot express a reorder.
   const saveScheduleRoles = (roles) => saveAppSettings({ scheduleRoles: roles })
+  // Written whole, so clearing a colour really clears it: a merge would keep
+  // the old value underneath and the reset would do nothing.
+  const saveTheme = (value) => replaceAppSettingsField('theme', themeForStorage(value))
 
   return {
     church,
@@ -103,6 +110,7 @@ export function useAppSettings() {
     categories,
     landing,
     scheduleRoles,
+    theme,
     isConfigured,
     saveChurch,
     saveCategories,
@@ -110,5 +118,6 @@ export function useAppSettings() {
     saveLogoDark,
     saveLanding,
     saveScheduleRoles,
+    saveTheme,
   }
 }

@@ -19,6 +19,7 @@ import {
   UsersRound,
   Wallet,
 } from '../icons'
+import { isAppEnabled } from '../composables/useChurchApps'
 
 // Painted icons for the pages that have one. Imported rather than referenced by
 // URL so Vite fingerprints them and they cache properly; the folder name has a
@@ -169,6 +170,9 @@ export const NAV_GROUPS = [
       {
         name: 'Bible',
         path: '/bible',
+        // Its own app, so a church can leave it out; with no capability to
+        // carry that, it is named here.
+        app: 'bible',
         icon: BookOpen,
         description: 'Read the Bible in Tagalog, and find a verse by reference or by what it says.',
       },
@@ -278,8 +282,12 @@ export const PRIMARY_PATHS = ['/dashboard', '/members', '/events', '/attendance'
  * @param can  usePermissions().can
  * @param isAdmin  usePermissions().isAdmin, unwrapped
  */
-export const navItemAllowed = (item, can, isAdmin) =>
-  item.adminOnly ? isAdmin : can(item.capability)
+export const navItemAllowed = (item, can, isAdmin) => {
+  // An app the church has switched off. Items with a capability are already
+  // covered by can(); this is for the ones without, like the Bible.
+  if (item.app && !isAppEnabled(item.app)) return false
+  return item.adminOnly ? isAdmin : can(item.capability)
+}
 
 /** Groups with their forbidden items removed, and empty groups dropped. */
 export const allowedGroups = (can, isAdmin, groups = NAV_GROUPS) =>

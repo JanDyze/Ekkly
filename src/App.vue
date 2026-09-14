@@ -4,6 +4,7 @@ import { useTheme } from './composables/useTheme'
 import { useNotifications } from './composables/useNotifications'
 import { useAppSettings } from './composables/useAppSettings'
 import { useVersionCheck } from './composables/useVersionCheck'
+import { useBrandTheme } from './composables/useBrandTheme'
 import PullToRefresh from './components/common/PullToRefresh.vue'
 import ToastContainer from './components/common/ToastContainer.vue'
 import WhatsNewModal from './components/common/WhatsNewModal.vue'
@@ -16,6 +17,9 @@ const onTestAddress = canSwitchChurchHere()
 const devChurchId = getChurchId()
 
 const { isTransitioning, isDark, transitionOrigin } = useTheme()
+
+// The accent colour: the church's, the platform's, or the built-in one.
+useBrandTheme()
 
 // The browser tab follows the uploaded logo too, so a rebranded install is not
 // still flying the old mark in the one place nobody thinks to look.

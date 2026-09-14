@@ -8,6 +8,18 @@
 
 export const versionHistory = [
   {
+    version: '0.23.0',
+    date: '2026-09-14',
+    title: 'Your apps, your colours',
+    summary:
+      'Your church can choose which parts of the app it uses and pays for, pick its own colours, and ask for anything the app does not do yet.',
+    highlights: [
+      'Settings → Apps & plan shows every app with its price. Turn off what your church does not use; nothing in it is deleted, and turning it back on brings it all back.',
+      'Settings → Colours lets your church choose its own accent colour, for light and dark mode.',
+      'Need an app that does not exist, or a change to one that does? Send a request from Apps & plan and see the answer there.',
+    ],
+  },
+  {
     version: '0.22.0',
     date: '2026-09-14',
     title: 'Your church, your address',

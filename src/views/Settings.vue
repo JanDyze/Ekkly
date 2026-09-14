@@ -9,6 +9,8 @@ import {
   HandHeart,
   KeyRound,
   Mail,
+  Palette,
+  Receipt,
   Repeat,
   ShieldCheck,
   Sparkles,
@@ -23,7 +25,10 @@ import MemberTagsAdmin from '../components/settings/MemberTagsAdmin.vue'
 import ChurchSettings from '../components/settings/ChurchSettings.vue'
 import EmailDigestAdmin from '../components/settings/EmailDigestAdmin.vue'
 import LandingPageAdmin from '../components/settings/LandingPageAdmin.vue'
+import ChurchColoursAdmin from '../components/settings/ChurchColoursAdmin.vue'
+import PlanAdmin from '../components/settings/PlanAdmin.vue'
 import { useAppSettings } from '../composables/useAppSettings'
+import { usePlatformConfig } from '../composables/usePlatformConfig'
 import { useVersionCheck } from '../composables/useVersionCheck'
 import { useMediaQuery } from '../composables/useMediaQuery'
 import { useRecurringSchedules } from '../composables/useRecurringSchedules'
@@ -50,7 +55,8 @@ const route = useRoute()
 const router = useRouter()
 const isDesktop = useMediaQuery('(min-width: 1024px)')
 
-const { church } = useAppSettings()
+const { church, theme: churchTheme } = useAppSettings()
+const { branding } = usePlatformConfig()
 const { schedules } = useRecurringSchedules()
 const { ministries } = useMinistries()
 const { pendingClaims } = useMemberClaims()
@@ -83,6 +89,25 @@ const GROUPS = computed(() => [
         icon: Globe,
         status: 'What visitors see before signing in',
         component: LandingPageAdmin,
+      },
+      {
+        key: 'colours',
+        label: 'Colours',
+        icon: Palette,
+        status: Object.keys(churchTheme.value || {}).length ? 'Your church’s own' : `${branding.value.name}’s colours`,
+        component: ChurchColoursAdmin,
+      },
+    ],
+  },
+  {
+    label: 'Plan',
+    items: [
+      {
+        key: 'plan',
+        label: 'Apps & plan',
+        icon: Receipt,
+        status: 'What the church pays for, and requests',
+        component: PlanAdmin,
       },
     ],
   },
@@ -275,7 +300,7 @@ const { open: openWhatsNew } = useVersionCheck()
            because a bug report can come from any of them and the version is
            the first question asked. -->
       <p class="pb-4 text-center text-xs text-gray-400 dark:text-gray-500">
-        UEC Church v{{ appVersion }} &middot;
+        {{ branding.name }} v{{ appVersion }} &middot;
         <button
           @click="openWhatsNew"
           class="underline underline-offset-2 transition-colors hover:text-gray-600 dark:hover:text-gray-300"

@@ -14,7 +14,7 @@ church can also bring a domain of its own; see [Custom domains](#custom-domains)
 
 | Address | What it serves |
 | --- | --- |
-| `church.app`, `app.church.app` | The platform's front door: sign in, ask for a church, see your requests. Platform admins also get `/platform`. |
+| `church.app`, `app.church.app` | The platform's front door: sign in, ask for a church, see your requests. Platform admins also get the console at `/platform`. |
 | `<id>.church.app` | That church's app, its sign-in page and its public page. |
 
 **Records live under the church.** Every collection the app has always used
@@ -34,9 +34,66 @@ Beside the churches sit a few platform collections:
 | --- | --- | --- |
 | `churches/{id}` | name, status, timezone (readable by anyone) | `/api/platform` |
 | `churchRequests` | requests for a new church | the person asking, then `/api/platform` |
-| `platformAdmins/{uid}` | people who approve churches | `scripts/make-platform-admin.mjs` |
-| `domains/{host}` | custom domain → church id | by hand for now |
+| `platformAdmins/{uid}` | people who run the platform | the first by `scripts/make-platform-admin.mjs`, then the console |
+| `domains/{host}` | custom domain → church id | the console (Church → Domains) |
 | `mcpTokens/{sha256}` | a church's connector token | `/api/mcp-token` |
+| `platform/public` | platform name, front-door wording, colours, app prices (readable by anyone) | the console |
+| `platform/private` | AI model per feature, new church defaults | the console |
+| `platformLog` | everything done from the console | `/api/platform` |
+| `supportRequests` | a church asking for an app, a change, or with feedback | `/api/platform` |
+
+Inside each church, three more are written only by the platform:
+
+| Collection | What it holds | Who reads it |
+| --- | --- | --- |
+| `subscription/apps` | which apps the church has on, and which the platform locked off | everyone in the church |
+| `subscription/billing` | status, paid-through date, custom price | the church's administrators |
+| `payments` | payments the platform recorded | the church's administrators |
+| `usage/{YYYY-MM}` | AI calls that month | the church's administrators |
+
+A church with no `subscription/apps` document has every app. That is how a
+church from before apps were sold (UEC) keeps everything it had.
+
+---
+
+## The platform console
+
+`/platform` on the front door's address, for platform admins. It works like
+church Settings: a list of sections, each saying where it stands. Everything it
+changes goes through `/api/platform`, which checks the caller is a platform
+admin and writes a `platformLog` entry with the change.
+
+| Section | What it does |
+| --- | --- |
+| Church requests | Approve or decline a request for a church. |
+| Churches | Every church with its plan and usage. Opening one (`/platform/churches/:id`) lets you rename it, change its timezone, switch its apps on and off (and lock them off), set its billing and record payments, connect domains, and close or reopen it. |
+| Apps & prices | The monthly price of each app, whether it is on offer, and how it is described to churches. |
+| Support requests | What churches asked for, with a status and a reply they see in their Settings. |
+| New church defaults | Timezone, public page on or off, starting apps, trial length, starter ministries and tags. |
+| Name & front door | The platform's name, tagline, contact email and front-door wording. |
+| Colours | The accent colours every church starts with. |
+| AI | Whether AI runs at all, and which Claude model each feature uses. |
+| Platform admins | Add or remove platform admins. The last one cannot be removed. |
+| Activity | The platform log. |
+
+**Apps.** Each app is tied to its pages and permissions in `lib/apps.js`. An app
+that is off disappears from the sidebar, bottom bar, home page and dashboard
+(`usePermissions().can()` refuses its capabilities), its routes redirect home,
+and its tools leave the Claude connector. Nothing in it is deleted. A church's
+administrators choose their own apps under **Settings → Apps & plan**, except
+apps the platform locked off or stopped offering.
+
+**Billing is tracked, not collected.** Take payment however you like, then
+record it on the church's page. A payment with a "covers until" date moves the
+church's paid-through date forward and marks it paid up.
+
+**Colours.** A church's own colours (Settings → Colours) win over the
+platform's, which win over the built-in ones. `src/composables/useBrandTheme.js`
+applies them by overriding the CSS variables Tailwind's `primary` classes read.
+
+**AI.** Minutes write-up, song lookup and lyrics layout run only when the AI
+switch in the console is on *and* the church has the AI assist app. Each call
+is counted in the church's `usage` for the month.
 
 ### A new church
 
@@ -46,7 +103,9 @@ Beside the churches sit a few platform collections:
    - the church document
    - the requester's access and administrator role
    - a settings document with the church's name
-   - an audit entry
+   - what **New church defaults** says: its apps, a trial, starter ministries
+     and tags
+   - an audit entry, and a platform log entry
 
    It then adds `<id>.church.app` to Firebase Auth's authorised domains.
 4. The requester opens `<id>.church.app`. They are its administrator. The
@@ -114,7 +173,8 @@ Sign in once at `app.church.app` (or `localhost:5173`, see below), then run:
 node scripts/make-platform-admin.mjs you@gmail.com
 ```
 
-`/platform` now shows the requests.
+`/platform` now opens the console. Add any further platform admins from its
+**Platform admins** section; the script is only needed for the first.
 
 ---
 
@@ -152,15 +212,18 @@ they are.
 
 ## Custom domains
 
-The data model supports custom domains already. There is no screen for them
-yet. To give a church `app.uecp-calapan.com` by hand:
+To give a church `app.uecp-calapan.com`, open the church in the console, then
+**Domains → Add a domain**. That does as much as it can and reports each step:
 
-1. Add the domain to the Vercel project. The church adds the DNS record Vercel
-   shows.
-2. In Firestore, create `domains/app.uecp-calapan.com` with `{ churchId: "uec" }`.
-3. Add the domain to Firebase Auth's authorised domains.
-4. Optionally, set `primaryDomain: "app.uecp-calapan.com"` on `churches/uec`, so
-   emails and connector links use it.
+1. Creates `domains/app.uecp-calapan.com` → `{ churchId: "uec" }`.
+2. Adds the domain to Firebase Auth's authorised domains.
+3. Adds the domain to the Vercel project, if `VERCEL_API_TOKEN` and
+   `VERCEL_PROJECT_ID` are set. Otherwise add it in Vercel by hand.
+4. Shows the DNS record the church has to add at its registrar.
+
+"Use in emails and links" sets `primaryDomain` on the church. Removing a domain
+deletes the mapping and removes it from Vercel, but leaves Firebase's authorised
+domains alone.
 
 For iPhone home-screen sign-in on a custom domain, see the README's section on
 `VITE_FIREBASE_SELF_HOSTED_AUTH`. It needs a redirect URI per domain in Google
@@ -209,7 +272,12 @@ church.
   says "UECPCOM Canubing II" for every church. It needs to be served per church.
 - **Sign-in screen mark.** A church without an uploaded logo shows the UEC logo
   and its drawing animation.
-- **Custom domain screen.** Setup is manual, as described above.
+- **Rules deployment.** `firestore.rules` now covers the console's collections
+  (`platform`, `platformLog`, `supportRequests`, and each church's
+  `subscription`, `payments`, `usage`). Until it is deployed, the browser cannot
+  read the platform's colours and name (the app falls back to the built-in
+  ones), and church members could still write `subscription/apps` directly.
+- **Online payments.** Billing is recorded by hand. There is no payment provider.
 - **Roles.** `OPEN_ACCESS` in `usePermissions.js` still gives every member of a
   church every page. Churches are separated from each other; ministries within a
   church are not.
@@ -219,3 +287,5 @@ church.
   - a member of another church doing the same: denied
   - a member creating their own `joinRequests` document in a church they're
     already in: denied
+  - a member writing `churches/uec/subscription/apps`: denied
+  - anyone but a platform admin reading `platform/private`: denied

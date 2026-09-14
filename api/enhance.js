@@ -18,8 +18,10 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { requireChurchUser } from "../lib/tenant.js";
+import { aiAccess, recordAiUse } from "../lib/platform/ai.js";
 
-const MODEL = "claude-opus-5";
+// The model is the platform's choice (Console → AI), defaulting to Claude Opus
+// 5 — see lib/aiModels.js for which models this request shape is offered on.
 
 // Both modes are the same job on a different scope, so the rules that keep the
 // minutes honest are written once and shared.
@@ -133,6 +135,10 @@ export default async function handler(req, res) {
   // found the URL. It is a church's meeting notes either way: members only.
   const caller = await requireChurchUser(req);
   if (caller.error) return res.status(caller.status).json({ error: caller.error });
+
+  // The platform's AI switch and the church's plan, and which model to use.
+  const ai = await aiAccess(caller.church, "minutes");
+  if (!ai.allowed) return res.status(403).json({ error: ai.reason });
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return res.status(500).json({ error: "ANTHROPIC_API_KEY not configured" });
@@ -250,7 +256,7 @@ export default async function handler(req, res) {
     const client = new Anthropic();
 
     stream = client.messages.stream({
-      model: MODEL,
+      model: ai.model,
       max_tokens: 16000,
       system: isMeeting ? meetingSystem : agendaSystem,
       thinking: { type: "adaptive" },
@@ -311,6 +317,9 @@ export default async function handler(req, res) {
   // The whole document again on the last line. The client could join the
   // deltas itself, but then a dropped chunk would be a silently truncated
   // minute — and a truncated minute looks exactly like a complete one.
+  // Counted once the minutes are in hand, and awaited: a serverless function
+  // may be frozen the moment it answers, taking an unfinished write with it.
+  await recordAiUse(caller.church, "minutes");
   send({ type: "done", enhanced, mode });
   return res.end();
 }

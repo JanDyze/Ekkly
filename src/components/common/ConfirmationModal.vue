@@ -26,7 +26,7 @@ const props = defineProps({
   },
   confirmButtonClass: {
     type: String,
-    default: 'bg-[#01779b] text-white hover:bg-[#015a77]'
+    default: 'bg-primary text-white hover:bg-primary-hover'
   }
 })
 
