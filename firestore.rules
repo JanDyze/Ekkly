@@ -1,0 +1,142 @@
+rules_version = '2';
+
+// One project, many churches. Deploy with `firebase deploy --only firestore:rules`
+// (or paste into Firestore → Rules).
+//
+// Every church's records live under churches/{churchId}/, and the line between
+// one congregation and everyone else is a single document:
+// churches/{churchId}/access/{uid}. Signing in with Google proves who somebody
+// is and nothing more — without that document, an account cannot read or write
+// a single record in the church, whatever the app's own screens would let it
+// try. Administrators (churches/{churchId}/appAdmins/{uid}) are the only ones
+// who can grant or remove it.
+//
+// Beside the churches sit a handful of platform collections: the address book
+// of custom domains, the requests for new churches, the platform's own
+// administrators and the connector tokens. The server (Admin SDK) writes what
+// matters in those and is not bound by any of this — api/ checks access itself,
+// through lib/tenant.js.
+//
+// The audit log keeps the three narrowings it had: an entry is written as
+// yourself, stamped with the server's time, and never edited or deleted — not by
+// an administrator either, because a log its subjects can tidy is not a log.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isPlatformAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/platformAdmins/$(request.auth.uid));
+    }
+
+    function hasAccess(churchId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/churches/$(churchId)/access/$(request.auth.uid));
+    }
+
+    function isChurchAdmin(churchId) {
+      return hasAccess(churchId)
+        && exists(/databases/$(database)/documents/churches/$(churchId)/appAdmins/$(request.auth.uid));
+    }
+
+    /* ------------------------------------------------------------ platform */
+
+    // Readable by the account it names, so the app can tell a platform
+    // administrator. Made by scripts/make-platform-admin.mjs, never by the app.
+    match /platformAdmins/{uid} {
+      allow get: if isSelf(uid);
+      allow list, write: if false;
+    }
+
+    // host -> churchId, for a church on a domain of its own. The page has to
+    // know which church it is before anyone signs in, so one address can be
+    // looked up by anyone; the list as a whole cannot.
+    match /domains/{host} {
+      allow get: if true;
+      allow list, write: if false;
+    }
+
+    // sha256(token) -> church. Server only, always.
+    match /mcpTokens/{hash} {
+      allow read, write: if false;
+    }
+
+    // A congregation asking for a church. Written by whoever asks, as a pending
+    // request in their own name; read back by them and by the platform's
+    // administrators. Answering one creates a church, which is /api/platform's
+    // job, so nobody updates these from the app.
+    match /churchRequests/{requestId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow read: if isPlatformAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid);
+      allow update, delete: if false;
+    }
+
+    /* ------------------------------------------------------------- a church */
+
+    match /churches/{churchId} {
+      // Whether a church exists, what it is called and whether it is open are
+      // shown on its own sign-in and join pages, before anyone may read more.
+      // Nothing else belongs on this document. Created only by /api/platform.
+      allow get: if true;
+      allow list: if isPlatformAdmin();
+      allow write: if false;
+
+      // Membership. Your own can be checked by you — that is how the app knows
+      // whether to open or show the join page — and the church's administrators
+      // manage the rest.
+      match /access/{uid} {
+        allow get: if isSelf(uid) || hasAccess(churchId);
+        allow list: if hasAccess(churchId);
+        allow create, update, delete: if isChurchAdmin(churchId);
+      }
+
+      // Asking to be let in. The asker writes their own, only ever as pending,
+      // and only while they are not in already; an administrator answers it.
+      match /joinRequests/{uid} {
+        allow get: if isSelf(uid) || isChurchAdmin(churchId);
+        allow list: if isChurchAdmin(churchId);
+        allow create, update: if isSelf(uid)
+          && !hasAccess(churchId)
+          && request.resource.data.uid == uid
+          && request.resource.data.status == 'pending';
+        allow update, delete: if isChurchAdmin(churchId);
+        allow delete: if isSelf(uid);
+      }
+
+      // Administrators are appointed by administrators. (It was any signed-in
+      // account before, which made the role a formality.)
+      match /appAdmins/{uid} {
+        allow read: if hasAccess(churchId);
+        allow write: if isChurchAdmin(churchId);
+      }
+
+      match /auditLog/{entryId} {
+        allow read: if hasAccess(churchId);
+        allow create: if hasAccess(churchId)
+          && request.resource.data.actorUid == request.auth.uid
+          && request.resource.data.at == request.time;
+        allow update, delete: if false;
+      }
+
+      // Everything else the church keeps — the roll, the calendar, the ledger,
+      // minutes, songs, settings — is open to everyone in the church, exactly
+      // as the whole database was open to every signed-in account before. The
+      // collections above are excluded by name, because rules allow a request
+      // if any matching rule does and this match would otherwise reopen them.
+      match /{collectionId}/{document=**} {
+        allow read, write: if hasAccess(churchId)
+          && !(collectionId in ['access', 'joinRequests', 'appAdmins', 'auditLog']);
+      }
+    }
+  }
+}

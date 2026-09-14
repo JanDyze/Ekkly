@@ -1,0 +1,239 @@
+import { readFileSync, statSync } from 'node:fs'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { defineConfig, loadEnv } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import tailwindcss from '@tailwindcss/vite'
+import { VitePWA } from 'vite-plugin-pwa'
+
+/**
+ * Serves the api/ handlers the app cannot do without during `npm run dev`.
+ *
+ * In production everything in api/ is a Vercel function; locally there is only
+ * Vite, so without this the public page at "/" would have nothing to load and
+ * would fall back to the built-in defaults — precisely the thing it exists to
+ * stop doing — and the song list could not search YouTube at all.
+ *
+ * Handlers are imported by file URL rather than through Vite: they are server
+ * code that pulls in firebase-admin, and have no business going through the
+ * browser pipeline. Restart the dev server after editing one.
+ *
+ * Deliberately absent: /api/notify and /api/email, which send real push and
+ * real mail. Those stay Vercel-only so a local dev session cannot ring every
+ * phone in the church.
+ */
+const DEV_API_ROUTES = {
+  '/api/public': './api/public.js',
+  // Uploads reach the real Blob store from `npm run dev` too, which is why
+  // BLOB_STORE_ID and VERCEL_OIDC_TOKEN have to be in .env.local. There is
+  // no local emulator, so a photo added in development is a photo added.
+  '/api/blob': './api/blob.js',
+  '/api/youtube-search': './api/youtube-search.js',
+  // Both bill Anthropic per call — a lookup runs a web search on top of the
+  // tokens — so they cost real money here in a way the two above do not. They
+  // are still local-friendly: neither writes anything or reaches the
+  // congregation, which is what keeps /api/notify and /api/email out.
+  '/api/song-lookup': './api/song-lookup.js',
+  '/api/lyrics-structure': './api/lyrics-structure.js',
+  '/api/enhance': './api/enhance.js',
+  // Reads everything and, with MCP_WRITE_TOOLS on, writes: it is here so the
+  // connector can be tried against the MCP Inspector before it is deployed.
+  // MCP_TOKEN has to be in .env.local or the endpoint stays shut, exactly as
+  // it does on Vercel.
+  '/api/mcp': './api/mcp.js',
+  // Issuing a church's connector token, from Settings.
+  '/api/mcp-token': './api/mcp-token.js',
+  // Approving a request for a church creates a real church and authorises its
+  // address for Google sign-in — the same as on Vercel. Here so the whole
+  // onboarding can be walked through on app.localhost before it is deployed.
+  '/api/platform': './api/platform.js',
+  // Reads the church's accounts from Firebase Auth into its own list. Writes
+  // only that mirror, and only for the church asking.
+  '/api/accounts': './api/accounts.js',
+}
+
+/** Vercel's runtime hands the handler a parsed body; connect does not. */
+const readJsonBody = (req) =>
+  new Promise((resolve) => {
+    const chunks = []
+    req.on('data', (chunk) => chunks.push(chunk))
+    req.on('end', () => {
+      const raw = Buffer.concat(chunks).toString('utf8')
+      if (!raw) return resolve({})
+      try {
+        resolve(JSON.parse(raw))
+      } catch {
+        resolve({})
+      }
+    })
+    req.on('error', () => resolve({}))
+  })
+
+const apiDevServer = (env) => ({
+  name: 'uec-api-dev',
+  apply: 'serve',
+  configureServer(server) {
+    for (const [route, modulePath] of Object.entries(DEV_API_ROUTES)) {
+      server.middlewares.use(route, async (req, res, next) => {
+        // .env.local holds the service account and the API keys, but only
+        // VITE_-prefixed names reach import.meta.env — the handlers read
+        // process.env, the way they do on Vercel.
+        for (const [key, value] of Object.entries(env)) {
+          if (!(key in process.env)) process.env[key] = value
+        }
+
+        try {
+          const url = new URL(req.originalUrl || req.url, 'http://localhost')
+          req.query = Object.fromEntries(url.searchParams)
+          if (req.method !== 'GET' && req.method !== 'HEAD') {
+            req.body = await readJsonBody(req)
+          }
+          res.status = (code) => {
+            res.statusCode = code
+            return res
+          }
+          res.json = (body) => {
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify(body))
+          }
+
+          const handlerPath = fileURLToPath(new URL(modulePath, import.meta.url))
+          // Node keeps an ES module for the life of the process, so editing a
+          // handler left this serving whichever version it imported first —
+          // silently, which is the worst way to be wrong: the endpoint answers,
+          // just with last hour's code. The file's mtime in the specifier makes
+          // every save a new module to Node, so an edit lands on the next
+          // request while an untouched handler is still only imported once.
+          const stamp = statSync(handlerPath).mtimeMs
+          const { default: handler } = await import(`${pathToFileURL(handlerPath).href}?v=${stamp}`)
+          await handler(req, res)
+        } catch (error) {
+          next(error)
+        }
+      })
+    }
+  },
+})
+
+/**
+ * Keeps the audit log strict. Every write has to go through src/api/firestore.js,
+ * which commits a log entry alongside it; a file importing 'firebase/firestore'
+ * itself could write around that without anyone noticing, so the build stops
+ * instead. The one file allowed to import it is the wrapper.
+ */
+const auditedFirestoreOnly = () => ({
+  name: 'uec-audited-firestore-only',
+  enforce: 'pre',
+  resolveId(source, importer) {
+    if (source !== 'firebase/firestore' || !importer) return null
+    const from = importer.replace(/\\/g, '/')
+    if (from.includes('/node_modules/') || from.endsWith('/src/api/firestore.js')) return null
+    this.error(
+      `${importer} imports 'firebase/firestore' directly. Import from src/api/firestore.js instead, so its writes are audited.`
+    )
+  },
+})
+
+/**
+ * package.json is the one place the app's version is written down; the app
+ * reads it from here as __APP_VERSION__ so a phone running an old cached
+ * build can say which one it is. Bump it in package.json, nowhere else.
+ */
+const { version } = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf-8')
+)
+
+// https://vite.dev/config/
+export default defineConfig(({ mode }) => ({
+  define: {
+    __APP_VERSION__: JSON.stringify(version),
+  },
+  plugins: [
+    // '' as the prefix: every variable in .env.local, not just the VITE_ ones
+    apiDevServer(loadEnv(mode, process.cwd(), '')),
+    auditedFirestoreOnly(),
+    vue(),
+    tailwindcss(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['uec-logo.png', 'icons/apple-touch-icon.png'],
+      manifest: {
+        name: 'UECPCOM Canubing II',
+        short_name: 'UECPCOM',
+        description:
+          'United Evangelical Church of the Philippines – Calapan, Oriental Mindoro — church management app',
+        theme_color: '#01779b',
+        background_color: '#ffffff',
+        display: 'standalone',
+        start_url: '/',
+        icons: [
+          { src: '/icons/pwa-64x64.png', sizes: '64x64', type: 'image/png' },
+          { src: '/icons/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icons/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icons/maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // FCM registers its own service worker — keep it out of the precache
+        // The event PNGs exist for digest email and the notification tray,
+        // never for the app itself, which draws Phosphor SVG components.
+        // Precaching 44 images nothing in the app requests is pure payload.
+        globIgnores: ['**/firebase-messaging-sw.js', 'icons/events/**'],
+        navigateFallback: '/index.html',
+        // /__/auth/ is Firebase's sign-in handler, reverse-proxied onto this
+        // domain (see vercel.json) so the iOS redirect flow stays first-party.
+        // It is a real navigation to a real page: hand it index.html and the
+        // sign-in returns to a blank app shell instead of completing.
+        navigateFallbackDenylist: [/^\/api\//, /^\/__\//],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // The Bible is 4.7 MB across 66 files and is deliberately not
+        // precached — globPatterns above does not list json, so it stays out of
+        // the install. A church does not need Habakkuk on every phone.
+        //
+        // It is cached once fetched, though, and cache-first forever after: a
+        // verse is not going to be revised, and the service a passage was
+        // looked up for has to survive the hall's wifi giving out mid-reading.
+        runtimeCaching: [
+          {
+            // Gallery photos and the logo on the public page. Each is a base64
+            // blob decoded out of Firestore on every cache miss, and a photo is
+            // addressed by a document id whose bytes never change — so the
+            // first visit should be the only one that ever pays for it. Held
+            // here as well as by the HTTP cache because this survives the
+            // eviction the browser's own cache does not.
+            urlPattern: /\/api\/public\?image=/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'public-images',
+              expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/bible\/[^/]+\/[^/]+\.json$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'bible-books',
+              expiration: { maxEntries: 70 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
+    }),
+  ],
+  server: {
+    // Bind to all interfaces so `npm run dev` is reachable from phones on the
+    // same Wi-Fi without needing the --host flag every time
+    host: true,
+    allowedHosts: [
+      '84960e178ae6.ngrok-free.app',
+      '.ngrok-free.app', // This allows all ngrok subdomains
+      '.ngrok.io', // Also allow ngrok.io domains
+      'localhost',
+      // uec.localhost:5173 is the church "uec", app.localhost:5173 the
+      // platform's front door — the development twin of *.church.app.
+      '.localhost'
+    ]
+  }
+}))

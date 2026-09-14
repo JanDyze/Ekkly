@@ -1,0 +1,551 @@
+<script setup>
+import { ref, computed } from "vue";
+import { X, Image as ImageIcon, ChevronDown, User, Phone, Church } from '../../icons';
+import ImageCropper from "./ImageCropper.vue";
+import { uploadImage } from "../../api/blobService";
+import { useToast } from "../../composables/useToast";
+import FloatingInput from "../common/FloatingInput.vue";
+import { calculateAgeFromDate, CIVIL_STATUS_OPTIONS as civilStatusOptions } from "../../utils/memberUtils";
+import { useMediaQuery } from "../../composables/useMediaQuery";
+import { useFocusTrap } from "../../composables/useFocusTrap";
+import { useMinistries } from '../../composables/useMinistries'
+import { useLabelMarks } from '../../composables/useLabelMarks'
+import LabelMark from '../common/LabelMark.vue'
+
+const props = defineProps({
+  showAddMember: {
+    type: Boolean,
+    default: false,
+  },
+  newMember: {
+    type: Object,
+    required: true,
+  },
+  allTags: {
+    type: Array,
+    default: () => [],
+  },
+  canAddMember: {
+    type: Boolean,
+    default: false,
+  },
+  addMemberTooltip: {
+    type: String,
+    default: "",
+  },
+});
+
+const emit = defineEmits([
+  "update:showAddMember",
+  "update:newMember",
+  "addMember",
+  "calculateAge",
+]);
+
+const isMobile = useMediaQuery("(max-width: 1023px)");
+const showImageCropper = ref(false);
+
+// Section collapse state
+const sections = ref({
+  personal: true,
+  contact: false,
+  church: false,
+});
+
+const toggleSection = (section) => {
+  sections.value[section] = !sections.value[section];
+};
+
+const dialogRef = ref(null);
+useFocusTrap(dialogRef, () => props.showAddMember, () => emit("update:showAddMember", false));
+
+// Computed age from DOB
+const computedAge = computed(() => {
+  if (props.newMember.dateOfBirth) {
+    return calculateAgeFromDate(props.newMember.dateOfBirth);
+  }
+  return null;
+});
+
+const toast = useToast();
+
+// The cropper hands back a full-quality PNG data URL, which is why member
+// portraits used to be the biggest base64 blobs in the database. It goes to
+// Blob storage instead and the record keeps the URL — same as a gallery photo.
+const handleImageUpdate = async (base64Image) => {
+  if (!base64Image) {
+    emit('update:newMember', { ...props.newMember, image: null });
+    return;
+  }
+  try {
+    const url = await uploadImage(base64Image, 'members');
+    emit('update:newMember', { ...props.newMember, image: url });
+  } catch (error) {
+    console.error('Error storing that photo:', error);
+    toast.error('Could not save that photo. Please try again.');
+  }
+};
+
+const updateField = (field, value) => {
+  emit('update:newMember', { ...props.newMember, [field]: value });
+};
+
+const { ministryNames } = useMinistries();
+const { ministryMark, tagMark } = useLabelMarks();
+
+// The form arrives already carrying a tag (First Timer), and a chip that is on
+// but not listed could never be switched off — so whatever the person holds is
+// offered alongside the church's list.
+const tagOptions = computed(() => [
+  ...new Set([...props.allTags, ...(props.newMember.tags || [])]),
+]);
+
+const toggleTag = (tag) => {
+  const tags = props.newMember.tags.includes(tag)
+    ? props.newMember.tags.filter(t => t !== tag)
+    : [...props.newMember.tags, tag];
+  updateField('tags', tags);
+};
+
+// Ministries are the field that grants access, so only names from the
+// controlled list in Settings can be toggled here — never free text.
+const toggleMinistry = (ministry) => {
+  const current = props.newMember.ministries || [];
+  const next = current.includes(ministry)
+    ? current.filter(m => m !== ministry)
+    : [...current, ministry];
+  updateField('ministries', next);
+};
+
+// Options for select fields
+const sexOptions = [
+  { value: 'Male', label: 'Male' },
+  { value: 'Female', label: 'Female' },
+];
+
+
+</script>
+
+<template>
+  <Teleport to="body" :disabled="!isMobile">
+    <Transition :name="isMobile ? 'modal-sheet' : 'drawer'">
+      <div
+        v-if="showAddMember"
+        :class="[
+          isMobile
+            ? 'fixed inset-0 z-80 flex flex-col justify-end'
+            : ''
+        ]"
+      >
+        <div
+          v-if="isMobile"
+          class="absolute inset-0 bg-black/50"
+          @click="emit('update:showAddMember', false)"
+        />
+
+        <div
+          ref="dialogRef"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-member-drawer-title"
+          tabindex="-1"
+          :class="[
+            'flex flex-col min-h-0',
+            isMobile
+              ? 'relative z-10 w-full max-h-[92dvh] rounded-t-2xl bg-white dark:bg-gray-800 shadow-2xl border-t border-gray-200 dark:border-gray-700'
+              : 'add-member-drawer m-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 w-[calc(50%-1.5rem)] min-w-110 h-[calc(100%-1.5rem)] flex flex-col shrink-0 shadow-xl'
+          ]"
+          @click.stop
+        >
+          <!-- Header -->
+          <div class="shrink-0 rounded-t-2xl border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 flex items-center justify-between">
+            <div>
+              <h3 id="add-member-drawer-title" class="text-lg font-semibold text-gray-900 dark:text-white">
+                Add New Person
+              </h3>
+            </div>
+            <button
+              @click="emit('update:showAddMember', false)"
+              aria-label="Close"
+              class="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+
+          <!-- Scrollable Form Content -->
+          <div class="flex-1 overflow-y-auto">
+            <form @submit.prevent="emit('addMember')" class="p-3 sm:p-4 space-y-3">
+              <!-- Profile Image Section -->
+              <div class="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 mb-4">
+                <div class="flex items-center gap-4">
+                  <div class="relative">
+                    <img
+                      :src="newMember.image || `https://api.dicebear.com/9.x/dylan/svg?seed=${encodeURIComponent((newMember.firstName || '') + ' ' + (newMember.lastName || ''))}`"
+                      alt="Avatar"
+                      class="w-20 h-20 rounded-full border-3 border-white dark:border-gray-600 object-cover shadow-lg"
+                    />
+                    <button
+                      type="button"
+                      @click="showImageCropper = true"
+                      class="absolute -bottom-1 -right-1 p-2 bg-primary dark:bg-primary-light text-white rounded-full hover:opacity-90 transition-opacity shadow-md"
+                      title="Upload Image"
+                      aria-label="Upload image"
+                    >
+                      <ImageIcon class="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">Profile Photo</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Upload a photo or use auto-generated avatar</p>
+                    <div class="flex gap-2">
+                      <button
+                        type="button"
+                        @click="showImageCropper = true"
+                        class="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        {{ newMember.image ? 'Change' : 'Upload' }}
+                      </button>
+                      <button
+                        v-if="newMember.image"
+                        type="button"
+                        @click="updateField('image', null)"
+                        class="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 rounded-lg hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Personal Information Section -->
+              <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <button
+                  type="button"
+                  @click="toggleSection('personal')"
+                  class="w-full px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div class="flex items-center gap-3">
+                    <div class="p-2 bg-white dark:bg-gray-800 rounded-lg">
+                      <User class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    </div>
+                    <div class="text-left">
+                      <p class="text-sm font-medium text-gray-900 dark:text-white">Personal Information</p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">Name, gender, birth date</p>
+                    </div>
+                  </div>
+                  <ChevronDown :class="['h-5 w-5 text-gray-400 transition-transform', sections.personal ? 'rotate-180' : '']" />
+                </button>
+
+                <Transition name="section">
+                  <div v-if="sections.personal" class="p-4 space-y-4 border-t border-gray-100 dark:border-gray-700">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <FloatingInput
+                        :modelValue="newMember.firstName"
+                        @update:modelValue="updateField('firstName', $event)"
+                        label="First Name"
+                        required
+                      />
+                      <FloatingInput
+                        :modelValue="newMember.lastName"
+                        @update:modelValue="updateField('lastName', $event)"
+                        label="Last Name"
+                        required
+                      />
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <FloatingInput
+                        :modelValue="newMember.nickname"
+                        @update:modelValue="updateField('nickname', $event)"
+                        label="Nickname"
+                      />
+                      <FloatingInput
+                        :modelValue="newMember.sex"
+                        @update:modelValue="updateField('sex', $event)"
+                        label="Gender"
+                        type="select"
+                        :options="sexOptions"
+                        required
+                      />
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <FloatingInput
+                        :modelValue="newMember.civilStatus"
+                        @update:modelValue="updateField('civilStatus', $event)"
+                        label="Civil Status"
+                        type="select"
+                        :options="civilStatusOptions"
+                      />
+                      <div class="relative">
+                        <FloatingInput
+                          :modelValue="newMember.dateOfBirth"
+                          @update:modelValue="updateField('dateOfBirth', $event); emit('calculateAge')"
+                          label="Date of Birth"
+                          type="date"
+                        />
+                        <span
+                          v-if="computedAge !== null"
+                          class="absolute -top-2 right-2 px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-full"
+                        >
+                          {{ computedAge }} yrs
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Transition>
+              </div>
+
+              <!-- Contact Information Section -->
+              <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <button
+                  type="button"
+                  @click="toggleSection('contact')"
+                  class="w-full px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div class="flex items-center gap-3">
+                    <div class="p-2 bg-white dark:bg-gray-800 rounded-lg">
+                      <Phone class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    </div>
+                    <div class="text-left">
+                      <p class="text-sm font-medium text-gray-900 dark:text-white">Contact Information</p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">Address, phone, occupation</p>
+                    </div>
+                  </div>
+                  <ChevronDown :class="['h-5 w-5 text-gray-400 transition-transform', sections.contact ? 'rotate-180' : '']" />
+                </button>
+
+                <Transition name="section">
+                  <div v-if="sections.contact" class="p-4 space-y-4 border-t border-gray-100 dark:border-gray-700">
+                    <FloatingInput
+                      :modelValue="newMember.address"
+                      @update:modelValue="updateField('address', $event)"
+                      label="Address"
+                      type="textarea"
+                    />
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <FloatingInput
+                        :modelValue="newMember.contactNumber"
+                        @update:modelValue="updateField('contactNumber', $event)"
+                        label="Contact Number"
+                        type="tel"
+                      />
+                      <FloatingInput
+                        :modelValue="newMember.occupation"
+                        @update:modelValue="updateField('occupation', $event)"
+                        label="Occupation"
+                      />
+                    </div>
+                  </div>
+                </Transition>
+              </div>
+
+              <!-- Church Information Section -->
+              <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <button
+                  type="button"
+                  @click="toggleSection('church')"
+                  class="w-full px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div class="flex items-center gap-3">
+                    <div class="p-2 bg-white dark:bg-gray-800 rounded-lg">
+                      <Church class="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    </div>
+                    <div class="text-left">
+                      <p class="text-sm font-medium text-gray-900 dark:text-white">Church Information</p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">Membership, role, tags</p>
+                    </div>
+                  </div>
+                  <ChevronDown :class="['h-5 w-5 text-gray-400 transition-transform', sections.church ? 'rotate-180' : '']" />
+                </button>
+
+                <Transition name="section">
+                  <div v-if="sections.church" class="p-4 space-y-4 border-t border-gray-100 dark:border-gray-700">
+                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <div>
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">Church Member</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Is this person an official member?</p>
+                      </div>
+                      <button
+                        type="button"
+                        @click="updateField('isMember', !newMember.isMember)"
+                        aria-label="Church Member"
+                        :aria-pressed="newMember.isMember"
+                        :class="[
+                          'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+                          newMember.isMember ? 'bg-primary dark:bg-primary-light' : 'bg-gray-300 dark:bg-gray-600'
+                        ]"
+                      >
+                        <span
+                          :class="[
+                            'inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm',
+                            newMember.isMember ? 'translate-x-6' : 'translate-x-1'
+                          ]"
+                        ></span>
+                      </button>
+                    </div>
+
+                    <!-- Ministries grant access, so this list is the controlled
+                         vocabulary from Settings and nothing else. -->
+                    <div>
+                      <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Ministries
+                      </p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                        What this person serves in. This is what grants access to the app.
+                      </p>
+                      <div v-if="ministryNames.length > 0" class="flex flex-wrap gap-2">
+                        <button
+                          v-for="ministry in ministryNames"
+                          :key="ministry"
+                          type="button"
+                          @click="toggleMinistry(ministry)"
+                          :class="[
+                            'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-all',
+                            (newMember.ministries || []).includes(ministry)
+                              ? 'bg-primary dark:bg-primary-light text-white shadow-sm'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600',
+                          ]"
+                        >
+                          <LabelMark :mark="ministryMark(ministry)" size="h-3.5 w-3.5" />
+                          {{ ministry }}
+                        </button>
+                      </div>
+                      <p v-else class="text-xs text-gray-400 dark:text-gray-500 italic">
+                        No ministries yet &mdash; add them in Settings &rsaquo; Ministries.
+                      </p>
+                    </div>
+
+                    <div>
+                      <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tags</p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                        Labels for finding people. They grant nothing.
+                      </p>
+                      <div v-if="tagOptions.length > 0" class="flex flex-wrap gap-2">
+                        <button
+                          v-for="tag in tagOptions"
+                          :key="tag"
+                          type="button"
+                          @click="toggleTag(tag)"
+                          :class="[
+                            'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-all',
+                            newMember.tags.includes(tag)
+                              ? 'bg-primary dark:bg-primary-light text-white shadow-sm'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600',
+                          ]"
+                        >
+                          <LabelMark :mark="tagMark(tag)" size="h-3.5 w-3.5" />
+                          {{ tag }}
+                        </button>
+                      </div>
+                      <p v-else class="text-xs text-gray-400 dark:text-gray-500 italic">No tags yet — add one from the Tags button in the toolbar.</p>
+                    </div>
+                  </div>
+                </Transition>
+              </div>
+            </form>
+          </div>
+
+          <!-- Sticky Footer -->
+          <div class="shrink-0 rounded-b-2xl border-t border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-4">
+            <div class="flex gap-3">
+              <button
+                type="button"
+                @click="emit('update:showAddMember', false)"
+                class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <div class="flex-1 relative group">
+                <button
+                  type="button"
+                  @click="emit('addMember')"
+                  :disabled="!canAddMember"
+                  :class="[
+                    'w-full px-4 py-2.5 text-sm font-medium rounded-lg transition-all',
+                    canAddMember
+                      ? 'text-white bg-primary dark:bg-primary-light hover:opacity-90'
+                      : 'text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
+                  ]"
+                >
+                  Add Person
+                </button>
+                <div
+                  v-if="!canAddMember && addMemberTooltip"
+                  class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50"
+                >
+                  {{ addMemberTooltip }}
+                  <div class="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
+  <!-- Image Cropper -->
+    <!-- :modelValue, not v-model. v-model would register a second listener
+         that writes the cropper's base64 straight into the record, racing the
+         upload beside it — and winning outright whenever the upload failed,
+         which is how a 194 KB data URL ended up saved on a member. The
+         handler below is the only thing allowed to set this field. -->
+  <ImageCropper
+    v-model:show="showImageCropper"
+    :modelValue="newMember.image"
+    @update:modelValue="handleImageUpdate"
+  />
+</template>
+
+<style>
+.add-member-drawer {
+  transition: max-width 0.3s ease-out, opacity 0.3s ease;
+}
+
+.drawer-enter-from.add-member-drawer,
+.drawer-leave-to.add-member-drawer {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.modal-sheet-enter-active,
+.modal-sheet-leave-active {
+  transition: all 0.25s ease;
+}
+
+.modal-sheet-enter-from,
+.modal-sheet-leave-to {
+  opacity: 0;
+  transform: translateY(100%);
+}
+
+.modal-sheet-enter-to,
+.modal-sheet-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.section-enter-active,
+.section-leave-active {
+  transition: all 0.25s ease;
+  overflow: hidden;
+}
+
+.section-enter-from,
+.section-leave-to {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.section-enter-to,
+.section-leave-from {
+  max-height: 500px;
+}
+</style>

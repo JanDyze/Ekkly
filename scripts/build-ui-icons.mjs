@@ -1,0 +1,175 @@
+#!/usr/bin/env node
+/**
+ * Generates src/icons/index.js — the app's icon set, drawn from Phosphor.
+ *
+ * Only the icons actually imported anywhere in src/ are generated. Emitting
+ * all 1512 would mean the dev server shipping ~700 KB to the browser on every
+ * reload; the production bundle would tree-shake it away, but the development
+ * experience would not survive it.
+ *
+ * That means this script has to know what is in use, so it scans for both
+ * import styles: the Phosphor module it generates, and any lucide import still
+ * left over. Nothing to maintain by hand — add an icon to a component, re-run,
+ * and it appears.
+ *
+ * Usage: npm run build:icons   (runs as part of npm run build)
+ */
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { LUCIDE_TO_PHOSPHOR } from "./lucide-to-phosphor.js";
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const SRC = path.join(ROOT, "src");
+const SVG_DIR = path.join(ROOT, "node_modules/@phosphor-icons/core/assets/regular");
+// Phosphor ships each glyph in several weights. Regular is the house style, but
+// a few glyphs only read correctly solid — a stop button is a filled square,
+// and an outlined one looks like an empty box. Any name ending in `Fill`
+// resolves here instead: `StopFill` -> assets/fill/stop-fill.svg.
+const FILL_DIR = path.join(ROOT, "node_modules/@phosphor-icons/core/assets/fill");
+const OUT_DIR = path.join(ROOT, "src/icons");
+const OUT = path.join(OUT_DIR, "index.js");
+
+const toKebab = (name) =>
+  String(name)
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1-$2")
+    .toLowerCase();
+
+/** Every .vue and .js file under src/, except the generated module itself. */
+function sourceFiles(dir, out = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name !== "icons") sourceFiles(full, out);
+    } else if (/\.(vue|js)$/.test(entry.name)) {
+      out.push(full);
+    }
+  }
+  return out;
+}
+
+// `[^}]` rather than a lazy `[\s\S]*?`: the lazy form can start at an earlier
+// `import {` and swallow whole statements up to the matching source.
+const IMPORT_RE = /import\s*\{([^}]*)\}\s*from\s*['"]([^'"]*(?:lucide-vue-next|\/icons|^\.\/icons))['"]/g;
+
+function usedNames() {
+  const names = new Set();
+  for (const file of sourceFiles(SRC)) {
+    const src = fs.readFileSync(file, "utf8");
+    if (!src.includes("lucide-vue-next") && !/from\s*['"][^'"]*\/icons['"]/.test(src)) continue;
+    let match;
+    IMPORT_RE.lastIndex = 0;
+    while ((match = IMPORT_RE.exec(src))) {
+      for (const spec of match[1].split(",")) {
+        // `Image as ImageIcon` — the imported name is what we must export
+        const name = spec.trim().split(/\s+as\s+/)[0].trim();
+        if (!name) continue;
+        // `WalletSvg` is the path data for `Wallet`, emitted alongside it.
+        // Both come from one entry, so the suffix is stripped before the
+        // Phosphor lookup — otherwise the build hunts for a "WalletSvg" glyph
+        // and fails, which is how this was found.
+        names.add(name.endsWith("Svg") ? name.slice(0, -3) : name);
+      }
+    }
+  }
+  return [...names].sort();
+}
+
+function main() {
+  if (!fs.existsSync(SVG_DIR)) {
+    console.error(`Phosphor assets not found at ${SVG_DIR}\nRun: npm install`);
+    process.exit(1);
+  }
+
+  // asset name -> the directory it came from. Fill-weight files already carry
+  // a `-fill` suffix, so the two weights cannot collide.
+  const available = new Map();
+  for (const dir of [SVG_DIR, FILL_DIR]) {
+    if (!fs.existsSync(dir)) continue;
+    for (const file of fs.readdirSync(dir)) {
+      if (!file.endsWith(".svg")) continue;
+      const asset = file.replace(/\.svg$/, "");
+      if (!available.has(asset)) available.set(asset, dir);
+    }
+  }
+
+  const names = usedNames();
+  const missing = [];
+  const entries = [];
+
+  for (const name of names) {
+    const phosphor = LUCIDE_TO_PHOSPHOR[name] || name;
+    const asset = toKebab(phosphor);
+    const dir = available.get(asset);
+    if (!dir) {
+      missing.push(`${name} -> ${phosphor}`);
+      continue;
+    }
+    const svg = fs.readFileSync(path.join(dir, `${asset}.svg`), "utf8");
+    const inner = svg
+      .replace(/^[\s\S]*?<svg[^>]*>/, "")
+      .replace(/<\/svg>\s*$/, "")
+      .trim();
+    entries.push({ name, phosphor, inner });
+  }
+
+  if (missing.length) {
+    // A blank icon is worse than a failed build: it looks deliberate.
+    console.error(
+      `\nNo Phosphor icon for:\n  ${missing.join("\n  ")}\n` +
+        `Add a mapping in scripts/lucide-to-phosphor.js`
+    );
+    process.exit(1);
+  }
+
+  // The path data is exported as well as the component. Anything that has to
+  // put an icon inside an HTML string rather than a template — the section
+  // headings on a written-up minute, which are rendered from Markdown — needs
+  // the markup itself, and copying it into a second file by hand would mean a
+  // regenerated icon set silently leaving stale paths behind.
+  const body = entries
+    .map(
+      ({ name, phosphor, inner }) =>
+        `/** Phosphor ${phosphor} */\nexport const ${name}Svg = ${JSON.stringify(inner)}\n` +
+        `export const ${name} = /*#__PURE__*/ icon(${name}Svg)\n`
+    )
+    .join("\n");
+
+  const file = `// GENERATED by scripts/build-ui-icons.mjs — do not edit.
+//
+// The app's icons, drawn from Phosphor path data rather than a component
+// library. Importing @phosphor-icons/vue and resolving names at runtime pulled
+// 5.8 MB into one chunk, because a dynamic lookup defeats tree-shaking; each
+// icon here is an independent export, so a build only carries what it uses.
+//
+// Several are exported under their old lucide names — Search is a
+// MagnifyingGlass, Settings is a Gear — so the migration did not have to touch
+// every template. scripts/lucide-to-phosphor.js holds that mapping.
+import { h } from 'vue'
+
+// One root element, so class and style from the call site fall through:
+// \`<Bell class="h-5 w-5" />\` keeps working exactly as it did.
+const icon = (inner) => ({
+  render: () =>
+    h('svg', {
+      xmlns: 'http://www.w3.org/2000/svg',
+      viewBox: '0 0 256 256',
+      fill: 'currentColor',
+      innerHTML: inner,
+    }),
+})
+
+${body}`;
+
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  fs.writeFileSync(OUT, file);
+
+  const kb = Math.round(fs.statSync(OUT).size / 1024);
+  const renamed = entries.filter((e) => e.name !== e.phosphor).length;
+  console.log(
+    `ui icons  : ${entries.length} exports (${renamed} under a lucide-compatible name) -> src/icons/index.js (${kb} KB)`
+  );
+}
+
+main();

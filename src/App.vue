@@ -1,0 +1,207 @@
+<script setup>
+import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { useTheme } from './composables/useTheme'
+import { useNotifications } from './composables/useNotifications'
+import { useAppSettings } from './composables/useAppSettings'
+import { useVersionCheck } from './composables/useVersionCheck'
+import PullToRefresh from './components/common/PullToRefresh.vue'
+import ToastContainer from './components/common/ToastContainer.vue'
+import WhatsNewModal from './components/common/WhatsNewModal.vue'
+import InstallPrompt from './components/common/InstallPrompt.vue'
+import RouteTransition from './components/common/RouteTransition.vue'
+import { getChurchId } from './api/church'
+import { canSwitchChurchHere, devChurchLink } from './api/churchService'
+
+const onTestAddress = canSwitchChurchHere()
+const devChurchId = getChurchId()
+
+const { isTransitioning, isDark, transitionOrigin } = useTheme()
+
+// The browser tab follows the uploaded logo too, so a rebranded install is not
+// still flying the old mark in the one place nobody thinks to look.
+const { logoUrl } = useAppSettings()
+watch(
+  logoUrl,
+  (url) => {
+    const link = document.querySelector("link[rel='icon']")
+    if (!url || !link) return
+    link.href = url
+    // The tag is declared image/png; an uploaded logo is a webp data URL.
+    const mime = url.startsWith('data:') ? url.slice(5, url.indexOf(';')) : ''
+    if (mime) link.type = mime
+  },
+  { immediate: true }
+)
+
+// Re-attach push handlers/token if notifications were already allowed
+const { init: initNotifications } = useNotifications()
+
+// The service worker reloads the page itself when a deploy lands, so this runs
+// on the build the user has just been moved onto.
+const { checkOnLaunch: checkAppVersion } = useVersionCheck()
+
+// Pull-to-refresh, ours instead of Chrome's (which style.css switches off).
+// The listeners are here rather than inside the component because the gesture
+// belongs to the whole app: every view scrolls in its own container, and one
+// set of listeners on the window covers all of them at once. touchmove has to
+// be non-passive - the pull cancels the page's own scrolling - which is
+// exactly what Vue's template handlers cannot express.
+const pullToRefresh = ref(null)
+const forwardTouch = (name) => (event) => pullToRefresh.value?.[name](event)
+const onTouchStart = forwardTouch('onTouchStart')
+const onTouchMove = forwardTouch('onTouchMove')
+const onTouchEnd = forwardTouch('onTouchEnd')
+
+onMounted(() => {
+  // A device's push token belongs to a church. The platform's front door has
+  // none to register it with.
+  if (getChurchId()) initNotifications()
+  checkAppVersion()
+
+  window.addEventListener('touchstart', onTouchStart, { passive: true })
+  window.addEventListener('touchmove', onTouchMove, { passive: false })
+  window.addEventListener('touchend', onTouchEnd, { passive: true })
+  window.addEventListener('touchcancel', onTouchEnd, { passive: true })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('touchstart', onTouchStart)
+  window.removeEventListener('touchmove', onTouchMove)
+  window.removeEventListener('touchend', onTouchEnd)
+  window.removeEventListener('touchcancel', onTouchEnd)
+})
+</script>
+
+<template>
+  <div id="app">
+    <router-view />
+
+    <!-- Between one page and the next: the church's mark over the gap, while
+         the view being navigated to fetches its chunk. -->
+    <RouteTransition />
+
+    <!-- Pull down at the top of any page: the church's logo, not Chrome's bar -->
+    <PullToRefresh ref="pullToRefresh" />
+
+    <!-- Offers the home-screen install to anyone still in a browser tab.
+         Renders nothing once the app is installed, dismissed or unsupported. -->
+    <InstallPrompt />
+
+    <!-- Global Toast Notifications -->
+    <ToastContainer />
+
+    <!-- Tells the user what changed after the service worker moved them to a new build -->
+    <WhatsNewModal />
+
+    <!-- Test addresses only (localhost, *.vercel.app): which church this tab is
+         serving, and the way back to the front door. Every church shares the
+         one address there, so without this nothing on screen says which one
+         you are in. Never shown on a church's real address. -->
+    <a
+      v-if="onTestAddress && devChurchId"
+      :href="devChurchLink('')"
+      class="fixed bottom-2 left-2 z-200 rounded-full bg-gray-900/80 px-2.5 py-1 font-mono text-[10px] text-white shadow hover:bg-gray-900"
+      title="Test address: open the platform front door in this tab"
+    >
+      test · {{ devChurchId }} · front door ↩
+    </a>
+    
+    <!-- Theme transition overlay - circular reveal -->
+    <div 
+      v-if="isTransitioning" 
+      class="theme-circle-reveal"
+      :class="isDark ? 'to-dark' : 'to-light'"
+      :style="{ '--origin-x': transitionOrigin.x + 'px', '--origin-y': transitionOrigin.y + 'px' }"
+    >
+      <span class="theme-text" :class="isDark ? 'text-light' : 'text-dark'">
+        {{ isDark ? 'Then darkness came...' : 'Let there be light!' }}
+      </span>
+    </div>
+  </div>
+</template>
+
+<style>
+#app {
+  width: 100%;
+  height: 100dvh;
+  position: relative;
+}
+
+.theme-circle-reveal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  animation: circle-expand 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.theme-circle-reveal.to-dark {
+  background: rgba(17, 24, 39, 0.92);
+}
+
+.theme-circle-reveal.to-light {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.theme-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  opacity: 0;
+  animation: text-fade 0.6s ease-out 0.1s forwards;
+}
+
+@media (max-width: 640px) {
+  .theme-text {
+    font-size: 1.5rem;
+    letter-spacing: 0.05em;
+  }
+}
+
+.theme-text.text-light {
+  color: #fbbf24;
+  text-shadow: 
+    0 0 20px rgba(251, 191, 36, 0.8),
+    0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.theme-text.text-dark {
+  color: #1e3a5f;
+  text-shadow: 
+    0 0 30px rgba(255, 255, 255, 0.9),
+    0 0 60px rgba(255, 255, 255, 0.5);
+}
+
+@keyframes circle-expand {
+  0% {
+    clip-path: circle(0% at var(--origin-x) var(--origin-y));
+  }
+  100% {
+    clip-path: circle(150% at var(--origin-x) var(--origin-y));
+  }
+}
+
+@keyframes text-fade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+</style>

@@ -1,0 +1,78 @@
+import { computed, markRaw, ref, triggerRef } from 'vue'
+import * as authService from '../api/authService'
+
+// Global auth state (shared across components)
+const user = ref(null)
+const isReady = ref(false)
+
+let unsubscribe = null
+
+// Resolves once Firebase has restored (or rejected) the persisted session.
+// The router guard awaits this so a refresh doesn't bounce a signed-in user
+// to /login before Firebase has caught up.
+let resolveReady
+const ready = new Promise((resolve) => {
+  resolveReady = resolve
+})
+
+// Starts the auth listener. Safe to call more than once.
+export const initAuth = () => {
+  if (unsubscribe) return ready
+
+  unsubscribe = authService.subscribeToAuth((firebaseUser) => {
+    // markRaw: the Firebase User is a class instance with internal state that
+    // shouldn't be wrapped in a reactive proxy. Mutations are published with
+    // triggerRef instead (see updateDisplayName).
+    user.value = firebaseUser ? markRaw(firebaseUser) : null
+
+    // The account is mirrored into the church's Accounts list by
+    // useChurchAccess, once it is known to belong there. Signing in is no
+    // longer the same thing as being in a church.
+
+    if (!isReady.value) {
+      isReady.value = true
+      resolveReady()
+    }
+  })
+
+  return ready
+}
+
+export function useAuth() {
+  const isAuthenticated = computed(() => !!user.value)
+
+  const displayName = computed(() => {
+    if (!user.value) return ''
+    return user.value.displayName || user.value.email?.split('@')[0] || 'User'
+  })
+
+  const email = computed(() => user.value?.email || '')
+
+  // No avatarUrl here on purpose. The face to show is not a property of the
+  // sign-in — a linked member record's photo outranks the provider thumbnail —
+  // so it is resolved in useAvatars(), which is the one place that knows about
+  // both. Reach for useAvatars().myAvatarUrl.
+
+  // updateProfile mutates the existing User object without firing
+  // onAuthStateChanged, so nothing would re-render on its own — publish the
+  // change to anything reading `user` by hand.
+  const updateDisplayName = async (name) => {
+    await authService.updateDisplayName(name)
+    triggerRef(user)
+  }
+
+  return {
+    user,
+    isReady,
+    isAuthenticated,
+    displayName,
+    email,
+    ready,
+    initAuth,
+    updateDisplayName,
+    loginWithGoogle: authService.loginWithGoogle,
+    consumePendingGoogleSignIn: authService.consumePendingGoogleSignIn,
+    logout: authService.logout,
+    getAuthErrorMessage: authService.getAuthErrorMessage,
+  }
+}

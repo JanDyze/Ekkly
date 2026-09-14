@@ -1,0 +1,401 @@
+import { watch } from 'vue'
+import { createRouter, createWebHistory } from 'vue-router'
+import AdminLayout from '../layouts/AdminLayout.vue'
+import { initAuth, useAuth } from '../composables/useAuth'
+import { initPermissions, usePermissions } from '../composables/usePermissions'
+import { getLandingEnabled } from '../composables/useAppSettings'
+import { initChurchAccess, isChurchOpen, useChurchAccess } from '../composables/useChurchAccess'
+import { getChurchId } from '../api/church'
+
+// Where a signed-in member belongs: "/" is the visitors' page now.
+//
+// The catalogue rather than the dashboard, and it carries no capability on
+// purpose — every "denied" redirect lands here, so a page that could itself be
+// denied would bounce forever.
+const HOME = '/home'
+
+// The door for somebody who is signed in but not in this church, and for an
+// address with no church behind it at all.
+const JOIN = '/join'
+
+// A church's own app, served on its address: uec.church.app.
+const churchRoutes = [
+  {
+    path: JOIN,
+    name: 'JoinChurch',
+    component: () => import('../views/JoinChurch.vue'),
+    meta: { public: true }
+  },
+  // The public front door. Registered before the app shell below so it — not
+  // the shell — is what "/" resolves to; the guard sends signed-in members on
+  // to their dashboard.
+  {
+    path: '/',
+    name: 'Landing',
+    component: () => import('../views/Landing.vue'),
+    meta: { public: true }
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/Login.vue'),
+    meta: { guestOnly: true }
+  },
+  {
+    // Kept as a redirect rather than deleted: sign-up was a real page for a
+    // year, and the address is in old links, bookmarks and at least one email.
+    // Google sign-in creates the account anyway, so /login is where it went.
+    path: '/register',
+    redirect: '/login'
+  },
+  {
+    // The projector's own window. Registered outside the app shell on purpose:
+    // it is dragged onto a second screen and shown to a congregation, so it
+    // must carry no sidebar, no topbar and no theme — just the slide.
+    path: '/present-output',
+    name: 'PresentOutput',
+    component: () => import('../views/PresentOutput.vue'),
+    // projector: nothing of ours may float over this window. It is on a second
+    // screen in front of a congregation, so even a dismissible banner is a
+    // banner the whole church reads mid-song.
+    meta: { requiresAuth: true, projector: true }
+  },
+  {
+    path: '/',
+    component: AdminLayout,
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'dashboard',
+        name: 'Home',
+        component: () => import('../views/Home.vue')
+      },
+      {
+        path: 'members',
+        name: 'Members',
+        meta: { capability: 'members.view' },
+        component: () => import('../views/Members.vue')
+      },
+      {
+        path: 'members/:id',
+        name: 'MemberDetails',
+        // focus: one record is a task, and the chrome around it was costing a
+        // topbar and a bottom bar's worth of a phone screen. The page carries
+        // its own way back, so nothing is stranded by dropping the nav.
+        meta: { capability: 'members.view', focus: true },
+        component: () => import('../views/MemberDetails.vue')
+      },
+      {
+        path: 'small-groups',
+        name: 'SmallGroups',
+        meta: { capability: 'smallgroups.view' },
+        component: () => import('../views/SmallGroups.vue')
+      },
+      {
+        path: 'small-groups/:id',
+        name: 'SmallGroupDetails',
+        meta: { capability: 'smallgroups.view' },
+        component: () => import('../views/SmallGroupDetails.vue')
+      },
+      {
+        path: 'small-groups/:id/sessions/:sessionId',
+        name: 'SgSessionDetails',
+        meta: { capability: 'smallgroups.view' },
+        component: () => import('../views/SgSessionDetails.vue')
+      },
+      {
+        path: 'events',
+        name: 'Events',
+        meta: { capability: 'events.view' },
+        component: () => import('../views/Events.vue')
+      },
+      {
+        path: 'gallery/:id?/:view?/:photoId?',
+        name: 'Gallery',
+        meta: { capability: 'gallery.view' },
+        component: () => import('../views/Gallery.vue'),
+        props: true
+      },
+      {
+        path: 'links',
+        name: 'Links',
+        meta: { capability: 'links.view' },
+        component: () => import('../views/Links.vue')
+      },
+      {
+        path: 'songs',
+        name: 'SongList',
+        meta: { capability: 'songs.view' },
+        component: () => import('../views/SongList.vue')
+      },
+      {
+        // Typing out a song needs the whole screen, the way recording
+        // attendance does — and the list opens straight into it, the same as
+        // People and Minutes do. Viewing is enough to reach it; the editor is read-only without
+        // songs.manage, so the worship team can read lyrics off it on a phone.
+        path: 'songs/:id',
+        name: 'SongDetails',
+        meta: { capability: 'songs.view' },
+        component: () => import('../views/SongDetails.vue')
+      },
+      {
+        // What Presentation opens on: every service there is to run. A church
+        // holds one a week, so choosing happens once, here, rather than from a
+        // switcher the presenter had to carry.
+        path: 'present',
+        name: 'Services',
+        meta: { capability: 'lineups.view' },
+        component: () => import('../views/Services.vue')
+      },
+      {
+        // The tech booth, for one service. Keyed by date rather than month,
+        // because a service is what gets run. Read-only access is enough —
+        // presenting shows what the worship team planned, it does not change it.
+        path: 'present/:date',
+        name: 'Present',
+        meta: { capability: 'lineups.view' },
+        component: () => import('../views/Present.vue')
+      },
+      {
+        // The month is optional: /schedules opens the current one, and the
+        // month-keyed form is what gets shared with whoever is serving. The
+        // capability keeps its lineups name — it is what the grants say.
+        path: 'schedules/:month?',
+        name: 'Schedules',
+        meta: { capability: 'lineups.view' },
+        component: () => import('../views/Schedules.vue')
+      },
+      {
+        // Lineups became Schedules. Old links live on in chats, bookmarks and
+        // the notification history, and every one of them should still land.
+        path: 'lineups/:month?',
+        redirect: (to) => ({ path: `/schedules${to.params.month ? `/${to.params.month}` : ''}` })
+      },
+      {
+        // Both params optional: bare /bible means "carry on from where I was",
+        // and the full form is what a reference shared with somebody else
+        // looks like. No capability — Scripture is not church data to be
+        // granted by ministry tag, and every signed-in account may read it.
+        path: 'bible/:slug?/:chapter?',
+        name: 'Bible',
+        // The page's own header already says which chapter you are in and
+        // carries the search, so the app bar above it would only repeat the
+        // word "Bible" and cost a reader a line of text. Not `focus`: the
+        // bottom bar stays, because this is a page you browse from.
+        meta: { hideTopbar: true },
+        component: () => import('../views/Bible.vue')
+      },
+      {
+        path: 'minutes',
+        name: 'Minutes',
+        meta: { capability: 'minutes.view' },
+        component: () => import('../views/Minutes.vue')
+      },
+      {
+        // focus: no top or bottom bar, the same as recording attendance. A
+        // minute is a document — read on a phone, and written into during a
+        // meeting — and the agenda rail, the notes and the write-up want the
+        // height. It carries its own back arrow to the list.
+        path: 'minutes/:id',
+        name: 'MinuteDetails',
+        meta: { capability: 'minutes.view', focus: true },
+        component: () => import('../views/MinuteDetails.vue')
+      },
+      {
+        path: 'attendance',
+        name: 'Attendance',
+        meta: { capability: 'attendance.view' },
+        component: () => import('../views/Attendance.vue')
+      },
+      {
+        // Recording is its own screen: a swipe deck and a hundred names need
+        // more room than a drawer. ?key= a gathering, ?id= an existing record,
+        // neither = a one-off.
+        path: 'attendance/record',
+        name: 'RecordAttendance',
+        // focus: no top or bottom bar. Taking attendance is a task with its
+        // own back arrow, and the swipe deck wants every pixel.
+        meta: { capability: 'attendance.manage', focus: true },
+        component: () => import('../views/RecordAttendance.vue')
+      },
+      {
+        // Between the dashboard and the pages it summarises: what the church
+        // still has to do is the second thing anyone opens the app for.
+        path: 'tasks',
+        name: 'Tasks',
+        meta: { capability: 'tasks.view' },
+        component: () => import('../views/Tasks.vue')
+      },
+      {
+        path: 'prayer-concerns',
+        name: 'PrayerConcerns',
+        meta: { capability: 'prayer.view' },
+        component: () => import('../views/PrayerConcerns.vue')
+      },
+      {
+        path: 'home',
+        name: 'Apps',
+        component: () => import('../views/Apps.vue')
+      },
+      {
+        path: 'finances',
+        name: 'Finances',
+        meta: { capability: 'finances.view' },
+        component: () => import('../views/Finances.vue')
+      },
+      {
+        path: 'todo',
+        name: 'Todo',
+        meta: { adminOnly: true },
+        component: () => import('../views/Todo.vue')
+      },
+      {
+        path: 'accounts',
+        name: 'Accounts',
+        meta: { adminOnly: true },
+        component: () => import('../views/Accounts.vue')
+      },
+      {
+        path: 'audit',
+        name: 'AuditLog',
+        meta: { adminOnly: true },
+        component: () => import('../views/AuditLog.vue')
+      },
+      {
+        path: 'settings',
+        name: 'Settings',
+        meta: { adminOnly: true },
+        component: () => import('../views/Settings.vue')
+      }
+    ]
+  },
+  // Anything unrecognised lands on the dashboard rather than an empty shell —
+  // a bookmark or home-screen shortcut to a page that has since been removed
+  // (/finances, say) would otherwise render nothing at all.
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: HOME
+  }
+]
+
+// The platform's own front door, on the bare domain and app.church.app: where
+// a congregation asks for a church, and where those requests are approved. No
+// church's records are reachable from here.
+const platformRoutes = [
+  {
+    path: '/',
+    name: 'PlatformHome',
+    component: () => import('../views/PlatformHome.vue'),
+    meta: { public: true }
+  },
+  {
+    path: '/platform',
+    name: 'PlatformAdmin',
+    component: () => import('../views/PlatformAdmin.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/'
+  }
+]
+
+// Going back to a list must land where you left it. Every list opens a record
+// as a full page now, so "check three people in a row" is back-scroll-tap —
+// and without this, each back lands at the top of the roll.
+const scrollBehavior = (to, from, savedPosition) => savedPosition || { top: 0 }
+
+const createPlatformRouter = () => {
+  const router = createRouter({ history: createWebHistory(), routes: platformRoutes, scrollBehavior })
+  router.beforeEach(async () => {
+    // The pages themselves sort out who is signed in; nothing here is behind a
+    // church's rules. The session still has to be restored first.
+    await initAuth()
+    return true
+  })
+  return router
+}
+
+const createChurchRouter = () => {
+  const router = createRouter({ history: createWebHistory(), routes: churchRoutes, scrollBehavior })
+
+  // Access taken away mid-session: leave on a full page load, so nothing the
+  // church's listeners already delivered stays on screen or in memory.
+  const { status } = useChurchAccess()
+  watch(status, (now, before) => {
+    if (before === 'granted' && now !== 'granted' && now !== 'signed-out' && now !== 'checking') {
+      window.location.assign(JOIN)
+    }
+  })
+
+  // Wait for Firebase to restore the persisted session before resolving any
+  // route, otherwise a page refresh would bounce a signed-in user to /login.
+  router.beforeEach(async (to) => {
+    await initAuth()
+
+    const { isAuthenticated, user } = useAuth()
+
+    // An address with no church behind it, or a church that has been closed,
+    // has one page: the one that says so.
+    if (!isChurchOpen()) {
+      return to.name === 'JoinChurch' ? true : { name: 'JoinChurch' }
+    }
+
+    if (to.meta.requiresAuth && !isAuthenticated.value) {
+      return {
+        name: 'Login',
+        query: to.fullPath === HOME ? {} : { redirect: to.fullPath }
+      }
+    }
+
+    if (to.name === 'Landing') {
+      // Turned off, this install is an internal tool with no public face. On a
+      // cold load the setting may not have arrived yet, so it reads as "shown"
+      // here and Landing.vue finishes the decision once it does.
+      if (!getLandingEnabled()) return { name: 'Login' }
+      // Signed in or not, "/" stays the public page. A member who follows the
+      // church's own link should land where visitors land — the page itself
+      // offers them the way back into the app.
+      return true
+    }
+
+    if (to.meta.guestOnly && isAuthenticated.value) {
+      return { path: HOME }
+    }
+
+    // Signed in is not the same as in this church. Everything behind the app
+    // shell needs an access document, and whoever has none is sent to ask for
+    // one — before a single listener is started on the church's records.
+    if (isAuthenticated.value && to.meta.requiresAuth) {
+      const access = await initChurchAccess(user.value)
+      if (access !== 'granted') return { name: 'JoinChurch' }
+    }
+
+    // Roles come from the signed-in member's ministry tags, so they can only be
+    // consulted once admins, members and the tag map have all loaded. Awaiting
+    // that here stops a hard refresh on a deep link from bouncing someone who
+    // does in fact have access.
+    if (isAuthenticated.value && to.meta.requiresAuth) {
+      // Awaited on every navigation, not just guarded ones: the sidebar and
+      // bottom bar filter themselves by capability, so the map has to be loaded
+      // even on a page that grants itself freely.
+      await initPermissions()
+
+      const capability = to.matched.reduce((cap, record) => record.meta.capability || cap, null)
+      const adminOnly = to.matched.some((record) => record.meta.adminOnly)
+      const { can, isAdmin, hasNoAdmins } = usePermissions()
+
+      if (adminOnly && !isAdmin.value && !hasNoAdmins.value) {
+        return { path: HOME, query: { denied: to.path } }
+      }
+      if (capability && !can(capability)) return { path: HOME, query: { denied: to.path } }
+    }
+
+    return true
+  })
+
+  return router
+}
+
+/** Called once, after resolveChurch() has decided what this page is serving. */
+export const createAppRouter = () => (getChurchId() ? createChurchRouter() : createPlatformRouter())

@@ -1,0 +1,256 @@
+<script setup>
+import { computed } from 'vue'
+import { getEventTypeBar, getEventTypeColor, eventTypeLabel } from '../../utils/eventColors'
+import { isCalledOff, eventStatusLabel, readEventStatus } from '../../../lib/eventStatus'
+import { isRecorded } from '../../../lib/attendance'
+import { CalendarClock, Trash2 } from '../../icons'
+
+const props = defineProps({
+  record: {
+    type: Object,
+    required: true
+  },
+  members: {
+    type: Array,
+    default: () => []
+  },
+  selected: {
+    type: Boolean,
+    default: false
+  },
+  // Whether this person may change the record. Passed down rather than asked
+  // for here, so the list and the row cannot disagree about it.
+  canManage: {
+    type: Boolean,
+    default: false
+  }
+})
+
+const emit = defineEmits(['delete', 'record-attendance', 'edit-attendance', 'mark', 'click'])
+
+const handleClick = () => {
+  // A gathering that is off, or one nobody is counting, has nothing to record:
+  // opening the marker is the only useful thing a tap can do, and it is also
+  // the way back — reinstating it, or asking to be prompted again.
+  if (calledOff.value || props.record.skipped) {
+    emit('mark', props.record)
+    return
+  }
+  if (props.record.rowType === 'attendance') {
+    emit('edit-attendance', props.record)
+  } else if (
+    props.record.rowType === 'event' ||
+    props.record.rowType === 'minute' ||
+    props.record.rowType === 'recurring'
+  ) {
+    emit('record-attendance', props.record)
+  } else {
+    emit('click', props.record)
+  }
+}
+
+const getDay = (dateString) => {
+  if (!dateString) return '--'
+  return new Date(dateString).getDate()
+}
+
+const getDayName = (dateString) => {
+  if (!dateString) return ''
+  return new Date(dateString).toLocaleDateString('en-US', { weekday: 'short' })
+}
+
+// The calendar's vocabulary, so a Sunday service is the same blue here as it
+// is on Events and a meeting the same slate. A meeting arrives as a minute row
+// rather than a typed event, so it is named rather than guessed.
+const type = computed(() =>
+  props.record.rowType === 'minute' ? 'meeting' : props.record.eventType || ''
+)
+
+const category = computed(() => (type.value ? eventTypeLabel(type.value) : 'Event'))
+
+// A gathering nobody has counted yet: a prompt, not a record. Asked of
+// lib/attendance.js rather than decided here, because "recorded" used to mean
+// "came from the attendance collection" — and a meeting's register is written
+// on its minute, so a meeting with thirty names on it read "Not recorded".
+const isPlaceholder = computed(() => !isRecorded(props.record))
+
+// Cancelled or postponed on the calendar. The row stays — a service that is
+// off is a fact about that Sunday, and hiding it is how somebody ends up
+// recording attendance for a gathering that never happened.
+const calledOff = computed(() => isCalledOff(props.record))
+const statusLabel = computed(() => eventStatusLabel(readEventStatus(props.record)))
+
+// Deliberately not counted anywhere: a skipped gathering is not a turnout of
+// zero, it is a decision not to count.
+const skipped = computed(() => Boolean(props.record.skipped))
+
+/** Off, skipped, or simply not yet done — the three things a row can be. */
+const isQuiet = computed(() => calledOff.value || skipped.value)
+
+// Only a meeting cannot be called off: minutes are not the calendar's to
+// cancel, and a gathering already recorded is history rather than a plan.
+const canMark = computed(
+  () => props.record.rowType === 'event' || props.record.rowType === 'recurring' || isPlaceholder.value
+)
+
+// Throwing away a count somebody took. Only ever offered where there is one:
+// a placeholder has nothing behind it, and a skipped gathering is undone by
+// asking to be prompted again rather than by deleting the marker. A meeting
+// qualifies — what goes is the register on its minute, not the minute.
+const canDelete = computed(
+  () => props.canManage && !isPlaceholder.value && !skipped.value
+)
+
+const roster = computed(() => props.members.length)
+
+const present = computed(() => props.record.totalAttendees ?? props.record.attendees?.length ?? 0)
+
+// Who was expected, not who is on the roster. A choir practice is for the ten
+// people carrying the tag, and reporting "8 of 105" called a full turnout a
+// collapse. The count arrives already recounted off the gathering's tags
+// (useAttendance.js); the roster only stands in for something that names no
+// audience at all, where everyone genuinely is the answer.
+const expected = computed(() => props.record.expectedAttendees || roster.value)
+
+// The same denominator the recorder counts against on its own header, so the
+// two screens cannot disagree about the same gathering.
+const share = computed(() => {
+  if (isPlaceholder.value || skipped.value || !expected.value) return null
+  return Math.min(100, Math.round((present.value / expected.value) * 100))
+})
+</script>
+
+<template>
+  <div
+    @click="handleClick"
+    :class="[
+      'relative flex cursor-pointer select-none items-center gap-3 overflow-hidden px-4 py-3 transition-colors',
+      selected
+        ? 'bg-primary/10 dark:bg-primary/20'
+        : 'hover:bg-gray-50 dark:hover:bg-gray-700/50',
+      // Still there, still readable, plainly not part of the count.
+      isQuiet ? 'opacity-60' : '',
+    ]"
+  >
+    <!-- The row itself is the gauge: it fills from the left in proportion to
+         turnout, so a full house and a thin one are told apart down the list
+         without reading a single number. Always the primary colour — a month
+         of rows each filling in its own hue was a rainbow, and the kind of
+         gathering is already carried by the stripe and the badge. -->
+    <div
+      v-if="share !== null"
+      class="pointer-events-none absolute inset-y-0 left-0 bg-primary opacity-10 transition-[width] duration-700 ease-out dark:bg-primary-light dark:opacity-20"
+      :style="{ width: `${share}%` }"
+    ></div>
+
+    <!-- The stripe carries the colour even on a row with nothing recorded, so
+         a month of services still reads as a month of services. -->
+    <div
+      :class="[
+        'pointer-events-none absolute inset-y-0 left-0 w-1',
+        getEventTypeBar(type),
+        isPlaceholder ? 'opacity-30' : '',
+      ]"
+    ></div>
+
+    <!-- Big Day Display -->
+    <div class="relative w-12 shrink-0 text-center">
+      <div class="text-2xl font-bold leading-none text-gray-900 dark:text-white">
+        {{ getDay(record.date) }}
+      </div>
+      <div class="mt-0.5 text-xs uppercase text-gray-400 dark:text-gray-500">
+        {{ getDayName(record.date) }}
+      </div>
+    </div>
+
+    <div class="relative min-w-0 flex-1">
+      <p
+        :class="[
+          'truncate text-sm font-medium',
+          calledOff
+            ? 'text-gray-500 line-through dark:text-gray-400'
+            : 'text-gray-900 dark:text-white',
+        ]"
+      >
+        {{ record.eventTitle || 'Untitled' }}
+      </p>
+      <div class="mt-0.5 flex items-center gap-2">
+        <span
+          :class="[
+            'rounded px-1.5 py-0.5 text-xs',
+            getEventTypeColor(type),
+            isPlaceholder ? 'opacity-60' : '',
+          ]"
+        >
+          {{ category }}
+        </span>
+        <!-- Cancelled and postponed are facts about the gathering; skipped is
+             a decision about the paperwork. Three different states, so three
+             different words rather than one grey badge for all of them. -->
+        <span
+          v-if="calledOff"
+          class="rounded bg-red-100 px-1.5 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-500/15 dark:text-red-300"
+        >
+          {{ statusLabel }}
+        </span>
+        <span
+          v-else-if="skipped"
+          class="rounded border border-dashed border-gray-300 px-1.5 py-0.5 text-xs text-gray-400 dark:border-gray-600 dark:text-gray-500"
+        >
+          Not counted
+        </span>
+        <span v-else-if="!isPlaceholder" class="text-xs text-gray-500 dark:text-gray-400">
+          <span class="tabular-nums">{{ present }}</span>
+          <span v-if="expected"> of <span class="tabular-nums">{{ expected }}</span></span>
+        </span>
+        <span
+          v-else
+          class="rounded border border-dashed border-gray-300 px-1.5 py-0.5 text-xs text-gray-400 dark:border-gray-600 dark:text-gray-500"
+        >
+          Not recorded
+        </span>
+      </div>
+
+      <p
+        v-if="record.statusNote || record.postponedTo"
+        class="mt-0.5 truncate text-[11px] text-gray-500 dark:text-gray-400"
+      >
+        <template v-if="record.postponedTo">Moved to {{ record.postponedTo }}</template>
+        <template v-if="record.postponedTo && record.statusNote"> · </template>
+        {{ record.statusNote }}
+      </p>
+    </div>
+
+    <!-- The way to say "this one is not happening" without leaving the list.
+         A tap target of its own, because the row itself already means
+         "record this". -->
+    <!-- The count was wrong, or was never this gathering's to begin with. The
+         row stays tappable for editing it; this is the way to be rid of it. -->
+    <button
+      v-if="canDelete"
+      @click.stop="emit('delete', record)"
+      aria-label="Delete this record"
+      title="Delete this record"
+      class="relative shrink-0 rounded-lg p-2 text-gray-300 transition-colors hover:bg-red-50 hover:text-red-500 dark:text-gray-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+    >
+      <Trash2 class="h-4 w-4" />
+    </button>
+
+    <button
+      v-if="canMark && !isQuiet"
+      @click.stop="emit('mark', record)"
+      aria-label="Cancel, postpone or skip"
+      title="Cancel, postpone or skip"
+      class="relative shrink-0 rounded-lg p-2 text-gray-300 transition-colors hover:bg-gray-100 hover:text-gray-500 dark:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+    >
+      <CalendarClock class="h-4 w-4" />
+    </button>
+
+    <p
+      v-if="share !== null"
+      class="relative shrink-0 text-xl font-bold tabular-nums text-primary dark:text-primary-light"
+    >
+      {{ share }}<span class="text-sm font-semibold">%</span>
+    </p>
+  </div>
+</template>

@@ -1,0 +1,795 @@
+<script setup>
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useMembers } from "../composables/useMembers";
+import { useMediaQuery } from "../composables/useMediaQuery";
+import { useMemberSearch } from "../composables/useMemberSearch";
+import { useMemberSorting } from "../composables/useMemberSorting";
+import { useMemberForm } from "../composables/useMemberForm";
+import { useListScrollMemory } from "../composables/useListScrollMemory";
+import { useToast } from "../composables/useToast";
+import MembersToolbar from "../components/members/MembersToolbar.vue";
+import MembersFab from "../components/members/MembersFab.vue";
+import MembersSortSheet from "../components/members/MembersSortSheet.vue";
+import AddMemberDrawer from "../components/members/AddMemberDrawer.vue";
+import MemberContextMenu from "../components/members/MemberContextMenu.vue";
+import ExportDialog from "../components/members/ExportDialog.vue";
+import MemberCard from "../components/members/MemberCard.vue";
+import MemberListItem from "../components/members/MemberListItem.vue";
+import MemberCardSkeleton from "../components/members/MemberCardSkeleton.vue";
+import MemberBandHeader from "../components/members/MemberBandHeader.vue";
+import ConfirmationModal from "../components/common/ConfirmationModal.vue";
+import BulkAssignSheet from "../components/members/BulkAssignSheet.vue";
+import { exportToExcel } from "../utils/exportUtils";
+import { getFullName, mergeTagSources } from "../utils/memberUtils";
+import { usePermissions } from "../composables/usePermissions";
+import { useMinistries } from "../composables/useMinistries";
+import { areaLabel } from "../data/capabilities";
+import { ArrowUpDown, ChevronDown, Church, Tag, X } from "../icons";
+import {
+  subscribeToCustomTags,
+  addCustomTag,
+  addTagToMembers,
+  removeTagFromMembers,
+} from "../api/tagsService";
+import {
+  addMinistryToMembers,
+  removeMinistryFromMembers,
+} from "../api/ministriesService";
+
+const toast = useToast();
+
+const router = useRouter();
+const route = useRoute();
+const isMobile = useMediaQuery("(max-width: 1023px)");
+
+const searchQuery = ref("");
+
+// Member data management
+const { members, loading, addMemberToFirestore, removeMember } = useMembers();
+
+// Search is the only way the list is narrowed - it matches tags, sex, civil
+// status, occupation and address as well as names.
+const { allTags, filteredMembers: searchedMembers } = useMemberSearch(members, searchQuery);
+
+// Custom tags created from the toolbar's "Add tag" control, registered as
+// selectable options without being applied to any member yet.
+const customTags = ref([]);
+let unsubscribeCustomTags = null;
+
+onMounted(() => {
+  unsubscribeCustomTags = subscribeToCustomTags((tags) => {
+    customTags.value = tags.map((t) => t.name);
+  });
+});
+
+onUnmounted(() => {
+  if (unsubscribeCustomTags) unsubscribeCustomTags();
+});
+
+// Tags offered when assigning/editing a member's tags: existing tags plus
+// ready-to-pick presets and toolbar-created tags, even before anyone has
+// been tagged with them.
+const assignableTags = computed(() => mergeTagSources(allTags.value, customTags.value));
+
+// Sorting
+const { sortBy, sortOptions, currentSort, sortMembers, arrangeMembers } = useMemberSorting();
+const showSort = ref(false);
+
+// Apply sorting to the searched members
+const filteredMembers = computed(() => {
+  return sortMembers(searchedMembers.value);
+});
+
+// The sort decides the headings as well as the order.
+//
+// By default the list is divided the way the attendance recorder checks
+// people off — kids, youth, adults,
+// seniors, then whoever has no age on record. Sorting by ministry or tag
+// replaces those headings with its own, because you cannot group by age band
+// and by choir at once; sorting by birthday or by when somebody joined drops
+// the headings entirely, since those are questions about the whole roll.
+// A section with no band is a flat list and renders without a heading.
+const memberGroups = computed(() => arrangeMembers(filteredMembers.value));
+
+/* ------------------------------------------------------------ bulk tagging */
+// A tag is picked one person at a time in the details drawer, which is fine for
+// one person and hopeless for thirty — and thirty is the normal case, because a
+// tag is what an event now counts its expected attendance from.
+//
+// Two ways in, both landing on the same sheet and the same batched write:
+// tag everyone the search is showing, or pick names off the list by hand.
+//
+// The same selection also assigns ministries — but a ministry grants access
+// and a tag grants nothing, so the two are not offered on equal terms. Tagging
+// is one tap from the search bar; a ministry can only be applied to a
+// selection someone picked deliberately, and states what it hands out first.
+const { canManage, roleMap } = usePermissions();
+const { ministryNames } = useMinistries();
+const canTag = computed(() => canManage("members"));
+
+const picking = ref(false);
+// Ids, not member records: the list is live, and holding copies would write
+// against a stale version of someone edited elsewhere mid-selection.
+const pickedIds = ref(new Set());
+const tagTargetIds = ref(new Set());
+/** null, or which sheet is open: 'tags' | 'ministries'. */
+const sheet = ref(null);
+const tagging = ref(false);
+
+// What joining one actually hands out, in the words Settings uses. Read from
+// the same roleMap that resolves permissions, so the sheet cannot promise
+// something the app would not honour.
+const ministryOptions = computed(() =>
+  ministryNames.value.map((name) => {
+    const areas = [
+      ...new Set((roleMap.value[name] || []).map((cap) => areaLabel(cap.split(".")[0]))),
+    ];
+    return {
+      name,
+      hint: areas.length ? `Grants ${areas.join(", ")}` : "Grants nothing on its own yet",
+    };
+  })
+);
+
+const sheetConfig = computed(() => {
+  const count = tagTargets.value.length;
+  const people = `${count} ${count === 1 ? "person" : "people"}`;
+  if (sheet.value === "ministries") {
+    return {
+      field: "ministries",
+      icon: Church,
+      title: `Ministry for ${people}`,
+      hint: "Tap to put everyone in, again to take them out",
+      note: "A ministry grants access. Everyone added can do what the role allows.",
+      options: ministryOptions.value,
+      allowCreate: false,
+      emptyText: "No ministries yet — add them in Settings > Ministries.",
+    };
+  }
+  return {
+    field: "tags",
+    icon: Tag,
+    title: `Tag ${people}`,
+    hint: "Tap a tag to add it to everyone, again to take it off",
+    note: "",
+    options: assignableTags.value,
+    allowCreate: true,
+    emptyText: `No tags yet. Type one above and it lands on all ${count} of them at once.`,
+  };
+});
+
+const memberId = (member) => String(member.firestoreId || member.id);
+const pickedCount = computed(() => pickedIds.value.size);
+
+// Resolved from the live list every time, so the sheet's "8 of 34" recounts
+// itself the moment a batch lands.
+const tagTargets = computed(() =>
+  members.value.filter((m) => tagTargetIds.value.has(memberId(m)))
+);
+
+// The Set is replaced rather than mutated: a mutation in place is not what the
+// rows are watching, and half of them would keep their old tick.
+const togglePicked = (member) => {
+  const id = memberId(member);
+  const next = new Set(pickedIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  pickedIds.value = next;
+};
+
+const startPicking = (member) => {
+  if (!canTag.value) return;
+  picking.value = true;
+  pickedIds.value = member ? new Set([memberId(member)]) : new Set();
+};
+
+const stopPicking = () => {
+  picking.value = false;
+  pickedIds.value = new Set();
+};
+
+/** "Select all" means what is on screen — which is whatever the search left. */
+const pickAllVisible = () => {
+  pickedIds.value = new Set(filteredMembers.value.map(memberId));
+};
+
+// Whole-band selection, off the band's own heading. Tagging an age group is
+// the common bulk edit — the kids become WLA Kids — and picking forty names by
+// hand to do it is the thing the headings are there to save.
+const isBandPicked = (group) =>
+  group.members.length > 0 && group.members.every((m) => pickedIds.value.has(memberId(m)));
+
+const toggleBand = (group) => {
+  const next = new Set(pickedIds.value);
+  const drop = isBandPicked(group);
+  group.members.forEach((member) => {
+    const id = memberId(member);
+    if (drop) next.delete(id);
+    else next.add(id);
+  });
+  pickedIds.value = next;
+};
+
+const openSheetForPicked = (kind) => {
+  if (!pickedIds.value.size) return;
+  tagTargetIds.value = new Set(pickedIds.value);
+  sheet.value = kind;
+};
+
+/** Straight from the toolbar: the search narrowed the list, so it is the group.
+ *  Tags only — see the note above on why a ministry never starts here. */
+const openTagSheetForResults = () => {
+  if (!canTag.value || !filteredMembers.value.length) return;
+  tagTargetIds.value = new Set(filteredMembers.value.map(memberId));
+  sheet.value = "tags";
+};
+
+/** How many of the selection the write would actually touch. */
+const countChanging = (field, name, mode) =>
+  tagTargets.value.filter((member) => {
+    const held = (member[field] || []).some(
+      (value) => String(value).toLowerCase() === name.toLowerCase()
+    );
+    return mode === "remove" ? held : !held;
+  }).length;
+
+// A ministry is the field that hands out access, so a batch of them is
+// confirmed with the number and the grant spelled out. Tags need no such
+// ceremony: they grant nothing, and a wrong one is one tap to undo.
+const confirmMinistry = ({ value, mode }) => {
+  const count = countChanging("ministries", value, mode);
+  if (!count) {
+    toast.success(
+      mode === "remove"
+        ? `Nobody selected was in "${value}"`
+        : `Everyone selected was already in "${value}"`
+    );
+    return;
+  }
+
+  const people = `${count} ${count === 1 ? "person" : "people"}`;
+  const grants = ministryOptions.value.find((o) => o.name === value)?.hint || "";
+
+  showConfirmModal({
+    title: mode === "remove" ? "Remove from ministry" : "Add to ministry",
+    message:
+      mode === "remove"
+        ? `Take ${people} out of "${value}"? They lose whatever access it granted them.`
+        : `Put ${people} into "${value}"? A ministry grants access — ${grants.toLowerCase()}.`,
+    confirmText: mode === "remove" ? "Remove" : "Add",
+    cancelText: "Cancel",
+    confirmButtonClass:
+      mode === "remove"
+        ? "bg-red-600 text-white hover:bg-red-700"
+        : "bg-primary text-white hover:bg-primary-hover",
+    onConfirm: () => {
+      showConfirmation.value = false;
+      applyBulk({ value, mode });
+    },
+  });
+};
+
+const handleSheetApply = (payload) => {
+  if (sheet.value === "ministries") {
+    confirmMinistry(payload);
+    return;
+  }
+  applyBulk(payload);
+};
+
+const applyBulk = async ({ value, mode, register }) => {
+  const targets = tagTargets.value;
+  const kind = sheet.value;
+  if (!targets.length || tagging.value || !kind) return;
+
+  tagging.value = true;
+  try {
+    // A tag typed into the sheet is registered as well as applied, so it turns
+    // up in Settings and in every picker instead of only on these people. A
+    // ministry can never arrive this way — the sheet offers no input for one.
+    if (register && kind === "tags") await addCustomTag(value);
+
+    const changed =
+      kind === "ministries"
+        ? mode === "remove"
+          ? await removeMinistryFromMembers(targets, value)
+          : await addMinistryToMembers(targets, value)
+        : mode === "remove"
+          ? await removeTagFromMembers(targets, value)
+          : await addTagToMembers(targets, value);
+
+    if (!changed) {
+      toast.success(
+        mode === "remove"
+          ? `Nobody selected had "${value}"`
+          : `Everyone selected already had "${value}"`
+      );
+    } else {
+      const people = `${changed} ${changed === 1 ? "person" : "people"}`;
+      toast.success(
+        mode === "remove" ? `"${value}" removed from ${people}` : `"${value}" added to ${people}`
+      );
+    }
+  } catch (error) {
+    console.error("Error applying a change to several members:", error);
+    toast.error(error?.message || "Could not apply that. Please try again.");
+  } finally {
+    tagging.value = false;
+  }
+};
+
+const showExport = ref(false);
+
+// Member form
+const { showAddMember, newMember, canAddMember, addMemberTooltip, calculateAge, addMember } = useMemberForm(
+  members,
+  addMemberToFirestore,
+  allTags
+);
+
+// URL query parameter helpers
+const updateQueryParams = (params) => {
+  const query = { ...route.query };
+
+  // Remove null/false params
+  Object.keys(params).forEach(key => {
+    if (params[key] === null || params[key] === false || params[key] === undefined) {
+      delete query[key];
+    } else {
+      query[key] = params[key];
+    }
+  });
+
+  router.replace({ query });
+};
+
+// Computed property for showAddMember to work with v-model and URL params
+const showAddMemberComputed = computed({
+  get: () => route.query.add === 'true',
+  set: (value) => {
+    if (value) {
+      showAddMember.value = true;
+      updateQueryParams({ add: 'true' });
+    } else {
+      showAddMember.value = false;
+      updateQueryParams({ add: null });
+    }
+  }
+});
+
+// Watch URL params to sync state on navigation
+watch(() => route.query, (query) => {
+  showAddMember.value = query.add === 'true';
+}, { immediate: true });
+
+// Add member handler - the drawer is driven by the `add` query param, so a
+// successful save has to close it there (not via the form's own ref).
+const handleAddMember = async () => {
+  const added = await addMember();
+  if (added) {
+    showAddMemberComputed.value = false;
+  }
+};
+
+// Export handler. "search" exports exactly what the search is showing; the
+// others start from the whole roll and narrow by standing.
+const handleExport = (config) => {
+  const base = config.scope === "search" ? filteredMembers.value : members.value;
+  const rows =
+    config.scope === "members"
+      ? base.filter((m) => m.isMember)
+      : config.scope === "attendees"
+        ? base.filter((m) => !m.isMember)
+        : base;
+  exportToExcel(rows, config);
+  toast.success('Export downloaded');
+};
+
+// Opening a record leaves the page, so the list has to remember where it was.
+const listScroller = ref(null);
+useListScrollMemory(listScroller);
+
+// One record, one destination: the focus page. It reads the record as facts
+// and carries its own way back, so there is nothing a drawer would add here
+// that the list does not already do better through search.
+const openMember = (member, { edit = false } = {}) => {
+  const memberId = member?.firestoreId || member?.id;
+  if (!memberId) return;
+  router.push({ path: `/members/${memberId}`, query: edit ? { edit: '1' } : {} });
+};
+
+const handleMemberClick = (member) => openMember(member);
+
+// Context menu state
+const contextMenu = ref({
+  show: false,
+  x: 0,
+  y: 0,
+  member: null,
+});
+
+const handleContextMenu = ({ member, x, y }) => {
+  contextMenu.value = { show: true, x, y, member };
+};
+
+const closeContextMenu = () => {
+  contextMenu.value.show = false;
+};
+
+// Context menu action handlers
+const handleContextView = (member) => openMember(member);
+
+// `?edit=1` puts the page straight into edit mode. It used to be a timed
+// querySelector against the drawer's DOM; the record now owns that state.
+const handleContextEdit = (member) => openMember(member, { edit: true });
+
+const handleContextCall = (member) => {
+  if (member?.contactNumber) {
+    window.location.href = `tel:${member.contactNumber}`;
+  }
+};
+
+const handleContextEmail = (member) => {
+  if (member?.email) {
+    window.location.href = `mailto:${member.email}`;
+  }
+};
+
+const handleContextCopy = (member) => {
+  const name = getFullName(member);
+  navigator.clipboard.writeText(name);
+};
+
+// Confirmation modal state
+const showConfirmation = ref(false);
+const confirmationConfig = ref({
+  title: 'Confirm Action',
+  message: '',
+  confirmText: 'Confirm',
+  cancelText: 'Cancel',
+  confirmButtonClass: 'bg-[#01779b] text-white hover:bg-[#015a77]',
+  onConfirm: null
+});
+
+// Helper function to show confirmation modal
+const showConfirmModal = (config) => {
+  confirmationConfig.value = { ...confirmationConfig.value, ...config };
+  showConfirmation.value = true;
+};
+
+const handleConfirmation = () => {
+  if (confirmationConfig.value.onConfirm) {
+    confirmationConfig.value.onConfirm();
+  }
+};
+
+const handleMemberDelete = async (member) => {
+  const getFullName = (m) => {
+    return `${m.firstName || ''} ${m.lastName || ''}`.trim() || 'this member';
+  };
+
+  showConfirmModal({
+    title: 'Delete Member',
+    message: `Are you sure you want to delete ${getFullName(member)}? This action cannot be undone.`,
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    confirmButtonClass: 'bg-red-600 text-white hover:bg-red-700',
+    onConfirm: async () => {
+      try {
+        await removeMember(member);
+        toast.success('Member deleted');
+      } catch (error) {
+        console.error('Error deleting member:', error);
+        toast.error('Failed to delete member. Please try again.');
+      }
+    }
+  });
+};
+
+// Check if any side drawer is open
+const isDrawerOpen = computed(() => showAddMemberComputed.value);
+
+// The button would sit on top of whatever a drawer or the details modal is
+// showing, and both carry their own actions anyway.
+// While picking, the action bar owns the bottom of the screen.
+// Search is a mode now, not furniture. Closing it clears the query, because a
+// bar you cannot see must not still be filtering the list.
+const searchOpen = ref(false);
+const openSearch = () => {
+  searchOpen.value = true;
+};
+const closeSearch = () => {
+  searchOpen.value = false;
+  searchQuery.value = "";
+};
+
+const showFab = computed(
+  () => !showAddMemberComputed.value && !picking.value
+);
+</script>
+
+<template>
+  <div class="relative flex flex-col h-full">
+    <!-- Opened from the plus button rather than always sitting there: an
+         always-on search bar costs a row of the list on every visit, and most
+         visits are a scroll rather than a lookup. -->
+    <MembersToolbar
+      v-model:searchQuery="searchQuery"
+      :open="searchOpen"
+      :resultCount="filteredMembers.length"
+      :totalCount="members.length"
+      :canTag="canTag"
+      @tag-results="openTagSheetForResults"
+      @close="closeSearch"
+    />
+
+    <!-- Members List -->
+    <div class="flex-1 overflow-hidden bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex">
+      <!-- Members Content. A column, so the sort strip sits above the
+           scroller rather than scrolling away with the first screenful. -->
+      <div class="flex flex-1 min-w-0 h-full flex-col">
+        <!-- No summary tiles: a head count at the top of the roll was read
+             more than it was used, and the band headings below already carry
+             their own counts. What is left is the sort, which has to say which
+             sort is on, so it cannot live in the actions menu — a setting you
+             cannot see the state of is one you re-open just to check. -->
+        <div
+          class="flex shrink-0 items-center gap-2 border-b border-gray-200 px-2 py-1.5 dark:border-gray-700"
+        >
+          <button
+            @click="showSort = true"
+            aria-haspopup="dialog"
+            class="ml-auto inline-flex min-w-0 items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-semibold text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+          >
+            <ArrowUpDown class="h-3.5 w-3.5 shrink-0" />
+            <span class="truncate">{{ currentSort.label }}</span>
+            <ChevronDown class="h-3 w-3 shrink-0 opacity-60" />
+          </button>
+        </div>
+
+        <div ref="listScroller" class="min-h-0 flex-1 overflow-y-auto pb-20">
+
+      <!-- Grid on desktop, list on mobile - the viewport decides, not a toggle.
+           Both are divided into age bands, each heading carrying its own count
+           so "we are short on youth" reads without counting rows. -->
+        <template v-if="!isMobile">
+          <div
+            v-if="loading"
+            :class="['grid gap-3 p-3', isDrawerOpen ? 'grid-cols-2' : 'grid-cols-4']"
+          >
+            <MemberCardSkeleton v-for="i in 12" :key="`skeleton-${i}`" />
+          </div>
+
+          <section v-else v-for="group in memberGroups" :key="group.band?.key || 'all'">
+            <MemberBandHeader
+              v-if="group.band"
+              :band="group.band"
+              :count="group.members.length"
+              :picking="picking"
+              :checked="isBandPicked(group)"
+              @toggle="toggleBand(group)"
+            />
+            <div
+              :class="['grid gap-3 p-3', isDrawerOpen ? 'grid-cols-2' : 'grid-cols-4']"
+            >
+              <MemberCard
+                v-for="member in group.members"
+                :key="member.id"
+                :member="member"
+                :picking="picking"
+                :checked="pickedIds.has(String(member.firestoreId || member.id))"
+                @click="handleMemberClick"
+                @contextmenu="handleContextMenu"
+                @toggle="togglePicked"
+              />
+            </div>
+          </section>
+        </template>
+
+        <template v-else>
+          <div v-if="loading" class="space-y-1 p-2">
+            <div
+              v-for="i in 10"
+              :key="`skeleton-${i}`"
+              class="p-4 flex items-center gap-4"
+            >
+              <div class="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-600 animate-pulse"></div>
+              <div class="flex-1 space-y-2">
+                <div class="h-4 w-32 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></div>
+                <div class="h-3 w-24 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+
+          <section v-else v-for="group in memberGroups" :key="group.band?.key || 'all'">
+            <MemberBandHeader
+              v-if="group.band"
+              :band="group.band"
+              :count="group.members.length"
+              :picking="picking"
+              :checked="isBandPicked(group)"
+              @toggle="toggleBand(group)"
+            />
+            <div class="space-y-1 p-2">
+              <MemberListItem
+                v-for="member in group.members"
+                :key="member.id"
+                :member="member"
+                :picking="picking"
+                :checked="pickedIds.has(String(member.firestoreId || member.id))"
+                @click="handleMemberClick"
+                @contextmenu="handleContextMenu"
+                @toggle="togglePicked"
+              />
+            </div>
+          </section>
+        </template>
+
+        <div v-if="!loading && filteredMembers.length === 0" class="p-8 text-center text-gray-500 dark:text-gray-400">
+          Nobody matches your search.
+        </div>
+        </div>
+      </div>
+
+      <!-- Add Member Drawer -->
+      <AddMemberDrawer
+        v-model:showAddMember="showAddMemberComputed"
+        :newMember="newMember"
+        :allTags="assignableTags"
+        :canAddMember="canAddMember"
+        :addMemberTooltip="addMemberTooltip"
+        @update:newMember="newMember = $event"
+        @addMember="handleAddMember"
+        @calculateAge="calculateAge"
+      />
+
+      <!-- Confirmation Modal -->
+      <ConfirmationModal
+        :show="showConfirmation"
+        :title="confirmationConfig.title"
+        :message="confirmationConfig.message"
+        :confirm-text="confirmationConfig.confirmText"
+        :cancel-text="confirmationConfig.cancelText"
+        :confirm-button-class="confirmationConfig.confirmButtonClass"
+        @update:show="showConfirmation = $event"
+        @confirm="handleConfirmation"
+        @cancel="showConfirmation = false"
+      />
+
+      <!-- Context Menu -->
+      <MemberContextMenu
+        :show="contextMenu.show"
+        :x="contextMenu.x"
+        :y="contextMenu.y"
+        :member="contextMenu.member"
+        @close="closeContextMenu"
+        @view="handleContextView"
+        @edit="handleContextEdit"
+        @delete="handleMemberDelete"
+        @call="handleContextCall"
+        @email="handleContextEmail"
+        @copy="handleContextCopy"
+        @select="startPicking"
+      />
+    </div>
+
+    <!-- Picking mode. One bar for the whole selection, sitting where the FAB
+         would be so the thumb does not have to travel. -->
+    <div
+      v-if="picking"
+      class="absolute inset-x-0 bottom-0 z-50 border-t border-gray-200 bg-white/95 px-3 py-3 backdrop-blur pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-gray-700 dark:bg-gray-900/95"
+    >
+      <div class="flex items-center gap-3">
+        <button
+          @click="stopPicking"
+          aria-label="Cancel selection"
+          class="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+        >
+          <X class="h-5 w-5" />
+        </button>
+
+        <!-- Truncating keeps the bar one row deep on a narrow phone, where two
+             actions and a count are already all it can hold. -->
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-sm font-semibold text-gray-900 dark:text-white">
+            {{ pickedCount }} selected
+          </p>
+          <button
+            @click="pickAllVisible"
+            class="block max-w-full truncate text-xs font-medium text-primary dark:text-primary-light"
+          >
+            Select all {{ filteredMembers.length }}
+          </button>
+        </div>
+
+        <!-- Ministry sits beside Tag rather than inside its sheet: they write
+             different fields and only one of them grants access. -->
+        <button
+          @click="openSheetForPicked('ministries')"
+          :disabled="!pickedCount"
+          :class="[
+            'inline-flex h-11 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition-colors',
+            pickedCount
+              ? 'border border-primary/40 text-primary hover:bg-primary/10 dark:text-primary-light'
+              : 'cursor-not-allowed border border-gray-200 text-gray-400 dark:border-gray-700',
+          ]"
+        >
+          <Church class="h-4 w-4" />
+          Ministry
+        </button>
+
+        <button
+          @click="openSheetForPicked('tags')"
+          :disabled="!pickedCount"
+          :class="[
+            'inline-flex h-11 shrink-0 items-center gap-1.5 rounded-lg px-4 text-sm font-semibold transition-colors',
+            pickedCount
+              ? 'bg-primary text-white shadow-lg shadow-primary/25 hover:bg-primary-hover'
+              : 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-700',
+          ]"
+        >
+          <Tag class="h-4 w-4" />
+          Tag
+        </button>
+      </div>
+    </div>
+
+    <!-- Floating actions -->
+    <MembersSortSheet
+      :show="showSort"
+      :options="sortOptions"
+      v-model="sortBy"
+      @close="showSort = false"
+    />
+
+    <MembersFab
+      v-if="showFab"
+      @search="openSearch"
+      @add="showAddMemberComputed = true"
+      @export="showExport = true"
+    />
+
+    <BulkAssignSheet
+      :show="!!sheet"
+      :members="tagTargets"
+      :field="sheetConfig.field"
+      :options="sheetConfig.options"
+      :title="sheetConfig.title"
+      :hint="sheetConfig.hint"
+      :note="sheetConfig.note"
+      :icon="sheetConfig.icon"
+      :allow-create="sheetConfig.allowCreate"
+      :empty-text="sheetConfig.emptyText"
+      create-placeholder="New tag, e.g. Choir"
+      :busy="tagging"
+      @close="sheet = null"
+      @apply="handleSheetApply"
+    />
+
+    <!-- Export Dialog -->
+    <ExportDialog
+      v-model:showExport="showExport"
+      :members="members"
+      :visibleCount="filteredMembers.length"
+      :currentSortBy="sortBy"
+      :currentSortOrder="sortOrder"
+      @export="handleExport"
+    />
+  </div>
+</template>
+
+<style scoped>
+/* Drawer column animations */
+.drawer-enter-active .add-member-drawer,
+.drawer-leave-active .add-member-drawer {
+  transition: max-width 0.3s ease-out, opacity 0.3s ease;
+}
+
+.drawer-enter-from .add-member-drawer,
+.drawer-leave-to .add-member-drawer {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+</style>
