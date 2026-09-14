@@ -1,5 +1,6 @@
 import XLSX from 'xlsx-js-style'
 import { getChurchIdentity } from '../composables/useAppSettings'
+import { accentCell } from '../composables/useBrandTheme'
 import { toPesos } from './moneyUtils'
 import { categoryLabel } from '../data/financeChart'
 import { accountShort } from '../data/financeChart'
@@ -19,12 +20,12 @@ const filePrefix = () =>
   (getChurchIdentity().shortName || 'Church').replace(/[^\w-]+/g, '_').slice(0, 40)
 
 const styles = {
-  church: { font: { bold: true, sz: 13, color: { rgb: '01779B' } } },
+  church: { font: { bold: true, sz: 13, get color() { return accentCell() } } },
   title: { font: { bold: true, sz: 11 } },
   period: { font: { italic: true, sz: 10, color: { rgb: '666666' } } },
   header: {
     font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' } },
-    fill: { fgColor: { rgb: '01779B' } },
+    fill: { get fgColor() { return accentCell() } },
   },
   group: { font: { bold: true, sz: 10 } },
   line: { font: { sz: 10, color: { rgb: '444444' } } },

@@ -8,6 +8,30 @@
 
 export const versionHistory = [
   {
+    version: '0.24.0',
+    date: '2026-09-15',
+    title: 'The app has a name: Ekkly',
+    summary:
+      'The app you have been using is called Ekkly, and it now looks like it — a new mark, and a blue that your church can still paint over with its own colour.',
+    highlights: [
+      'A new mark and name everywhere the app used to wear another church’s: on the loading screen, on your home screen after installing, and on the emails it sends.',
+      'Emails now arrive in your church’s own colour rather than one fixed blue.',
+      'Your own logo and colours still win: set them in Settings → Church details and Settings → Colours, and nothing here changes what you chose.',
+    ],
+  },
+  {
+    version: '0.23.0',
+    date: '2026-09-14',
+    title: 'Your apps, your colours',
+    summary:
+      'Your church can choose which parts of the app it uses and pays for, pick its own colours, and ask for anything the app does not do yet.',
+    highlights: [
+      'Settings → Apps & plan shows every app with its price. Turn off what your church does not use; nothing in it is deleted, and turning it back on brings it all back.',
+      'Settings → Colours lets your church choose its own accent colour, for light and dark mode.',
+      'Need an app that does not exist, or a change to one that does? Send a request from Apps & plan and see the answer there.',
+    ],
+  },
+  {
     version: '0.22.0',
     date: '2026-09-14',
     title: 'Your church, your address',

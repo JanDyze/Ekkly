@@ -49,18 +49,59 @@ service cloud.firestore {
     /* ------------------------------------------------------------ platform */
 
     // Readable by the account it names, so the app can tell a platform
-    // administrator. Made by scripts/make-platform-admin.mjs, never by the app.
+    // administrator. The first is made by scripts/make-platform-admin.mjs;
+    // after that /api/platform appoints and removes them, and logs it.
     match /platformAdmins/{uid} {
-      allow get: if isSelf(uid);
-      allow list, write: if false;
+      allow get: if isSelf(uid) || isPlatformAdmin();
+      allow list: if isPlatformAdmin();
+      allow write: if false;
     }
 
     // host -> churchId, for a church on a domain of its own. The page has to
     // know which church it is before anyone signs in, so one address can be
-    // looked up by anyone; the list as a whole cannot.
+    // looked up by anyone; the list as a whole only by the platform.
     match /domains/{host} {
       allow get: if true;
-      allow list, write: if false;
+      allow list: if isPlatformAdmin();
+      allow write: if false;
+    }
+
+    // The platform's own settings. `public` is the name, the colours and the
+    // app prices — needed on every church's pages before anyone signs in, and
+    // nothing in it is secret. `private` is which AI model each feature runs
+    // on and what a new church starts with. Both written by /api/platform.
+    match /platform/{docId} {
+      allow get: if docId == 'public' || isPlatformAdmin();
+      allow list: if isPlatformAdmin();
+      allow write: if false;
+    }
+
+    // What the platform's administrators did. Server-written, never edited.
+    match /platformLog/{entryId} {
+      allow read: if isPlatformAdmin();
+      allow write: if false;
+    }
+
+    // A church asking the platform for something. Sent and read back through
+    // /api/platform, which checks the asker administers the church, so the
+    // browser needs nothing here.
+    match /supportRequests/{requestId} {
+      allow read: if isPlatformAdmin();
+      allow write: if false;
+    }
+
+    // What the front door has seen: a count per day, and the church names
+    // visitors typed into it. Written only by /api/platform, which takes the
+    // signal from a visitor who has not signed in and may never — so the
+    // browser is refused here, whoever it belongs to.
+    match /frontDoorDays/{day} {
+      allow read: if isPlatformAdmin();
+      allow write: if false;
+    }
+
+    match /frontDoorTries/{tryId} {
+      allow read: if isPlatformAdmin();
+      allow write: if false;
     }
 
     // sha256(token) -> church. Server only, always.
@@ -90,6 +131,29 @@ service cloud.firestore {
       allow get: if true;
       allow list: if isPlatformAdmin();
       allow write: if false;
+
+      // What the church pays for. `apps` is read by everyone in the church —
+      // it decides which pages they see — and `billing` by its administrators.
+      // Only /api/platform changes either, so nobody tags themselves into an
+      // app nobody pays for.
+      match /subscription/{docId} {
+        allow get: if isPlatformAdmin()
+          || (docId == 'apps' && hasAccess(churchId))
+          || isChurchAdmin(churchId);
+        allow list: if isPlatformAdmin() || isChurchAdmin(churchId);
+        allow write: if false;
+      }
+
+      // Payments the platform recorded, and each month's AI use.
+      match /payments/{paymentId} {
+        allow read: if isPlatformAdmin() || isChurchAdmin(churchId);
+        allow write: if false;
+      }
+
+      match /usage/{month} {
+        allow read: if isPlatformAdmin() || isChurchAdmin(churchId);
+        allow write: if false;
+      }
 
       // Membership. Your own can be checked by you — that is how the app knows
       // whether to open or show the join page — and the church's administrators
@@ -135,7 +199,7 @@ service cloud.firestore {
       // if any matching rule does and this match would otherwise reopen them.
       match /{collectionId}/{document=**} {
         allow read, write: if hasAccess(churchId)
-          && !(collectionId in ['access', 'joinRequests', 'appAdmins', 'auditLog']);
+          && !(collectionId in ['access', 'joinRequests', 'appAdmins', 'auditLog', 'subscription', 'payments', 'usage']);
       }
     }
   }

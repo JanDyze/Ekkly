@@ -155,13 +155,14 @@ export default defineConfig(({ mode }) => ({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['uec-logo.png', 'icons/apple-touch-icon.png'],
+      includeAssets: ['ekkly-mark.svg', 'ekkly-mark.png', 'icons/apple-touch-icon.png'],
+      // The platform's, for every church, until the manifest is served per
+      // church (TENANCY.md, "Not done yet").
       manifest: {
-        name: 'UECPCOM Canubing II',
-        short_name: 'UECPCOM',
-        description:
-          'United Evangelical Church of the Philippines – Calapan, Oriental Mindoro — church management app',
-        theme_color: '#01779b',
+        name: 'Ekkly',
+        short_name: 'Ekkly',
+        description: 'Your church, in one app — people, gatherings, schedules, minutes and more.',
+        theme_color: '#1d64d8',
         background_color: '#ffffff',
         display: 'standalone',
         start_url: '/',

@@ -1,14 +1,15 @@
 import { computed, ref } from 'vue'
-import { subscribeToAppSettings, saveAppSettings } from '../api/appSettingsService'
+import { subscribeToAppSettings, saveAppSettings, replaceAppSettingsField } from '../api/appSettingsService'
 import {
   DEFAULT_CATEGORIES,
   withChurchDefaults,
   withLandingDefaults,
 } from '../data/appDefaults'
 import { scheduleRolesFrom } from '../data/scheduleRoles'
-import bundledLogo from '../assets/uec-logo.png'
+import bundledLogo from '../assets/ekkly-mark.svg'
 import { useTheme } from './useTheme'
 import { getChurchId, getChurchName } from '../api/church'
+import { themeForStorage } from '../../lib/platformDefaults.js'
 
 // Module-level with an explicit init, like usePermissions: the church name is
 // needed by plain utility modules (the spreadsheet exporters) that have no
@@ -32,7 +33,7 @@ export const initAppSettings = () => {
 //
 // Until the settings arrive — or for somebody not yet allowed to read them —
 // the name comes from the church's public profile rather than the defaults,
-// which carry the congregation this app was first built for.
+// which only say "Church".
 const publicIdentity = () => {
   const name = getChurchName()
   return name ? { shortName: name, fullName: name, branch: '' } : undefined
@@ -46,6 +47,9 @@ const landingOf = (data) => withLandingDefaults(data?.landing)
  * exporters build a workbook once, at the moment the button is pressed.
  */
 export const getChurchIdentity = () => churchOf(stored.value)
+
+/** The church's own accent colours, non-reactively; empty when it chose none. */
+export const getChurchTheme = () => stored.value?.theme || {}
 
 /** The uploaded logo, or the bundled one while none has been set. Everything
  *  that draws the mark reads this, so one upload changes them all at once. */
@@ -78,6 +82,9 @@ export function useAppSettings() {
   // congregation would name differently, and read by the MCP connector from
   // the same document through the same defaults.
   const scheduleRoles = computed(() => scheduleRolesFrom(stored.value?.scheduleRoles))
+  // The church's own accent colours, if it chose any. Empty means the
+  // platform's; useBrandTheme does the falling back.
+  const theme = computed(() => stored.value?.theme || {})
 
   // True once the document exists; until then the views run on defaults.
   const isConfigured = computed(() => stored.value !== null)
@@ -93,6 +100,9 @@ export function useAppSettings() {
   // The whole list every time, for the same reason: its order is the order a
   // service is shown in, and a merge cannot express a reorder.
   const saveScheduleRoles = (roles) => saveAppSettings({ scheduleRoles: roles })
+  // Written whole, so clearing a colour really clears it: a merge would keep
+  // the old value underneath and the reset would do nothing.
+  const saveTheme = (value) => replaceAppSettingsField('theme', themeForStorage(value))
 
   return {
     church,
@@ -103,6 +113,7 @@ export function useAppSettings() {
     categories,
     landing,
     scheduleRoles,
+    theme,
     isConfigured,
     saveChurch,
     saveCategories,
@@ -110,5 +121,6 @@ export function useAppSettings() {
     saveLogoDark,
     saveLanding,
     saveScheduleRoles,
+    saveTheme,
   }
 }

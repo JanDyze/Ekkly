@@ -7,7 +7,6 @@ import { useAppSettings } from '../composables/useAppSettings'
 import { useTheme } from '../composables/useTheme'
 import { useToast } from '../composables/useToast'
 import bundledHero from '../assets/hero-cover.webp'
-import brandReveal from '../assets/uec-reveal.webp'
 
 // The door to the app, and there is exactly one way through it.
 //
@@ -25,7 +24,7 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 
-const { church: churchInfo, logoUrl, hasCustomLogo, landing } = useAppSettings()
+const { church: churchInfo, logoUrl, landing } = useAppSettings()
 const { isDark, toggleTheme } = useTheme()
 
 // The mark is the way back out to the church's public page — but only while
@@ -39,17 +38,10 @@ const showPublicLink = computed(() => landing.value.enabled !== false)
 // rules will not answer for the settings document until they are in.
 const heroImage = computed(() => landing.value.heroImage || bundledHero)
 
-// Somebody who has asked for less motion gets the finished logo rather than
-// the clip that draws it — and so does a congregation that has uploaded a mark
-// of its own, since the animation is UEC's logo drawing itself and would be
-// the wrong church's. Read once, the way the confetti reads it: a reader who
-// changes the setting mid-sign-in is not a case worth a listener.
-const reduceMotion =
-  typeof window !== 'undefined' &&
-  Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
-
-const isAnimatedMark = computed(() => !hasCustomLogo.value && !reduceMotion)
-const markSrc = computed(() => (isAnimatedMark.value ? brandReveal : logoUrl.value))
+// The church's own logo, or Ekkly's mark until it uploads one. This used to
+// play a clip of UEC's logo drawing itself, which was right while the app was
+// UEC's alone and would be another church's logo on every other church's door.
+const markSrc = computed(() => logoUrl.value)
 
 const error = ref('')
 
@@ -116,7 +108,6 @@ const handleSignedIn = (user) => {
             :src="markSrc"
             :alt="churchInfo.shortName"
             class="mark"
-            :class="{ 'mark-flat': !isAnimatedMark }"
           />
         </div>
 
@@ -211,16 +202,9 @@ const handleSignedIn = (user) => {
    the bottom. svh so the browser's own chrome sliding away does not resize it. */
 .mark {
   width: auto;
-  height: clamp(122px, 27svh, 212px);
+  height: clamp(78px, 17svh, 136px);
   filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.5));
   animation: mark-in 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* The clip is a square frame the logo is drawn inside and only fills about two
-   thirds of it, so a church using its own flat logo needs roughly two thirds
-   of the height to read the same size. The reader never sees both. */
-.mark-flat {
-  height: clamp(78px, 17svh, 136px);
 }
 
 @keyframes mark-in {

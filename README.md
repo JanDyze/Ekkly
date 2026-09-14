@@ -1,8 +1,24 @@
-# Vue 3 + Vite
+<img src="public/ekkly-mark.svg" alt="" width="56" height="56" />
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+# Ekkly
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+Your church, in one app. People, small groups, attendance, events, songs,
+schedules, the Bible, minutes, prayer concerns, photos, finances and tasks,
+for any number of churches from one deployment. Each church has its own
+address and records, and pays only for the apps it uses.
+
+Built with Vue 3, Vite, Tailwind CSS 4 and Firebase, and deployed on Vercel.
+Start with [CLAUDE.md](CLAUDE.md) for how the code is organised and
+[DESIGN.md](DESIGN.md) for how pages look.
+
+```bash
+npm install
+npm run dev        # the app; add ?church=<id> to open a church locally
+npm run build      # the check before calling a change done
+```
+
+The logo lives in `public/ekkly-mark.svg`. After changing it, run
+`node scripts/generate-icons.mjs` to regenerate the installed-app icons.
 
 ## Many churches, one deployment
 

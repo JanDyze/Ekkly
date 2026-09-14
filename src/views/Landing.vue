@@ -1276,12 +1276,9 @@ const year = new Date().getFullYear()
           </div>
         </div>
 
-        <!-- The mark drawing itself in, as the page signs off. It waits for
-             the reader to reach it before it loads anything: on a phone this
-             is the very bottom of a long page, and a visitor who turns back
-             earlier should never have paid for it. Centred under the words on
-             a phone, alongside them once there is room. -->
-        <BrandReveal class="mx-auto h-36 w-36 md:mx-0 md:h-48 md:w-48" />
+        <!-- The church's logo, arriving as the page signs off. Centred under
+             the words on a phone, alongside them once there is room. -->
+        <BrandReveal :src="logoUrl" :alt="church.shortName" class="mx-auto h-36 w-36 md:mx-0 md:h-48 md:w-48" />
       </div>
     </section>
 

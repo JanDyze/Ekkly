@@ -21,8 +21,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { requireChurchUser } from "../lib/tenant.js";
 import { validateStructure, validateRecasing, ALLOWED_SECTION_LABELS } from "../lib/lyrics.js";
+import { aiAccess, recordAiUse } from "../lib/platform/ai.js";
 
-const MODEL = "claude-sonnet-5";
+// The model is the platform's choice (Console → AI), defaulting to Claude
+// Sonnet 5 — see lib/aiModels.js.
 
 const SYSTEM = `You prepare a worship song for a Filipino church: you identify its structure, and you fix its capitalisation. You are given the song's lines, numbered from 0. Many songs are in Tagalog.
 
@@ -76,6 +78,9 @@ export default async function handler(req, res) {
   const caller = await requireChurchUser(req);
   if (caller.error) return res.status(caller.status).json({ error: caller.error });
 
+  const ai = await aiAccess(caller.church, "lyrics");
+  if (!ai.allowed) return res.status(403).json({ error: ai.reason });
+
   if (!process.env.ANTHROPIC_API_KEY) {
     return res.status(500).json({ error: "ANTHROPIC_API_KEY not configured" });
   }
@@ -93,7 +98,7 @@ export default async function handler(req, res) {
     const client = new Anthropic();
 
     const response = await client.messages.create({
-      model: MODEL,
+      model: ai.model,
       // Raised from 4000 when recasing joined this pass: the structure is a
       // page of numbers, but the recased lines are text, and a song where most
       // lines address God hands back most of the song. Truncation here is not
@@ -137,6 +142,7 @@ export default async function handler(req, res) {
     // lines when the text is rebuilt, so the caller is told what was covered.
     const covered = checked.sections.reduce((sum, s) => sum + (s.end - s.start + 1), 0);
 
+    await recordAiUse(caller.church, "lyrics");
     return res.status(200).json({
       sections: checked.sections,
       adlibLines: checked.adlibLines,

@@ -137,7 +137,7 @@ export default async function handler(req, res) {
             // the same thing replaces the first in the tray, while two
             // different new events still stack. Tagging by kind alone would
             // have one week's events quietly swallow the last.
-            tag: `${kind || "uec"}:${title.trim()}`,
+            tag: `${kind || "ekkly"}:${title.trim()}`,
             renotify: def.tone === "alert",
             vibrate: def.tone === "alert" ? [200, 100, 200] : [120],
           },

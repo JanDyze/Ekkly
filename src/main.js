@@ -5,6 +5,7 @@ import App from './App.vue'
 import { createAppRouter } from './router'
 import { resolveChurch } from './api/churchService'
 import { loadChurchProfile } from './composables/useChurchAccess'
+import { initPlatformConfig } from './composables/usePlatformConfig'
 
 // PWA service worker — auto-updates when a new version is deployed.
 //
@@ -43,6 +44,11 @@ registerSW({
 // (useChurchAccess), because the rules refuse them until then and a refused
 // listener does not come back on its own.
 const bootstrap = async () => {
+  // The platform's name and colours, for the front door and every church.
+  // Not awaited: the page draws in the built-in colours and takes the
+  // platform's the moment they arrive.
+  initPlatformConfig()
+
   const churchId = await resolveChurch()
   if (churchId) await loadChurchProfile()
 

@@ -500,7 +500,7 @@ useFocusTrap(dialogRef, () => props.show, close);
                         cy="50" 
                         r="50" 
                         fill="none" 
-                        stroke="#01779b" 
+                        class="stroke-primary"
                         stroke-width="0.8"
                         vector-effect="non-scaling-stroke"
                       />

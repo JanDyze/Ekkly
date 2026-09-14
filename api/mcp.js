@@ -29,7 +29,8 @@
 import { respondToBody, SERVER_INFO, ERRORS } from "../lib/mcp/server.js";
 import { runInChurch } from "../lib/mcp/church.js";
 import { grantFor } from "../lib/mcpTokens.js";
-import { loadChurch } from "../lib/tenant.js";
+import { churchRef, loadChurch } from "../lib/tenant.js";
+import { enabledAppsFrom } from "../lib/apps.js";
 
 /**
  * The credential, from wherever the client could put it: the standard header,
@@ -160,9 +161,19 @@ export default async function handler(req, res) {
     });
   }
 
+  // Tools for apps the church has switched off are left out. A failed read
+  // leaves every tool on: the church's plan is not a reason to break the
+  // connector for everything else.
+  const apps = await churchRef(grant.churchId)
+    .collection("subscription")
+    .doc("apps")
+    .get()
+    .then((snapshot) => enabledAppsFrom(snapshot.exists ? snapshot.data() : null))
+    .catch(() => null);
+
   // Every tool this message reaches reads and writes inside the token's church.
   const reply = await runInChurch(grant.churchId, () =>
-    respondToBody(body, { allowWrites: grant.allowWrites })
+    respondToBody(body, { allowWrites: grant.allowWrites, apps })
   );
 
   // Every message in the body was a notification. There is nothing to answer

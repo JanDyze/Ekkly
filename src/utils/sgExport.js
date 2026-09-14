@@ -1,6 +1,7 @@
 import XLSX from 'xlsx-js-style'
 import { sgLabel } from '../data/sgFormLabels'
 import { getChurchIdentity } from '../composables/useAppSettings'
+import { accentCell } from '../composables/useBrandTheme'
 import { getFullName } from './memberUtils'
 import {
   memberKey,
@@ -19,20 +20,20 @@ const churchName = () => {
 // so every spreadsheet leaving the app looks like it came from one office.
 const styles = {
   churchName: {
-    font: { bold: true, sz: 13, color: { rgb: '01779B' } },
+    font: { bold: true, sz: 13, get color() { return accentCell() } },
     alignment: { horizontal: 'left' },
   },
   title: { font: { bold: true, sz: 11 } },
   subtitle: { font: { italic: true, sz: 10, color: { rgb: '666666' } } },
   sectionHeader: {
     font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' } },
-    fill: { fgColor: { rgb: '01779B' } },
+    fill: { get fgColor() { return accentCell() } },
   },
   fieldLabel: { font: { bold: true, sz: 10, color: { rgb: '444444' } } },
   fieldValue: { font: { sz: 10 }, alignment: { wrapText: true, vertical: 'top' } },
   tableHeader: {
     font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' } },
-    fill: { fgColor: { rgb: '01779B' } },
+    fill: { get fgColor() { return accentCell() } },
     alignment: { horizontal: 'center' },
   },
   cell: { font: { sz: 10 } },

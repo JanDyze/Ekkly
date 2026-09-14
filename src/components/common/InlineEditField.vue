@@ -329,7 +329,7 @@ const viewModeAriaLabel = computed(() => {
           </button>
           <button
             @click="saveEdit"
-            class="p-1 text-white bg-primary dark:bg-primary-light hover:bg-primary-hover dark:hover:bg-[#1a9aab] rounded transition-colors"
+            class="p-1 text-white bg-primary dark:bg-primary-light hover:bg-primary-hover dark:hover:bg-primary-hover rounded transition-colors"
             title="Save (Enter)"
             aria-label="Save"
           >

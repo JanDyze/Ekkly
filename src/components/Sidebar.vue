@@ -156,20 +156,18 @@ nav button {
   background-color: transparent !important;
 }
 
+/* The accent tokens, not their values: a church's own colours (useBrandTheme)
+   have to reach the highlighted page in the sidebar like everywhere else. */
 nav button.active {
-  background-color: #01779b !important;
-}
-
-.dark nav button.active {
-  background-color: #01779b !important; /* Keep consistent or use #22b8cf if preferred */
+  background-color: var(--color-primary) !important;
 }
 
 nav button.active:hover {
-  background-color: #015a77 !important;
+  background-color: var(--color-primary-hover) !important;
 }
 
 nav button:hover:not(.active) {
-  background-color: rgba(1, 119, 155, 0.05) !important;
+  background-color: color-mix(in srgb, var(--color-primary) 5%, transparent) !important;
 }
 
 .dark nav button:hover:not(.active) {

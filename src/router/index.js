@@ -6,6 +6,7 @@ import { initPermissions, usePermissions } from '../composables/usePermissions'
 import { getLandingEnabled } from '../composables/useAppSettings'
 import { initChurchAccess, isChurchOpen, useChurchAccess } from '../composables/useChurchAccess'
 import { getChurchId } from '../api/church'
+import { churchAppsReady, isAppEnabled } from '../composables/useChurchApps'
 
 // Where a signed-in member belongs: "/" is the visitors' page now.
 //
@@ -182,7 +183,7 @@ const churchRoutes = [
         // carries the search, so the app bar above it would only repeat the
         // word "Bible" and cost a reader a line of text. Not `focus`: the
         // bottom bar stays, because this is a page you browse from.
-        meta: { hideTopbar: true },
+        meta: { hideTopbar: true, app: 'bible' },
         component: () => import('../views/Bible.vue')
       },
       {
@@ -295,6 +296,14 @@ const platformRoutes = [
     meta: { requiresAuth: true }
   },
   {
+    // One church, as the platform runs it. The server refuses anyone who is
+    // not a platform administrator, so the page only has to cope with that.
+    path: '/platform/churches/:id',
+    name: 'PlatformChurch',
+    component: () => import('../views/PlatformChurch.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/'
   }
@@ -379,11 +388,16 @@ const createChurchRouter = () => {
       // Awaited on every navigation, not just guarded ones: the sidebar and
       // bottom bar filter themselves by capability, so the map has to be loaded
       // even on a page that grants itself freely.
-      await initPermissions()
+      // Which apps the church has is part of every answer below: can() refuses
+      // a capability whose app is off, so the map has to be in first.
+      await Promise.all([initPermissions(), churchAppsReady()])
 
       const capability = to.matched.reduce((cap, record) => record.meta.capability || cap, null)
       const adminOnly = to.matched.some((record) => record.meta.adminOnly)
+      const app = to.matched.reduce((key, record) => record.meta.app || key, null)
       const { can, isAdmin, hasNoAdmins } = usePermissions()
+
+      if (app && !isAppEnabled(app)) return { path: HOME, query: { denied: to.path } }
 
       if (adminOnly && !isAdmin.value && !hasNoAdmins.value) {
         return { path: HOME, query: { denied: to.path } }

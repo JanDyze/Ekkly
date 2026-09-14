@@ -1,5 +1,6 @@
 import XLSX from 'xlsx-js-style';
 import { getChurchIdentity } from '../composables/useAppSettings';
+import { accentCell } from '../composables/useBrandTheme';
 
 // Every column a sheet can carry, in the order they are laid out. Exported so
 // the dialog offers exactly these and the two cannot drift apart.
@@ -27,18 +28,18 @@ const styles = {
   // Header style - dark blue background with white text
   header: {
     font: { bold: true, color: { rgb: "FFFFFF" }, sz: 11 },
-    fill: { fgColor: { rgb: "01779B" } },
+    fill: { get fgColor() { return accentCell() } },
     alignment: { horizontal: "center", vertical: "center", wrapText: true },
     border: {
-      top: { style: "thin", color: { rgb: "01779B" } },
-      bottom: { style: "thin", color: { rgb: "01779B" } },
-      left: { style: "thin", color: { rgb: "01779B" } },
-      right: { style: "thin", color: { rgb: "01779B" } },
+      top: { style: "thin", get color() { return accentCell() } },
+      bottom: { style: "thin", get color() { return accentCell() } },
+      left: { style: "thin", get color() { return accentCell() } },
+      right: { style: "thin", get color() { return accentCell() } },
     },
   },
   // Title style
   title: {
-    font: { bold: true, color: { rgb: "01779B" }, sz: 16 },
+    font: { bold: true, get color() { return accentCell() }, sz: 16 },
     alignment: { horizontal: "center", vertical: "center" },
   },
   // Subtitle style

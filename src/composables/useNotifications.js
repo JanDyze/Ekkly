@@ -10,6 +10,7 @@ import { doc, setDoc, serverTimestamp } from '../api/firestore';
 import app, { db } from "../api/firebase";
 import { useToast } from "./useToast";
 import { initAuth, useAuth } from "./useAuth";
+import { getChurchName } from "../api/church";
 
 // The FCM service worker gets its own scope so it never competes with the PWA
 // service worker for "/" — two registrations on the same scope replace each
@@ -170,7 +171,9 @@ export function useNotifications() {
     foregroundBound = true;
     onMessage(messaging, async (payload) => {
       const n = payload.notification || payload.data || {};
-      info(`${n.title || "UEC Church"}${n.body ? " — " + n.body : ""}`, 8000);
+      // A push with no title of its own is titled by the church it came from.
+      const fallbackTitle = getChurchName() || "Ekkly";
+      info(`${n.title || fallbackTitle}${n.body ? " — " + n.body : ""}`, 8000);
 
       if (Notification.permission !== "granted") return;
       try {
@@ -181,7 +184,7 @@ export function useNotifications() {
           serviceWorkerRegistration ||
           (await navigator.serviceWorker.getRegistration());
         if (!reg) return;
-        await reg.showNotification(n.title || "UEC Church", {
+        await reg.showNotification(n.title || fallbackTitle, {
           body: n.body || "",
           icon: "/icons/pwa-192x192.png",
           badge: "/icons/badge-96x96.png",

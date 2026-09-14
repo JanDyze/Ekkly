@@ -11,6 +11,130 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.24.1] — 2026-09-15
+
+The front door starts counting, with the visitor's permission.
+
+### Added
+
+- **Console → Front door.** Visits, names tried and calls to action pressed
+  for the last 30 days, and the list of church names visitors typed into the
+  hero — each one a church that got as far as wondering what its address would
+  look like. The names are kept once the visitor stops typing, so a name is one
+  row and not one per keystroke.
+- **A question before any of that.** The front door asks before it counts
+  anything, says exactly what it keeps, and takes no for an answer: refuse and
+  nothing is ever sent. The answer is remembered on that device, along with a
+  random id that exists only so the same person typing the same name twice is
+  one row. Nothing follows anyone to another site.
+- `frontDoorDays` and `frontDoorTries`, written only by `/api/platform` — its
+  first action that anyone at all may call, and deliberately narrow: three
+  kinds of signal, short fields, and row ids worked out from what was sent
+  rather than a new document each time.
+
+## [0.24.0] — 2026-09-15
+
+The app becomes Ekkly, and its front door becomes a demonstration. Until now
+the product wore UEC's name, logo and teal wherever a church had not chosen its
+own; it now starts as Ekkly, in Ekkly's blue, and UEC is a church like any
+other. The front door shows what the app does by playing it rather than
+describing it.
+
+### Added
+
+- **Ekkly's mark and wordmark.** `public/ekkly-mark.svg`, the four-pane window,
+  with `AnimatedMark.vue` (the panes light in turn, with a glint across the
+  glass) and `PlatformLogo.vue` (the mark plus whatever the console calls the
+  platform). `index.html` lights the same window pane by pane while the app's
+  code downloads, in plain SVG and CSS so it shows before anything has loaded.
+- **A front door that plays the app.** The hero at `/` is a device running a
+  short scene for each of the things Ekkly does — a church getting its own
+  address and colour, Sunday's head count going in, a lineup and its reminders,
+  Present putting lyrics, a Bible passage and a PowerPoint slide on the
+  projector, minutes writing themselves, and Klysia answering from the church's
+  records — every one of them first on a phone, then on a computer, then a last
+  scene for the apps the tour did not reach. Built in
+  `src/components/frontdoor/`; DESIGN.md describes how it fits together.
+- **"Curious? Type your church's name."** in the hero. It sends nothing and
+  claims nothing about whether the address is free: it shows the address that
+  name would have, puts the name on the device in the tour, and carries it into
+  the request form if the visitor takes it up.
+
+### Changed
+
+- **The built-in colour is Ekkly's blue** (`#1d64d8`, and `#5b9dff` on a dark
+  page) rather than UEC's teal. A church that chose its own colours keeps them;
+  a church that never did changes appearance.
+- **Emails are drawn in the church's own accent** instead of one fixed blue,
+  resolved the same way the app resolves it: the church's, then the platform's,
+  then Ekkly's.
+- **The front door follows the platform's colour.** The light behind the hero,
+  the headline and the steps were fixed to the mark's four colours; they are
+  tokens now, so re-colouring Ekkly in the console re-colours its front door.
+- **UEC's brand lives in `brand/uec/`** with a note on how to put it back on
+  UEC's own church, rather than sitting in `src/assets` as the app's default.
+- The installed app's icons, its title and its theme colour are Ekkly's.
+  (Unchanged: the manifest is still one for all churches — see TENANCY.md.)
+- README describes the product instead of the Vue template it started from.
+
+## [0.23.0] — 2026-09-14
+
+A console for running the platform, and churches that pay only for what they
+use. Everything a platform administrator did by hand — Firestore edits,
+scripts, environment variables — now has a screen at `/platform`, and a church
+can switch apps on and off to keep its bill down.
+
+### Added
+- **The platform console** at `/platform`, laid out like church Settings: church
+  requests, churches, apps and prices, support requests, new church defaults,
+  name and front door, colours, AI, platform admins, and an activity log of
+  everything done from it. See "The platform console" in `TENANCY.md`.
+- **A page for each church** (`/platform/churches/:id`): rename it, change its
+  timezone, see its people, accounts and last activity, switch its apps on and
+  off (and lock one off), set its billing, record payments, connect its own
+  domains, and close or reopen it.
+- **Apps a church pays for.** Every page belongs to an app with a monthly price
+  (`lib/apps.js`). An app that is off disappears from the sidebar, bottom bar,
+  home page, dashboard and Claude connector, and its routes redirect home;
+  nothing in it is deleted. A church's administrators choose their apps under
+  **Settings → Apps & plan**, which also shows the bill and what has been paid.
+- **Billing, tracked.** A status, a paid-through date, an optional agreed price
+  and a list of payments per church. Recording a payment moves the date on.
+  Payment is still taken outside the app.
+- **Support requests.** A church's administrators ask for a new app, a change,
+  a fix, or send feedback from Settings; the platform answers with a status and
+  a reply they see there.
+- **Colours.** The platform chooses the accent every church starts with, and a
+  church can choose its own under **Settings → Colours**, with a light and dark
+  preview and a warning when text would be hard to read.
+- **The platform's name and front-door wording** are edited in the console
+  instead of set in `VITE_PLATFORM_NAME`, which is now only the fallback.
+- **AI settings.** Which Claude model writes up minutes, looks up songs and lays
+  out lyrics, and a switch that stops all AI calls at once. Each church's AI
+  calls are counted per month.
+- **Custom domains from the console.** Connecting one maps it to the church,
+  authorises it for Google sign-in, adds it to the Vercel project when
+  `VERCEL_API_TOKEN` and `VERCEL_PROJECT_ID` are set, and shows the DNS record
+  the church has to add.
+- **Platform admins from the console.** The first still comes from
+  `scripts/make-platform-admin.mjs`; the last one cannot be removed.
+- **New church defaults**: timezone, public page, starting apps, trial length,
+  and starter ministries and tags, applied when a request is approved.
+- `CLAUDE.md` and `DESIGN.md`: the rules the code depends on, and the house
+  style every page follows.
+
+### Changed
+- **Breaking:** deploy `firestore.rules` with this release. It adds the
+  platform's collections and makes each church's `subscription`, `payments` and
+  `usage` readable but not writable from the app. Until it is deployed the app
+  uses the built-in name and colours.
+- AI features need both the platform's AI switch and the church's AI assist app.
+  A church with no apps chosen yet has every app, AI included, as before.
+- The sidebar, confirmation buttons and image cropper use the accent colour
+  tokens instead of fixed hex values, so they follow a church's colours.
+- Settings shows the platform's name and version at its foot instead of
+  "UEC Church".
+
 ## [0.22.0] — 2026-09-14
 
 One app for many churches. A single deployment now serves any number of

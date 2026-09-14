@@ -40,7 +40,7 @@ const PATHS_ALL = path.join(ROOT, "src/data/eventIconPathsAll.json");
 const PNG_SIZE = 96;
 // Icons are drawn in the brand colour; the SVGs use fill="currentColor",
 // so this is a straight substitution before rasterising.
-const BRAND = "#01779b";
+const BRAND = "#1d64d8";
 
 /** church-outline.svg -> ChurchOutline, matching the Vue component minus "Ph". */
 const toPascalCase = (file) =>

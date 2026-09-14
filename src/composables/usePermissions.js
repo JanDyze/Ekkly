@@ -4,6 +4,7 @@ import { subscribeToAdmins } from '../api/adminsService'
 import { subscribeToMembers } from '../api/membersService'
 import { useAuth } from './useAuth'
 import { BASELINE_CAPABILITIES } from '../data/capabilities'
+import { capabilityAppEnabled } from './useChurchApps'
 
 // Module-level, with an explicit init like initAuth: the router guard has to
 // consult permissions before a route resolves, and a guard has no component
@@ -101,8 +102,14 @@ export function usePermissions() {
     return granted
   })
 
-  /** Admins bypass every check; everyone else is limited to what they hold. */
+  /**
+   * An app the church has switched off is off for everyone, administrators
+   * included — it is not a permission but a thing the church does not have —
+   * so that check comes before OPEN_ACCESS and the admin bypass. Everything
+   * else: admins bypass every check; everyone else is limited to what they hold.
+   */
   const can = (capability) => {
+    if (!capabilityAppEnabled(capability)) return false
     if (OPEN_ACCESS) return true
     if (!capability) return true
     if (isAdmin.value) return true

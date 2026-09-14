@@ -108,6 +108,11 @@ const NOT_AUDITED = new Set([
   'fcmTokens',
   'userPrefs',
   'joinRequests',
+  // Written only by /api/platform, which logs to the platform's own log; the
+  // app never writes these, and the rules would refuse it if it tried.
+  'subscription',
+  'payments',
+  'usage',
 ])
 
 // Writes outside any church — a request for a new church — have no church log

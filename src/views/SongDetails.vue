@@ -17,6 +17,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Check, Loader2, List, Cards, Copy, Sparkles } from '../icons'
 import { subscribeToSongs, updateSong } from '../api/songsService'
 import { analyseStructure } from '../api/songLookupService'
+import { isAppEnabled } from '../composables/useChurchApps'
 import { useToast } from '../composables/useToast'
 import { usePermissions } from '../composables/usePermissions'
 import { useDragReorder } from '../composables/useDragReorder'
@@ -376,7 +377,10 @@ onUnmounted(() => {
       >
         <div v-if="canManage('songs')" class="mb-2 flex shrink-0 items-center justify-between gap-2">
           <p class="text-xs font-bold text-gray-400">Lyrics</p>
+          <!-- AI assist is its own app; without it the lyrics are still
+               typed and arranged by hand. -->
           <button
+            v-if="isAppEnabled('ai')"
             @click="identifySections"
             :disabled="isAnalysing"
             class="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary transition-all hover:bg-primary/20 disabled:opacity-40"

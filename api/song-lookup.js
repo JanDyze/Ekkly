@@ -9,8 +9,10 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { requireChurchUser } from "../lib/tenant.js";
+import { aiAccess, recordAiUse } from "../lib/platform/ai.js";
 
-const MODEL = "claude-opus-5";
+// The model is the platform's choice (Console → AI), defaulting to Claude Opus
+// 5. Only models that take this web search tool version are offered for it.
 
 const SYSTEM = `You identify worship songs for a church's song library and reply with JSON only.
 
@@ -65,6 +67,9 @@ export default async function handler(req, res) {
   const caller = await requireChurchUser(req);
   if (caller.error) return res.status(caller.status).json({ error: caller.error });
 
+  const ai = await aiAccess(caller.church, "songLookup");
+  if (!ai.allowed) return res.status(403).json({ error: ai.reason });
+
   if (!process.env.ANTHROPIC_API_KEY) {
     return res.status(500).json({ error: "ANTHROPIC_API_KEY not configured" });
   }
@@ -97,7 +102,7 @@ export default async function handler(req, res) {
     // stops a pathological loop from running the bill up.
     for (let attempt = 0; attempt < 4; attempt += 1) {
       response = await client.messages.create({
-        model: MODEL,
+        model: ai.model,
         max_tokens: 4000,
         system: SYSTEM,
         thinking: { type: "adaptive" },
@@ -130,6 +135,7 @@ export default async function handler(req, res) {
     // that arrives under that name is dropped rather than shown.
     delete result.lyrics;
 
+    await recordAiUse(caller.church, "songLookup");
     return res.status(200).json({
       ...result,
       usage: {

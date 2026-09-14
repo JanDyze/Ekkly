@@ -6,16 +6,16 @@
 
 export const DEFAULT_CHURCH = {
   // Short name: sidebar, sign-in screen, browser title, spreadsheet headers.
-  shortName: 'UECPCOM',
-  // Legal name and branch: the letterhead on printed and exported documents.
-  // The acronym already carries the city: UECP, then COM for Calapan Oriental
-  // Mindoro. So the full name is the letterhead, and the branch is the local
-  // congregation under it — which is what the public header shows as a
-  // subtitle beneath the short name.
-  fullName: 'United Evangelical Church of the Philippines – Calapan, Oriental Mindoro',
-  branch: 'Canubing II',
-  // Base64 webp uploaded from Settings. Empty means "use the bundled logo",
-  // which is what a fresh install and every fallback path renders.
+  // Rarely seen: an approved church starts with its own name in its settings,
+  // and until those load the name on its public profile is used instead. These
+  // used to be UEC's details, from when the app served that church alone.
+  shortName: 'Church',
+  // Legal name and branch: the letterhead on printed and exported documents,
+  // and the subtitle under the short name on the public header.
+  fullName: '',
+  branch: '',
+  // Base64 webp uploaded from Settings. Empty means "use the bundled logo" —
+  // Ekkly's mark — which is what a new church and every fallback path renders.
   logo: '',
   // Optional dark-mode version. When empty, the main logo is reused.
   logoDark: '',
@@ -97,7 +97,7 @@ export const DEFAULT_LANDING = {
 
   // Why the church is here. Either may be left empty; with both empty the
   // section goes.
-  vision: 'Isang simbahang sumasamba, lumalago, at namumunga sa Canubing II.',
+  vision: 'Isang simbahang sumasamba, lumalago, at namumunga.',
   mission: 'Ihatid ang Ebanghelyo, palaguin ang mananampalataya, paglingkuran ang kapwa.',
 
   // Punla, Puno, Prutas — the discipleship process, as [{ stage, note }].

@@ -5,6 +5,7 @@ import { useMinutes } from '../composables/useMinutes'
 import { useMembers } from '../composables/useMembers'
 import { useTasks } from '../composables/useTasks'
 import { usePermissions } from '../composables/usePermissions'
+import { isAppEnabled } from '../composables/useChurchApps'
 import { useAuth } from '../composables/useAuth'
 import { getDisplayName, getFullName } from '../utils/memberUtils'
 import { Calendar, Clock, MapPin, Users, Trash2, Download, ArrowLeft, FileText, List, X, Plus, Sparkles, Copy, RotateCcw, Menu, Loader2, MoreVertical } from '../icons'
@@ -38,6 +39,9 @@ const isMobile = useMediaQuery('(max-width: 1023px)')
 
 const canAddTasks = computed(() => canManage('tasks'))
 const canEditMinute = computed(() => canManage('minutes'))
+// Writing up is AI assist, an app of its own. Without it the notes are still
+// taken and the minute still written by hand.
+const canWriteUp = computed(() => canEditMinute.value && isAppEnabled('ai'))
 const mentions = useMentionPicker(members)
 
 const showConfirmation = ref(false)
@@ -1357,7 +1361,7 @@ watch(() => minute.value, (newMinute, oldMinute) => {
                 Summary
               </h2>
               <button
-                v-if="canEditMinute"
+                v-if="canWriteUp"
                 @click="enhanceOverallSummary"
                 :disabled="isEnhancingOverall"
                 class="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60 sm:px-3 sm:py-2 sm:text-sm"
@@ -1392,7 +1396,7 @@ watch(() => minute.value, (newMinute, oldMinute) => {
               </h2>
 
               <button
-                v-if="canEditMinute && currentStructure.discussions?.[currentAgendaItem.index]"
+                v-if="canWriteUp && currentStructure.discussions?.[currentAgendaItem.index]"
                 @click="enhanceMinutes"
                 :disabled="isEnhancing"
                 class="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60 sm:px-3 sm:py-2 sm:text-sm"

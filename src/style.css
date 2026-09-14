@@ -5,9 +5,9 @@
 
 /* Theme colors */
 @theme {
-  --color-primary: #01779b;
-  --color-primary-light: #22b8cf;
-  --color-primary-hover: #015a77;
+  --color-primary: #1d64d8;
+  --color-primary-light: #5b9dff;
+  --color-primary-hover: #174fae;
 }
 
 /* The pixel face from index.html, kept to the one place it belongs. Named
@@ -79,10 +79,10 @@
 }
 
 :root {
-  --color-primary: #01779b;
-  --color-primary-hover: #015a77;
-  --scrollbar-thumb: rgba(1, 119, 155, 0.35);
-  --scrollbar-thumb-hover: rgba(1, 119, 155, 0.65);
+  --color-primary: #1d64d8;
+  --color-primary-hover: #174fae;
+  --scrollbar-thumb: rgba(29, 100, 216, 0.35);
+  --scrollbar-thumb-hover: rgba(29, 100, 216, 0.65);
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -94,10 +94,10 @@
 }
 
 .dark {
-  --color-primary: #22b8cf;
-  --color-primary-hover: #3bc9db;
-  --scrollbar-thumb: rgba(34, 184, 207, 0.3);
-  --scrollbar-thumb-hover: rgba(34, 184, 207, 0.6);
+  --color-primary: #5b9dff;
+  --color-primary-hover: #7db2ff;
+  --scrollbar-thumb: rgba(91, 157, 255, 0.3);
+  --scrollbar-thumb-hover: rgba(91, 157, 255, 0.6);
 }
 
 /* Switches off Chrome's own pull-to-refresh and the rubber-band glow at the
@@ -121,7 +121,7 @@ body {
 
 .dark body {
   background-color: #111827;
-  color: #22b8cf;
+  color: #5b9dff;
 }
 
 /* These three are element defaults, and they belong in @layer base.
