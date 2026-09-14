@@ -1,7 +1,8 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, ArrowSquareOut, Loader2, SearchX } from '../icons'
+import { ArrowLeft, ArrowSquareOut, SearchX } from '../icons'
+import SectionCardSkeleton from '../components/common/SectionCardSkeleton.vue'
 import { callPlatform } from '../api/platformService'
 import { useToast } from '../composables/useToast'
 import { usePlatformConsole } from '../composables/usePlatformConsole'
@@ -70,8 +71,17 @@ const badge = computed(() => billingBadge(church.value?.plan))
         Churches
       </RouterLink>
 
-      <div v-if="loading && !church" class="flex justify-center py-16">
-        <Loader2 class="h-6 w-6 animate-spin text-gray-400" />
+      <div v-if="loading && !church" class="space-y-4" aria-busy="true">
+        <div class="flex items-start justify-between gap-3">
+          <div class="space-y-2">
+            <div class="h-5 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+            <div class="h-4 w-32 animate-pulse rounded bg-gray-100 dark:bg-gray-700/60"></div>
+          </div>
+          <div class="h-10 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+        </div>
+        <SectionCardSkeleton variant="form" :rows="2" />
+        <SectionCardSkeleton :rows="4" />
+        <SectionCardSkeleton :rows="5" />
       </div>
 
       <div

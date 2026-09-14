@@ -28,6 +28,8 @@ import { FieldValue } from "firebase-admin/firestore";
 import { isCronRequest } from "../lib/firebaseAdmin.js";
 import { listOpenChurches, originOf, requireChurchAdmin } from "../lib/tenant.js";
 import { isMailConfigured, sendBulk, sendTo, isValidEmail } from "../lib/mailer.js";
+import { getPlatformPublic } from "../lib/platform/config.js";
+import { resolveTheme } from "../lib/platformDefaults.js";
 import {
   buildEventDigest,
   buildActivityReport,
@@ -48,10 +50,12 @@ import {
 // for either; 60 is the Hobby plan's ceiling.
 export const config = { maxDuration: 60 };
 
+// Only reached by a church that has never saved its details and has no name on
+// its profile either — which approval always gives it.
 const DEFAULT_CHURCH = {
-  shortName: "UECPCOM",
-  fullName: "United Evangelical Church of the Philippines – Calapan, Oriental Mindoro",
-  branch: "Canubing II",
+  shortName: "Church",
+  fullName: "",
+  branch: "",
 };
 
 const docsOf = (snapshot) => snapshot.docs.map((d) => ({ id: d.id, data: d.data() }));
@@ -79,11 +83,20 @@ const appUrlFor = (church, req) =>
   ).replace(/\/$/, "");
 
 async function loadChurch(firestore, name = "") {
-  const snap = await firestore.collection("appSettings").doc("church").get();
+  const [snap, platform] = await Promise.all([
+    firestore.collection("appSettings").doc("church").get(),
+    getPlatformPublic().catch(() => ({})),
+  ]);
   // A church that has never saved its details is called what it asked to be
-  // called, not by the defaults, which are another congregation's name.
+  // called, not by the defaults.
   const fallback = name ? { ...DEFAULT_CHURCH, shortName: name, fullName: name, branch: "" } : DEFAULT_CHURCH;
-  return { ...fallback, ...(snap.exists ? snap.data()?.church || {} : {}) };
+  const settings = snap.exists ? snap.data() || {} : {};
+  return {
+    ...fallback,
+    ...(settings.church || {}),
+    // The colour the email is drawn in: the same one the church's app wears.
+    accent: resolveTheme(platform.theme, settings.theme).primary,
+  };
 }
 
 /** Events, weekly schedules and birthdays — everything the calendar is made of. */

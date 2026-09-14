@@ -1,7 +1,7 @@
 {
   "name": "ekkly",
   "private": true,
-  "version": "0.23.0",
+  "version": "0.24.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,6 @@
     "preview": "vite preview",
     "deploy": "node scripts/deploy.mjs",
     "build:icons": "node scripts/build-ui-icons.mjs && node scripts/build-event-icons.mjs",
-    "build:brand": "node scripts/build-brand-animation.mjs",
     "sync:bible": "node scripts/sync-bible.mjs"
   },
   "dependencies": {

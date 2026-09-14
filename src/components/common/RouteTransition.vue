@@ -1,7 +1,8 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import mark from '../../assets/uec-mark.webp'
+import { useAppSettings } from '../../composables/useAppSettings'
+import AnimatedMark from './AnimatedMark.vue'
 
 /**
  * The church's mark, over the gap between one page and the next.
@@ -11,10 +12,9 @@ import mark from '../../assets/uec-mark.webp'
  * enough to leave the screen holding the page the user has already left. This
  * fills that gap with the logo instead of nothing.
  *
- * It plays uec-mark.webp, not the full reveal: at these durations the reveal
- * would only ever get through its own opening frames, which are black. The
- * mark opens on the finished logo and loops a shine across it, so however
- * briefly it appears, what appears is the logo.
+ * It shows the church's own logo (Ekkly's mark until one is uploaded) with a
+ * soft pulse, where it used to loop a clip cut from UEC's logo animation — a
+ * clip only one congregation's logo could have.
  *
  * The curtain is deliberately short, and it is not waiting for the navigation
  * — the new page renders underneath it and is ready before it lifts. Its whole
@@ -22,6 +22,9 @@ import mark from '../../assets/uec-mark.webp'
  */
 
 const router = useRouter()
+// A church with a logo of its own sees it breathing; one without sees Ekkly's
+// window light up pane by pane.
+const { logoUrl, hasCustomLogo } = useAppSettings()
 
 // How long the mark holds once a navigation starts. Short enough that a member
 // clicking through the sidebar is not waiting on it, long enough that the logo
@@ -41,7 +44,7 @@ let holdTimer = null
 // never competes with the work of getting the first page up.
 onMounted(() => {
   const warm = () => {
-    new Image().src = mark
+    new Image().src = logoUrl.value
   }
   if (window.requestIdleCallback) window.requestIdleCallback(warm, { timeout: 3000 })
   else setTimeout(warm, 1500)
@@ -91,7 +94,8 @@ onUnmounted(() => {
        swallow a tap is one that can strand someone if it ever fails to lift. -->
   <Transition name="rt">
     <div v-if="active" class="rt" aria-hidden="true">
-      <img :src="mark" alt="" class="rt-mark" />
+      <img v-if="hasCustomLogo" :src="logoUrl" alt="" class="rt-mark" />
+      <AnimatedMark v-else class="rt-anim" />
     </div>
   </Transition>
 </template>
@@ -106,27 +110,50 @@ onUnmounted(() => {
   display: grid;
   place-items: center;
   pointer-events: none;
-  /* The landing's ink rather than a flat black, so the curtain belongs to this
-     app rather than to the browser. Not quite opaque: the page underneath
-     stays faintly legible, which keeps it reading as a transition rather than
-     as a screen of its own. */
-  background: rgba(6, 40, 50, 0.94);
+  /* Ekkly's navy rather than a flat black, so the curtain belongs to this app
+     rather than to the browser. Not quite opaque: the page underneath stays
+     faintly legible, which keeps it reading as a transition rather than as a
+     screen of its own. */
+  background: rgba(15, 28, 77, 0.94);
 }
 
 :global(.dark) .rt {
   background: rgba(17, 24, 39, 0.94);
 }
 
+/* A flat logo fills its box, where the old clip drew inside a margin of its
+   own, so the box is smaller than it was. A slow breath while it holds. */
 .rt-mark {
-  width: 7rem;
-  height: 7rem;
+  width: 4.5rem;
+  height: 4.5rem;
   object-fit: contain;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.35));
+  animation: rt-breathe 1.6s ease-in-out infinite;
 }
 
 @media (min-width: 640px) {
   .rt-mark {
-    width: 8.5rem;
-    height: 8.5rem;
+    width: 5.5rem;
+    height: 5.5rem;
+  }
+}
+
+.rt-anim {
+  width: 5.5rem;
+  height: 5.5rem;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.35));
+}
+
+@media (min-width: 640px) {
+  .rt-anim {
+    width: 6.5rem;
+    height: 6.5rem;
+  }
+}
+
+@keyframes rt-breathe {
+  50% {
+    transform: scale(1.06);
   }
 }
 

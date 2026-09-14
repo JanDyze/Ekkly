@@ -200,6 +200,10 @@ node scripts/migrate-to-tenancy.mjs --from=../church-c9b15-sa.json --church=uec 
 node scripts/migrate-to-tenancy.mjs --from=../church-c9b15-sa.json --church=uec --name="UECPCOM" --write
 ```
 
+UEC's app used to be the app's built-in look. It now starts with Ekkly's mark and
+blue, so after the copy, in UEC's own Settings, upload its logo and set its
+colours. The files and the colours are in [brand/uec/README.md](brand/uec/README.md).
+
 Photos and logos already live in Vercel Blob under public URLs, so they keep
 working. New uploads go under `uec/…` in the store.
 
@@ -268,10 +272,10 @@ church.
 
 ## Not done yet
 
-- **Installed app name and icon.** The PWA manifest in `vite.config.js` still
-  says "UECPCOM Canubing II" for every church. It needs to be served per church.
-- **Sign-in screen mark.** A church without an uploaded logo shows the UEC logo
-  and its drawing animation.
+- **Installed app name and icon per church.** The PWA manifest in
+  `vite.config.js` says "Ekkly", with Ekkly's icons, for every church. A church
+  installing its app gets Ekkly on the home screen rather than its own name
+  and logo until the manifest is served per church.
 - **Rules deployment.** `firestore.rules` now covers the console's collections
   (`platform`, `platformLog`, `supportRequests`, and each church's
   `subscription`, `payments`, `usage`). Until it is deployed, the browser cannot

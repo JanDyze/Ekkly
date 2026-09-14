@@ -7,7 +7,6 @@ import {
   ChatCircleDots,
   ChevronRight,
   ClockCounterClockwise,
-  Loader2,
   LogOut,
   Palette,
   PuzzlePiece,
@@ -22,6 +21,8 @@ import { initAuth, useAuth } from '../composables/useAuth'
 import { useMediaQuery } from '../composables/useMediaQuery'
 import { usePlatformConfig } from '../composables/usePlatformConfig'
 import { isPlatformAdmin, subscribeToChurchRequests } from '../api/platformService'
+import PlatformLogo from '../components/common/PlatformLogo.vue'
+import SectionCardSkeleton from '../components/common/SectionCardSkeleton.vue'
 import ChurchRequestsAdmin from '../components/platform/ChurchRequestsAdmin.vue'
 import ChurchesAdmin from '../components/platform/ChurchesAdmin.vue'
 import AppCatalogAdmin from '../components/platform/AppCatalogAdmin.vue'
@@ -33,7 +34,7 @@ import AiAdmin from '../components/platform/AiAdmin.vue'
 import PlatformAdminsAdmin from '../components/platform/PlatformAdminsAdmin.vue'
 import PlatformActivity from '../components/platform/PlatformActivity.vue'
 
-// The platform's console: everything the people who run ekkly do, from saying
+// The platform's console: everything the people who run Ekkly do, from saying
 // yes to a new church to choosing which AI model writes up minutes.
 //
 // Laid out the way church Settings is — a list of places, each saying where it
@@ -201,10 +202,7 @@ const backToList = () => {
           class="flex min-w-0 items-center gap-2 text-gray-900 dark:text-white"
           aria-label="Back to the front door"
         >
-          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-white">
-            <Buildings class="h-4.5 w-4.5" />
-          </span>
-          <span class="truncate text-sm font-bold">{{ branding.name }}</span>
+          <PlatformLogo mark-class="h-7 w-7" text-class="text-xl" />
           <span class="hidden text-sm text-gray-400 sm:inline">Console</span>
         </RouterLink>
         <span class="ml-auto hidden min-w-0 truncate text-xs text-gray-500 sm:block dark:text-gray-400">{{ email }}</span>
@@ -220,8 +218,26 @@ const backToList = () => {
       </div>
     </header>
 
-    <div v-if="checking" class="flex flex-1 items-center justify-center">
-      <Loader2 class="h-6 w-6 animate-spin text-gray-400" />
+    <!-- Checking who is signed in: the console's own shape in grey, so the
+         page does not jump from a spinner to a list. -->
+    <div v-if="checking" class="mx-auto flex min-h-0 w-full max-w-7xl flex-1 px-4 pt-4 sm:px-6 lg:gap-6" aria-busy="true">
+      <div class="w-full space-y-4 lg:w-72 lg:shrink-0">
+        <div v-for="group in [2, 3, 2]" :key="group" class="space-y-1.5">
+          <div class="h-3 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+          <div class="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800">
+            <div v-for="row in group" :key="row" class="flex items-center gap-3 px-3 py-3">
+              <div class="h-9 w-9 shrink-0 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+              <div class="flex-1 space-y-1.5">
+                <div class="h-3.5 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                <div class="h-3 w-40 animate-pulse rounded bg-gray-100 dark:bg-gray-700/60"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="hidden min-w-0 flex-1 space-y-4 lg:block">
+        <SectionCardSkeleton :rows="4" />
+      </div>
     </div>
 
     <div v-else-if="!allowed" class="flex flex-1 items-center justify-center px-4">

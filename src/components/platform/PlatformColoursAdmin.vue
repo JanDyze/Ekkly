@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { Loader2, Palette, Save } from '../../icons'
 import SectionCard from '../common/SectionCard.vue'
+import SectionCardSkeleton from '../common/SectionCardSkeleton.vue'
 import ColourEditor from '../common/ColourEditor.vue'
 import { useToast } from '../../composables/useToast'
 import { usePlatformConsole } from '../../composables/usePlatformConsole'
@@ -47,7 +48,8 @@ const save = async (value) => {
 </script>
 
 <template>
-  <SectionCard :icon="Palette" title="Colours" subtitle="The accent every church starts with. Churches can choose their own.">
+  <SectionCardSkeleton v-if="!config" variant="form" :rows="2" />
+  <SectionCard v-else :icon="Palette" title="Colours" subtitle="The accent every church starts with. Churches can choose their own.">
     <div class="space-y-4 p-4">
       <ColourEditor v-model="theme" :fallback="DEFAULT_THEME" />
       <div class="flex flex-wrap items-center justify-end gap-3">

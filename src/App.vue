@@ -30,9 +30,16 @@ watch(
     const link = document.querySelector("link[rel='icon']")
     if (!url || !link) return
     link.href = url
-    // The tag is declared image/png; an uploaded logo is a webp data URL.
-    const mime = url.startsWith('data:') ? url.slice(5, url.indexOf(';')) : ''
+    // The tag starts as Ekkly's SVG mark; an uploaded logo is a webp data URL
+    // or a PNG. A wrong type makes some browsers ignore the icon, so it is
+    // set when known and dropped when not.
+    const mime = url.startsWith('data:')
+      ? url.slice(5, url.indexOf(';'))
+      : /\.svg(\?|$)/.test(url)
+        ? 'image/svg+xml'
+        : ''
     if (mime) link.type = mime
+    else link.removeAttribute('type')
   },
   { immediate: true }
 )
@@ -88,8 +95,10 @@ onUnmounted(() => {
     <PullToRefresh ref="pullToRefresh" />
 
     <!-- Offers the home-screen install to anyone still in a browser tab.
-         Renders nothing once the app is installed, dismissed or unsupported. -->
-    <InstallPrompt />
+         Renders nothing once the app is installed, dismissed or unsupported.
+         A church's app only: the front door is a page to read and sign up
+         from, not something to put on a home screen. -->
+    <InstallPrompt v-if="devChurchId" />
 
     <!-- Global Toast Notifications -->
     <ToastContainer />

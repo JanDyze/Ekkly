@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { Loader2, Robot, Save } from '../../icons'
 import SectionCard from '../common/SectionCard.vue'
+import SectionCardSkeleton from '../common/SectionCardSkeleton.vue'
 import ToggleSwitch from '../common/ToggleSwitch.vue'
 import { useToast } from '../../composables/useToast'
 import { usePlatformConsole } from '../../composables/usePlatformConsole'
@@ -80,7 +81,8 @@ const input =
 
 <template>
   <div class="space-y-4">
-    <SectionCard :icon="Robot" title="AI" subtitle="Which Claude model each feature runs on. The platform pays for every call.">
+    <SectionCardSkeleton v-if="!form" :rows="4" />
+    <SectionCard v-else :icon="Robot" title="AI" subtitle="Which Claude model each feature runs on. The platform pays for every call.">
       <form v-if="form" class="divide-y divide-gray-100 dark:divide-gray-700" @submit.prevent="save">
         <div class="flex items-center gap-3 px-4 py-4">
           <div class="min-w-0 flex-1">

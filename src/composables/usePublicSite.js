@@ -3,7 +3,7 @@ import { fetchPublicSite } from '../api/publicSiteService'
 import { withChurchDefaults, withLandingDefaults } from '../data/appDefaults'
 import { useAppSettings } from './useAppSettings'
 import { useTheme } from './useTheme'
-import bundledLogo from '../assets/uec-logo.png'
+import bundledLogo from '../assets/ekkly-mark.svg'
 
 // What the page at "/" draws itself from, whoever is looking at it.
 //

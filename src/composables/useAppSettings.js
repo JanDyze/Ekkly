@@ -6,7 +6,7 @@ import {
   withLandingDefaults,
 } from '../data/appDefaults'
 import { scheduleRolesFrom } from '../data/scheduleRoles'
-import bundledLogo from '../assets/uec-logo.png'
+import bundledLogo from '../assets/ekkly-mark.svg'
 import { useTheme } from './useTheme'
 import { getChurchId, getChurchName } from '../api/church'
 import { themeForStorage } from '../../lib/platformDefaults.js'
@@ -33,7 +33,7 @@ export const initAppSettings = () => {
 //
 // Until the settings arrive — or for somebody not yet allowed to read them —
 // the name comes from the church's public profile rather than the defaults,
-// which carry the congregation this app was first built for.
+// which only say "Church".
 const publicIdentity = () => {
   const name = getChurchName()
   return name ? { shortName: name, fullName: name, branch: '' } : undefined
@@ -47,6 +47,9 @@ const landingOf = (data) => withLandingDefaults(data?.landing)
  * exporters build a workbook once, at the moment the button is pressed.
  */
 export const getChurchIdentity = () => churchOf(stored.value)
+
+/** The church's own accent colours, non-reactively; empty when it chose none. */
+export const getChurchTheme = () => stored.value?.theme || {}
 
 /** The uploaded logo, or the bundled one while none has been set. Everything
  *  that draws the mark reads this, so one upload changes them all at once. */

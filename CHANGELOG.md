@@ -11,6 +11,51 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.24.0] — 2026-09-15
+
+The app becomes Ekkly, and its front door becomes a demonstration. Until now
+the product wore UEC's name, logo and teal wherever a church had not chosen its
+own; it now starts as Ekkly, in Ekkly's blue, and UEC is a church like any
+other. The front door shows what the app does by playing it rather than
+describing it.
+
+### Added
+
+- **Ekkly's mark and wordmark.** `public/ekkly-mark.svg`, the four-pane window,
+  with `AnimatedMark.vue` (the panes light in turn, with a glint across the
+  glass) and `PlatformLogo.vue` (the mark plus whatever the console calls the
+  platform). `index.html` lights the same window pane by pane while the app's
+  code downloads, in plain SVG and CSS so it shows before anything has loaded.
+- **A front door that plays the app.** The hero at `/` is a device running a
+  short scene for each of the things Ekkly does — a church getting its own
+  address and colour, Sunday's head count going in, a lineup and its reminders,
+  Present putting lyrics, a Bible passage and a PowerPoint slide on the
+  projector, minutes writing themselves, and Klysia answering from the church's
+  records — every one of them first on a phone, then on a computer, then a last
+  scene for the apps the tour did not reach. Built in
+  `src/components/frontdoor/`; DESIGN.md describes how it fits together.
+- **"Curious? Type your church's name."** in the hero. It sends nothing and
+  claims nothing about whether the address is free: it shows the address that
+  name would have, puts the name on the device in the tour, and carries it into
+  the request form if the visitor takes it up.
+
+### Changed
+
+- **The built-in colour is Ekkly's blue** (`#1d64d8`, and `#5b9dff` on a dark
+  page) rather than UEC's teal. A church that chose its own colours keeps them;
+  a church that never did changes appearance.
+- **Emails are drawn in the church's own accent** instead of one fixed blue,
+  resolved the same way the app resolves it: the church's, then the platform's,
+  then Ekkly's.
+- **The front door follows the platform's colour.** The light behind the hero,
+  the headline and the steps were fixed to the mark's four colours; they are
+  tokens now, so re-colouring Ekkly in the console re-colours its front door.
+- **UEC's brand lives in `brand/uec/`** with a note on how to put it back on
+  UEC's own church, rather than sitting in `src/assets` as the app's default.
+- The installed app's icons, its title and its theme colour are Ekkly's.
+  (Unchanged: the manifest is still one for all churches — see TENANCY.md.)
+- README describes the product instead of the Vue template it started from.
+
 ## [0.23.0] — 2026-09-14
 
 A console for running the platform, and churches that pay only for what they

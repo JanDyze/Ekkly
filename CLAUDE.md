@@ -1,4 +1,4 @@
-# ekkly
+# Ekkly
 
 A church management app sold to many churches from one deployment. Each church
 has its own address (`<id>.<root domain>`) and its own records under

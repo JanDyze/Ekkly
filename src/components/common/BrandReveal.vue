@@ -1,55 +1,47 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
-import reveal from '../../assets/uec-reveal.webp'
-import still from '../../assets/uec-still.webp'
 
 /**
- * The logo drawing itself in, played once.
+ * The church's logo, arriving as the reader reaches it.
  *
- * This is the long cut — the disc, the cross, the letters and a shine, just
- * under five seconds of it — so it belongs somewhere the eye arrives and
- * stays, not somewhere it is passing through. It stops on the finished logo
- * rather than looping, so a reader who lingers is not lapped by a second run.
+ * This used to be a clip of UEC's logo drawing itself. Now that one app serves
+ * many churches, it is whichever logo the church uploaded (or Ekkly's mark
+ * until it has), eased in with a gentle rise and a single shine rather than a
+ * recorded animation only one congregation's logo could have.
  *
- * It costs 211 KB, which is more than anything else on the public page and
- * five times less than the GIF it came from. The landing page fought hard to
- * paint its hero on the first connection, so nothing here is allowed to load
- * until it is actually about to be seen: the src is empty until an observer
- * says the band has come into view, and a visitor who never scrolls that far
- * pays nothing at all.
+ * Nothing moves until the band has actually come into view, so a visitor who
+ * turns back before the bottom of the page never sees it happen off-screen.
  */
 
+defineProps({
+  src: { type: String, required: true },
+  alt: { type: String, default: '' },
+})
+
 // Size comes from the caller's own classes rather than a prop, so a placement
-// can be as responsive as the band around it. The clip is 384px square, so
-// anything drawn up to ~192px stays sharp on a 2x screen.
+// can be as responsive as the band around it.
 
 const root = ref(null)
-const src = ref('')
+const shown = ref(false)
 
-// Someone who has asked their system to stop animating things gets the last
-// frame of the clip, not the clip — the same mark, just already arrived.
 const reduced =
-  typeof window !== 'undefined' &&
-  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
 let observer = null
 
 onMounted(() => {
-  if (reduced) {
-    src.value = still
+  if (reduced || typeof IntersectionObserver === 'undefined') {
+    shown.value = true
     return
   }
-
-  // rootMargin gives the fetch a head start, so by the time the band is on
-  // screen the animation is ready to begin rather than beginning to download.
   observer = new IntersectionObserver(
     (entries) => {
       if (!entries.some((e) => e.isIntersecting)) return
-      src.value = reveal
+      shown.value = true
       observer.disconnect()
       observer = null
     },
-    { rootMargin: '200px' }
+    { threshold: 0.4 }
   )
   observer.observe(root.value)
 })
@@ -58,33 +50,61 @@ onUnmounted(() => observer?.disconnect())
 </script>
 
 <template>
-  <!-- The element holds its square whether or not the clip has loaded, so the
-       band around it never reflows when the animation arrives. -->
-  <div ref="root" class="br">
-    <Transition name="br">
-      <img v-if="src" :src="src" alt="" class="br-clip" />
-    </Transition>
+  <!-- The element holds its square whether or not the logo has arrived, so the
+       band around it never reflows. -->
+  <div ref="root" class="br" :class="{ 'br-shown': shown, 'br-still': reduced }">
+    <img :src="src" :alt="alt" class="br-logo" />
   </div>
 </template>
 
 <style scoped>
 .br {
   flex: none;
+  position: relative;
   display: grid;
   place-items: center;
+  overflow: hidden;
 }
 
-.br-clip {
-  width: 100%;
-  height: 100%;
+.br-logo {
+  width: 78%;
+  height: 78%;
   object-fit: contain;
-}
-
-.br-enter-active {
-  transition: opacity 0.4s ease-out;
-}
-
-.br-enter-from {
   opacity: 0;
+  transform: translateY(0.75rem) scale(0.92);
+  transition: opacity 0.7s ease-out, transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.br-shown .br-logo {
+  opacity: 1;
+  transform: none;
+}
+
+/* One sweep of light across the logo once it has landed. */
+.br::after {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background: linear-gradient(105deg, transparent 40%, rgb(255 255 255 / 0.35) 50%, transparent 60%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+
+.br-shown::after {
+  animation: br-shine 1.4s ease-in-out 0.8s 1 forwards;
+}
+
+@keyframes br-shine {
+  to {
+    transform: translateX(120%);
+  }
+}
+
+.br-still .br-logo {
+  transition: none;
+}
+
+.br-still::after {
+  display: none;
 }
 </style>

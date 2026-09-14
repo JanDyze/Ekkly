@@ -2,9 +2,11 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { Loader2, Save, SlidersHorizontal } from '../../icons'
 import SectionCard from '../common/SectionCard.vue'
+import SectionCardSkeleton from '../common/SectionCardSkeleton.vue'
 import { useToast } from '../../composables/useToast'
 import { usePlatformConsole } from '../../composables/usePlatformConsole'
 import { DEFAULT_BRANDING } from '../../../lib/platformDefaults.js'
+import mark from '../../assets/ekkly-mark.svg'
 
 // The platform's name and the words on its front door — the page a
 // congregation's leader lands on to ask for a church. A blank field falls back
@@ -33,7 +35,7 @@ onMounted(async () => {
 })
 watch(() => config.value?.storedBranding, fill, { immediate: true })
 
-const fallbackName = import.meta.env.VITE_PLATFORM_NAME || 'Church App'
+const fallbackName = import.meta.env.VITE_PLATFORM_NAME || 'Ekkly'
 const preview = computed(() => ({
   name: form.value?.name.trim() || fallbackName,
   headline: form.value?.frontDoor.headline.trim() || DEFAULT_BRANDING.frontDoor.headline,
@@ -61,7 +63,8 @@ const input =
 
 <template>
   <div class="space-y-4">
-    <SectionCard :icon="SlidersHorizontal" title="Name & front door" subtitle="What the platform is called, and what its front door says">
+    <SectionCardSkeleton v-if="!config" variant="form" :rows="4" />
+    <SectionCard v-else :icon="SlidersHorizontal" title="Name & front door" subtitle="What the platform is called, and what its front door says">
       <form v-if="form" class="space-y-4 p-4" @submit.prevent="save">
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -100,7 +103,12 @@ const input =
          where they will be read. -->
     <div v-if="form" class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700" aria-label="Front door preview">
       <div class="bg-gradient-to-b from-primary to-primary-hover px-5 py-6">
-        <p class="text-sm font-black tracking-tight text-white">{{ preview.name }}</p>
+        <p class="flex items-center gap-2">
+          <span class="flex items-center justify-center rounded-lg bg-white p-1 shadow-sm">
+            <img :src="mark" alt="" class="h-5 w-5" />
+          </span>
+          <span class="font-[Poppins,system-ui,sans-serif] text-lg font-medium tracking-tight text-white">{{ preview.name }}</span>
+        </p>
         <p class="mt-4 text-xl font-black tracking-tight text-white">{{ preview.headline }}</p>
         <p class="mt-1.5 max-w-lg text-xs leading-relaxed text-white/75">{{ preview.intro }}</p>
       </div>

@@ -1,6 +1,6 @@
 # Design
 
-How a page in ekkly looks and behaves, so every page reads as part of the same
+How a page in Ekkly looks and behaves, so every page reads as part of the same
 app.
 
 **The reference page is People** ([src/views/Members.vue](src/views/Members.vue)).
@@ -102,6 +102,38 @@ The page skeleton:
 `pb-20` on the scroller keeps the FAB from covering the last row.
 
 ## Building blocks
+
+### The front door's hero
+
+The platform's front door ([PlatformHome.vue](src/views/PlatformHome.vue))
+opens on a tour: a device that plays a short scene for each of the things Ekkly
+does, first every scene on a phone and then every scene again on a computer,
+ending on what the tour left out. It lives in
+[src/components/frontdoor/](src/components/frontdoor/):
+
+- **[HeroStage.vue](src/components/frontdoor/HeroStage.vue)** owns the device,
+  the order of the scenes and the timing. The device changes shape between a
+  phone and a monitor rather than being swapped. A scene advances when its
+  chip's progress bar finishes, so pausing pauses both.
+- **A scene** (`scenes/Scene*.vue`) draws one feature happening, with a phone
+  layout and a computer layout sharing one timeline
+  ([useSceneTimeline.js](src/components/frontdoor/useSceneTimeline.js)).
+- **[ScaledScreen.vue](src/components/frontdoor/ScaledScreen.vue)** draws a
+  screen at one fixed size (272×544 for a phone, 524×320 for a monitor) and
+  scales it to fit, so type never reflows into a shape no device would show.
+  [AppWindow.vue](src/components/frontdoor/AppWindow.vue) is that plus the
+  app's sidebar and top bar; [FloatNote.vue](src/components/frontdoor/FloatNote.vue)
+  is a note beside the device.
+- **Everything on screen is sample data**, and every colour is a token, so the
+  platform's colour in the console carries the whole page — the light behind
+  the hero and the headline included.
+- **"Curious? Type your church's name."** sits under the hero's buttons. It
+  asks for nothing and sends nothing: it shows the address that name would
+  have, puts the name on the device in the tour, and hands it to the request
+  form if they take it up.
+- **Motion shows something happening.** Nothing idles: no breathing, no
+  bobbing, and no button that lifts or grows under the pointer. Every scene
+  also has a finished state for `prefers-reduced-motion`.
 
 ### Settings-style pages
 

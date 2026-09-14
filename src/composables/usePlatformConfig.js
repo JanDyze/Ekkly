@@ -21,7 +21,10 @@ export const initPlatformConfig = () => {
   })
 }
 
-const fallbackName = () => import.meta.env.VITE_PLATFORM_NAME || 'Church App'
+const fallbackName = () => import.meta.env.VITE_PLATFORM_NAME || 'Ekkly'
+
+/** Non-reactive, for code outside components (the spreadsheet exporters). */
+export const getPlatformTheme = () => stored.value?.theme || {}
 
 export function usePlatformConfig() {
   const branding = computed(() => withBrandingDefaults(stored.value?.branding, fallbackName()))

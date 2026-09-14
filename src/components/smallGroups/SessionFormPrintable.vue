@@ -292,7 +292,7 @@ const groupSchedule = computed(() => {
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  border-bottom: 2px solid #01779b;
+  border-bottom: 2px solid var(--color-primary);
   padding-bottom: 0.65rem;
 }
 .sg-logo {
@@ -306,7 +306,7 @@ const groupSchedule = computed(() => {
 .sg-church {
   font-weight: 700;
   font-size: 11.5px;
-  color: #01779b;
+  color: var(--color-primary);
 }
 .sg-branch {
   font-size: 9px;
@@ -345,7 +345,7 @@ const groupSchedule = computed(() => {
   font-weight: 800;
   letter-spacing: 0.11em;
   text-transform: uppercase;
-  color: #01779b;
+  color: var(--color-primary);
   margin-bottom: 0.6rem;
 }
 

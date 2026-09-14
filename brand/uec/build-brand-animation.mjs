@@ -1,7 +1,7 @@
 /**
  * Derives the brand animation's two web-ready cuts from the master GIF.
  *
- * The master (src/assets/UEC-animation.gif) is 640x640, 173 frames, 7.2s and
+ * The master (brand/uec/UEC-animation.gif) is 640x640, 173 frames, 7.2s and
  * 1.19 MB — a weight the landing page spent real effort getting away from, and
  * a length nothing in the app actually waits for. It also opens on a second of
  * black and fades back to black at the end, so neither end of it can be shown
@@ -42,9 +42,9 @@ import sharp from 'sharp'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const SRC = path.join(root, 'src/assets/UEC-animation.gif')
-const OUT = path.join(root, 'src/assets')
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
+const SRC = path.join(root, 'brand/uec/UEC-animation.gif')
+const OUT = path.join(root, 'brand/uec')
 
 // The master is square; 384 covers every place these are drawn (the largest is
 // ~192 CSS px) at 2x without paying for the other 256px of the original.

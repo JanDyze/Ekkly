@@ -27,7 +27,7 @@ messaging.onBackgroundMessage((payload) => {
   const data = payload.data || {};
   if (payload.notification) return; // SDK already displayed it
 
-  self.registration.showNotification(data.title || "Church", {
+  self.registration.showNotification(data.title || "Ekkly", {
     body: data.body || "",
     icon: "/icons/pwa-192x192.png",
     badge: "/icons/badge-96x96.png",

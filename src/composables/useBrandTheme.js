@@ -1,7 +1,17 @@
 import { watch } from 'vue'
-import { usePlatformConfig } from './usePlatformConfig'
-import { useAppSettings } from './useAppSettings'
+import { getPlatformTheme, usePlatformConfig } from './usePlatformConfig'
+import { getChurchTheme, useAppSettings } from './useAppSettings'
 import { resolveTheme } from '../../lib/platformDefaults.js'
+
+/** The colours in use right now, read once — for a spreadsheet being built. */
+export const currentTheme = () => resolveTheme(getPlatformTheme(), getChurchTheme())
+
+/**
+ * The light accent as a spreadsheet colour, `{ rgb: '1D64D8' }`. The exporters
+ * read it through getters on their style objects, so a workbook carries the
+ * church's colour at the moment it is exported, not the one the app loaded with.
+ */
+export const accentCell = () => ({ rgb: currentTheme().primary.slice(1).toUpperCase() })
 
 // The app's accent colour, chosen at run time.
 //

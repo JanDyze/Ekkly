@@ -2,10 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/uec-logo.png" />
+    <!-- Ekkly's mark until the church's own logo arrives (App.vue swaps it). -->
+    <link rel="icon" type="image/svg+xml" href="/ekkly-mark.svg" />
+    <link rel="alternate icon" type="image/png" href="/ekkly-mark.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#01779b" />
+    <meta name="theme-color" content="#1d64d8" />
 
     <!-- iOS reads none of the web app manifest before 16.4, and still ignores
          parts of it after: without these an "Add to Home Screen" icon opens a
@@ -20,7 +22,7 @@
          and the sign-in screen — do not, and would wear the clock. -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="UECPCOM" />
+    <meta name="apple-mobile-web-app-title" content="Ekkly" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
     <!-- One pixel typeface, for the discipleship stage names only. The
@@ -34,10 +36,59 @@
       href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <title>UEC Canubing II - Admin</title>
+    <!-- Ekkly's wordmark face, one weight (PlatformLogo.vue). -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap"
+      rel="stylesheet"
+    />
+    <title>Ekkly</title>
   </head>
   <body>
-    <div id="app"></div>
+    <!-- What shows while the app's code downloads: Ekkly's window lighting up
+         pane by pane. Vue replaces everything inside #app when it mounts, so
+         this disappears by itself the moment the app is ready. Plain SVG and
+         CSS, because nothing else has loaded yet. -->
+    <div id="app">
+      <div class="boot" aria-label="Loading" role="status">
+        <svg viewBox="10.5 9 90 90" class="boot-mark" aria-hidden="true">
+          <!-- The four panes of public/ekkly-mark.svg, one flat colour each. -->
+          <path class="boot-pane" fill="#fdc24b" d="M18.6 53Q18 52.6 18 51V46A34 34 0 0 1 48.5 12.2Q52 12 52 15.5V41C52 46.5 41 49.5 20 52.8Z" />
+          <path class="boot-pane" fill="#f19140" style="animation-delay: 0.12s" d="M92.4 53Q93 52.6 93 51V46A34 34 0 0 0 62.5 12.2Q59 12 59 15.5V41C59 46.5 70 49.5 91 52.8Z" />
+          <path class="boot-pane" fill="#09a4c6" style="animation-delay: 0.24s" d="M59.5 61Q59.5 56 65 54.8C70 53.5 80 53.8 88 56Q92.5 57.5 92.5 62V89Q92.5 96 86 96H63Q59.5 96 59.5 92.5Z" />
+          <path class="boot-pane" fill="#0270dc" style="animation-delay: 0.36s" d="M18 62Q18 57.5 22 56.3C30 53.5 40 53 45 54.5Q51 56 51 61V93Q51 96 48 96H24Q18 96 18 90Z" />
+        </svg>
+      </div>
+    </div>
+    <style>
+      .boot {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: #ffffff;
+      }
+      .boot-mark {
+        width: 84px;
+        height: 84px;
+      }
+      .boot-pane {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: boot-pane 2.4s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+      }
+      @keyframes boot-pane {
+        0% { opacity: 0.15; transform: scale(0.55); }
+        22% { opacity: 1; transform: scale(1.06); }
+        32%, 78% { opacity: 1; transform: scale(1); }
+        100% { opacity: 0.15; transform: scale(0.55); }
+      }
+      @media (prefers-color-scheme: dark) {
+        .boot { background: #111827; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-pane { animation: none; }
+      }
+    </style>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
