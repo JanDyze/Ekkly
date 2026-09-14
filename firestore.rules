@@ -90,6 +90,20 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // What the front door has seen: a count per day, and the church names
+    // visitors typed into it. Written only by /api/platform, which takes the
+    // signal from a visitor who has not signed in and may never — so the
+    // browser is refused here, whoever it belongs to.
+    match /frontDoorDays/{day} {
+      allow read: if isPlatformAdmin();
+      allow write: if false;
+    }
+
+    match /frontDoorTries/{tryId} {
+      allow read: if isPlatformAdmin();
+      allow write: if false;
+    }
+
     // sha256(token) -> church. Server only, always.
     match /mcpTokens/{hash} {
       allow read, write: if false;

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowLeft,
   Buildings,
+  ChartLine,
   ChatCircleDots,
   ChevronRight,
   ClockCounterClockwise,
@@ -26,6 +27,7 @@ import SectionCardSkeleton from '../components/common/SectionCardSkeleton.vue'
 import ChurchRequestsAdmin from '../components/platform/ChurchRequestsAdmin.vue'
 import ChurchesAdmin from '../components/platform/ChurchesAdmin.vue'
 import AppCatalogAdmin from '../components/platform/AppCatalogAdmin.vue'
+import FrontDoorAdmin from '../components/platform/FrontDoorAdmin.vue'
 import SupportRequestsAdmin from '../components/platform/SupportRequestsAdmin.vue'
 import NewChurchDefaultsAdmin from '../components/platform/NewChurchDefaultsAdmin.vue'
 import BrandingAdmin from '../components/platform/BrandingAdmin.vue'
@@ -107,6 +109,13 @@ const GROUPS = computed(() => [
         icon: Storefront,
         status: 'What each app costs a month',
         component: AppCatalogAdmin,
+      },
+      {
+        key: 'frontdoor',
+        label: 'Front door',
+        icon: ChartLine,
+        status: 'Who is looking, and which churches typed their name',
+        component: FrontDoorAdmin,
       },
       {
         key: 'support',

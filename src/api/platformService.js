@@ -127,6 +127,20 @@ export const callPlatform = async (action, body = {}) => {
  */
 export const reviewChurchRequest = (action, body) => callPlatform(action, body)
 
+/**
+ * One signal from the front door: a visit, a church name someone tried, or a
+ * call to action pressed. Sent only when the visitor has allowed it (see
+ * useFrontDoorConsent), and never awaited by anything the page draws — if it
+ * fails, the page carries on and nobody hears about it.
+ */
+export const sendFrontDoorSignal = (kind, fields = {}) =>
+  fetch('/api/platform', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'frontDoorSignal', kind, ...fields }),
+    keepalive: true,
+  }).catch(() => {})
+
 /* ------------------------------------------------- platform/public */
 
 /**

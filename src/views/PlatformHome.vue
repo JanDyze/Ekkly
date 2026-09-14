@@ -19,6 +19,7 @@ import {
 import GoogleSignInButton from '../components/auth/GoogleSignInButton.vue'
 import PlatformLogo from '../components/common/PlatformLogo.vue'
 import AnimatedMark from '../components/common/AnimatedMark.vue'
+import CookieBanner from '../components/frontdoor/CookieBanner.vue'
 import HeroStage from '../components/frontdoor/HeroStage.vue'
 import PlanBuilder from '../components/frontdoor/PlanBuilder.vue'
 import { appIcon } from '../components/frontdoor/appIcons'
@@ -27,9 +28,11 @@ import { useToast } from '../composables/useToast'
 import { usePlatformConfig } from '../composables/usePlatformConfig'
 import {
   isPlatformAdmin,
+  sendFrontDoorSignal,
   submitChurchRequest,
   subscribeToMyChurchRequests,
 } from '../api/platformService'
+import { useFrontDoorConsent } from '../composables/useFrontDoorConsent'
 import { churchOrigin, isValidChurchId, suggestChurchId } from '../../lib/churchId.js'
 import { canSwitchChurchHere, devChurchLink } from '../api/churchService'
 
@@ -110,12 +113,53 @@ const headline = computed(() => {
   return { text, lead: leadWords, glow, glowDelay: 120 + leadWords.length * 90 }
 })
 
-// "Curious? Type your church's name." Nothing is sent and nothing is claimed
-// about whether the address is free; it only shows what the address would be,
-// and hands the name to the request form if they want it.
+/* ------------------------------------------------------------- counting */
+
+// What the console is told about this page, and only with the visitor's
+// say-so: how many people looked, which church names they tried, and whether
+// they pressed a call to action. Nothing here is waited on — a signal that
+// fails changes nothing on the page.
+const { allowed, visitor } = useFrontDoorConsent()
+
+const signal = (kind, fields = {}) => {
+  if (!allowed.value) return
+  // The visitor's own date, so an evening here is not tomorrow in UTC.
+  const day = new Date().toLocaleDateString("en-CA")
+  sendFrontDoorSignal(kind, { visitor: visitor(), referrer: document.referrer, day, ...fields })
+}
+
+// One visit per page load, once they have agreed — which may be now, or may be
+// a previous visit's answer, so it waits for the answer rather than the load.
+const counted = ref(false)
+watch(
+  allowed,
+  (yes) => {
+    if (!yes || counted.value) return
+    counted.value = true
+    signal('visit')
+  },
+  { immediate: true }
+)
+
+// "Curious? Type your church's name." Nothing is claimed about whether the
+// address is free; it only shows what the address would be, and hands the name
+// to the request form if they want it.
+//
+// The name is kept once they stop typing, so the console sees "Grace Baptist
+// Church" rather than every letter on the way to it, and the same person
+// refining the same name is one row (lib/platform/frontDoor.js).
 const tryName = ref('')
 const trySlug = computed(() => suggestChurchId(tryName.value))
 const tryAddress = computed(() => `${trySlug.value}.${sampleDomain}`)
+
+const SETTLED = 1500
+let tryTimer = 0
+watch(tryName, (name) => {
+  clearTimeout(tryTimer)
+  if (name.trim().length < 3) return
+  tryTimer = setTimeout(() => signal('tried', { name: name.trim() }), SETTLED)
+})
+onUnmounted(() => clearTimeout(tryTimer))
 
 // A soft light follows the pointer across the hero. Only a mouse or trackpad
 // moves it; on a touch screen it rests where it starts.
@@ -199,6 +243,7 @@ const openFaq = ref(0)
 // Every call to action ends here: the sign-in, or the request form.
 const startSection = ref(null)
 const goToStart = async () => {
+  signal('start')
   await nextTick()
   startSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
@@ -207,6 +252,9 @@ const goTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'sm
 // Taking up the hero's offer: the name they tried fills the request form, and
 // the address follows it the way it would if they had typed it there.
 const startWithTriedName = () => {
+  // Their last keystroke may still be waiting; this is the moment it matters.
+  clearTimeout(tryTimer)
+  if (tryName.value.trim().length >= 3) signal('tried', { name: tryName.value.trim() })
   form.churchName = tryName.value.trim()
   addressEdited.value = false
   goToStart()
@@ -749,6 +797,8 @@ const input =
         </template>
       </div>
     </section>
+
+    <CookieBanner />
 
     <!-- ============================================================= footer -->
     <footer class="border-t border-gray-100 py-10 dark:border-gray-900">

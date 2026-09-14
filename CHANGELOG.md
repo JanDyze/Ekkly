@@ -11,6 +11,27 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.24.1] — 2026-09-15
+
+The front door starts counting, with the visitor's permission.
+
+### Added
+
+- **Console → Front door.** Visits, names tried and calls to action pressed
+  for the last 30 days, and the list of church names visitors typed into the
+  hero — each one a church that got as far as wondering what its address would
+  look like. The names are kept once the visitor stops typing, so a name is one
+  row and not one per keystroke.
+- **A question before any of that.** The front door asks before it counts
+  anything, says exactly what it keeps, and takes no for an answer: refuse and
+  nothing is ever sent. The answer is remembered on that device, along with a
+  random id that exists only so the same person typing the same name twice is
+  one row. Nothing follows anyone to another site.
+- `frontDoorDays` and `frontDoorTries`, written only by `/api/platform` — its
+  first action that anyone at all may call, and deliberately narrow: three
+  kinds of signal, short fields, and row ids worked out from what was sent
+  rather than a new document each time.
+
 ## [0.24.0] — 2026-09-15
 
 The app becomes Ekkly, and its front door becomes a demonstration. Until now

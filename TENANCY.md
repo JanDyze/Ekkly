@@ -41,6 +41,8 @@ Beside the churches sit a few platform collections:
 | `platform/private` | AI model per feature, new church defaults | the console |
 | `platformLog` | everything done from the console | `/api/platform` |
 | `supportRequests` | a church asking for an app, a change, or with feedback | `/api/platform` |
+| `frontDoorDays/{YYYY-MM-DD}` | how many visitors the front door had that day, how many typed a church name, how many pressed a call to action | `/api/platform` |
+| `frontDoorTries` | the church names visitors typed into the front door's "Curious? Type your church's name" | `/api/platform` |
 
 Inside each church, three more are written only by the platform:
 

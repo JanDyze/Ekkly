@@ -6,10 +6,13 @@
 // One file rather than one per job because api/ is at Vercel's function limit
 // for the plan; the work itself lives in lib/platform/, one module per subject.
 //
-// Two kinds of caller, checked before an action runs:
+// Three kinds of caller, checked before an action runs:
 //   PLATFORM_ACTIONS  somebody in platformAdmins (lib/tenant.js requirePlatformAdmin)
 //   CHURCH_ACTIONS    an administrator of the church the request names, via
 //                     the X-Church-Id header (requireChurchAdmin)
+//   PUBLIC_ACTIONS    anyone at all, signed in or not. Only the front door's
+//                     own counting is here, and it is written to be safe in
+//                     the open: see lib/platform/frontDoor.js.
 //
 // The Admin SDK is not bound by Firestore's rules, so those checks are the
 // rules here. Every change an action makes is written to platformLog.
@@ -29,6 +32,7 @@ import {
 } from "../lib/platform/support.js";
 import { readConfig, saveAi, saveBranding, saveCatalog, saveDefaults, saveTheme } from "../lib/platform/config.js";
 import { addDomain, domainStatus, removeDomain, setPrimaryDomain } from "../lib/platform/domains.js";
+import { frontDoorReport, recordFrontDoor } from "../lib/platform/frontDoor.js";
 
 // (admin, body) => result
 const PLATFORM_ACTIONS = {
@@ -61,11 +65,18 @@ const PLATFORM_ACTIONS = {
   saveCatalog,
   saveAi,
   saveDefaults,
+  // the front door
+  frontDoor: (_admin, body) => frontDoorReport(body),
   // who runs it
   listAdmins: () => listAdmins(),
   addAdmin,
   removeAdmin,
   activity: (_admin, body) => activity(body),
+};
+
+// (body) => result, for a visitor who has not signed in and may never.
+const PUBLIC_ACTIONS = {
+  frontDoorSignal: recordFrontDoor,
 };
 
 // (caller, body) => result, where caller carries the church
@@ -92,6 +103,10 @@ export default async function handler(req, res) {
   const { action, ...fields } = body;
 
   try {
+    if (Object.hasOwn(PUBLIC_ACTIONS, action)) {
+      return res.status(200).json(await PUBLIC_ACTIONS[action](fields));
+    }
+
     if (Object.hasOwn(PLATFORM_ACTIONS, action)) {
       const admin = await requirePlatformAdmin(req);
       if (admin.error) return res.status(admin.status).json({ error: admin.error });
