@@ -11,6 +11,19 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.25.3] — 2026-09-15
+
+The tour matches the rest of the front door.
+
+### Changed
+
+- **The tour's chips wear the app artwork** — Attendance, Song List, Schedules
+  & Presentation, Minutes and EKRIS, the Ekkly mark for your address, and a
+  little folder of apps for "and more" — and each plays its animation as its
+  scene comes on.
+- **Phone and computer are just icons** under the tour, with their names kept
+  for screen readers and as a tooltip.
+
 ## [0.25.2] — 2026-09-15
 
 The front door's app icons move.

@@ -114,7 +114,10 @@ ending on what the tour left out. It lives in
 - **[HeroStage.vue](src/components/frontdoor/HeroStage.vue)** owns the device,
   the order of the scenes and the timing. The device changes shape between a
   phone and a monitor rather than being swapped. A scene advances when its
-  chip's progress bar finishes, so pausing pauses both.
+  chip's progress bar finishes, so pausing pauses both. Each chip wears the
+  animated artwork of the app its scene shows (the mark for the address, a
+  folder of four for "and more"), and plays it as its scene comes on; the
+  phone/computer switch is icons only, with the names kept as labels.
 - **A scene** (`scenes/Scene*.vue`) draws one feature happening, with a phone
   layout and a computer layout sharing one timeline
   ([useSceneTimeline.js](src/components/frontdoor/useSceneTimeline.js)).
