@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="o" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB21E"/><stop offset=".5" stop-color="#FF7417"/><stop offset="1" stop-color="#EC4319"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D9DFF"/><stop offset=".55" stop-color="#1467E8"/><stop offset="1" stop-color="#0A4FC4"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BD4C0"/><stop offset="1" stop-color="#0B93AB"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <path d="M12 40a20 20 0 0 1 40 0" fill="none" stroke="url(#b)" stroke-width="3.5" stroke-linecap="round"/>
+  <rect x="7" y="34" width="9" height="15" rx="4.5" fill="url(#o)"/>
+  <rect x="48" y="34" width="9" height="15" rx="4.5" fill="url(#o)"/>
+  <rect x="13" y="24" width="38" height="33" rx="16.5" fill="#fff" stroke="#C9D8EE" stroke-width="1.8"/>
+  <rect x="18" y="31" width="28" height="19" rx="9.5" fill="#0B2A6B"/>
+  <ellipse class="a-blink" cx="26.5" cy="40.5" rx="3.2" ry="4.2" fill="#3D9DFF"/>
+  <ellipse class="a-blink" cx="37.5" cy="40.5" rx="3.2" ry="4.2" fill="#3D9DFF"/>
+  <path d="M11.5 48.5c0 6.5 3.8 10 10 10h3" fill="none" stroke="url(#o)" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="25.5" cy="58.5" r="2.4" fill="#EC4319"/>
+  <g class="a-bubble">
+    <path d="M40 4h18a5 5 0 0 1 5 5v8a5 5 0 0 1-5 5h-9l-6 5v-5h-3a5 5 0 0 1-5-5V9a5 5 0 0 1 5-5z" fill="#fff" stroke="#1467E8" stroke-width="1.6"/>
+    <circle class="a-dot" style="--i:0" cx="44.5" cy="13" r="1.9" fill="#0B2A6B"/>
+    <circle class="a-dot" style="--i:1" cx="50" cy="13" r="1.9" fill="#0B2A6B"/>
+    <circle class="a-dot" style="--i:2" cx="55.5" cy="13" r="1.9" fill="#0B2A6B"/>
+  </g>
+</svg>

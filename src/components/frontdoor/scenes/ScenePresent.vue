@@ -5,6 +5,7 @@ import FloatNote from '../FloatNote.vue'
 import ScaledScreen from '../ScaledScreen.vue'
 import SlideView from '../SlideView.vue'
 import { useSceneTimeline } from '../useSceneTimeline'
+import { CAMP, SUNDAY } from '../sceneDates'
 
 // Scene: Present. The run sheet for Sunday lists a song, a reading and the
 // announcements deck; the operator steps through them, and whatever is live is
@@ -35,7 +36,7 @@ const SLIDES = [
     lines: ['The LORD is my shepherd; I shall not want.', 'He maketh me to lie down in green pastures.'],
     reference: 'Psalm 23:1–2',
   },
-  { id: 's4', item: 2, kind: 'deck', title: 'Youth camp', lines: ['14–16 November', 'Sign up at the welcome desk'] },
+  { id: 's4', item: 2, kind: 'deck', title: 'Youth camp', lines: [CAMP, 'Sign up at the welcome desk'] },
 ]
 
 const live = ref(-1)
@@ -65,7 +66,7 @@ const thumbClass = (s, i) => [
         <div class="fd-rise flex items-center justify-between">
           <div>
             <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Present</p>
-            <p class="text-sm font-bold text-gray-900 dark:text-white">Sunday 21 September</p>
+            <p class="text-sm font-bold text-gray-900 dark:text-white">Sunday {{ SUNDAY }}</p>
           </div>
           <span class="flex h-6 items-center gap-1.5 rounded-md bg-red-50 px-2 text-[10px] font-bold text-red-600 dark:bg-red-500/10 dark:text-red-400">
             <span class="h-1.5 w-1.5 rounded-full bg-current"></span> Live
@@ -102,7 +103,7 @@ const thumbClass = (s, i) => [
       <div class="flex h-10 items-center gap-2 border-b border-gray-100 px-3 dark:border-gray-800">
         <ProjectorScreen class="h-4 w-4 text-primary dark:text-primary-light" />
         <span class="text-[13px] font-bold text-gray-900 dark:text-white">Present</span>
-        <span class="text-[11px] text-gray-400">Sunday 21 September</span>
+        <span class="text-[11px] text-gray-400">Sunday {{ SUNDAY }}</span>
         <span class="ml-auto flex h-6 items-center gap-1 rounded-md bg-gray-100 px-2 text-[10px] font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
           <EyeSlash class="h-3 w-3" /> Blank
         </span>

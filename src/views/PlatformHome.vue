@@ -1,93 +1,52 @@
 <script setup>
-import { computed, nextTick, onUnmounted, reactive, ref, watch } from 'vue'
-import {
-  ArrowRight,
-  CheckCircle2,
-  ChevronDown,
-  Clock,
-  ExternalLink,
-  Loader2,
-  LogOut,
-  Send,
-  ShieldCheck,
-  HandPointing,
-  HandWaving,
-  X,
-} from '../icons'
-import GoogleSignInButton from '../components/auth/GoogleSignInButton.vue'
-import PlatformLogo from '../components/common/PlatformLogo.vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ArrowRight, CheckCircle2, Clock, HandPointing, HandWaving } from '../icons'
 import AnimatedMark from '../components/common/AnimatedMark.vue'
 import CookieBanner from '../components/frontdoor/CookieBanner.vue'
 import ChatBubble from '../components/frontdoor/ChatBubble.vue'
 import WelcomeSheet from '../components/frontdoor/WelcomeSheet.vue'
 import HeroStage from '../components/frontdoor/HeroStage.vue'
-import PlanBuilder from '../components/frontdoor/PlanBuilder.vue'
 import AppsInside from '../components/frontdoor/AppsInside.vue'
+import AppArt from '../components/frontdoor/AppArt.vue'
+import FrontDoorHeader from '../components/frontdoor/FrontDoorHeader.vue'
+import FrontDoorFooter from '../components/frontdoor/FrontDoorFooter.vue'
+import FrontDoorFaq from '../components/frontdoor/FrontDoorFaq.vue'
+import { FAQS, HOME_FAQS } from '../components/frontdoor/faqs'
+import { TYPE } from '../components/frontdoor/type'
 import { initAuth, useAuth } from '../composables/useAuth'
-import { useToast } from '../composables/useToast'
 import { usePlatformConfig } from '../composables/usePlatformConfig'
-import {
-  isPlatformAdmin,
-  sendFrontDoorSignal,
-  submitChurchRequest,
-  subscribeToMyChurchRequests,
-} from '../api/platformService'
 import { useFrontDoorConsent } from '../composables/useFrontDoorConsent'
-import { churchOrigin, isValidChurchId, suggestChurchId } from '../../lib/churchId.js'
-import { canSwitchChurchHere, devChurchLink } from '../api/churchService'
+import { planFrom, useFrontDoor } from '../composables/useFrontDoor'
+import { suggestChurchId } from '../../lib/churchId.js'
+import { formatMoney } from '../utils/moneyUtils'
 import { vScrollLight } from '../components/frontdoor/scrollLight'
 
 // The platform's front door: church.app itself, and app.church.app.
 //
-// Two jobs, in this order. First it sells: a visitor who has never heard of
-// Ekkly should come away knowing what it does for a church, what it costs, and
-// that starting is one button away — so the page opens on a hero with the app
-// in a phone, walks through what is inside, lets them build a plan, and
-// answers the questions they would otherwise have to ask. Then it signs them
-// up: every call to action lands on the last section, where they sign in and
-// ask for their church, and see what became of that request.
-//
-// The platform's administrators approve requests on /platform; approving one
-// is what creates the church, makes this person its first administrator and
-// opens its address.
+// It sells: a visitor who has never heard of Ekkly should come away knowing
+// what it does for a church, roughly what it costs, and that starting is one
+// button away — so the page opens on a hero with the app in a phone, walks
+// through what is inside and how a church gets started, says a word about
+// price, and answers the first questions they would ask. The detail has pages
+// of its own: Pricing builds the plan, and Get started is where every call to
+// action lands, to sign in and ask for a church.
 
-const toast = useToast()
-const { user, isAuthenticated, displayName, email, logout } = useAuth()
+const route = useRoute()
+const router = useRouter()
+const { isAuthenticated } = useAuth()
 
 // The name and the words come from the console (Name & front door), falling
 // back to VITE_PLATFORM_NAME and the wording the app shipped with. The app
 // prices come from Apps & prices.
 const { branding, catalog } = usePlatformConfig()
 const rootDomain = import.meta.env.VITE_ROOT_DOMAIN || ''
+const { picks, addPick, namedChurch, signal } = useFrontDoor()
 
 const ready = ref(false)
-const requests = ref([])
-const admin = ref(false)
-let unsubscribe = null
-
 initAuth().then(() => {
   ready.value = true
 })
-
-watch(
-  [ready, () => user.value?.uid],
-  async ([isReady, uid]) => {
-    unsubscribe?.()
-    unsubscribe = null
-    requests.value = []
-    admin.value = false
-    if (!isReady || !uid) return
-    unsubscribe = subscribeToMyChurchRequests(uid, (list) => {
-      requests.value = list
-    })
-    admin.value = await isPlatformAdmin(uid)
-  },
-  { immediate: true }
-)
-
-onUnmounted(() => unsubscribe?.())
-
-const hasPending = computed(() => requests.value.some((r) => r.status === 'pending'))
 
 /* ------------------------------------------------------------ the story */
 
@@ -115,20 +74,10 @@ const headline = computed(() => {
 
 /* ------------------------------------------------------------- counting */
 
-// What the console is told about this page, and only with the visitor's
-// say-so: how many people looked, and whether they pressed a call to action. Nothing here is waited on — a signal that
-// fails changes nothing on the page.
+// One visit per page load, once they have agreed to be counted — which may be
+// now, or may be a previous visit's answer, so it waits for the answer rather
+// than the load.
 const { allowed, answered } = useFrontDoorConsent()
-
-const signal = (kind) => {
-  if (!allowed.value) return
-  // The visitor's own date, so an evening here is not tomorrow in UTC.
-  const day = new Date().toLocaleDateString("en-CA")
-  sendFrontDoorSignal(kind, { day })
-}
-
-// One visit per page load, once they have agreed — which may be now, or may be
-// a previous visit's answer, so it waits for the answer rather than the load.
 const counted = ref(false)
 watch(
   allowed,
@@ -146,10 +95,6 @@ const showTagline = computed(
   () => !!branding.value.tagline?.trim() && !sameWords(branding.value.tagline, branding.value.frontDoor.headline)
 )
 
-// The church a visitor named in the welcome. It goes on the phone in the hero
-// and into "How it works", so the page shows their church rather than a sample.
-const namedChurch = ref('')
-
 // A soft light follows the pointer across the hero. Only a mouse or trackpad
 // moves it; on a touch screen it rests where it starts.
 const hero = ref(null)
@@ -166,53 +111,29 @@ const moveSpotlight = (event) => {
 }
 onUnmounted(() => cancelAnimationFrame(spotFrame))
 
-// One type scale for every section's heading — the small label above it, the
-// title, and the line under it — so no section reads louder or quieter than
-// the next. Colour is left to each section, since some sit on a dark band.
-const TYPE = {
-  eyebrow: 'text-sm font-bold uppercase tracking-wider',
-  title: 'text-balance text-3xl font-black tracking-tight sm:text-4xl',
-  lead: 'text-lg leading-relaxed',
-}
-
 const STEPS = [
-  { title: 'Ask for your church', body: 'Sign in with Google and tell us your church’s name and the address you would like. It takes two minutes.' },
+  { title: 'Ask for your church', body: 'Sign in with Google and tell us your church’s name and the link you would like. It takes two minutes.' },
   { title: 'We set it up', body: 'We look it over and open your church. You become its first administrator, with everything ready to fill in.' },
-  { title: 'Bring your people in', body: 'Share your address. Members sign in and ask to join, and you let them in with one tap.' },
+  { title: 'Bring your people in', body: 'Share your church’s link. Members sign in and ask to join, and you let them in with one tap.' },
 ]
 
-const FAQS = [
-  {
-    q: 'Is our church’s information private?',
-    a: 'Yes. Each church’s records are kept apart, and only people your administrators let in can open them. Contact numbers and addresses stay inside your church.',
-  },
-  {
-    q: 'Can we start small?',
-    a: 'That is how most churches start. Turn on the apps you need today and add more from Settings whenever you are ready. Turning one off never deletes anything.',
-  },
-  {
-    q: 'Do our members need to install anything?',
-    a: 'No. It opens in any phone’s browser, and anyone who wants the app on their home screen can add it in a tap.',
-  },
-  {
-    q: 'How do we pay?',
-    a: 'The first month is free. After that, by card for the apps your church uses: monthly, or yearly for the price of ten months. It renews on its own, and you can stop any time.',
-  },
-  {
-    q: 'What if we need something the apps do not do?',
-    a: 'Ask. Every church can send a request for a new app, a change, or feedback from its own Settings, and we answer there.',
-  },
-]
-const openFaq = ref(0)
+const faqs = FAQS.slice(0, HOME_FAQS)
 
-// Every call to action ends here: the sign-in, or the request form.
-const startSection = ref(null)
-const goToStart = async () => {
+// Every call to action goes to Get started.
+const goToStart = () => {
   signal('start')
-  await nextTick()
-  startSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  router.push('/start')
 }
 const goTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+// Arriving from another page's link to a section ("/#features"): go to it once
+// the page has drawn, then take the hash off, so a reload starts at the top.
+onMounted(async () => {
+  if (!route.hash) return
+  await nextTick()
+  document.getElementById(route.hash.slice(1))?.scrollIntoView({ block: 'start' })
+  router.replace({ hash: '' })
+})
 
 // The welcome, once per visitor and never for someone signed in: which church
 // are they with, and may someone reach out? The cookie question waits until it
@@ -241,20 +162,29 @@ const closeWelcome = () => {
   welcomeAgain.value = false
 }
 
-// The church named in the welcome goes on the hero's phone, and into the
-// request form should they go on to ask.
+// The church named in the welcome goes on the hero's phone, into "How it
+// works", and into the request form on Get started.
 const welcomeChurch = (name) => {
   namedChurch.value = name
-  form.churchName = name
 }
 
-// "Add to my plan" on an app in What's inside: it is ticked in the plan
-// builder, and the page goes there so they see it join the total.
-const planBuilder = ref(null)
-const addToPlan = (key) => {
-  planBuilder.value?.add(key)
-  goTo('plan')
-}
+// "Add to my plan" on an app in What's inside adds it to the plan the front
+// door keeps (useFrontDoor) and leaves the reader where they are; "See my
+// plan" goes to Pricing, where it is already ticked.
+const viewPlan = () => router.push('/pricing')
+
+/* ------------------------------------------------------------- pricing */
+
+// A word about price, and the plan so far. The whole builder is on Pricing.
+const peso = (centavos) => formatMoney(centavos).replace(/\.00$/, '')
+const plan = computed(() => planFrom(catalog.value, picks.value))
+const priceLine = computed(() => {
+  const prices = offeredApps.value.map((app) => app.price || 0).filter((price) => price > 0)
+  if (!prices.length) return 'Priced for your church.'
+  const low = Math.min(...prices)
+  return low === Math.max(...prices) ? `${peso(low)} an app, a month.` : `From ${peso(low)} an app, a month.`
+})
+const PRICE_WINS = ['First month free', 'Monthly, or a year for the price of ten', 'Add or drop apps any month']
 
 // Scrolling down the page is a room catching the light, not sections fading up
 // (see scrollLight.js). Headings are lit as a band of the window's colours
@@ -287,119 +217,13 @@ const JOINED = 24
 const joined = computed(() => Math.round(stepProgress(2) * JOINED))
 const JOINER_INITIALS = ['AM', 'JR', 'LC', 'PD', 'RS', 'MV']
 
-const year = new Date().getFullYear()
-
-/* ------------------------------------------------------------------ form */
-
-const form = reactive({
-  churchName: '',
-  churchId: '',
-  location: '',
-  size: '',
-  contactNumber: '',
-  message: '',
-})
-
-// The address follows the name until somebody edits it themselves.
-const addressEdited = ref(false)
-watch(
-  () => form.churchName,
-  (name) => {
-    if (!addressEdited.value) form.churchId = suggestChurchId(name)
-  }
-)
-
-const onAddressInput = (event) => {
-  addressEdited.value = true
-  form.churchId = event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')
-}
-
-const addressValid = computed(() => !form.churchId || isValidChurchId(form.churchId))
-const addressPreview = computed(() =>
-  rootDomain ? `${form.churchId || 'your-church'}.${rootDomain}` : form.churchId || 'your-church'
-)
-
-const SIZES = ['Under 50', '50–150', '150–500', 'Over 500']
-
-const sending = ref(false)
-const error = ref('')
-
-const submit = async () => {
-  error.value = ''
-  if (!form.churchName.trim()) {
-    error.value = 'Give your church a name.'
-    return
-  }
-  if (!addressValid.value) {
-    error.value = 'The address can only use lowercase letters, numbers and single hyphens, 3 to 40 long.'
-    return
-  }
-  sending.value = true
-  try {
-    await submitChurchRequest(user.value, form)
-    toast.success('Request sent')
-    Object.assign(form, { churchName: '', churchId: '', location: '', size: '', contactNumber: '', message: '' })
-    addressEdited.value = false
-  } catch (e) {
-    console.error('Error requesting a church:', e)
-    error.value = e.message || 'Could not send your request.'
-  } finally {
-    sending.value = false
-  }
-}
-
-// On localhost there is no domain to give a church an address under, so the
-// link opens it on this same address instead (see devChurchOverride).
-const addressOf = (request) =>
-  rootDomain
-    ? churchOrigin(request.churchId, { rootDomain })
-    : canSwitchChurchHere() && request.churchId
-      ? devChurchLink(request.churchId)
-      : ''
-const addressLabel = (request) => addressOf(request).replace(/^https:\/\//, '').replace(/^\/\?church=/, 'localhost ▸ ')
-
-const formatDate = (date) =>
-  date ? date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''
-
-const input =
-  'mt-1 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-primary focus:ring-1 focus:ring-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white'
 </script>
 
 <template>
   <div class="min-h-dvh overflow-x-clip bg-white text-gray-900 dark:bg-gray-950 dark:text-white">
     <!-- overflow-x-clip, not hidden: hidden makes this a scroll container, and
          the sticky header would then scroll away with the page. -->
-    <!-- ================================================================ nav -->
-    <header class="sticky top-0 z-40 border-b border-gray-200/70 bg-white/80 backdrop-blur-lg dark:border-gray-800 dark:bg-gray-950/80">
-      <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
-        <a href="#top" @click.prevent="goTo('top')" class="min-w-0">
-          <PlatformLogo mark-class="h-8 w-8" text-class="text-2xl" />
-        </a>
-        <nav class="ml-6 hidden items-center gap-6 text-sm font-medium text-gray-600 md:flex dark:text-gray-300">
-          <button type="button" @click="goTo('features')" class="hover:text-gray-900 dark:hover:text-white">What’s inside</button>
-          <button type="button" @click="goTo('how')" class="hover:text-gray-900 dark:hover:text-white">How it works</button>
-          <button type="button" @click="goTo('plan')" class="hover:text-gray-900 dark:hover:text-white">Pricing</button>
-          <button type="button" @click="goTo('faq')" class="hover:text-gray-900 dark:hover:text-white">Questions</button>
-        </nav>
-        <div class="ml-auto flex items-center gap-2">
-          <RouterLink
-            v-if="admin"
-            to="/platform"
-            class="hidden h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-gray-600 hover:bg-gray-100 sm:inline-flex dark:text-gray-300 dark:hover:bg-gray-800"
-          >
-            <ShieldCheck class="h-4 w-4" />
-            Console
-          </RouterLink>
-          <button
-            type="button"
-            @click="goToStart"
-            class="inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm shadow-primary/30 transition-colors hover:bg-primary-hover"
-          >
-            {{ isAuthenticated ? 'Your church' : 'Get started' }}
-          </button>
-        </div>
-      </div>
-    </header>
+    <FrontDoorHeader />
 
     <!-- =============================================================== hero -->
     <section id="top" ref="hero" class="hero relative isolate" @pointermove="moveSpotlight">
@@ -460,7 +284,7 @@ const input =
           </div>
           <p class="hero-in mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-gray-500 lg:justify-start dark:text-gray-400" :style="{ animationDelay: `${headline.glowDelay + 450}ms` }">
             <span class="inline-flex items-center gap-1.5"><CheckCircle2 class="h-4 w-4 text-emerald-500" /> First month free</span>
-            <span class="inline-flex items-center gap-1.5"><CheckCircle2 class="h-4 w-4 text-emerald-500" /> Your church’s own web address</span>
+            <span class="inline-flex items-center gap-1.5"><CheckCircle2 class="h-4 w-4 text-emerald-500" /> Your church’s own link</span>
             <span class="inline-flex items-center gap-1.5"><CheckCircle2 class="h-4 w-4 text-emerald-500" /> Pay only for the apps you turn on</span>
           </p>
 
@@ -494,10 +318,9 @@ const input =
       class="scroll-mt-20 border-t border-gray-100 bg-gray-50/60 py-16 dark:border-gray-900 dark:bg-gray-900/40 lg:flex lg:min-h-[calc(100dvh-4.25rem)] lg:scroll-mt-17 lg:flex-col lg:justify-center lg:py-[clamp(0.75rem,3dvh,3rem)]"
     >
       <div class="mx-auto w-full max-w-6xl px-4 sm:px-6">
-        <!-- One card for each part of church life, whose apps light up as the
-             cards rise into view. Opening an app shows everything it does, and
-             its button carries it into the plan builder further down. -->
-        <AppsInside :apps="offeredApps" @plan="addToPlan">
+        <!-- Every app, lighting up as it comes into view. Opening one shows
+             everything it does, and its button adds it to the plan. -->
+        <AppsInside :apps="offeredApps" :planned="picks" @plan="addPick" @view-plan="viewPlan">
           <template #heading>
             <div class="mx-auto max-w-2xl text-center lg:mx-0 lg:flex lg:max-w-none lg:items-end lg:justify-between lg:gap-12 lg:text-left">
               <div class="lg:max-w-xl">
@@ -601,19 +424,46 @@ const input =
       </div>
     </section>
 
-    <!-- ========================================================= your plan -->
+    <!-- ============================================================ pricing -->
+    <!-- A word about price and the plan so far; building it is Pricing's. -->
     <section id="plan" class="scroll-mt-20 py-20 lg:py-28">
-      <div class="mx-auto max-w-6xl px-4 sm:px-6">
-        <div class="mx-auto max-w-2xl text-center">
+      <div class="mx-auto grid max-w-6xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_22rem] lg:gap-16">
+        <div class="text-center lg:text-left">
           <p :class="[TYPE.eyebrow, 'text-primary dark:text-primary-light']">Pricing</p>
-          <h2 v-scroll-light="HEADING_LIGHT" :class="['lit-heading mt-3', TYPE.title]">Build the plan your church needs</h2>
-          <p :class="['mt-4 text-gray-600 dark:text-gray-300', TYPE.lead]">
-            Tap the apps you would use. Your first month is free.
+          <h2 v-scroll-light="HEADING_LIGHT" :class="['lit-heading mt-3', TYPE.title]">Pay only for the apps you use</h2>
+          <p :class="['mt-4 text-gray-600 dark:text-gray-300', TYPE.lead]">{{ priceLine }} Turn on what your church needs.</p>
+          <ul class="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-gray-600 lg:justify-start dark:text-gray-300">
+            <li v-for="win in PRICE_WINS" :key="win" class="inline-flex items-center gap-1.5">
+              <CheckCircle2 class="h-4 w-4 text-emerald-500" />
+              {{ win }}
+            </li>
+          </ul>
+          <RouterLink
+            to="/pricing"
+            class="group mt-8 inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-colors hover:bg-primary-hover"
+          >
+            Build your plan
+            <ArrowRight class="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </RouterLink>
+        </div>
+
+        <!-- The plan so far: the starter apps, and whatever was added above. -->
+        <aside class="rounded-3xl bg-gray-900 p-6 text-white shadow-2xl dark:bg-gray-800">
+          <p class="text-xs font-semibold uppercase tracking-wider text-white/60">Your plan so far</p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <AppArt v-for="app in plan.apps" :key="app.key" :app-key="app.key" :title="app.name" class="h-10 w-10" />
+          </div>
+          <p v-if="plan.total" class="mt-5 flex items-baseline gap-1">
+            <span class="text-3xl font-black tabular-nums">{{ peso(plan.total) }}</span>
+            <span class="text-sm text-white/60">/ month</span>
           </p>
-        </div>
-        <div class="mt-12">
-          <PlanBuilder ref="planBuilder" :catalog="catalog" @start="goToStart" />
-        </div>
+          <p class="mt-1 text-sm text-white/70">
+            {{ plan.apps.length }} {{ plan.apps.length === 1 ? 'app' : 'apps' }}. Your first month is free.
+          </p>
+          <RouterLink to="/pricing" class="mt-5 inline-flex text-sm font-semibold text-white underline-offset-4 hover:underline">
+            Change it
+          </RouterLink>
+        </aside>
       </div>
     </section>
 
@@ -624,24 +474,11 @@ const input =
           <p :class="[TYPE.eyebrow, 'text-primary dark:text-primary-light']">Questions</p>
           <h2 v-scroll-light="HEADING_LIGHT" :class="['lit-heading mt-3', TYPE.title]">Questions churches ask</h2>
         </div>
-        <ul class="mt-10 space-y-3">
-          <li v-for="(item, index) in FAQS" :key="item.q" class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-            <button
-              type="button"
-              @click="openFaq = openFaq === index ? -1 : index"
-              :aria-expanded="openFaq === index"
-              class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
-            >
-              <span class="text-base font-semibold">{{ item.q }}</span>
-              <ChevronDown :class="['h-5 w-5 shrink-0 text-gray-400 transition-transform duration-300', openFaq === index ? 'rotate-180' : '']" />
-            </button>
-            <div class="faq-answer grid transition-all duration-300" :class="openFaq === index ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'">
-              <p class="overflow-hidden px-5 text-sm leading-relaxed text-gray-600 dark:text-gray-400" :class="openFaq === index ? 'pb-5' : ''">
-                {{ item.a }}
-              </p>
-            </div>
-          </li>
-        </ul>
+        <FrontDoorFaq :items="faqs" class="mt-10" />
+        <p class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+          More about paying on
+          <RouterLink to="/pricing" class="font-semibold text-primary underline-offset-4 hover:underline dark:text-primary-light">Pricing</RouterLink>
+        </p>
       </div>
     </section>
 
@@ -674,198 +511,12 @@ const input =
       </div>
     </section>
 
-    <!-- ==================================================== sign up / status -->
-    <section id="start" ref="startSection" class="scroll-mt-20 pb-24">
-      <div class="mx-auto max-w-2xl px-4 sm:px-6">
-        <!-- Restoring the session: the card's shape, not a spinner. -->
-        <div v-if="!ready" class="animate-pulse space-y-3 rounded-3xl border border-gray-200 p-6 dark:border-gray-800" aria-busy="true">
-          <div class="h-6 w-48 rounded bg-gray-200 dark:bg-gray-800"></div>
-          <div class="h-4 w-full rounded bg-gray-100 dark:bg-gray-800/60"></div>
-          <div class="h-4 w-2/3 rounded bg-gray-100 dark:bg-gray-800/60"></div>
-          <div class="h-12 w-full rounded-xl bg-gray-200 dark:bg-gray-800"></div>
-        </div>
-
-        <!-- Signed out -->
-        <div
-          v-else-if="!isAuthenticated"
-          class="rounded-3xl bg-gray-900 p-6 text-white shadow-xl sm:p-8 dark:ring-1 dark:ring-gray-800"
-        >
-          <h2 class="text-2xl font-black tracking-tight">Ask for your church</h2>
-          <p class="mt-2 text-sm leading-relaxed text-white/70">
-            Sign in with the Google account you will run the church with. You become its first administrator once
-            the request is approved.
-          </p>
-          <p v-if="error" role="alert" class="mt-4 rounded-xl bg-red-950/60 px-4 py-3 text-xs font-semibold text-red-200">
-            {{ error }}
-          </p>
-          <div class="mt-6">
-            <GoogleSignInButton @error="error = $event" />
-          </div>
-        </div>
-
-        <template v-else>
-          <!-- Their requests -->
-          <div v-if="requests.length" class="mb-8">
-            <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Your requests</h2>
-            <ul class="mt-3 space-y-2">
-              <li
-                v-for="request in requests"
-                :key="request.id"
-                class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
-              >
-                <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0">
-                    <p class="truncate text-sm font-semibold text-gray-900 dark:text-white">{{ request.churchName }}</p>
-                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Asked {{ formatDate(request.createdAt) }}</p>
-                  </div>
-                  <span
-                    v-if="request.status === 'approved'"
-                    class="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
-                  >
-                    <CheckCircle2 class="h-3.5 w-3.5" /> Approved
-                  </span>
-                  <span
-                    v-else-if="request.status === 'declined'"
-                    class="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-600 dark:bg-red-500/15 dark:text-red-400"
-                  >
-                    <X class="h-3.5 w-3.5" /> Declined
-                  </span>
-                  <span
-                    v-else
-                    class="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
-                  >
-                    <Clock class="h-3.5 w-3.5" /> Waiting
-                  </span>
-                </div>
-                <a
-                  v-if="request.status === 'approved' && addressOf(request)"
-                  :href="addressOf(request)"
-                  class="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary dark:text-primary-light"
-                >
-                  Open {{ addressLabel(request) }}
-                  <ExternalLink class="h-3.5 w-3.5" />
-                </a>
-                <p v-if="request.status === 'declined' && request.note" class="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                  &ldquo;{{ request.note }}&rdquo;
-                </p>
-              </li>
-            </ul>
-          </div>
-
-          <!-- The form -->
-          <div
-            v-if="!hasPending"
-            class="rounded-3xl border border-gray-200 bg-white p-6 shadow-xl shadow-gray-900/5 sm:p-8 dark:border-gray-800 dark:bg-gray-900"
-          >
-            <h2 class="text-2xl font-black tracking-tight">Ask for your church</h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              We will look it over and let you know. You become its first administrator.
-            </p>
-
-            <form class="mt-6 space-y-4" @submit.prevent="submit">
-              <div>
-                <label for="church-name" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Church name</label>
-                <input id="church-name" v-model="form.churchName" type="text" maxlength="120" required :class="input" />
-              </div>
-
-              <div>
-                <label for="church-address" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Address you would like</label>
-                <input
-                  id="church-address"
-                  :value="form.churchId"
-                  type="text"
-                  maxlength="40"
-                  inputmode="url"
-                  autocapitalize="off"
-                  spellcheck="false"
-                  :class="[input, 'font-mono', addressValid ? '' : 'border-red-400 focus:border-red-500 focus:ring-red-500']"
-                  @input="onAddressInput"
-                />
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Your church will be at <span class="font-mono font-semibold">{{ addressPreview }}</span>
-                </p>
-              </div>
-
-              <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label for="church-location" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Location</label>
-                  <input id="church-location" v-model="form.location" type="text" maxlength="160" placeholder="City, province" :class="input" />
-                </div>
-                <div>
-                  <label for="church-size" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Congregation size</label>
-                  <select id="church-size" v-model="form.size" :class="input">
-                    <option value="">Choose one</option>
-                    <option v-for="size in SIZES" :key="size" :value="size">{{ size }}</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label for="church-contact" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Contact number</label>
-                <input id="church-contact" v-model="form.contactNumber" type="tel" maxlength="40" :class="input" />
-              </div>
-
-              <div>
-                <label for="church-message" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Anything we should know</label>
-                <textarea
-                  id="church-message"
-                  v-model="form.message"
-                  rows="3"
-                  maxlength="1000"
-                  placeholder="The apps you are most interested in, how many people use it, when you would like to start"
-                  :class="[input, 'h-auto resize-none py-2.5']"
-                ></textarea>
-              </div>
-
-              <p v-if="error" role="alert" class="rounded-xl bg-red-50 px-4 py-3 text-xs font-semibold text-red-600 dark:bg-red-500/10 dark:text-red-400">
-                {{ error }}
-              </p>
-
-              <button
-                type="submit"
-                :disabled="sending"
-                class="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
-              >
-                <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
-                <Send v-else class="h-4 w-4" />
-                Send request
-              </button>
-            </form>
-          </div>
-
-          <div class="mt-6 flex items-center justify-between gap-3 text-xs text-gray-500 dark:text-gray-400">
-            <span class="min-w-0 truncate">{{ displayName }}<template v-if="email"> &middot; {{ email }}</template></span>
-            <button
-              type="button"
-              class="inline-flex shrink-0 items-center gap-1 font-semibold hover:text-gray-900 dark:hover:text-white"
-              @click="logout"
-            >
-              <LogOut class="h-3.5 w-3.5" />
-              Sign out
-            </button>
-          </div>
-        </template>
-      </div>
-    </section>
-
     <WelcomeSheet v-if="showWelcome" :domain="sampleDomain" :delay="welcomeAgain ? 0 : 1400" @done="closeWelcome" @church="welcomeChurch" />
     <CookieBanner v-if="welcomeDone" />
     <!-- After the cookie question, which sits in the same corner of a phone. -->
     <ChatBubble v-if="answered" />
 
-    <!-- ============================================================= footer -->
-    <footer class="border-t border-gray-100 py-10 dark:border-gray-900">
-      <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 text-sm text-gray-500 sm:flex-row sm:px-6 dark:text-gray-400">
-        <PlatformLogo mark-class="h-6 w-6" text-class="text-lg" />
-        <p class="text-center">
-          © {{ year }} {{ branding.name }}
-          <template v-if="branding.contactEmail">
-            &middot; <a :href="`mailto:${branding.contactEmail}`" class="font-medium hover:text-gray-900 dark:hover:text-white">{{ branding.contactEmail }}</a>
-          </template>
-        </p>
-        <RouterLink v-if="admin" to="/platform" class="font-medium hover:text-gray-900 dark:hover:text-white">Console</RouterLink>
-      </div>
-    </footer>
+    <FrontDoorFooter />
   </div>
 </template>
 

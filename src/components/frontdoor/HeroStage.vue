@@ -1,20 +1,9 @@
 <script setup>
 import { computed, markRaw, onMounted, onUnmounted, ref, watch } from 'vue'
-import {
-  ChatCircleDots,
-  ClipboardText,
-  DeviceMobile,
-  GlobeSimple,
-  Home,
-  MagicWand,
-  Monitor,
-  MusicNotes,
-  Pause,
-  Play,
-  ProjectorScreen,
-  SquaresFour,
-} from '../../icons'
+import { DeviceMobile, Home, Monitor, Pause, Play, ProjectorScreen } from '../../icons'
 import { appIcon } from './appIcons'
+import AppArt from './AppArt.vue'
+import mark from '../../assets/ekkly-mark.svg'
 import ScaledScreen from './ScaledScreen.vue'
 import { prefersStill } from './useSceneTimeline'
 import SceneChurches from './scenes/SceneChurches.vue'
@@ -62,12 +51,16 @@ const emit = defineEmits(['explore'])
 
 // `tab` is the page the phone's bottom bar highlights; a scene without one
 // (the assistant, which has its own input) hides the bar.
+//
+// `art` is the picture on the scene's chip: the artwork of the app it shows,
+// the same as What's inside wears, so the two agree. The address is Ekkly's
+// own, so it wears the mark; "and more" is a little folder of apps.
 const SCENES = [
   {
     key: 'churches',
-    chip: 'Your address',
-    icon: GlobeSimple,
-    title: 'Your address, your colours',
+    chip: 'Your own link',
+    art: 'mark',
+    title: 'Your own link, your colours',
     component: markRaw(SceneChurches),
     duration: 7000,
     tab: 0,
@@ -75,7 +68,7 @@ const SCENES = [
   {
     key: 'attendance',
     chip: 'Attendance',
-    icon: ClipboardText,
+    art: 'attendance',
     title: 'Sunday’s count in a minute',
     component: markRaw(SceneAttendance),
     duration: 5500,
@@ -84,7 +77,7 @@ const SCENES = [
   {
     key: 'worship',
     chip: 'Worship',
-    icon: MusicNotes,
+    art: 'songs',
     title: 'Sunday, planned',
     component: markRaw(SceneWorship),
     duration: 6000,
@@ -93,7 +86,7 @@ const SCENES = [
   {
     key: 'present',
     chip: 'Present',
-    icon: ProjectorScreen,
+    art: 'lineups',
     title: 'Lyrics, verses and slides on the big screen',
     component: markRaw(ScenePresent),
     duration: 7500,
@@ -102,7 +95,7 @@ const SCENES = [
   {
     key: 'minutes',
     chip: 'AI minutes',
-    icon: MagicWand,
+    art: 'minutes',
     title: 'Minutes that write themselves',
     component: markRaw(SceneMinutes),
     duration: 7000,
@@ -111,7 +104,7 @@ const SCENES = [
   {
     key: 'assistant',
     chip: 'Ask EKRIS',
-    icon: ChatCircleDots,
+    art: 'ai',
     title: 'Ask EKRIS about your church',
     component: markRaw(SceneAssistant),
     duration: 7000,
@@ -119,7 +112,7 @@ const SCENES = [
   {
     key: 'more',
     chip: 'And more',
-    icon: SquaresFour,
+    art: 'folder',
     title: 'And there’s more inside',
     component: markRaw(SceneMore),
     duration: 6500,
@@ -156,6 +149,19 @@ const next = () => {
 // The phone's bottom bar.
 const TABS = [Home, appIcon('attendance'), appIcon('lineups'), ProjectorScreen, appIcon('minutes')]
 const showTabs = computed(() => !desktop.value && current.value.tab !== undefined)
+
+// The four apps in the "and more" folder.
+const FOLDER = ['members', 'events', 'finances', 'prayer']
+
+// A chip's picture plays its animation when its scene comes on.
+const chipPlays = ref({})
+watch(
+  () => SCENES[index.value]?.key,
+  (key) => {
+    if (key) chipPlays.value = { ...chipPlays.value, [key]: (chipPlays.value[key] || 0) + 1 }
+  },
+  { immediate: true }
+)
 
 const DEVICES = [
   { key: 'phone', label: 'Phone', icon: DeviceMobile },
@@ -339,19 +345,22 @@ const tintStyle = computed(() =>
           :style="{ translate: desktop ? '100% 0' : '0 0' }"
           aria-hidden="true"
         ></span>
+        <!-- Just the pictures: a phone and a monitor say which without words.
+             The names stay for screen readers and as a tooltip. -->
         <button
           v-for="option in DEVICES"
           :key="option.key"
           type="button"
           :aria-pressed="pass === option.key"
+          :aria-label="`Show it on a ${option.label.toLowerCase()}`"
+          :title="option.label"
           @click="show(index, option.key)"
           :class="[
-            'relative flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-colors duration-300',
+            'relative flex h-8 w-11 items-center justify-center rounded-full transition-colors duration-300',
             pass === option.key ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400',
           ]"
         >
-          <component :is="option.icon" class="h-4 w-4" />
-          {{ option.label }}
+          <component :is="option.icon" class="h-4.5 w-4.5" />
         </button>
       </div>
 
@@ -368,7 +377,9 @@ const tintStyle = computed(() =>
     </div>
 
     <!-- The scenes, to pick from; the chosen one fills as it plays and opens
-         out to show its name. -->
+         out to show its name. No chip is white or black: the artwork is glossy
+         and partly white, and vanishes on white, so the chosen one takes a tint
+         of the accent and the rest a light grey. -->
     <div class="mt-2 flex items-center justify-center gap-1.5">
       <button
         v-for="(scene, i) in SCENES"
@@ -378,25 +389,48 @@ const tintStyle = computed(() =>
         :aria-label="scene.title"
         @click="show(i)"
         :class="[
-          'relative flex h-9 items-center overflow-hidden whitespace-nowrap rounded-full px-2.5 text-xs font-semibold transition-colors duration-300',
+          'relative flex h-10 items-center overflow-hidden whitespace-nowrap rounded-full px-2 text-xs font-semibold transition-colors duration-300',
           i === index
-            ? 'bg-gray-900 text-white shadow-lg shadow-gray-900/20 dark:bg-white dark:text-gray-900'
-            : 'bg-white/80 text-gray-600 ring-1 ring-gray-200 backdrop-blur hover:text-gray-900 dark:bg-gray-900/70 dark:text-gray-400 dark:ring-gray-800 dark:hover:text-white',
+            ? 'bg-primary/15 text-gray-900 ring-1 ring-primary/40 dark:bg-primary-light/20 dark:text-white dark:ring-primary-light/40'
+            : 'bg-gray-100/90 text-gray-600 ring-1 ring-gray-200/80 backdrop-blur hover:bg-gray-200/80 hover:text-gray-900 dark:bg-gray-800/80 dark:text-gray-400 dark:ring-gray-700 dark:hover:bg-gray-700/80 dark:hover:text-white',
         ]"
       >
-        <component :is="scene.icon" class="h-4 w-4 shrink-0" />
+        <span class="chip-art h-6 w-6 shrink-0" aria-hidden="true">
+          <img v-if="scene.art === 'mark'" :src="mark" alt="" draggable="false" class="h-full w-full select-none" />
+          <span v-else-if="scene.art === 'folder'" class="grid h-full w-full grid-cols-2 gap-px">
+            <AppArt v-for="key in FOLDER" :key="key" :app-key="key" :play="chipPlays.more || 0" class="h-full w-full" />
+          </span>
+          <AppArt v-else :app-key="scene.art" :play="chipPlays[scene.key] || 0" class="h-full w-full" />
+        </span>
         <!-- The name opens and closes with the chip. There is no room for it
              on a phone, where the caption above names the scene instead. -->
         <span :class="['label hidden sm:grid', i === index ? 'is-open' : '']">
           <span class="overflow-hidden">{{ scene.chip }}</span>
         </span>
-        <span
+        <!-- The time left in the scene, drawn round the chip's own rounded
+             edge. The line sits on the edge and the chip clips its outer half,
+             so what shows follows the curve exactly, whatever width the chip
+             has opened to. -->
+        <svg
           v-if="i === index && !still"
           :key="run"
-          class="progress absolute inset-x-0 bottom-0 h-0.5 origin-left bg-primary dark:bg-primary-light"
-          :style="{ animationDuration: `${scene.duration}ms`, animationPlayState: playing ? 'running' : 'paused' }"
-          @animationend="next"
-        ></span>
+          class="pointer-events-none absolute inset-0 h-full w-full text-primary dark:text-primary-light"
+          aria-hidden="true"
+        >
+          <rect
+            class="progress"
+            width="100%"
+            height="100%"
+            rx="20"
+            ry="20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="4"
+            pathLength="1"
+            :style="{ animationDuration: `${scene.duration}ms`, animationPlayState: playing ? 'running' : 'paused' }"
+            @animationend="next"
+          />
+        </svg>
       </button>
     </div>
   </div>
@@ -555,12 +589,16 @@ const tintStyle = computed(() =>
   animation-fill-mode: forwards;
 }
 
+.progress {
+  stroke-dasharray: 1;
+}
+
 @keyframes fill {
   from {
-    transform: scaleX(0);
+    stroke-dashoffset: 1;
   }
   to {
-    transform: scaleX(1);
+    stroke-dashoffset: 0;
   }
 }
 

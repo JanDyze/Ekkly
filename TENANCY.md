@@ -14,7 +14,7 @@ church can also bring a domain of its own; see [Custom domains](#custom-domains)
 
 | Address | What it serves |
 | --- | --- |
-| `church.app`, `app.church.app` | The platform's front door: sign in, ask for a church, see your requests. Platform admins also get the console at `/platform`. |
+| `church.app`, `app.church.app` | The platform's front door: the home page, `/pricing`, `/start` (sign in, ask for a church, see your requests), `/privacy` and `/terms`. Platform admins also get the console at `/platform`. |
 | `<id>.church.app` | That church's app, its sign-in page and its public page. |
 
 **Records live under the church.** Every collection the app has always used

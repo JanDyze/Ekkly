@@ -289,6 +289,33 @@ const platformRoutes = [
     component: () => import('../views/PlatformHome.vue'),
     meta: { public: true }
   },
+  // The front door's other pages. Pricing and Get started were the two longest
+  // parts of the home page; Get started is also where someone comes back to
+  // see whether their church was approved, so it needs a link of its own.
+  {
+    path: '/pricing',
+    name: 'PlatformPricing',
+    component: () => import('../views/PlatformPricing.vue'),
+    meta: { public: true }
+  },
+  {
+    path: '/start',
+    name: 'PlatformStart',
+    component: () => import('../views/PlatformStart.vue'),
+    meta: { public: true }
+  },
+  {
+    path: '/privacy',
+    name: 'PlatformPrivacy',
+    component: () => import('../views/PlatformLegal.vue'),
+    meta: { public: true, doc: 'privacy' }
+  },
+  {
+    path: '/terms',
+    name: 'PlatformTerms',
+    component: () => import('../views/PlatformLegal.vue'),
+    meta: { public: true, doc: 'terms' }
+  },
   {
     path: '/platform',
     name: 'PlatformAdmin',
@@ -322,7 +349,16 @@ const platformRoutes = [
 const scrollBehavior = (to, from, savedPosition) => savedPosition || { top: 0 }
 
 const createPlatformRouter = () => {
-  const router = createRouter({ history: createWebHistory(), routes: platformRoutes, scrollBehavior })
+  // A link to one of the home page's sections ("/#features", from Pricing) is
+  // scrolled to by the home page once it has drawn, and the hash then taken
+  // off the address; the router leaves those alone. Anywhere else, a new page
+  // starts at the top.
+  const platformScroll = (to, from, savedPosition) => {
+    if (savedPosition) return savedPosition
+    if (to.hash || to.path === from.path) return false
+    return { top: 0 }
+  }
+  const router = createRouter({ history: createWebHistory(), routes: platformRoutes, scrollBehavior: platformScroll })
   router.beforeEach(async () => {
     // The pages themselves sort out who is signed in; nothing here is behind a
     // church's rules. The session still has to be restored first.

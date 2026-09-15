@@ -11,6 +11,166 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.26.1] — 2026-09-15
+
+The tour's chips suit the app artwork.
+
+### Changed
+
+- **The chosen chip is tinted with the accent** rather than black or white, and
+  the rest are light grey, so artwork that is partly white stays visible.
+- **The time left in a scene runs round the chip's rounded edge** instead of
+  along its bottom.
+
+## [0.26.0] — 2026-09-15
+
+The front door is several short pages instead of one long one, and says
+"link" where it used to say "address".
+
+### Added
+
+- **Pricing** (`/pricing`): the plan builder and every question about paying.
+- **Get started** (`/start`): signing in, asking for a church, and checking on
+  the request, at a link someone can come back to. It shows the plan built on
+  the way and fills in the church named in the welcome and the apps picked.
+- **Privacy** (`/privacy`) and **Terms** (`/terms`), linked from every page's
+  footer.
+- **Swipe between apps** in What's inside on a phone.
+
+### Changed
+
+- **The home page is shorter:** a short word about price with the plan so far
+  replaces the plan builder, four questions instead of five, and the sign-up
+  form is on Get started. About a screen less on a computer, two on a phone.
+- **"Your church's own link"** replaces "address" in the tour, the hero, How it
+  works and the request form.
+- **The tour's dates follow today**, so "This Sunday" is always a Sunday. One
+  sample church, Grace Fellowship, runs through every scene; home screens and
+  the app list wear the app artwork; notes beside the computer no longer cover
+  what they describe.
+- **What's inside's open app** sits on soft grey so white icons show, and has
+  one button: "Add to my plan", then "See my plan", with "In your plan" beside it.
+
+## [0.25.4] — 2026-09-15
+
+Looking through the apps is easier to do one after another.
+
+### Changed
+
+- **What's inside steps from app to app** with previous and next arrows, on a
+  phone too, where the row of apps that scrolled sideways is now "4 of 14".
+- **Adding an app to your plan keeps it open** and says "In your plan", with
+  "See my plan" for anyone who wants to go down and look. Apps already in the
+  plan say so when opened.
+
+## [0.25.3] — 2026-09-15
+
+The tour matches the rest of the front door.
+
+### Changed
+
+- **The tour's chips wear the app artwork** — Attendance, Song List, Schedules
+  & Presentation, Minutes and EKRIS, the Ekkly mark for your address, and a
+  little folder of apps for "and more" — and each plays its animation as its
+  scene comes on.
+- **Phone and computer are just icons** under the tour, with their names kept
+  for screen readers and as a tooltip.
+
+## [0.25.2] — 2026-09-15
+
+The front door's app icons move.
+
+### Changed
+
+- **Each app's icon plays a short animation** as it lights up in What's
+  inside, and again when pointed at, when its app opens, or when it joins the
+  plan in Pricing: people step out, a ring draws itself, a day is checked off,
+  a star lands, a song's lines are written and its note drops on, the Bible's
+  ribbon falls, a pencil writes, light opens around praying hands, the sun
+  rises, links click together, coins stack, a list is ticked, and EKRIS blinks
+  and has something to say. Once each time, never looping, and not at all for
+  anyone who asks for less motion.
+
+## [0.25.1] — 2026-09-15
+
+The front door's apps get pictures of their own.
+
+### Changed
+
+- **App icons on the front door** are Ekkly's own artwork now — glossy
+  pictures in the mark's orange and blue, one per app — in What's inside, in an
+  app's details and in Pricing. They glow once they light up, and in Pricing
+  an app not in the plan stays greyed. Drawn as SVG, so they stay sharp at any
+  size; `brand/ekkly/make-app-icons.mjs` draws them.
+
+## [0.25.0] — 2026-09-15
+
+Paying by card, a person to talk to on the front door, and a front door that
+asks a new church who it is — lightly.
+
+### Added
+
+- **Pay by card.** Settings → Apps & plan has a card form: monthly, or yearly
+  for the price of ten months. PayMongo charges it on its own, each charge is
+  recorded as a payment and moves the paid-through date on, and a church still
+  in its free month keeps it. Changing apps charges the new total from the next
+  cycle; removing the card stops future charges and keeps the time paid for.
+  The card number goes from the browser straight to PayMongo. Needs
+  `PAYMONGO_SECRET_KEY`, `VITE_PAYMONGO_PUBLIC_KEY` and
+  `PAYMONGO_WEBHOOK_SECRET` (see .env.example); **not yet tried against
+  PayMongo with real keys.**
+- **A chat bubble on the front door.** It says when the person who runs Ekkly
+  is online — signed in with any Ekkly tab open — and opens to suggested
+  questions, Call, Email, Messenger and a conversation. Visitors write first
+  and are asked where to reply afterwards; "Seen" shows once it has been read,
+  and a reply that arrives while the bubble is closed is previewed beside it.
+  Replies come from the new **Live chat** section of the console; a message
+  left while away is emailed. Who answers, the name shown, a phone and a
+  Messenger link are set in Name & front door.
+- **A welcome on a first visit.** Which church are you with, and may we reach
+  out? One field, an optional second, then thanks; skippable at every step,
+  shown once, and brought back any time with "Say hello, we'll reach out" in
+  the hero. The answers are listed in Console → Front door as "Churches that
+  said hello", with a tap to email or call, and emailed when a way to reach
+  them is left.
+- **Prices.** Every app has a starting price until the console sets its own —
+  ₱1 for now, while payments are tried; the launch prices are written beside
+  them in `lib/apps.js`. Pricing on the front door switches between monthly
+  and yearly, and says the first month is free.
+- **`/qr`**, Ekkly's QR code for ekkly.online in the mark's four colours,
+  with the address under it or on its own, to download as PNG or SVG.
+  `brand/ekkly/build-qr.mjs` makes it and checks it scans.
+
+### Changed
+
+- **The assistant is EKRIS** — Ekklesia Knowledge Retrieval & Intelligence
+  System — everywhere it was Klysia or "AI assist", the app included.
+- **What's inside** is laid out like a phone's home screen: an icon and a name
+  for each app, lighting up as the section scrolls into view. Tapping one shows
+  what it does for a church in a line and three wins, with its price and a
+  button that adds it to the plan below. One screen tall on a desktop.
+- **The front door reads as one piece.** Every section heading shares one type
+  scale; "Why churches choose it" is gone; app descriptions are a few words
+  each; the tour shows sample churches with logos of their own; sections light
+  as they are scrolled past rather than fading in.
+- **Colours arrive with the page.** A church's or the platform's colours, and
+  dark mode, are remembered and applied before anything is drawn, so a page no
+  longer opens in the built-in blue and changes a second later.
+- **The page behind a popup or drawer holds still**, everywhere — including
+  the chat on a phone, a minute's drawers and the Bible's picker.
+- On a phone the chat fills the screen above the keyboard, never pops the
+  keyboard up by itself, and its fields no longer make iOS zoom in.
+- The What's new window shows only in a church's app, not on the front door.
+- `npm run dev` reloads what an API route imports from `lib/` when it
+  changes, instead of serving the version it loaded first.
+
+### Removed
+
+- "Curious? Type your church's name." from the hero, and with it the names
+  tried: their card and count in Console → Front door, and the visitor id the
+  page kept for them. The cookie question now asks only to count visits.
+  Names already stored in `frontDoorTries` are no longer read.
+
 ## [0.25.0] — 2026-09-15
 
 Paying by card, a person to talk to on the front door, and a front door that

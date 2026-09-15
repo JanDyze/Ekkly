@@ -103,10 +103,39 @@ The page skeleton:
 
 ## Building blocks
 
+### The front door's pages
+
+The front door is five pages sharing one header and footer
+([FrontDoorHeader.vue](src/components/frontdoor/FrontDoorHeader.vue),
+[FrontDoorFooter.vue](src/components/frontdoor/FrontDoorFooter.vue)):
+
+- **Home** ([PlatformHome.vue](src/views/PlatformHome.vue)): the tour, What's
+  inside, How it works, a short word about price with the plan so far, the
+  first few questions, and the last call. It sells; the detail lives elsewhere.
+- **Pricing** ([PlatformPricing.vue](src/views/PlatformPricing.vue), `/pricing`):
+  the plan builder and every question ([faqs.js](src/components/frontdoor/faqs.js)).
+- **Get started** ([PlatformStart.vue](src/views/PlatformStart.vue), `/start`):
+  where every call to action lands — sign in, ask for a church, and come back
+  to see the request's status. It shows the plan built on the way, and fills
+  the form with the church named in the welcome and the apps picked.
+- **Privacy and Terms** ([PlatformLegal.vue](src/views/PlatformLegal.vue),
+  `/privacy`, `/terms`): the words are in
+  [legal.js](src/components/frontdoor/legal.js) and describe what the app really
+  does, so a change to what the front door keeps, who helps run it, or how
+  paying works is a change there too.
+
+The plan and the named church are shared by every page through
+[useFrontDoor.js](src/composables/useFrontDoor.js), for the tab. Something
+that would take a phone's worth of scrolling on its own gets a page, not a
+longer home.
+
+Say **link**, not address, for a church's `<id>.<domain>` in anything a
+visitor or church reads: to most people an address is a street, and the FAQ
+uses it for exactly that.
+
 ### The front door's hero
 
-The platform's front door ([PlatformHome.vue](src/views/PlatformHome.vue))
-opens on a tour: a device that plays a short scene for each of the things Ekkly
+The home page opens on a tour: a device that plays a short scene for each of the things Ekkly
 does, first every scene on a phone and then every scene again on a computer,
 ending on what the tour left out. It lives in
 [src/components/frontdoor/](src/components/frontdoor/):
@@ -114,7 +143,10 @@ ending on what the tour left out. It lives in
 - **[HeroStage.vue](src/components/frontdoor/HeroStage.vue)** owns the device,
   the order of the scenes and the timing. The device changes shape between a
   phone and a monitor rather than being swapped. A scene advances when its
-  chip's progress bar finishes, so pausing pauses both.
+  chip's progress bar finishes, so pausing pauses both. Each chip wears the
+  animated artwork of the app its scene shows (the mark for the church's link, a
+  folder of four for "and more"), and plays it as its scene comes on; the
+  phone/computer switch is icons only, with the names kept as labels.
 - **A scene** (`scenes/Scene*.vue`) draws one feature happening, with a phone
   layout and a computer layout sharing one timeline
   ([useSceneTimeline.js](src/components/frontdoor/useSceneTimeline.js)).
@@ -126,7 +158,14 @@ ending on what the tour left out. It lives in
   is a note beside the device.
 - **Everything on screen is sample data**, and every colour is a token, so the
   platform's colour in the console carries the whole page — the light behind
-  the hero and the headline included.
+  the hero and the headline included. Its dates come from
+  [sceneDates.js](src/components/frontdoor/sceneDates.js), worked out from today,
+  so a scene never names a Sunday that falls on a Monday. The sample church is
+  Grace Fellowship throughout, and the first scene ends on it; the visitor's own
+  church replaces it once they have named one. A note beside the computer
+  (FloatNote) sits on a corner of the window, never over what it describes.
+  Home screens and app lists on the device wear the app artwork; sidebars and
+  bottom bars keep the line icons the real app uses.
 - **"Say hello, we'll reach out"** sits under the hero's buttons and opens the
   welcome again, straight away, for anyone who skipped it. The church named
   there goes on the device in the tour and into the request form.
@@ -149,24 +188,37 @@ ending on what the tour left out. It lives in
   instead of spilling over. [AppsInside.vue](src/components/frontdoor/AppsInside.vue)
   lays the apps out like a phone's home screen: an icon and a name, nothing
   more (4 across on a phone, 5 on a tablet, 7 on a desktop), lighting up in
-  turn as the grid rises. Opening an app shows what a church
+  turn as the grid rises. The icons are Ekkly's own artwork
+  ([src/assets/app-icons/](src/assets/app-icons/), from
+  `brand/ekkly/make-app-icons.mjs`, through `appArt()`): glossy SVGs in the
+  mark's orange and blue that keep those colours rather than the accent, glow
+  by CSS drop-shadow, and grey out until lit or while not in a plan. They are
+  drawn inline by [AppArt.vue](src/components/frontdoor/AppArt.vue) so their
+  parts move: each plays a short animation once — as it lights up, when the
+  pointer arrives, when its app opens or joins the plan — and never loops.
+  Moving parts carry an `a-…` class in the generator; a new icon reuses those
+  motions before inventing one. Opening an app shows what a church
   gets from it, from [appDetails.js](src/components/frontdoor/appDetails.js):
   one benefit line and three practical wins of a few words, each with an icon.
   Keep it that short; paragraphs there go unread. On a
   desktop the panel grows out of the app's icon to cover the section, with a
   strip of every app, arrows and Escape; on a phone it is a card in the middle
-  of the screen, with the page locked behind it.
-  "Add to my plan" ticks the app in the plan builder, which is still the only
-  place apps are chosen. A new app gets an entry in appDetails.js.
+  of the screen, with the page locked behind it, "4 of 14" and arrows instead
+  of a strip (nothing in it scrolls sideways), and a sideways swipe turns to
+  the next app. The panel is a soft grey, not white: several icons are mostly
+  white. Its action is one button in one place — "Add to my plan", which
+  becomes "See my plan" once added — with a line beside it saying where the app
+  stands. Adding keeps the panel open. A new app gets an entry in appDetails.js.
 - **Section headings share one scale:** `TYPE.eyebrow`, `TYPE.title` and
-  `TYPE.lead` in PlatformHome.vue. A new section uses them rather than its own
+  `TYPE.lead` in [type.js](src/components/frontdoor/type.js), on every front door
+  page. A new section uses them rather than its own
   sizes; only colour changes, for the dark band.
 - **Prices are whole pesos** on the front door (no `.00`). The plan builder
   switches between monthly and yearly, a year costing `MONTHS_PER_YEAR_PAID`
   months (`lib/apps.js`), and says the first month is free.
 - **The welcome** ([WelcomeSheet.vue](src/components/frontdoor/WelcomeSheet.vue))
   greets a first visit, once, 1.4s after the headline, and never someone signed
-  in. It asks which church they are with (the address it could have appears as
+  in. It asks which church they are with (the link it could have appears as
   they type, and the hero's phone takes the name), then, optionally, a name and
   an email or phone so someone can reach out. Skip, the backdrop and Escape
   close it for good; the cookie question waits until it has. Entries land in
