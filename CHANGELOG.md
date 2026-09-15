@@ -11,6 +11,15 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.26.3] — 2026-09-15
+
+The front door's chat has a face.
+
+### Changed
+
+- **The developer's own picture** is on the chat bubble, in the chat's header
+  and beside every reply, instead of the Ekkly mark and a chat icon.
+
 ## [0.26.2] — 2026-09-15
 
 Light and dark on the front door.

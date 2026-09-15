@@ -1,12 +1,13 @@
 <script setup>
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
-import { ArrowUp, ChatCircleDots, Check, EnvelopeSimple, MessengerLogo, Phone, X } from '../../icons'
+import { ArrowUp, Check, EnvelopeSimple, MessengerLogo, Phone, X } from '../../icons'
 import { useAuth } from '../../composables/useAuth'
 import { useFrontDoorChat } from '../../composables/useFrontDoorChat'
 import { useMediaQuery } from '../../composables/useMediaQuery'
 import { useScrollLock } from '../../composables/useScrollLock'
 import { usePlatformConfig } from '../../composables/usePlatformConfig'
-import mark from '../../assets/ekkly-mark.svg'
+// The developer's own picture, wherever the chat shows who is answering.
+import developer from '../../assets/developer.png'
 
 // The chat bubble in the front door's corner: whether the person who runs
 // Ekkly is around, and the quickest way to ask them something.
@@ -220,8 +221,8 @@ const field =
       >
         <!-- Who they are talking to, and the other ways to reach them. -->
         <header class="flex shrink-0 items-center gap-3 border-b border-gray-100 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-3 dark:border-gray-800">
-          <span class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-            <img :src="mark" alt="" class="h-6 w-6" />
+          <span class="relative flex h-10 w-10 shrink-0">
+            <img :src="developer" alt="" class="h-10 w-10 rounded-full" />
             <span :class="['absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-white dark:ring-gray-900', online ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600']"></span>
           </span>
           <div class="min-w-0 flex-1">
@@ -291,9 +292,7 @@ const field =
           <!-- The conversation. -->
           <div v-else class="space-y-4">
             <div v-for="(turn, t) in turns" :key="t" :class="['flex items-end gap-2', turn.from === 'visitor' ? 'justify-end' : '']">
-              <span v-if="turn.from === 'host'" class="mb-5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-                <img :src="mark" alt="" class="h-4 w-4" />
-              </span>
+              <img v-if="turn.from === 'host'" :src="developer" alt="" class="mb-5 h-7 w-7 shrink-0 rounded-full" />
               <div :class="['flex min-w-0 max-w-[80%] flex-col gap-1', turn.from === 'visitor' ? 'items-end' : 'items-start']">
                 <p
                   v-for="(message, m) in turn.items"
@@ -375,9 +374,7 @@ const field =
         class="relative w-72 max-w-[calc(100vw-2rem)] rounded-2xl bg-white p-3 pr-9 shadow-xl shadow-gray-900/15 ring-1 ring-gray-900/5 dark:bg-gray-900 dark:shadow-black/40 dark:ring-white/10"
       >
         <button type="button" class="flex w-full items-start gap-2.5 text-left" @click="openChat">
-          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-            <img :src="mark" alt="" class="h-5 w-5" />
-          </span>
+          <img :src="developer" alt="" class="h-8 w-8 shrink-0 rounded-full" />
           <span class="min-w-0">
             <span class="block text-xs font-semibold text-gray-900 dark:text-white">{{ host }}</span>
             <span class="mt-0.5 line-clamp-2 text-sm text-gray-600 dark:text-gray-300">{{ preview.text }}</span>
@@ -400,9 +397,9 @@ const field =
       ]"
       @click="open ? close() : openChat()"
     >
-      <span class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-white">
+      <span :class="['relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white', open ? 'bg-primary' : '']">
         <X v-if="open" class="h-5 w-5" />
-        <ChatCircleDots v-else class="h-5 w-5" />
+        <img v-else :src="developer" alt="" class="h-10 w-10 rounded-full" />
         <span :class="['absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-white dark:ring-gray-900', online ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600']"></span>
       </span>
       <span class="hidden min-w-0 text-left sm:block">
