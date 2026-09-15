@@ -22,7 +22,9 @@
     <path d="M13 4H56V36Z" fill="url(#o)"/>
     <rect x="13" y="4" width="43" height="46" fill="url(#shine)"/>
   </g>
-  <rect x="31.5" y="12" width="6" height="29" rx="1" fill="#fff"/>
-  <rect x="23.5" y="20" width="22" height="6" rx="1" fill="#fff"/>
-  <path d="M41 48h8v14l-4-3.5-4 3.5z" fill="#EC4319"/>
+  <g class="a-pop" style="--i:1">
+    <rect x="31.5" y="12" width="6" height="29" rx="1" fill="#fff"/>
+    <rect x="23.5" y="20" width="22" height="6" rx="1" fill="#fff"/>
+  </g>
+  <path class="a-ribbon" d="M41 48h8v14l-4-3.5-4 3.5z" fill="#EC4319"/>
 </svg>

@@ -15,11 +15,19 @@
   </defs>
 
   <g stroke="#FFB21E" stroke-width="2.8" stroke-linecap="round">
-    <path d="M12 9l3 5M5 17l5 3M20 5l1 5.5"/>
+    <path class="a-ray" style="--i:0" d="M12 9l3 5"/>
+    <path class="a-ray" style="--i:1" d="M5 17l5 3"/>
+    <path class="a-ray" style="--i:2" d="M20 5l1 5.5"/>
   </g>
   <g transform="rotate(-45 32 32)">
-    <rect x="3.5" y="24.5" width="31" height="15" rx="7.5" fill="none" stroke="url(#o)" stroke-width="7"/>
-    <rect x="29.5" y="24.5" width="31" height="15" rx="7.5" fill="none" stroke="url(#b)" stroke-width="7"/>
-    <path d="M29.5 32h5" stroke="url(#o)" stroke-width="7" stroke-linecap="round"/>
+    <g class="a-join-left">
+      <rect x="3.5" y="24.5" width="31" height="15" rx="7.5" fill="none" stroke="url(#o)" stroke-width="7"/>
+    </g>
+    <g class="a-join-right">
+      <rect x="29.5" y="24.5" width="31" height="15" rx="7.5" fill="none" stroke="url(#b)" stroke-width="7"/>
+    </g>
+    <g class="a-join-left">
+      <path d="M29.5 32h5" stroke="url(#o)" stroke-width="7" stroke-linecap="round"/>
+    </g>
   </g>
 </svg>

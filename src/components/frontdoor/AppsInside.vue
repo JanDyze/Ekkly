@@ -5,6 +5,7 @@ import { useMediaQuery } from '../../composables/useMediaQuery'
 import { useScrollLock } from '../../composables/useScrollLock'
 import { formatMoney } from '../../utils/moneyUtils'
 import { appArt } from './appIcons'
+import AppArt from './AppArt.vue'
 import { appDetail } from './appDetails'
 import { vScrollLight } from './scrollLight'
 
@@ -41,6 +42,18 @@ const BOARD_LIGHT = {
   end: 0.995,
   onProgress: (p) => (litApps.value = p >= 1 ? Infinity : Math.round(p * props.apps.length)),
 }
+
+// Each icon plays its little animation as it comes on, and again when the
+// pointer arrives on it. A counter per app: bumping it is what replays.
+const plays = ref({})
+const replay = (key) => {
+  plays.value = { ...plays.value, [key]: (plays.value[key] || 0) + 1 }
+}
+watch(litApps, (lit, before) => {
+  ordered.value.forEach((app) => {
+    if (app.order < lit && !(app.order < before)) replay(app.key)
+  })
+})
 
 /* ------------------------------------------------------------- opening */
 
@@ -171,9 +184,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
               { 'is-on': app.order < litApps },
             ]"
             @click="open(app)"
+            @pointerenter="$event.pointerType === 'mouse' && replay(app.key)"
           >
             <span class="app-icon relative flex aspect-square w-14 items-center justify-center sm:w-16 lg:w-[clamp(3.75rem,9.5dvh,5.25rem)]">
-              <img :src="appArt(app.key)" alt="" draggable="false" class="h-full w-full select-none" />
+              <AppArt :app-key="app.key" :play="plays[app.key] || 0" class="h-full w-full" />
             </span>
             <span class="line-clamp-2 text-xs font-semibold leading-tight text-gray-800 sm:text-sm dark:text-gray-100">{{ app.name }}</span>
           </button>
@@ -244,7 +258,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
               >
                 <div class="min-w-0">
                   <div class="flex items-center gap-3">
-                    <img :src="appArt(openApp.key)" alt="" draggable="false" class="art-glow h-12 w-12 shrink-0 select-none" />
+                    <AppArt :key="openApp.key" :app-key="openApp.key" :play="1" class="art-glow h-12 w-12 shrink-0" />
                     <div class="min-w-0">
                       <h3 class="truncate text-base font-bold">{{ openApp.name }}</h3>
                       <p v-if="openApp.group !== openApp.name" class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ openApp.group }}</p>

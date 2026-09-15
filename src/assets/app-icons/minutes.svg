@@ -23,13 +23,15 @@
   </g>
   <path d="M10 14a3 3 0 0 1 3-3h24l9 9v26a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3z" fill="#fff"/>
   <path d="M37 11v6.5a2.5 2.5 0 0 0 2.5 2.5H46" fill="#DCE3EE"/>
-  <rect x="16" y="22" width="20" height="3.6" rx="1.8" fill="#8E9CB3"/>
-  <rect x="16" y="29.5" width="24" height="3.6" rx="1.8" fill="#8E9CB3"/>
-  <rect x="16" y="37" width="16" height="3.6" rx="1.8" fill="#8E9CB3"/>
+  <rect class="a-line" style="--i:0" x="16" y="22" width="20" height="3.6" rx="1.8" fill="#8E9CB3"/>
+  <rect class="a-line" style="--i:1" x="16" y="29.5" width="24" height="3.6" rx="1.8" fill="#8E9CB3"/>
+  <rect class="a-line" style="--i:2" x="16" y="37" width="16" height="3.6" rx="1.8" fill="#8E9CB3"/>
   <g transform="translate(-4 -3) rotate(45 46 44)">
-    <rect x="41" y="22" width="10" height="30" rx="2" fill="url(#o)" stroke="#fff" stroke-width="2.4" paint-order="stroke"/>
-    <path d="M41 52h10l-5 9z" fill="#FFD9A6" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" paint-order="stroke"/>
-    <path d="M44.4 58.3L46 61l1.6-2.7z" fill="#0B2A6B"/>
-    <rect x="41" y="22" width="10" height="5" rx="2" fill="#EC4319"/>
+    <g class="a-write">
+      <rect x="41" y="22" width="10" height="30" rx="2" fill="url(#o)" stroke="#fff" stroke-width="2.4" paint-order="stroke"/>
+      <path d="M41 52h10l-5 9z" fill="#FFD9A6" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" paint-order="stroke"/>
+      <path d="M44.4 58.3L46 61l1.6-2.7z" fill="#0B2A6B"/>
+      <rect x="41" y="22" width="10" height="5" rx="2" fill="#EC4319"/>
+    </g>
   </g>
 </svg>

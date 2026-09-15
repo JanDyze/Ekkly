@@ -153,7 +153,12 @@ ending on what the tour left out. It lives in
   ([src/assets/app-icons/](src/assets/app-icons/), from
   `brand/ekkly/make-app-icons.mjs`, through `appArt()`): glossy SVGs in the
   mark's orange and blue that keep those colours rather than the accent, glow
-  by CSS drop-shadow, and grey out until lit or while not in a plan. The tour's
+  by CSS drop-shadow, and grey out until lit or while not in a plan. They are
+  drawn inline by [AppArt.vue](src/components/frontdoor/AppArt.vue) so their
+  parts move: each plays a short animation once — as it lights up, when the
+  pointer arrives, when its app opens or joins the plan — and never loops.
+  Moving parts carry an `a-…` class in the generator; a new icon reuses those
+  motions before inventing one. The tour's
   simulated app screens keep the line icons the real app uses. Opening an app shows what a church
   gets from it, from [appDetails.js](src/components/frontdoor/appDetails.js):
   one benefit line and three practical wins of a few words, each with an icon.

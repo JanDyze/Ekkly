@@ -11,6 +11,21 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.25.2] — 2026-09-15
+
+The front door's app icons move.
+
+### Changed
+
+- **Each app's icon plays a short animation** as it lights up in What's
+  inside, and again when pointed at, when its app opens, or when it joins the
+  plan in Pricing: people step out, a ring draws itself, a day is checked off,
+  a star lands, a song's lines are written and its note drops on, the Bible's
+  ribbon falls, a pencil writes, light opens around praying hands, the sun
+  rises, links click together, coins stack, a list is ticked, and EKRIS blinks
+  and has something to say. Once each time, never looping, and not at all for
+  anyone who asks for less motion.
+
 ## [0.25.1] — 2026-09-15
 
 The front door's apps get pictures of their own.

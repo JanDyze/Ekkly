@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { ArrowRight, Check } from '../../icons'
 import { formatMoney } from '../../utils/moneyUtils'
 import { MONTHS_PER_YEAR_PAID, yearlyPrice } from '../../../lib/apps.js'
-import { appArt } from './appIcons'
+import AppArt from './AppArt.vue'
 
 // "Build your plan": a visitor ticks the apps their church would use and
 // watches the monthly price add up. It is the front door's way of saying the
@@ -34,11 +34,20 @@ watch(offered, (apps) => {
   picked.value = new Set([...picked.value].filter((k) => keys.has(k)))
 })
 
+// An app's picture plays its animation when the app joins the plan.
+const plays = ref({})
+const celebrate = (key) => {
+  plays.value = { ...plays.value, [key]: (plays.value[key] || 0) + 1 }
+}
+
 const toggle = (app) => {
   if (app.core) return
   const next = new Set(picked.value)
   if (next.has(app.key)) next.delete(app.key)
-  else next.add(app.key)
+  else {
+    next.add(app.key)
+    celebrate(app.key)
+  }
   picked.value = next
 }
 
@@ -47,6 +56,7 @@ const toggle = (app) => {
 const add = (key) => {
   if (picked.value.has(key)) return
   picked.value = new Set([...picked.value, key])
+  celebrate(key)
 }
 defineExpose({ add })
 
@@ -80,12 +90,7 @@ const monthsFree = 12 - MONTHS_PER_YEAR_PAID
               : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600',
           ]"
         >
-          <img
-            :src="appArt(app.key)"
-            alt=""
-            draggable="false"
-            :class="['plan-art h-11 w-11 shrink-0 select-none', { 'is-off': !isOn(app) }]"
-          />
+          <AppArt :app-key="app.key" :play="plays[app.key] || 0" :class="['plan-art h-11 w-11 shrink-0', { 'is-off': !isOn(app) }]" />
           <span class="min-w-0 flex-1">
             <span class="flex items-center justify-between gap-2">
               <span class="truncate text-sm font-semibold text-gray-900 dark:text-white">{{ app.name }}</span>

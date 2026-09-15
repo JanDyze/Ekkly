@@ -24,8 +24,10 @@
   <clipPath id="p"><rect x="11" y="12" width="42" height="40" rx="5"/></clipPath>
   <g clip-path="url(#p)">
     <rect x="11" y="12" width="42" height="40" fill="url(#b)"/>
-    <path d="M11 52L26 30l9 12 6-7 12 17z" fill="url(#t)"/>
-    <path d="M26 30l9 12-9 10z" fill="#0B7F95" opacity=".55"/>
-    <circle cx="42" cy="22.5" r="5" fill="#fff"/>
+    <circle class="a-sun" cx="42" cy="22.5" r="5" fill="#fff"/>
+    <g class="a-hills">
+      <path d="M11 52L26 30l9 12 6-7 12 17z" fill="url(#t)"/>
+      <path d="M26 30l9 12-9 10z" fill="#0B7F95" opacity=".55"/>
+    </g>
   </g>
 </svg>

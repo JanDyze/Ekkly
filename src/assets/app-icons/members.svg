@@ -14,14 +14,16 @@
     </linearGradient>
   </defs>
 
-  
+  <g class="a-side a-left">
   <circle cx="14" cy="22" r="6.5" fill="url(#b)"/>
-  <path d="M3 50 C3 36.3 7.84 32.075 14 32.075 C20.16 32.075 25 36.3 25 50 Z" fill="url(#b)"/>
-  
+  <path d="M3 50 C3 36.3 7.84 32.075 14 32.075 C20.16 32.075 25 36.3 25 50 Z" fill="url(#b)"/></g>
+  <g class="a-side a-right">
   <circle cx="50" cy="22" r="6.5" fill="url(#b)"/>
-  <path d="M39 50 C39 36.3 43.84 32.075 50 32.075 C56.16 32.075 61 36.3 61 50 Z" fill="url(#b)"/>
-  
+  <path d="M39 50 C39 36.3 43.84 32.075 50 32.075 C56.16 32.075 61 36.3 61 50 Z" fill="url(#b)"/></g>
+  <g class="a-pop">
+    
   <circle cx="32" cy="17" r="9.5" fill="url(#o)"/>
   <path d="M16 55 C16 37.900000000000006 23.04 31.725 32 31.725 C40.96 31.725 48 37.900000000000006 48 55 Z" fill="url(#o)"/>
-  <path d="M22.5 17a9.5 9.5 0 0 1 19 0" fill="url(#shine)"/>
+    <path d="M22.5 17a9.5 9.5 0 0 1 19 0" fill="url(#shine)"/>
+  </g>
 </svg>
