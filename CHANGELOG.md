@@ -11,6 +11,16 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.26.8] — 2026-09-15
+
+Churches we are talking to see themselves.
+
+### Added
+
+- **Known churches wear their own logo:** typing City Praise (or "CP") or UEC
+  ("UEC", "UECPCOM", "UEC Canubing II") shows that church's logo in the
+  welcome, and its logo, proper name and colour in the tour and How it works.
+
 ## [0.26.7] — 2026-09-15
 
 How it works, drawn rather than screenshotted.

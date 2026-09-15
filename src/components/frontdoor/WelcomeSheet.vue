@@ -6,6 +6,7 @@ import { sendFrontDoorLead } from '../../api/platformService'
 import { usePlatformConfig } from '../../composables/usePlatformConfig'
 import { useScrollLock } from '../../composables/useScrollLock'
 import { suggestChurchId } from '../../../lib/churchId.js'
+import { knownChurch } from './knownChurches'
 
 // The front door's welcome, once per visitor: which church are they with, and
 // how could someone from Ekkly reach them?
@@ -94,6 +95,8 @@ const address = computed(() => {
   return slug ? `${slug}.${props.domain}` : ''
 })
 const churchReady = computed(() => church.value.trim().length >= 2)
+// A church the front door knows shows its own logo the moment its name is typed.
+const known = computed(() => knownChurch(church.value))
 
 const continueWithChurch = async () => {
   if (!churchReady.value || sending.value) return
@@ -226,10 +229,14 @@ const skip = 'h-12 rounded-xl px-4 text-sm font-semibold text-gray-500 transitio
 
               <input v-model="church" type="text" maxlength="120" autocomplete="organization" enterkeyhint="next" placeholder="Grace Baptist Church" aria-label="Your church’s name" :class="[field, 'mt-4']" />
 
-              <!-- The address it could have, appearing as they type. -->
-              <p class="mt-2 h-5 truncate text-sm text-gray-500 dark:text-gray-400">
+              <!-- The address it could have, appearing as they type — with the
+                   church's own logo beside it, if it is one we know. -->
+              <p class="mt-2 flex h-6 items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                 <Transition name="fade">
-                  <span v-if="address" class="inline">
+                  <img v-if="known" :key="known.key" :src="known.logo" alt="" class="known-logo h-6 w-6 shrink-0 rounded-md bg-white object-contain ring-1 ring-black/5" />
+                </Transition>
+                <Transition name="fade">
+                  <span v-if="address" class="min-w-0 truncate">
                     Yours could be <span class="font-mono font-semibold text-primary dark:text-primary-light">{{ address }}</span>
                   </span>
                 </Transition>

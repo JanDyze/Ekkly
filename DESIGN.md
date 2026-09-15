@@ -129,6 +129,11 @@ The plan and the named church are shared by every page through
 that would take a phone's worth of scrolling on its own gets a page, not a
 longer home.
 
+**Churches the front door knows** ([knownChurches.js](src/components/frontdoor/knownChurches.js))
+wear their own logo, name and colour in every preview — the welcome as the name
+is typed, the tour, How it works — when a visitor types any name they go by
+("CP", "City Praise"). Logos are bundled in `src/assets/churches/` for now.
+
 Say **link**, not address, for a church's `<id>.<domain>` in anything a
 visitor or church reads: to most people an address is a street, and the FAQ
 uses it for exactly that.

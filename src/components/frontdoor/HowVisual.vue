@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import { CheckCircle2, LinkSimple, PaperPlaneTilt } from '../../icons'
 import { suggestChurchId } from '../../../lib/churchId.js'
+import ChurchMark from './ChurchMark.vue'
+import { knownChurch } from './knownChurches'
 
 // What one step of "How it works" looks like while it happens, drawn as a small
 // illustration rather than a screen from the app: a screen, with its fields and
@@ -23,6 +25,7 @@ const props = defineProps({
 
 const clamp = (n) => Math.min(1, Math.max(0, n))
 const name = computed(() => props.church.trim() || 'Grace Baptist Church')
+const known = computed(() => knownChurch(props.church))
 const slug = (text) => suggestChurchId(text) || 'your-church'
 
 /* ---------------------------------------------------- 1. ask for a church */
@@ -80,7 +83,9 @@ const facesIn = computed(() => Math.min(FACES.length, joined.value))
     <!-- 2. The stamp, and what approving does. -->
     <template v-else-if="step === 1">
       <div class="flex items-center gap-4">
-        <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary text-2xl font-black text-white shadow-lg shadow-primary/40">{{ name[0] }}</span>
+        <span class="h-14 w-14 shrink-0 text-2xl">
+          <ChurchMark :initial="name[0]" :image="known?.logo || ''" />
+        </span>
         <div class="min-w-0">
           <p class="truncate text-lg font-bold text-white">{{ name }}</p>
           <span :class="['stamp mt-1 inline-flex items-center gap-1 rounded-md border-2 px-2 py-0.5 text-xs font-black uppercase tracking-wider', approved ? 'is-in border-emerald-400 text-emerald-300' : 'border-white/20 text-white/40']">

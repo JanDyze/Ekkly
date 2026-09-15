@@ -5,6 +5,7 @@ import { Calendar, LockSimple, Palette } from '../../../icons'
 import AppArt from '../AppArt.vue'
 import AppWindow from '../AppWindow.vue'
 import ChurchMark from '../ChurchMark.vue'
+import { knownChurch } from '../knownChurches'
 import ScaledScreen from '../ScaledScreen.vue'
 import FloatNote from '../FloatNote.vue'
 import { useSceneTimeline } from '../useSceneTimeline'
@@ -55,12 +56,18 @@ const WEEK = [
 ]
 
 const visitor = computed(() => props.church.trim())
+// A church the front door knows: its logo on the device, and its own colour as
+// the one the colours come round to.
+const known = computed(() => knownChurch(visitor.value))
+const palette = computed(() =>
+  known.value ? CHURCHES.map((c, i) => (i === CHURCHES.length - 1 ? { ...c, tint: known.value.tint } : c)) : CHURCHES
+)
 
 const church = ref(0)
 // Their name and address when they have given one, the sample church's
 // otherwise. The colour keeps coming from whichever swatch is showing.
 const current = computed(() =>
-  visitor.value ? { ...CHURCHES[church.value], id: suggestChurchId(visitor.value), name: visitor.value } : CHURCHES[church.value]
+  visitor.value ? { ...palette.value[church.value], id: suggestChurchId(visitor.value), name: visitor.value } : CHURCHES[church.value]
 )
 // A sample church wears its made-up logo; the visitor's own church has none.
 const logo = computed(() => (visitor.value ? '' : CHURCHES[church.value].id))
@@ -70,7 +77,7 @@ const { at, type, erase, still } = useSceneTimeline()
 
 const pick = (i) => {
   church.value = i
-  emit('tint', CHURCHES[i].tint)
+  emit('tint', palette.value[i].tint)
 }
 
 if (still) {
@@ -104,7 +111,7 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
       <div class="px-4 pt-12">
         <div class="fd-rise flex items-center gap-2.5">
           <span class="h-9 w-9 shrink-0 text-sm">
-            <ChurchMark :church="logo" :initial="current.name[0]" />
+            <ChurchMark :church="logo" :initial="current.name[0]" :image="known?.logo || ''" />
           </span>
           <div class="min-w-0">
             <Transition name="swap" mode="out-in">
@@ -144,7 +151,7 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
             <Palette class="h-4 w-4 text-primary dark:text-primary-light" /> Church colour
           </span>
           <span class="flex items-center gap-1.5">
-            <span v-for="(c, i) in CHURCHES" :key="c.id" :class="[swatchClass(c, i), 'h-4 w-4']" :style="swatchStyle(c)"></span>
+            <span v-for="(c, i) in palette" :key="c.id" :class="[swatchClass(c, i), 'h-4 w-4']" :style="swatchStyle(c)"></span>
           </span>
         </div>
       </div>
@@ -170,7 +177,7 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
             <Palette class="h-3.5 w-3.5 text-primary dark:text-primary-light" /> Church colour
           </p>
           <div class="mt-2.5 flex items-center gap-2">
-            <span v-for="(c, i) in CHURCHES" :key="c.id" :class="[swatchClass(c, i), 'h-5 w-5']" :style="swatchStyle(c)"></span>
+            <span v-for="(c, i) in palette" :key="c.id" :class="[swatchClass(c, i), 'h-5 w-5']" :style="swatchStyle(c)"></span>
           </div>
           <p class="mt-2.5 truncate font-mono text-[9px] text-gray-400">{{ current.id }}.{{ domain }}</p>
         </div>

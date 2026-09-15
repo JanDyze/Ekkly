@@ -78,6 +78,7 @@ const rest = computed(() => {
       :subtitle="`${churchName} · switch on what you need`"
       :logo="props.church.trim() ? '' : 'grace'"
       :initial="churchName[0]"
+      :church="props.church"
       active="apps"
     >
       <div class="grid grid-cols-3 gap-2">

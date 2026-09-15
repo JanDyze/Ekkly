@@ -19,6 +19,7 @@ import { initAuth, useAuth } from '../composables/useAuth'
 import { usePlatformConfig } from '../composables/usePlatformConfig'
 import { useFrontDoorConsent } from '../composables/useFrontDoorConsent'
 import { planFrom, useFrontDoor } from '../composables/useFrontDoor'
+import { knownChurch } from '../components/frontdoor/knownChurches'
 import { formatMoney } from '../utils/moneyUtils'
 import { vScrollLight } from '../components/frontdoor/scrollLight'
 
@@ -162,6 +163,10 @@ const welcomeChurch = (name) => {
   namedChurch.value = name
 }
 
+// A church the front door knows goes on the previews by its proper name, however
+// it was typed ("cp" is City Praise), and wears its own logo there.
+const demoChurch = computed(() => knownChurch(namedChurch.value)?.name || namedChurch.value)
+
 // "Add to my plan" on an app in What's inside adds it to the plan the front
 // door keeps (useFrontDoor) and leaves the reader where they are; "See my
 // plan" goes to Pricing, where it is already ticked.
@@ -277,7 +282,7 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
           </div>
         </div>
 
-        <HeroStage :domain="sampleDomain" :apps="offeredApps" :church="namedChurch" @explore="goTo('features')" />
+        <HeroStage :domain="sampleDomain" :apps="offeredApps" :church="demoChurch" @explore="goTo('features')" />
       </div>
     </section>
 
@@ -316,7 +321,7 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
 
     <!-- ======================================================= how it works -->
     <section id="how" class="scroll-mt-20 bg-gray-900 text-white lg:scroll-mt-17 dark:bg-gray-900">
-      <HowItWorks :church="namedChurch" :domain="sampleDomain" @start="goToStart">
+      <HowItWorks :church="demoChurch" :domain="sampleDomain" @start="goToStart">
         <template #heading>
           <div class="text-center lg:text-left">
             <p :class="[TYPE.eyebrow, 'text-primary-light']">How it works</p>

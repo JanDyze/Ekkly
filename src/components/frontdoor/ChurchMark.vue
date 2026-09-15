@@ -8,7 +8,8 @@ import { BirdFill, BookOpenTextFill, ChurchFill, SunHorizonFill } from '../../ic
 // than a letter in a square.
 //
 // A church the visitor typed in has no logo to show, so it gets its initial on
-// a plain badge, which is what a new church sees before it uploads one.
+// a plain badge, which is what a new church sees before it uploads one — unless
+// it is one the front door knows (knownChurches.js), which wears its own logo.
 //
 // The badge is bg-primary, so it follows whichever colour the stage has
 // dressed the device in.
@@ -18,6 +19,8 @@ const props = defineProps({
   church: { type: String, default: '' },
   // Shown when there is no logo.
   initial: { type: String, default: '' },
+  // A real church's own logo, which wins over both.
+  image: { type: String, default: '' },
 })
 
 // Each church a mark and a badge of its own, so four logos read as four
@@ -34,7 +37,12 @@ const mark = computed(() => MARKS[props.church] || null)
 </script>
 
 <template>
+  <!-- A real logo keeps its own colours, on white. -->
+  <span v-if="image" class="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[30%] bg-white shadow-md shadow-black/15 ring-1 ring-black/5">
+    <img :src="image" alt="" draggable="false" class="h-[88%] w-[88%] select-none object-contain" />
+  </span>
   <span
+    v-else
     :class="[
       'relative flex h-full w-full items-center justify-center bg-linear-to-br from-primary to-primary-hover text-white shadow-md shadow-primary/30',
       mark ? mark.shape : 'rounded-[30%]',

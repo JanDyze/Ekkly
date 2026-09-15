@@ -1,7 +1,9 @@
 <script setup>
 import { Home, MagnifyingGlass, ProjectorScreen } from '../../icons'
 import { appIcon } from './appIcons'
+import { computed } from 'vue'
 import ChurchMark from './ChurchMark.vue'
+import { knownChurch } from './knownChurches'
 import ScaledScreen from './ScaledScreen.vue'
 
 // Ekkly as it looks on a computer, for the hero's computer scenes: the sidebar
@@ -24,6 +26,9 @@ const props = defineProps({
   church: { type: String, default: '' },
 })
 
+// A church the front door knows wears its own logo.
+const known = computed(() => knownChurch(props.church))
+
 const NAV = [
   { key: 'home', icon: Home },
   { key: 'members', icon: appIcon('members') },
@@ -40,7 +45,11 @@ const NAV = [
     <div class="flex h-full">
       <nav class="flex w-13 shrink-0 flex-col items-center gap-1.5 border-r border-gray-100 bg-gray-50 py-2.5 dark:border-gray-800 dark:bg-gray-950">
         <span class="mb-1.5 h-8 w-8 text-[13px]">
-          <ChurchMark :church="props.church.trim() ? '' : logo" :initial="props.church.trim() ? props.church.trim()[0] : initial" />
+          <ChurchMark
+            :church="props.church.trim() ? '' : logo"
+            :initial="props.church.trim() ? props.church.trim()[0] : initial"
+            :image="known?.logo || ''"
+          />
         </span>
         <span
           v-for="item in NAV"
