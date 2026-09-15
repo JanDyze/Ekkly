@@ -377,7 +377,9 @@ const tintStyle = computed(() =>
     </div>
 
     <!-- The scenes, to pick from; the chosen one fills as it plays and opens
-         out to show its name. -->
+         out to show its name. No chip is white or black: the artwork is glossy
+         and partly white, and vanishes on white, so the chosen one takes a tint
+         of the accent and the rest a light grey. -->
     <div class="mt-2 flex items-center justify-center gap-1.5">
       <button
         v-for="(scene, i) in SCENES"
@@ -389,8 +391,8 @@ const tintStyle = computed(() =>
         :class="[
           'relative flex h-10 items-center overflow-hidden whitespace-nowrap rounded-full px-2 text-xs font-semibold transition-colors duration-300',
           i === index
-            ? 'bg-gray-900 text-white shadow-lg shadow-gray-900/20 dark:bg-white dark:text-gray-900'
-            : 'bg-white/80 text-gray-600 ring-1 ring-gray-200 backdrop-blur hover:text-gray-900 dark:bg-gray-900/70 dark:text-gray-400 dark:ring-gray-800 dark:hover:text-white',
+            ? 'bg-primary/15 text-gray-900 ring-1 ring-primary/40 dark:bg-primary-light/20 dark:text-white dark:ring-primary-light/40'
+            : 'bg-gray-100/90 text-gray-600 ring-1 ring-gray-200/80 backdrop-blur hover:bg-gray-200/80 hover:text-gray-900 dark:bg-gray-800/80 dark:text-gray-400 dark:ring-gray-700 dark:hover:bg-gray-700/80 dark:hover:text-white',
         ]"
       >
         <span class="chip-art h-6 w-6 shrink-0" aria-hidden="true">
@@ -405,13 +407,30 @@ const tintStyle = computed(() =>
         <span :class="['label hidden sm:grid', i === index ? 'is-open' : '']">
           <span class="overflow-hidden">{{ scene.chip }}</span>
         </span>
-        <span
+        <!-- The time left in the scene, drawn round the chip's own rounded
+             edge. The line sits on the edge and the chip clips its outer half,
+             so what shows follows the curve exactly, whatever width the chip
+             has opened to. -->
+        <svg
           v-if="i === index && !still"
           :key="run"
-          class="progress absolute inset-x-0 bottom-0 h-0.5 origin-left bg-primary dark:bg-primary-light"
-          :style="{ animationDuration: `${scene.duration}ms`, animationPlayState: playing ? 'running' : 'paused' }"
-          @animationend="next"
-        ></span>
+          class="pointer-events-none absolute inset-0 h-full w-full text-primary dark:text-primary-light"
+          aria-hidden="true"
+        >
+          <rect
+            class="progress"
+            width="100%"
+            height="100%"
+            rx="20"
+            ry="20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="4"
+            pathLength="1"
+            :style="{ animationDuration: `${scene.duration}ms`, animationPlayState: playing ? 'running' : 'paused' }"
+            @animationend="next"
+          />
+        </svg>
       </button>
     </div>
   </div>
@@ -570,12 +589,16 @@ const tintStyle = computed(() =>
   animation-fill-mode: forwards;
 }
 
+.progress {
+  stroke-dasharray: 1;
+}
+
 @keyframes fill {
   from {
-    transform: scaleX(0);
+    stroke-dashoffset: 1;
   }
   to {
-    transform: scaleX(1);
+    stroke-dashoffset: 0;
   }
 }
 

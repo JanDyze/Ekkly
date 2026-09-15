@@ -11,6 +11,17 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.26.1] — 2026-09-15
+
+The tour's chips suit the app artwork.
+
+### Changed
+
+- **The chosen chip is tinted with the accent** rather than black or white, and
+  the rest are light grey, so artwork that is partly white stays visible.
+- **The time left in a scene runs round the chip's rounded edge** instead of
+  along its bottom.
+
 ## [0.26.0] — 2026-09-15
 
 The front door is several short pages instead of one long one, and says
