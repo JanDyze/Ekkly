@@ -18,7 +18,7 @@ const props = defineProps({
   catalog: { type: Array, default: () => [] },
 })
 
-const emit = defineEmits(['start'])
+const emit = defineEmits(['start', 'change'])
 
 // Prices here are whole pesos, so they read as a price tag rather than a bill.
 const peso = (centavos) => formatMoney(centavos).replace(/\.00$/, '')
@@ -59,6 +59,10 @@ const add = (key) => {
   celebrate(key)
 }
 defineExpose({ add })
+
+// Which apps are in the plan, told to the page, so What's inside can say an app
+// is already in it.
+watch(picked, (keys) => emit('change', [...keys]), { immediate: true })
 
 const isOn = (app) => app.core || picked.value.has(app.key)
 const chosen = computed(() => offered.value.filter(isOn))

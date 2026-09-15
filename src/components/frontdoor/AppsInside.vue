@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
-import { ArrowRight, Check, ChevronLeft, ChevronRight, X } from '../../icons'
+import { Check, ChevronLeft, ChevronRight, Plus, X } from '../../icons'
 import { useMediaQuery } from '../../composables/useMediaQuery'
 import { useScrollLock } from '../../composables/useScrollLock'
 import { formatMoney } from '../../utils/moneyUtils'
@@ -22,9 +22,12 @@ import { vScrollLight } from './scrollLight'
 
 const props = defineProps({
   apps: { type: Array, default: () => [] },
+  // The keys of the apps in the plan builder's plan, so an open app can say
+  // it is already in it.
+  planned: { type: Array, default: () => [] },
 })
 
-const emit = defineEmits(['plan'])
+const emit = defineEmits(['plan', 'view-plan'])
 
 const isDesktop = useMediaQuery('(min-width: 1024px)')
 
@@ -125,9 +128,19 @@ const step = (by) => {
 // price tag; the centavos only matter on a bill.
 const priceOf = (app) => (app.price > 0 ? `${formatMoney(app.price).replace(/\.00$/, '')} a month` : 'Free')
 
+const inPlan = (app) => props.planned.includes(app.key)
+
+// Adding keeps the panel open and says so in place; "See my plan" is there for
+// anyone who wants to go and look.
+const justAdded = ref('')
 const addToPlan = (app) => {
-  openKey.value = null
+  justAdded.value = app.key
   emit('plan', app.key)
+}
+
+const viewPlan = async () => {
+  await close()
+  emit('view-plan')
 }
 
 // Escape closes and the arrow keys walk the apps, while one is open and nobody
@@ -147,18 +160,6 @@ watch(openKey, (key) => {
   else window.removeEventListener('keydown', onKey)
 })
 
-// The strip of apps is wider than a phone, so the open one is brought to its
-// middle — scrolling only the strip, never the page.
-const strip = ref(null)
-watch(openKey, async (key) => {
-  if (!key) return
-  await nextTick()
-  const bar = strip.value
-  const tab = bar?.querySelector('[aria-selected="true"]')
-  if (!bar || !tab) return
-  const left = tab.offsetLeft - (bar.clientWidth - tab.offsetWidth) / 2
-  bar.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
-})
 onUnmounted(() => window.removeEventListener('keydown', onKey))
 </script>
 
@@ -216,9 +217,14 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
             isDesktop ? 'h-full rounded-2xl' : 'max-h-[85dvh] w-full max-w-md rounded-3xl',
           ]"
         >
-          <!-- Every app, to go straight to another. -->
+          <!-- Going from one app to the next. A desktop also has every app in a
+               row, which fits it; a phone has only where it is, and the arrows,
+               rather than a row that would have to scroll sideways. -->
           <div class="panel-fade flex items-center gap-2 border-b border-gray-100 px-3 py-2.5 sm:px-4 dark:border-gray-800">
-            <div ref="strip" class="relative flex min-w-0 flex-1 items-center gap-1 overflow-x-auto" role="tablist" aria-label="Apps">
+            <p class="min-w-0 flex-1 px-1 text-sm font-semibold tabular-nums text-gray-500 lg:hidden dark:text-gray-400">
+              {{ openIndex + 1 }} of {{ ordered.length }}
+            </p>
+            <div class="hidden min-w-0 flex-1 items-center gap-1 lg:flex" role="tablist" aria-label="Apps">
               <button
                 v-for="app in ordered"
                 :key="app.key"
@@ -237,13 +243,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
               </button>
             </div>
             <div class="flex shrink-0 items-center gap-1">
-              <button type="button" aria-label="Previous app" class="hidden rounded-lg p-2 text-gray-500 hover:bg-gray-100 sm:block dark:text-gray-400 dark:hover:bg-gray-800" @click="step(-1)">
+              <button type="button" aria-label="Previous app" class="flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" @click="step(-1)">
                 <ChevronLeft class="h-5 w-5" />
               </button>
-              <button type="button" aria-label="Next app" class="hidden rounded-lg p-2 text-gray-500 hover:bg-gray-100 sm:block dark:text-gray-400 dark:hover:bg-gray-800" @click="step(1)">
+              <button type="button" aria-label="Next app" class="flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" @click="step(1)">
                 <ChevronRight class="h-5 w-5" />
               </button>
-              <span class="mx-1 hidden h-5 w-px bg-gray-200 sm:block dark:bg-gray-700" aria-hidden="true"></span>
+              <span class="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
               <button type="button" aria-label="Close" class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" @click="close">
                 <X class="h-5 w-5" />
               </button>
@@ -267,22 +273,36 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
                   <p class="mt-4 text-balance text-2xl font-black leading-[1.1] tracking-tight lg:mt-[clamp(1rem,3dvh,1.75rem)] lg:text-[clamp(1.75rem,5dvh,2.75rem)] lg:leading-[1.08]">{{ detail.headline }}</p>
 
                   <div class="mt-5 hidden flex-wrap items-center gap-x-4 gap-y-2 lg:mt-[clamp(1.25rem,4dvh,2.25rem)] lg:flex">
-                    <span
-                      v-if="openApp.core"
-                      class="inline-flex h-11 items-center gap-1.5 rounded-xl bg-primary/10 px-4 text-sm font-semibold text-primary dark:bg-primary-light/15 dark:text-primary-light"
-                    >
+<span
+                    v-if="openApp.core"
+                    class="inline-flex h-11 items-center gap-1.5 rounded-xl bg-primary/10 px-4 text-sm font-semibold text-primary dark:bg-primary-light/15 dark:text-primary-light"
+                  >
+                    <Check class="h-4 w-4" />
+                    Always included
+                  </span>
+                  <!-- Added, it says so where the button was, and the panel stays
+                       open: there may be more apps to look at. -->
+                  <span
+                    v-else-if="inPlan(openApp)"
+                    :class="['inline-flex h-11 items-center gap-x-3 gap-y-1', { 'just-added': justAdded === openApp.key }]"
+                  >
+                    <span class="added inline-flex h-11 items-center gap-1.5 rounded-xl bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
                       <Check class="h-4 w-4" />
-                      Always included
+                      In your plan
                     </span>
-                    <button
-                      v-else
-                      type="button"
-                      class="group/add inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-colors hover:bg-primary-hover"
-                      @click="addToPlan(openApp)"
-                    >
-                      Add {{ openApp.name }} to my plan
-                      <ArrowRight class="h-4 w-4 transition-transform group-hover/add:translate-x-1" />
+                    <button type="button" class="text-sm font-semibold text-primary underline-offset-4 hover:underline dark:text-primary-light" @click="viewPlan">
+                      See my plan
                     </button>
+                  </span>
+                  <button
+                    v-else
+                    type="button"
+                    class="group/add inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-colors hover:bg-primary-hover"
+                    @click="addToPlan(openApp)"
+                  >
+                    Add {{ openApp.name }} to my plan
+                    <Plus class="h-4 w-4" />
+                  </button>
                     <span class="text-sm font-semibold tabular-nums text-gray-500 dark:text-gray-400">{{ priceOf(openApp) }}</span>
                   </div>
                 </div>
@@ -304,12 +324,26 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
                 <!-- A phone puts the price and the button last, under the wins. -->
                 <div class="flex flex-wrap items-center justify-between gap-3 lg:hidden">
                   <span class="text-sm font-semibold tabular-nums text-gray-500 dark:text-gray-400">{{ priceOf(openApp) }}</span>
-                  <span
+<span
                     v-if="openApp.core"
                     class="inline-flex h-11 items-center gap-1.5 rounded-xl bg-primary/10 px-4 text-sm font-semibold text-primary dark:bg-primary-light/15 dark:text-primary-light"
                   >
                     <Check class="h-4 w-4" />
                     Always included
+                  </span>
+                  <!-- Added, it says so where the button was, and the panel stays
+                       open: there may be more apps to look at. -->
+                  <span
+                    v-else-if="inPlan(openApp)"
+                    :class="['inline-flex h-11 items-center gap-x-3 gap-y-1', { 'just-added': justAdded === openApp.key }]"
+                  >
+                    <span class="added inline-flex h-11 items-center gap-1.5 rounded-xl bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                      <Check class="h-4 w-4" />
+                      In your plan
+                    </span>
+                    <button type="button" class="text-sm font-semibold text-primary underline-offset-4 hover:underline dark:text-primary-light" @click="viewPlan">
+                      See my plan
+                    </button>
                   </span>
                   <button
                     v-else
@@ -318,7 +352,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
                     @click="addToPlan(openApp)"
                   >
                     Add to my plan
-                    <ArrowRight class="h-4 w-4 transition-transform group-hover/add:translate-x-1" />
+                    <Plus class="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -416,6 +450,18 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
   opacity: 0;
 }
 
+/* Just added: the "In your plan" mark arrives with a little give, once. */
+.just-added .added {
+  animation: added-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes added-in {
+  from {
+    opacity: 0;
+    scale: 0.8;
+  }
+}
+
 /* Going from one app to another: a quick cross-fade, and the wins arrive one
    after another. */
 .swap-enter-active,
@@ -454,7 +500,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
     transition: none;
   }
 
-  .win {
+  .win,
+  .just-added .added {
     animation: none;
   }
 }

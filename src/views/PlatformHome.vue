@@ -248,12 +248,13 @@ const welcomeChurch = (name) => {
   form.churchName = name
 }
 
-// "Add to my plan" on an app in What's inside: it is ticked in the plan
-// builder, and the page goes there so they see it join the total.
+// "Add to my plan" on an app in What's inside ticks it in the plan builder
+// and leaves the reader where they are; What's inside says it is added, and
+// offers the way down to the plan. It learns what is in the plan from here.
 const planBuilder = ref(null)
+const planned = ref([])
 const addToPlan = (key) => {
   planBuilder.value?.add(key)
-  goTo('plan')
 }
 
 // Scrolling down the page is a room catching the light, not sections fading up
@@ -497,7 +498,7 @@ const input =
         <!-- One card for each part of church life, whose apps light up as the
              cards rise into view. Opening an app shows everything it does, and
              its button carries it into the plan builder further down. -->
-        <AppsInside :apps="offeredApps" @plan="addToPlan">
+        <AppsInside :apps="offeredApps" :planned="planned" @plan="addToPlan" @view-plan="goTo('plan')">
           <template #heading>
             <div class="mx-auto max-w-2xl text-center lg:mx-0 lg:flex lg:max-w-none lg:items-end lg:justify-between lg:gap-12 lg:text-left">
               <div class="lg:max-w-xl">
@@ -612,7 +613,7 @@ const input =
           </p>
         </div>
         <div class="mt-12">
-          <PlanBuilder ref="planBuilder" :catalog="catalog" @start="goToStart" />
+          <PlanBuilder ref="planBuilder" :catalog="catalog" @start="goToStart" @change="planned = $event" />
         </div>
       </div>
     </section>

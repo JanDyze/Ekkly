@@ -11,6 +11,18 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.25.4] — 2026-09-15
+
+Looking through the apps is easier to do one after another.
+
+### Changed
+
+- **What's inside steps from app to app** with previous and next arrows, on a
+  phone too, where the row of apps that scrolled sideways is now "4 of 14".
+- **Adding an app to your plan keeps it open** and says "In your plan", with
+  "See my plan" for anyone who wants to go down and look. Apps already in the
+  plan say so when opened.
+
 ## [0.25.3] — 2026-09-15
 
 The tour matches the rest of the front door.
