@@ -11,6 +11,20 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.26.2] — 2026-09-15
+
+Light and dark on the front door.
+
+### Added
+
+- **A light and dark switch** in the front door's header, on every page.
+
+### Changed
+
+- **Switching to light mode now says "And then there was light"**, everywhere
+  the switch is, and the line wraps on a narrow phone instead of running off
+  the screen.
+
 ## [0.26.1] — 2026-09-15
 
 The tour's chips suit the app artwork.

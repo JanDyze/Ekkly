@@ -1,9 +1,10 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
-import { ShieldCheck } from '../../icons'
+import { Moon, ShieldCheck, Sun } from '../../icons'
 import PlatformLogo from '../common/PlatformLogo.vue'
 import { useAuth } from '../../composables/useAuth'
 import { useFrontDoor } from '../../composables/useFrontDoor'
+import { useTheme } from '../../composables/useTheme'
 
 // The bar across the top of every front door page. Its links go to the home
 // page's sections, to Pricing, and to Get started; on the home page a section
@@ -13,6 +14,10 @@ const route = useRoute()
 const router = useRouter()
 const { isAuthenticated } = useAuth()
 const { admin, signal } = useFrontDoor()
+
+// Light or dark, the same switch the app has, with the same moment when it
+// changes (App.vue draws it).
+const { isDark, toggleTheme } = useTheme()
 
 const SECTIONS = [
   { id: 'features', label: 'What’s inside' },
@@ -53,6 +58,16 @@ const current = 'text-gray-900 dark:text-white'
         >
           Pricing
         </RouterLink>
+        <button
+          type="button"
+          :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+          :title="isDark ? 'Light mode' : 'Dark mode'"
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+          @click="toggleTheme($event)"
+        >
+          <Sun v-if="isDark" class="h-5 w-5" />
+          <Moon v-else class="h-5 w-5" />
+        </button>
         <RouterLink
           v-if="admin"
           to="/platform"

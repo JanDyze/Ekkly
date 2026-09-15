@@ -135,7 +135,7 @@ onUnmounted(() => {
       :style="{ '--origin-x': transitionOrigin.x + 'px', '--origin-y': transitionOrigin.y + 'px' }"
     >
       <span class="theme-text" :class="isDark ? 'text-light' : 'text-dark'">
-        {{ isDark ? 'Then darkness came...' : 'Let there be light!' }}
+        {{ isDark ? 'Then darkness came...' : 'And then there was light' }}
       </span>
     </div>
   </div>
@@ -172,7 +172,11 @@ onUnmounted(() => {
   font-size: 2.5rem;
   font-weight: 800;
   letter-spacing: 0.1em;
-  white-space: nowrap;
+  /* A long line wraps on a narrow phone rather than running off its edges. */
+  width: max-content;
+  max-width: 90vw;
+  text-align: center;
+  text-wrap: balance;
   opacity: 0;
   animation: text-fade 0.6s ease-out 0.1s forwards;
 }
