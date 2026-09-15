@@ -11,6 +11,21 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.26.6] — 2026-09-15
+
+Previews that look like previews, of your own church.
+
+### Changed
+
+- **How it works's cards read as something to watch:** each sits in a frame
+  labelled Preview, nothing in it responds to a tap, and a hand shows each
+  button being pressed. A phone has a Replay button in the frame.
+- **Your church's name is remembered on your device**, from the welcome or the
+  Get started form, so the tour and How it works show your church on later
+  visits too. The Privacy page says so.
+- **On a phone, the first step's Next step button spans the row**; Back appears
+  from step 2.
+
 ## [0.26.5] — 2026-09-15
 
 How it works on a phone, and the right address in the samples.

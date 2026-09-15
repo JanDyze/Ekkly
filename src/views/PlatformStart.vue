@@ -91,12 +91,15 @@ watch(
   { immediate: true }
 )
 
-// The link follows the name until somebody edits it themselves.
+// The link follows the name until somebody edits it themselves. The name is
+// also remembered as their church, for the front door's previews — but not
+// emptied when the form is, after sending.
 const linkEdited = ref(false)
 watch(
   () => form.churchName,
   (name) => {
     if (!linkEdited.value) form.churchId = suggestChurchId(name)
+    if (name.trim()) namedChurch.value = name.trim()
   },
   { immediate: true }
 )

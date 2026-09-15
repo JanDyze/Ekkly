@@ -28,7 +28,7 @@ export const privacy = ({ name, email }) => ({
         'If you say hello: your church’s name, your name, and the email or phone number you give, so we can reach out.',
         'If you chat with us: your messages, and your name and email if you give them.',
         'If you ask for a church: your Google account’s name and email, and the details you enter about the church.',
-        'On your own device: your answer to the counting question, that you have seen the welcome, your light or dark choice, and the plan you are building, which is forgotten when you close the tab.',
+        'On your own device: your answer to the counting question, that you have seen the welcome, your light or dark choice, and your church’s name if you gave it, so the previews here show your church. The plan you are building is forgotten when you close the tab.',
       ],
     },
     {

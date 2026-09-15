@@ -240,7 +240,7 @@ const onTouchEnd = (event) => {
         <div>
           <!-- As tall as the tallest card, so turning to a shorter one does not
                move everything around it. -->
-          <div class="relative flex min-h-84 items-center">
+          <div class="relative flex min-h-96 items-center">
             <Transition :name="`turn-${direction}`" mode="out-in">
               <HowVisual class="w-full" :key="active" :step="active" :p="within" :church="church" :domain="domain" />
             </Transition>
@@ -303,7 +303,7 @@ const onTouchEnd = (event) => {
             <p class="mt-2 min-h-12 text-base leading-relaxed text-white/70">{{ STEPS[phoneStep].body }}</p>
             <!-- As tall as the tallest card, so the buttons below stay put. -->
             <div class="mt-5 min-h-92">
-              <HowVisual :step="phoneStep" :p="phoneP" :church="church" :domain="domain" @click="play" />
+              <HowVisual :step="phoneStep" :p="phoneP" :church="church" :domain="domain" replayable @replay="play" />
             </div>
           </div>
         </Transition>
@@ -340,7 +340,7 @@ const onTouchEnd = (event) => {
           <ArrowRight class="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </button>
       </div>
-      <p class="mt-3 text-center text-xs text-white/40">Swipe the card, or tap a step</p>
+      <p class="mt-3 text-center text-xs text-white/40">Swipe the preview, or tap a step</p>
     </div>
   </div>
 </template>

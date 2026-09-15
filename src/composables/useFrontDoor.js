@@ -9,26 +9,37 @@ import { isPlatformAdmin, sendFrontDoorSignal } from '../api/platformService'
 // A visitor builds up two things as they go — the apps they would use and the
 // name of their church — and each page picks them up where the last left off:
 // "Add to my plan" on the home page is already ticked on Pricing, and the church
-// they named in the welcome is already in the form on Get started. Both live
-// for the tab (sessionStorage), so a reload keeps them and a new visit starts
-// fresh.
+// they named in the welcome is already in the form on Get started.
+//
+// The plan lives for the tab (sessionStorage), so a new visit starts fresh. The
+// church's name is kept on the device (localStorage): once someone has said
+// which church they are with, every preview on the front door — the tour, How
+// it works — shows theirs, this visit and the next.
 
 const PICKS_KEY = 'ekkly.frontDoor.plan'
 const CHURCH_KEY = 'ekkly.frontDoor.church'
 
-const read = (key) => {
+const storage = (kind) => {
   try {
-    return sessionStorage.getItem(key)
+    return kind === 'local' ? localStorage : sessionStorage
   } catch {
     return null
   }
 }
 
-const write = (key, value) => {
+const read = (key, kind = 'session') => {
   try {
-    sessionStorage.setItem(key, value)
+    return storage(kind)?.getItem(key) ?? null
   } catch {
-    // A tab that cannot remember starts again on reload. That is all.
+    return null
+  }
+}
+
+const write = (key, value, kind = 'session') => {
+  try {
+    storage(kind)?.setItem(key, value)
+  } catch {
+    // A browser that cannot remember starts again next time. That is all.
   }
 }
 
@@ -47,8 +58,9 @@ const readPicks = () => {
 const picks = ref(readPicks())
 watch(picks, (list) => write(PICKS_KEY, JSON.stringify(list)))
 
-const namedChurch = ref(read(CHURCH_KEY) || '')
-watch(namedChurch, (name) => write(CHURCH_KEY, name))
+// A name kept from before this change lived in the tab; it carries over.
+const namedChurch = ref(read(CHURCH_KEY, 'local') || read(CHURCH_KEY) || '')
+watch(namedChurch, (name) => write(CHURCH_KEY, name.trim(), 'local'), { immediate: true })
 
 // Whether the signed-in person runs the platform, for the console link. Looked
 // up once per sign-in, however many pages ask.
