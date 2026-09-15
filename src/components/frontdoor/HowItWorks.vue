@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onUnmounted, ref, watch } from 'vue'
-import { ArrowRight, CheckCircle2 } from '../../icons'
+import { ArrowRight, CheckCircle2, ChevronLeft } from '../../icons'
 import { useMediaQuery } from '../../composables/useMediaQuery'
 import HowVisual from './HowVisual.vue'
 import { prefersStill } from './useSceneTimeline'
@@ -310,13 +310,16 @@ const onTouchEnd = (event) => {
       </div>
 
       <div class="mt-6 flex items-center gap-3">
+        <!-- Back is there only once there is somewhere to go back to, so the
+             first step's button spans the whole row rather than leaving a gap. -->
         <button
+          v-if="phoneStep > 0"
           type="button"
-          :disabled="phoneStep === 0"
-          class="h-12 rounded-xl px-4 text-sm font-semibold text-white/70 transition-colors hover:bg-white/10 disabled:opacity-0"
+          aria-label="Back a step"
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white/80 ring-1 ring-white/15 transition-colors hover:bg-white/10"
           @click="goPhone(phoneStep - 1)"
         >
-          Back
+          <ChevronLeft class="h-5 w-5" />
         </button>
         <button
           v-if="phoneStep < STEPS.length - 1"
