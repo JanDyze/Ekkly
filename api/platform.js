@@ -11,8 +11,9 @@
 //   CHURCH_ACTIONS    an administrator of the church the request names, via
 //                     the X-Church-Id header (requireChurchAdmin)
 //   PUBLIC_ACTIONS    anyone at all, signed in or not. Only the front door's
-//                     own counting is here, and it is written to be safe in
-//                     the open: see lib/platform/frontDoor.js.
+//                     own counting, its welcome and its chat bubble are here,
+//                     each written to be safe in the open: see
+//                     lib/platform/frontDoor.js and lib/platform/chat.js.
 //
 // The Admin SDK is not bound by Firestore's rules, so those checks are the
 // rules here. Every change an action makes is written to platformLog.
@@ -32,7 +33,15 @@ import {
 } from "../lib/platform/support.js";
 import { readConfig, saveAi, saveBranding, saveCatalog, saveDefaults, saveTheme } from "../lib/platform/config.js";
 import { addDomain, domainStatus, removeDomain, setPrimaryDomain } from "../lib/platform/domains.js";
-import { frontDoorReport, recordFrontDoor } from "../lib/platform/frontDoor.js";
+import { frontDoorReport, recordFrontDoor, recordLead } from "../lib/platform/frontDoor.js";
+import { chatIdentify, chatPoll, chatSend, listChats, presenceBeat, readChat, replyChat } from "../lib/platform/chat.js";
+import {
+  cancelCardBilling,
+  handlePaymongoEvent,
+  signatureValid,
+  startCardBilling,
+  syncCardBilling,
+} from "../lib/platform/payments.js";
 
 // (admin, body) => result
 const PLATFORM_ACTIONS = {
@@ -67,6 +76,11 @@ const PLATFORM_ACTIONS = {
   saveDefaults,
   // the front door
   frontDoor: (_admin, body) => frontDoorReport(body),
+  // the front door's chat
+  presenceBeat: (admin) => presenceBeat(admin),
+  chats: () => listChats(),
+  chat: readChat,
+  replyChat,
   // who runs it
   listAdmins: () => listAdmins(),
   addAdmin,
@@ -77,6 +91,11 @@ const PLATFORM_ACTIONS = {
 // (body) => result, for a visitor who has not signed in and may never.
 const PUBLIC_ACTIONS = {
   frontDoorSignal: recordFrontDoor,
+  chatPoll,
+  chatSend,
+  chatIdentify,
+  // the front door's welcome: a new church leaving its name and a way to reach it
+  frontDoorLead: recordLead,
 };
 
 // (caller, body) => result, where caller carries the church
@@ -85,11 +104,33 @@ const CHURCH_ACTIONS = {
   setMyApps,
   mySupportRequests: (caller) => mySupportRequests(caller),
   sendSupportRequest,
+  // paying by card (lib/platform/payments.js)
+  startCardBilling,
+  syncCardBilling: (caller) => syncCardBilling(caller),
+  cancelCardBilling: (caller) => cancelCardBilling(caller),
 };
 
 export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  // PayMongo's webhook comes here too, since api/ has no room for a route of
+  // its own. It is told apart by its signature header, answered quickly, and
+  // acted on only after PayMongo is asked directly (see payments.js).
+  if (req.headers["paymongo-signature"]) {
+    try {
+      const raw = typeof req.rawBody === "string" ? req.rawBody : null;
+      if (signatureValid(req.headers["paymongo-signature"], raw) === false) {
+        return res.status(401).json({ error: "Bad signature" });
+      }
+      const event = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+      return res.status(200).json(await handlePaymongoEvent(event));
+    } catch (error) {
+      console.error("Error handling a PayMongo event:", error);
+      // A 500 makes PayMongo retry, which is what an outage here should do.
+      return res.status(500).json({ error: "Could not handle that event" });
+    }
+  }
 
   let body = req.body || {};
   if (typeof body === "string") {

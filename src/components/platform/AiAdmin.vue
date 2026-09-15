@@ -11,7 +11,7 @@ import { AI_FEATURES, AI_MODELS, isModelId, modelLabel } from '../../../lib/aiMo
 // The platform's AI: whether it runs at all, and which Claude model each
 // feature uses. Every call is paid for by the platform, which is why this is
 // here and not in a church's Settings. A church only gets AI if the switch
-// here is on and its plan includes the AI assist app. Changes reach the
+// here is on and its plan includes the EKRIS app. Changes reach the
 // endpoints within a minute.
 
 const toast = useToast()

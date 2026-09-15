@@ -141,9 +141,9 @@ const done = computed(() => count.value === TOTAL)
       </Transition>
     </AppWindow>
 
-    <FloatNote :icon="HandTap" title="One tap a person" body="at the door" :delay="900" :class="props.desktop ? '-right-8 -top-5' : '-left-40 top-40'" />
-    <FloatNote title="Up 9% this month" :delay="1500" :class="props.desktop ? '-bottom-8 -left-10' : '-right-40 top-72'">
-      <svg viewBox="0 0 100 32" class="mt-1.5 h-8 w-32 overflow-visible text-emerald-500" aria-hidden="true">
+    <FloatNote :icon="HandTap" title="One tap a person" body="at the door" :delay="900" :class="props.desktop ? '-right-3 sm:-right-8 -top-5' : 'fd-out-left sm:-left-40 top-40'" />
+    <FloatNote title="Up 9% this month" :delay="1500" :class="props.desktop ? '-bottom-8 -left-3 sm:-left-10' : 'fd-out-right sm:-right-40 top-72'">
+      <svg viewBox="0 0 100 32" class="mt-1 h-6 w-24 overflow-visible text-emerald-500 sm:mt-1.5 sm:h-8 sm:w-32" aria-hidden="true">
         <path class="draw" d="M2 26 L18 22 L32 24 L48 16 L62 18 L78 10 L98 4" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1" />
       </svg>
     </FloatNote>

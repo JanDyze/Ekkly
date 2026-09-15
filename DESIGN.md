@@ -127,13 +127,62 @@ ending on what the tour left out. It lives in
 - **Everything on screen is sample data**, and every colour is a token, so the
   platform's colour in the console carries the whole page — the light behind
   the hero and the headline included.
-- **"Curious? Type your church's name."** sits under the hero's buttons. It
-  asks for nothing and sends nothing: it shows the address that name would
-  have, puts the name on the device in the tour, and hands it to the request
-  form if they take it up.
+- **"Say hello, we'll reach out"** sits under the hero's buttons and opens the
+  welcome again, straight away, for anyone who skipped it. The church named
+  there goes on the device in the tour and into the request form.
 - **Motion shows something happening.** Nothing idles: no breathing, no
   bobbing, and no button that lifts or grows under the pointer. Every scene
   also has a finished state for `prefers-reduced-motion`.
+- **Below the hero, motion follows the scroll, both ways.** No section fades
+  and rises into view; that stock reveal is what every template does.
+  `v-scroll-light` ([scrollLight.js](src/components/frontdoor/scrollLight.js))
+  gives an element `--p`, from 0 to 1, as it passes up the screen, and the
+  page draws with it: a band of the window's colours crosses each heading
+  (`lit-heading`), the apps in "What's inside" light up one after another,
+  icon by icon, "How it works" plays one
+  church's request through the steps (the church named in the welcome, if any), and
+  the last call opens out of an arched window. A new section uses one of these,
+  or shows its own content doing something; it doesn't bring back the fade.
+  Styles read `var(--p, 1)` so the finished state is the default.
+- **"What's inside" is one screen on a desktop:** `min-h-[calc(100dvh-4.25rem)]`
+  under the header, with spacing in clamped `dvh` so a short laptop tightens it
+  instead of spilling over. [AppsInside.vue](src/components/frontdoor/AppsInside.vue)
+  lays the apps out like a phone's home screen: an icon and a name, nothing
+  more (4 across on a phone, 5 on a tablet, 7 on a desktop), lighting up in
+  turn as the grid rises. Opening an app shows what a church
+  gets from it, from [appDetails.js](src/components/frontdoor/appDetails.js):
+  one benefit line and three practical wins of a few words, each with an icon.
+  Keep it that short; paragraphs there go unread. On a
+  desktop the panel grows out of the app's icon to cover the section, with a
+  strip of every app, arrows and Escape; on a phone it is a card in the middle
+  of the screen, with the page locked behind it.
+  "Add to my plan" ticks the app in the plan builder, which is still the only
+  place apps are chosen. A new app gets an entry in appDetails.js.
+- **Section headings share one scale:** `TYPE.eyebrow`, `TYPE.title` and
+  `TYPE.lead` in PlatformHome.vue. A new section uses them rather than its own
+  sizes; only colour changes, for the dark band.
+- **Prices are whole pesos** on the front door (no `.00`). The plan builder
+  switches between monthly and yearly, a year costing `MONTHS_PER_YEAR_PAID`
+  months (`lib/apps.js`), and says the first month is free.
+- **The welcome** ([WelcomeSheet.vue](src/components/frontdoor/WelcomeSheet.vue))
+  greets a first visit, once, 1.4s after the headline, and never someone signed
+  in. It asks which church they are with (the address it could have appears as
+  they type, and the hero's phone takes the name), then, optionally, a name and
+  an email or phone so someone can reach out. Skip, the backdrop and Escape
+  close it for good; the cookie question waits until it has. Entries land in
+  the console's Front door section. A small card in the middle of the screen
+  at every size; on a phone it stays centred in the space above the keyboard
+  (visual viewport), and it never focuses a field on its own.
+- **The chat bubble** ([ChatBubble.vue](src/components/frontdoor/ChatBubble.vue))
+  sits bottom right once the cookie question is answered. It says whether the
+  host is online. Opened, it greets, offers four one-tap questions and Call /
+  Email / Messenger; nobody is asked for a name before they have said
+  something, and a card asks where to reply after their first message. Turns
+  show a time and "Seen"; a reply that arrives while it is closed is previewed
+  beside it. On a phone it fills the screen above the keyboard (visual
+  viewport), never focuses the box on its own, and Enter makes a new line.
+  Replies come from the console's Live chat. It grows out of where it was
+  pressed and never idles.
 
 ### Settings-style pages
 
@@ -243,6 +292,18 @@ Copy [TaskDrawer.vue](src/components/tasks/TaskDrawer.vue).
   then Save (or Update when editing).
 - Call `useFocusTrap(dialogRef, () => props.show, handleCancel)` so Escape
   closes it and focus returns to where it was.
+
+### The page holds still behind anything open over it
+
+**Always.** While a modal, drawer, sheet or full-screen panel is open, the page
+behind it does not scroll. `useFocusTrap` does this by default; anything not
+built on it calls `useScrollLock(openState)`
+([useScrollLock.js](src/composables/useScrollLock.js)), which counts holders
+so a confirmation over a drawer does not hand the page back early, and keeps
+the scrollbar's width so nothing jumps. Never set `overflow` on `html` or
+`body` yourself. A drawer that is a column beside the page on a desktop locks
+only where it covers it (`() => props.show && isPhone.value`). Small menus and
+popovers that leave the page usable are the only exception.
 
 ### Sheet: picking one thing
 

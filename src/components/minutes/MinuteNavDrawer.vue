@@ -15,6 +15,8 @@
  */
 
 import { computed } from 'vue'
+import { useMediaQuery } from '../../composables/useMediaQuery'
+import { useScrollLock } from '../../composables/useScrollLock'
 import {
   Download, FileText, List, Plus, Trash2, UsersRound, X,
 } from '../../icons'
@@ -33,6 +35,11 @@ const props = defineProps({
 const emit = defineEmits([
   'close', 'select-summary', 'select', 'add', 'attendance', 'export', 'delete',
 ])
+
+// Only a drawer on a phone, where it covers the page; the page holds still
+// while it does.
+const isPhone = useMediaQuery('(max-width: 1023px)')
+useScrollLock(() => props.show && isPhone.value)
 
 const toRoman = (num) => {
   const table = [

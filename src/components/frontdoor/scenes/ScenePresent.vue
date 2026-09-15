@@ -144,24 +144,34 @@ const thumbClass = (s, i) => [
       </div>
     </ScaledScreen>
 
-    <!-- The projector's picture on the wall: below the monitor on a
-         phone-width page, overlapping its corner on anything wider. -->
+    <!-- The other screen: what the congregation sees while the operator
+         steps through the run sheet, on the phone and the computer alike.
+         Beside a monitor it overlaps the monitor's lower corner, smaller on a
+         phone-width page; beside a phone it overlaps the phone's
+         lower corner on a phone-width page, below its own preview so the two
+         are not side by side, and stands out to its right from sm up. -->
     <div
-      v-if="props.desktop"
-      class="fd-pop absolute left-1/2 top-[calc(100%+3.5rem)] z-30 w-52 -translate-x-1/2 sm:-bottom-28 sm:-right-10 sm:left-auto sm:top-auto sm:w-72 sm:translate-x-0"
+      :class="[
+        'fd-pop absolute z-30',
+        props.desktop
+          ? '-bottom-10 -right-2 w-40 sm:-bottom-28 sm:-right-10 sm:w-72'
+          : '-right-3 bottom-4 w-36 sm:-right-48 sm:bottom-auto sm:top-32 sm:w-56',
+      ]"
       style="--d: 500ms"
     >
-      <div class="relative aspect-video overflow-hidden rounded-lg shadow-2xl ring-4 ring-gray-800 dark:ring-gray-700">
-        <SlideView :slide="slide" size="lg" />
+      <div class="relative aspect-video overflow-hidden rounded-md shadow-2xl ring-2 ring-gray-800 sm:rounded-lg sm:ring-4 dark:ring-gray-700">
+        <SlideView :slide="slide" size="wall" />
       </div>
-      <p class="mt-2 flex items-center justify-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
-        <ProjectorScreen class="h-4 w-4" /> On the projector
-      </p>
     </div>
 
-    <template v-else>
-      <FloatNote :icon="MusicNotes" title="Songs and verses" body="split into slides for you" :delay="900" class="-right-40 top-36" />
-      <FloatNote :icon="PresentationChart" tone="orange" title="PowerPoint too" body="in the same run sheet" :delay="1500" class="-left-40 bottom-28" />
-    </template>
+    <FloatNote
+      v-if="!props.desktop"
+      :icon="PresentationChart"
+      tone="orange"
+      title="PowerPoint too"
+      body="in the same run sheet"
+      :delay="1500"
+      class="fd-out-left top-40 sm:-left-40 sm:bottom-28 sm:top-auto"
+    />
   </div>
 </template>

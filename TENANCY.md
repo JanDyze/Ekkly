@@ -41,8 +41,10 @@ Beside the churches sit a few platform collections:
 | `platform/private` | AI model per feature, new church defaults | the console |
 | `platformLog` | everything done from the console | `/api/platform` |
 | `supportRequests` | a church asking for an app, a change, or with feedback | `/api/platform` |
-| `frontDoorDays/{YYYY-MM-DD}` | how many visitors the front door had that day, how many typed a church name, how many pressed a call to action | `/api/platform` |
-| `frontDoorTries` | the church names visitors typed into the front door's "Curious? Type your church's name" | `/api/platform` |
+| `frontDoorDays/{YYYY-MM-DD}` | how many visitors the front door had that day, and how many pressed a call to action | `/api/platform` |
+| `frontDoorLeads` | what a first-time visitor told the welcome: their church, and, if they chose, their name and an email or phone to reach them | `/api/platform` |
+| `frontDoorChats` | conversations visitors start from the front door's chat bubble, each readable only with the secret its visitor was given | `/api/platform` |
+| `frontDoorPresence/host` | when the chat's host was last seen with Ekkly open, which is what "online now" means | `/api/platform` |
 
 Inside each church, three more are written only by the platform:
 
@@ -70,9 +72,10 @@ admin and writes a `platformLog` entry with the change.
 | Church requests | Approve or decline a request for a church. |
 | Churches | Every church with its plan and usage. Opening one (`/platform/churches/:id`) lets you rename it, change its timezone, switch its apps on and off (and lock them off), set its billing and record payments, connect domains, and close or reopen it. |
 | Apps & prices | The monthly price of each app, whether it is on offer, and how it is described to churches. |
+| Live chat | Conversations from the front door's chat bubble, and your replies. The bubble says you are online while the account named in **Name & front door → Chat bubble** has any Ekkly tab open; a message left while you are away is emailed to that address. |
 | Support requests | What churches asked for, with a status and a reply they see in their Settings. |
 | New church defaults | Timezone, public page on or off, starting apps, trial length, starter ministries and tags. |
-| Name & front door | The platform's name, tagline, contact email and front-door wording. |
+| Name & front door | The platform's name, tagline, contact email and front-door wording, and the chat bubble: on or off, the name visitors see, who answers, a phone for "Call" and a Messenger link. |
 | Colours | The accent colours every church starts with. |
 | AI | Whether AI runs at all, and which Claude model each feature uses. |
 | Platform admins | Add or remove platform admins. The last one cannot be removed. |
@@ -85,16 +88,29 @@ and its tools leave the Claude connector. Nothing in it is deleted. A church's
 administrators choose their own apps under **Settings → Apps & plan**, except
 apps the platform locked off or stopped offering.
 
-**Billing is tracked, not collected.** Take payment however you like, then
-record it on the church's page. A payment with a "covers until" date moves the
-church's paid-through date forward and marks it paid up.
+**Billing: by card, or recorded by hand.** A church's administrator can put a
+card on file under **Settings → Apps & plan → Pay by card**, monthly or yearly
+(a year costs ten months). PayMongo charges it on its own; each paid charge is
+recorded as a payment and moves the paid-through date on, and a church still
+in its free month keeps it. When a church's apps change, its card is charged
+the new total from the next cycle. Payments taken any other way (GCash, a
+bank transfer) are recorded on the church's page as before; a payment with a
+"covers until" date moves the paid-through date forward and marks it paid up.
+
+The card number goes from the browser straight to PayMongo. The server starts
+the subscription, and PayMongo's webhook (`/api/platform`, told apart by its
+`Paymongo-Signature` header) tells it about later charges. Neither the
+webhook nor the page is taken at its word: the server asks PayMongo for the
+subscription before recording anything. Keys are in [.env.example](.env.example).
+`churches/{id}/subscription/billing.card` holds the PayMongo ids, and
+`cardSubscriptions/{subscriptionId}` maps a subscription back to its church.
 
 **Colours.** A church's own colours (Settings → Colours) win over the
 platform's, which win over the built-in ones. `src/composables/useBrandTheme.js`
 applies them by overriding the CSS variables Tailwind's `primary` classes read.
 
 **AI.** Minutes write-up, song lookup and lyrics layout run only when the AI
-switch in the console is on *and* the church has the AI assist app. Each call
+switch in the console is on *and* the church has the EKRIS app. Each call
 is counted in the church's `usage` for the month.
 
 ### A new church
@@ -283,7 +299,10 @@ church.
   `subscription`, `payments`, `usage`). Until it is deployed, the browser cannot
   read the platform's colours and name (the app falls back to the built-in
   ones), and church members could still write `subscription/apps` directly.
-- **Online payments.** Billing is recorded by hand. There is no payment provider.
+- **Card payments are untested against PayMongo.** The integration follows
+  PayMongo's documentation but has not been run with real keys. Try it with the
+  test keys and PayMongo's test cards before going live, including a card that
+  asks for 3-D Secure, a declined card, and a renewal (the webhook).
 - **Roles.** `OPEN_ACCESS` in `usePermissions.js` still gives every member of a
   church every page. Churches are separated from each other; ministries within a
   church are not.

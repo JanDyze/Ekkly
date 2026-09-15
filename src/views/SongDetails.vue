@@ -377,7 +377,7 @@ onUnmounted(() => {
       >
         <div v-if="canManage('songs')" class="mb-2 flex shrink-0 items-center justify-between gap-2">
           <p class="text-xs font-bold text-gray-400">Lyrics</p>
-          <!-- AI assist is its own app; without it the lyrics are still
+          <!-- EKRIS is its own app; without it the lyrics are still
                typed and arranged by hand. -->
           <button
             v-if="isAppEnabled('ai')"

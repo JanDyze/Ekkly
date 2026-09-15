@@ -8,6 +8,17 @@
 
 export const versionHistory = [
   {
+    version: '0.25.0',
+    date: '2026-09-15',
+    title: 'Pay by card, and meet EKRIS',
+    summary: 'Your church can now pay for its plan by card, and the assistant that writes up minutes has a name of its own.',
+    highlights: [
+      'Settings → Apps & plan has a card form: pay monthly, or yearly for the price of ten months. It renews on its own, and you can remove the card any time.',
+      'A church still in its free month keeps it — the first charge pays for the time after the trial ends.',
+      'The assistant is now called EKRIS, wherever you see it in the app.',
+    ],
+  },
+  {
     version: '0.24.0',
     date: '2026-09-15',
     title: 'The app has a name: Ekkly',

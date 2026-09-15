@@ -23,8 +23,8 @@ const { answered, allow, refuse } = useFrontDoorConsent()
         </span>
         <p class="flex-1 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
           <span class="font-semibold text-gray-900 dark:text-white">May we count you?</span>
-          We keep a count of visits to this page and the church names people try above, so we know what churches are
-          looking for. Nothing follows you to other sites, and nothing is sold or shared.
+          We keep a count of visits to this page, so we know how many churches are looking. Nothing follows you to other
+          sites, and nothing is sold or shared.
         </p>
         <div class="flex shrink-0 gap-2">
           <button

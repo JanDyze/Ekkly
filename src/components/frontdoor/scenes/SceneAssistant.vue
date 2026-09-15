@@ -5,7 +5,7 @@ import FloatNote from '../FloatNote.vue'
 import ScaledScreen from '../ScaledScreen.vue'
 import { useSceneTimeline } from '../useSceneTimeline'
 
-// Scene: asking Klysia, the church's own assistant. It can read the roll and
+// Scene: asking EKRIS, the church's own assistant. It can read the roll and
 // the calendar, so a plain question is answered from the church's own records,
 // and it can make the task that follows from it. It never deletes anything,
 // which is why the follow-up is adding a task rather than tidying one away.
@@ -48,7 +48,7 @@ at(5000, () => (step.value = 7))
             <Sparkle class="h-4 w-4" />
           </span>
           <div class="min-w-0">
-            <p class="text-sm font-bold text-gray-900 dark:text-white">Klysia</p>
+            <p class="text-sm font-bold text-gray-900 dark:text-white">EKRIS</p>
             <p class="truncate text-[10px] text-gray-500 dark:text-gray-400">Your church’s assistant</p>
           </div>
         </div>
@@ -99,7 +99,7 @@ at(5000, () => (step.value = 7))
           <span class="flex h-7 w-7 items-center justify-center rounded-full bg-linear-to-br from-primary to-primary-hover text-white shadow-sm shadow-primary/30">
             <Sparkle class="h-3.5 w-3.5" />
           </span>
-          <span class="text-[13px] font-bold text-gray-900 dark:text-white">Klysia</span>
+          <span class="text-[13px] font-bold text-gray-900 dark:text-white">EKRIS</span>
           <span class="text-[10px] text-gray-400">{{ churchName }}</span>
           <span class="ml-auto flex h-6 items-center gap-1 rounded-md bg-emerald-50 px-2 text-[9px] font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
             <PlugsConnected class="h-3 w-3" /> Connected to your records
@@ -151,7 +151,7 @@ at(5000, () => (step.value = 7))
       title="Reads your records"
       body="people, calendar, songs"
       :delay="1200"
-      :class="props.desktop ? '-left-10 top-24' : '-left-44 top-32'"
+      :class="props.desktop ? '-left-3 sm:-left-10 top-24' : 'fd-out-left sm:-left-44 top-32'"
     />
     <FloatNote
       :icon="ShieldCheck"
@@ -159,13 +159,13 @@ at(5000, () => (step.value = 7))
       title="Never deletes"
       body="and keeps contacts private"
       :delay="2600"
-      :class="props.desktop ? '-bottom-6 -right-8' : '-right-40 bottom-36'"
+      :class="props.desktop ? '-bottom-6 -right-3 sm:-right-8' : 'fd-out-right sm:-right-40 bottom-36'"
     />
   </div>
 </template>
 
 <style scoped>
-/* Klysia is thinking. */
+/* EKRIS is thinking. */
 .dot {
   animation: dot 0.9s ease-in-out infinite;
 }

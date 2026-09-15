@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { ArrowRight, Check } from '../../icons'
 import { formatMoney } from '../../utils/moneyUtils'
+import { MONTHS_PER_YEAR_PAID, yearlyPrice } from '../../../lib/apps.js'
 import { appIcon } from './appIcons'
 
 // "Build your plan": a visitor ticks the apps their church would use and
@@ -9,7 +10,8 @@ import { appIcon } from './appIcons'
 // thing that sets Ekkly apart — a church pays for what it uses — by letting
 // them try it rather than read it.
 //
-// Prices come from the console (Apps & prices). Until any are set, the same
+// Prices come from the console (Apps & prices), or the starting prices in
+// lib/apps.js until the console saves its own. If every app is free, the same
 // picker shows without figures and invites them to ask.
 
 const props = defineProps({
@@ -17,6 +19,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['start'])
+
+// Prices here are whole pesos, so they read as a price tag rather than a bill.
+const peso = (centavos) => formatMoney(centavos).replace(/\.00$/, '')
 
 const offered = computed(() => props.catalog.filter((app) => app.available))
 const hasPrices = computed(() => offered.value.some((app) => app.price > 0))
@@ -37,9 +42,26 @@ const toggle = (app) => {
   picked.value = next
 }
 
+// Another part of the page can tick an app for them: "Add to my plan" in
+// What's inside does, on its way down here.
+const add = (key) => {
+  if (picked.value.has(key)) return
+  picked.value = new Set([...picked.value, key])
+}
+defineExpose({ add })
+
 const isOn = (app) => app.core || picked.value.has(app.key)
 const chosen = computed(() => offered.value.filter(isOn))
 const total = computed(() => chosen.value.reduce((n, app) => n + (app.price || 0), 0))
+
+// Monthly, or a year up front for the price of ten months. The yearly figure
+// also says what that comes to a month, since that is the number they just
+// watched add up.
+const yearly = ref(false)
+const shown = computed(() => (yearly.value ? yearlyPrice(total.value) : total.value))
+// Rounded to the whole peso, like every other price here.
+const perMonthYearly = computed(() => Math.round(yearlyPrice(total.value) / 1200) * 100)
+const monthsFree = 12 - MONTHS_PER_YEAR_PAID
 </script>
 
 <template>
@@ -80,7 +102,7 @@ const total = computed(() => chosen.value.reduce((n, app) => n + (app.price || 0
             </span>
             <span class="mt-0.5 block text-xs leading-relaxed text-gray-500 dark:text-gray-400">{{ app.description }}</span>
             <span v-if="hasPrices" class="mt-1.5 block text-xs font-semibold tabular-nums text-gray-700 dark:text-gray-300">
-              {{ app.core ? `Included · ${formatMoney(app.price)}` : app.price ? `${formatMoney(app.price)} / month` : 'Included' }}
+              {{ app.core ? `Included · ${peso(app.price)}` : app.price ? `${peso(app.price)} / month` : 'Included' }}
             </span>
           </span>
         </button>
@@ -92,9 +114,32 @@ const total = computed(() => chosen.value.reduce((n, app) => n + (app.price || 0
       <div class="overflow-hidden rounded-3xl bg-gray-900 p-6 text-white shadow-2xl dark:bg-gray-800">
         <p class="text-xs font-semibold uppercase tracking-wider text-white/60">Your plan</p>
         <template v-if="hasPrices">
-          <p class="mt-2 flex items-baseline gap-1">
-            <span class="total text-4xl font-black tabular-nums" :key="total">{{ formatMoney(total) }}</span>
-            <span class="text-sm text-white/60">/ month</span>
+          <!-- Monthly or yearly: two choices, so a segment control. -->
+          <div class="mt-3 flex h-10 items-center rounded-lg bg-white/10 p-0.5 text-xs font-semibold sm:text-sm" role="group" aria-label="How often to pay">
+            <button
+              type="button"
+              :aria-pressed="!yearly"
+              :class="['h-9 flex-1 rounded-md px-2.5 transition-colors', !yearly ? 'bg-white text-gray-900 shadow-sm' : 'text-white/70 hover:text-white']"
+              @click="yearly = false"
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              :aria-pressed="yearly"
+              :class="['h-9 flex-1 rounded-md px-2.5 transition-colors', yearly ? 'bg-white text-gray-900 shadow-sm' : 'text-white/70 hover:text-white']"
+              @click="yearly = true"
+            >
+              Yearly <span :class="yearly ? 'text-emerald-600' : 'text-emerald-400'">· {{ monthsFree }} months free</span>
+            </button>
+          </div>
+          <p class="mt-3 flex items-baseline gap-1">
+            <span class="total text-4xl font-black tabular-nums" :key="`${yearly}-${total}`">{{ peso(shown) }}</span>
+            <span class="text-sm text-white/60">/ {{ yearly ? 'year' : 'month' }}</span>
+          </p>
+          <p v-if="yearly" class="text-xs tabular-nums text-white/60">That is {{ peso(perMonthYearly) }} a month.</p>
+          <p class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+            <Check class="h-3.5 w-3.5" /> First month free
           </p>
         </template>
         <p v-else class="mt-2 text-2xl font-black leading-tight">Priced for your church</p>

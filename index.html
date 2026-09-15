@@ -8,6 +8,32 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#1d64d8" />
+    <!-- Before anything is drawn: dark or light, and the colours this address
+         wore last time, so a church in purple does not open blue — or a dark
+         phone open white — and change a second later. useTheme.js decides dark
+         the same way (a saved choice, then the system's), and useBrandTheme.js
+         writes the colours; the key must match rememberKey() there. -->
+    <script>
+      try {
+        var mode = localStorage.getItem('theme')
+        if (mode ? mode === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark')
+        }
+      } catch (e) {}
+      try {
+        var church = new URLSearchParams(location.search).get('church')
+        if (church === null) church = sessionStorage.getItem('dev.church')
+        var saved = JSON.parse(localStorage.getItem('ekkly.brandTheme:' + location.host + '|' + (church || '').trim().toLowerCase()) || 'null')
+        if (saved && saved.css) {
+          var style = document.createElement('style')
+          style.id = 'brand-theme'
+          style.dataset.remembered = 'true'
+          style.textContent = saved.css
+          document.head.appendChild(style)
+          if (saved.primary) document.querySelector("meta[name='theme-color']").setAttribute('content', saved.primary)
+        }
+      } catch (e) {}
+    </script>
 
     <!-- iOS reads none of the web app manifest before 16.4, and still ignores
          parts of it after: without these an "Add to Home Screen" icon opens a

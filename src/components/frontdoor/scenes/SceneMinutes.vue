@@ -137,7 +137,7 @@ at(typed + 3000, () => (filed.value = true))
 
     </AppWindow>
 
-    <FloatNote :icon="FileText" title="Type as you talk" body="no tidy notes needed" :delay="700" :class="props.desktop ? '-left-10 top-20' : '-right-36 top-28'" />
+    <FloatNote :icon="FileText" title="Type as you talk" body="no tidy notes needed" :delay="700" :class="props.desktop ? '-left-3 sm:-left-10 top-20' : 'fd-out-right sm:-right-36 top-28'" />
     <Transition name="write">
       <FloatNote
         v-if="written"
@@ -146,7 +146,7 @@ at(typed + 3000, () => (filed.value = true))
         title="Written up"
         body="in a few seconds"
         :delay="300"
-        :class="props.desktop ? '-bottom-6 -right-8' : '-left-40 top-44'"
+        :class="props.desktop ? '-bottom-6 -right-3 sm:-right-8' : 'fd-out-left sm:-left-40 top-44'"
       />
     </Transition>
   </div>

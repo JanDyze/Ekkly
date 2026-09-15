@@ -53,7 +53,7 @@ const props = defineProps({
   domain: { type: String, default: 'ekkly.church' },
   // The apps on sale, for the last scene.
   apps: { type: Array, default: () => [] },
-  // A church name the visitor typed into the hero. The scenes that name a
+  // The church the visitor named in the welcome. The scenes that name a
   // church use theirs instead of the sample one.
   church: { type: String, default: '' },
 })
@@ -68,7 +68,6 @@ const SCENES = [
     chip: 'Your address',
     icon: GlobeSimple,
     title: 'Your address, your colours',
-    body: 'Every church gets an address of its own and paints the app in its own colour.',
     component: markRaw(SceneChurches),
     duration: 7000,
     tab: 0,
@@ -78,7 +77,6 @@ const SCENES = [
     chip: 'Attendance',
     icon: ClipboardText,
     title: 'Sunday’s count in a minute',
-    body: 'Tap in the head count as people arrive, and watch the weeks add up.',
     component: markRaw(SceneAttendance),
     duration: 5500,
     tab: 1,
@@ -88,7 +86,6 @@ const SCENES = [
     chip: 'Worship',
     icon: MusicNotes,
     title: 'Sunday, planned',
-    body: 'Who is serving, which songs in which key, and a reminder to everyone on the team.',
     component: markRaw(SceneWorship),
     duration: 6000,
     tab: 2,
@@ -98,7 +95,6 @@ const SCENES = [
     chip: 'Present',
     icon: ProjectorScreen,
     title: 'Lyrics, verses and slides on the big screen',
-    body: 'Run the service in order: songs, Bible passages and your PowerPoint, up on the projector.',
     component: markRaw(ScenePresent),
     duration: 7500,
     tab: 3,
@@ -108,17 +104,15 @@ const SCENES = [
     chip: 'AI minutes',
     icon: MagicWand,
     title: 'Minutes that write themselves',
-    body: 'Type rough notes in the meeting. AI turns them into minutes you can file.',
     component: markRaw(SceneMinutes),
     duration: 7000,
     tab: 4,
   },
   {
     key: 'assistant',
-    chip: 'Ask Klysia',
+    chip: 'Ask EKRIS',
     icon: ChatCircleDots,
-    title: 'Ask Klysia about your church',
-    body: 'Your church’s own assistant answers from your records, and does the next thing for you.',
+    title: 'Ask EKRIS about your church',
     component: markRaw(SceneAssistant),
     duration: 7000,
   },
@@ -127,7 +121,6 @@ const SCENES = [
     chip: 'And more',
     icon: SquaresFour,
     title: 'And there’s more inside',
-    body: 'Small groups, events, prayer concerns, songs, the Bible, finances, tasks, photos and links.',
     component: markRaw(SceneMore),
     duration: 6500,
     tab: 0,
@@ -234,11 +227,13 @@ const tintStyle = computed(() =>
     @focusin="focused = true"
     @focusout="onFocusOut"
   >
-    <div class="stage tint relative mx-auto mt-8 w-full" :class="{ tinted: tint }" :style="tintStyle">
-      <!-- Two still rings behind the device, for depth. -->
-      <div class="rings pointer-events-none absolute left-1/2 top-1/2 -z-10 hidden h-[100cqh] w-[100cqh] lg:block" aria-hidden="true">
+    <div class="stage tint relative mx-auto mt-8 w-full" :class="{ tinted: tint, 'is-desktop': desktop }" :style="tintStyle">
+      <!-- Two still rings behind the device, for depth, at every width. On a
+           phone-width page they run past the edges of the screen, which the
+           page clips. -->
+      <div class="rings pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[max(100cqh,100cqw)] w-[max(100cqh,100cqw)]" aria-hidden="true">
         <div class="ring-in absolute inset-0 rounded-full border border-dashed border-gray-300/70 dark:border-gray-700/70"></div>
-        <div class="ring-in absolute inset-16 rounded-full border border-gray-200/60 dark:border-gray-800/60" style="animation-delay: 150ms"></div>
+        <div class="ring-in absolute inset-10 rounded-full border border-gray-200/60 sm:inset-16 dark:border-gray-800/60" style="animation-delay: 150ms"></div>
       </div>
 
       <!-- The device: a phone, or a monitor for the computer pass. -->
@@ -320,11 +315,10 @@ const tintStyle = computed(() =>
     </div>
 
     <!-- What this scene is showing. -->
-    <div class="relative mx-auto mt-6 min-h-18 max-w-sm text-center" aria-live="polite">
+    <div class="relative mx-auto mt-6 max-w-sm text-center" aria-live="polite">
       <Transition name="fade" mode="out-in">
         <div :key="current.key">
           <p class="text-lg font-bold text-gray-900 dark:text-white">{{ current.title }}</p>
-          <p class="mt-1 text-sm leading-relaxed text-gray-600 dark:text-gray-400">{{ current.body }}</p>
           <button
             v-if="index === MORE"
             type="button"
@@ -446,6 +440,18 @@ const tintStyle = computed(() =>
 .stage {
   height: clamp(26rem, 56dvh, 34rem);
   container-type: size;
+  transition: height 0.55s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* On a phone-width page a monitor is as wide as the page and so only half as
+   tall as a phone; left at a phone's height the stage would leave a wide
+   empty band under it. There the stage shrinks to the monitor and its stand,
+   which is worked out from the page's width because the width is what sizes
+   the monitor. */
+@media (max-width: 39.99rem) {
+  .stage.is-desktop {
+    height: calc((100vw - 2rem) * 0.625 + 4.5rem);
+  }
 }
 
 /* The device's two shapes. Width, height and corners ease between them; the
@@ -467,11 +473,12 @@ const tintStyle = computed(() =>
   height: 100cqh;
 }
 
-/* On a phone-width page the projector hangs below the monitor, so the monitor
-   sits higher; wider, it sits beside it. */
+/* On a phone-width page the monitor sits at the top of its shrunken stage,
+   with its stand in the room left below; wider, it sits a little above the
+   middle of a full-height stage. */
 .device.is-desktop {
-  top: 35%;
-  translate: -50% -50%;
+  top: 0.5rem;
+  translate: -50% 0;
   width: min(34rem, 100cqw);
   height: calc(min(34rem, 100cqw) * 0.625);
 }
@@ -479,6 +486,7 @@ const tintStyle = computed(() =>
 @media (min-width: 40rem) {
   .device.is-desktop {
     top: 45%;
+    translate: -50% -50%;
   }
 }
 
@@ -499,9 +507,14 @@ const tintStyle = computed(() =>
   }
 }
 
-/* The rings do not turn; they open out once behind the device. */
+/* The rings do not turn; they open out once behind the device. They are as
+   wide as the stage or as tall, whichever is more, so a monitor that fills a
+   phone-width page still has one around it, and they resize with the device. */
 .rings {
   translate: -50% -50%;
+  transition:
+    width 0.55s cubic-bezier(0.65, 0, 0.35, 1),
+    height 0.55s cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 .ring-in {
@@ -612,6 +625,22 @@ const tintStyle = computed(() =>
 .fd-grow {
   transform-origin: bottom;
   animation: fd-grow 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) var(--d, 0ms) both;
+}
+
+/* A note beside the phone on a phone-width page. There is only a strip of
+   room either side of the phone there, so the note moves out until its own
+   edge meets the stage's, covering as little of the screen as the page's width
+   allows. The strip is half of what the stage is wider than the phone, and the
+   phone is half as wide as the stage is tall. From sm up the scene's own
+   placement takes over. */
+@media (max-width: 39.99rem) {
+  .fd-out-right {
+    right: calc(-1 * ((100cqw - 50cqh) / 2 - 0.25rem));
+  }
+
+  .fd-out-left {
+    left: calc(-1 * ((100cqw - 50cqh) / 2 - 0.25rem));
+  }
 }
 
 .fd-caret::after {

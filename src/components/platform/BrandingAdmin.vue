@@ -1,7 +1,8 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { Loader2, Save, SlidersHorizontal } from '../../icons'
+import { ChatsCircle, Loader2, Save, SlidersHorizontal } from '../../icons'
 import SectionCard from '../common/SectionCard.vue'
+import ToggleSwitch from '../common/ToggleSwitch.vue'
 import SectionCardSkeleton from '../common/SectionCardSkeleton.vue'
 import { useToast } from '../../composables/useToast'
 import { usePlatformConsole } from '../../composables/usePlatformConsole'
@@ -23,6 +24,13 @@ const fill = () => {
     tagline: stored.tagline || '',
     contactEmail: stored.contactEmail || '',
     frontDoor: { headline: stored.frontDoor?.headline || '', intro: stored.frontDoor?.intro || '' },
+    chat: {
+      enabled: stored.chat?.enabled !== false,
+      hostName: stored.chat?.hostName || '',
+      hostEmail: stored.chat?.hostEmail || '',
+      phone: stored.chat?.phone || '',
+      messenger: stored.chat?.messenger || '',
+    },
   }
 }
 
@@ -88,6 +96,47 @@ const input =
         <div>
           <label for="brand-intro" :class="label">Front door introduction</label>
           <textarea id="brand-intro" v-model="form.frontDoor.intro" rows="3" maxlength="400" :placeholder="DEFAULT_BRANDING.frontDoor.intro" :class="[input, 'resize-none']"></textarea>
+        </div>
+        <div class="flex justify-end">
+          <button type="submit" :disabled="saving" class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover disabled:opacity-60">
+            <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
+            <Save v-else class="h-4 w-4" />
+            Save
+          </button>
+        </div>
+      </form>
+    </SectionCard>
+
+    <!-- The chat bubble in the front door's corner. Saved with the rest. -->
+    <SectionCard v-if="config && form" :icon="ChatsCircle" title="Chat bubble" subtitle="Who visitors reach from the front door, and how">
+      <form class="space-y-4 p-4" @submit.prevent="save">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="text-sm font-medium text-gray-900 dark:text-white">Show the chat bubble</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Off hides it from the front door. Conversations are kept.</p>
+          </div>
+          <ToggleSwitch v-model="form.chat.enabled" label="Show the chat bubble" />
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label for="chat-name" :class="label">Name visitors see</label>
+            <input id="chat-name" v-model="form.chat.hostName" type="text" maxlength="40" placeholder="The developer" :class="input" />
+          </div>
+          <div>
+            <label for="chat-email" :class="label">Who answers</label>
+            <input id="chat-email" v-model="form.chat.hostEmail" type="email" maxlength="120" :placeholder="DEFAULT_BRANDING.chat.hostEmail" :class="input" />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Shows online while this account has Ekkly open. Messages left while away are emailed here.</p>
+          </div>
+          <div>
+            <label for="chat-phone" :class="label">Phone for "Call"</label>
+            <input id="chat-phone" v-model="form.chat.phone" type="tel" maxlength="30" placeholder="+63 917 123 4567" :class="input" />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Shown publicly. Leave blank to hide the Call button.</p>
+          </div>
+          <div>
+            <label for="chat-messenger" :class="label">Messenger link</label>
+            <input id="chat-messenger" v-model="form.chat.messenger" type="url" maxlength="200" placeholder="https://m.me/yourpage" :class="input" />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Optional. Any https link to reach you.</p>
+          </div>
         </div>
         <div class="flex justify-end">
           <button type="submit" :disabled="saving" class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary-hover disabled:opacity-60">

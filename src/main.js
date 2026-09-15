@@ -45,12 +45,15 @@ registerSW({
 // listener does not come back on its own.
 const bootstrap = async () => {
   // The platform's name and colours, for the front door and every church.
-  // Not awaited: the page draws in the built-in colours and takes the
-  // platform's the moment they arrive.
-  initPlatformConfig()
+  // Waited for alongside the church, but never for long: a slow or refused
+  // read gives up after a moment and the page carries on, taking the colours
+  // whenever they do arrive. Colours from a previous visit are already on
+  // screen by now (index.html), so this mainly spares a first visit the flash.
+  const platformConfig = Promise.race([initPlatformConfig(), new Promise((resolve) => setTimeout(resolve, 1500))])
 
   const churchId = await resolveChurch()
   if (churchId) await loadChurchProfile()
+  await platformConfig
 
   const app = createApp(App)
   app.use(createAppRouter())

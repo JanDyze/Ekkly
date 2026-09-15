@@ -73,7 +73,14 @@ const rest = computed(() => {
     </ScaledScreen>
 
     <!-- --------------------------------------------------------- computer -->
-    <AppWindow v-else page="Apps" :subtitle="`${churchName} · switch on what you need`" active="apps">
+    <AppWindow
+      v-else
+      page="Apps"
+      :subtitle="`${churchName} · switch on what you need`"
+      :logo="props.church.trim() ? '' : 'grace'"
+      :initial="churchName[0]"
+      active="apps"
+    >
       <div class="grid grid-cols-3 gap-2">
         <div
           v-for="(app, i) in rest"
@@ -99,7 +106,7 @@ const rest = computed(() => {
       title="Pay for what you use"
       body="not for the whole of Ekkly"
       :delay="1000"
-      :class="props.desktop ? '-bottom-6 -right-8' : '-right-40 top-44'"
+      :class="props.desktop ? '-bottom-6 -right-3 sm:-right-8' : 'fd-out-right sm:-right-40 top-44'"
     />
   </div>
 </template>
