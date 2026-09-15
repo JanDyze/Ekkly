@@ -178,8 +178,7 @@ ending on what the tour left out. It lives in
   gives an element `--p`, from 0 to 1, as it passes up the screen, and the
   page draws with it: a band of the window's colours crosses each heading
   (`lit-heading`), the apps in "What's inside" light up one after another,
-  icon by icon, "How it works" plays one
-  church's request through the steps (the church named in the welcome, if any), and
+  icon by icon, and
   the last call opens out of an arched window. A new section uses one of these,
   or shows its own content doing something; it doesn't bring back the fade.
   Styles read `var(--p, 1)` so the finished state is the default.
@@ -209,6 +208,16 @@ ending on what the tour left out. It lives in
   white. Its action is one button in one place — "Add to my plan", which
   becomes "See my plan" once added — with a line beside it saying where the app
   stands. Adding keeps the panel open. A new app gets an entry in appDetails.js.
+- **"How it works" holds still on a desktop** while the scroll walks through its
+  three steps ([HowItWorks.vue](src/components/frontdoor/HowItWorks.vue)): the
+  section is a screen plus 0.8 of one per step, its content pinned under the
+  header. The step being read is open in the list, the ones before it ticked
+  and the ones to come dim, so nobody meets a step before its turn; each step's
+  name scrolls to it. Beside the list, a card from the app shows the step
+  happening ([HowVisual.vue](src/components/frontdoor/HowVisual.vue)) — the
+  request filled in, the church opened, people let in — with the church named in
+  the welcome, if any. A phone stacks the steps, each with its card playing as
+  it comes up the screen.
 - **Section headings share one scale:** `TYPE.eyebrow`, `TYPE.title` and
   `TYPE.lead` in [type.js](src/components/frontdoor/type.js), on every front door
   page. A new section uses them rather than its own

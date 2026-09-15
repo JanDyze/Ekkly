@@ -11,6 +11,20 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.26.4] — 2026-09-15
+
+How it works, one step at a time.
+
+### Changed
+
+- **On a computer, How it works stays in place while you scroll through its
+  steps.** The step being read opens, the ones before it are ticked and the ones
+  to come wait their turn; pressing a step goes to it.
+- **Each step shows itself happening** in a card from the app: the request
+  filled in and sent, the church approved and opened, and people let in from
+  the link. A phone shows the same cards, one under each step.
+- **Clearer steps:** ask for your church, we open it for you, bring your people in.
+
 ## [0.26.3] — 2026-09-15
 
 The front door's chat has a face.

@@ -1,13 +1,14 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowRight, CheckCircle2, Clock, HandPointing, HandWaving } from '../icons'
+import { ArrowRight, CheckCircle2, HandPointing, HandWaving } from '../icons'
 import AnimatedMark from '../components/common/AnimatedMark.vue'
 import CookieBanner from '../components/frontdoor/CookieBanner.vue'
 import ChatBubble from '../components/frontdoor/ChatBubble.vue'
 import WelcomeSheet from '../components/frontdoor/WelcomeSheet.vue'
 import HeroStage from '../components/frontdoor/HeroStage.vue'
 import AppsInside from '../components/frontdoor/AppsInside.vue'
+import HowItWorks from '../components/frontdoor/HowItWorks.vue'
 import AppArt from '../components/frontdoor/AppArt.vue'
 import FrontDoorHeader from '../components/frontdoor/FrontDoorHeader.vue'
 import FrontDoorFooter from '../components/frontdoor/FrontDoorFooter.vue'
@@ -18,7 +19,6 @@ import { initAuth, useAuth } from '../composables/useAuth'
 import { usePlatformConfig } from '../composables/usePlatformConfig'
 import { useFrontDoorConsent } from '../composables/useFrontDoorConsent'
 import { planFrom, useFrontDoor } from '../composables/useFrontDoor'
-import { suggestChurchId } from '../../lib/churchId.js'
 import { formatMoney } from '../utils/moneyUtils'
 import { vScrollLight } from '../components/frontdoor/scrollLight'
 
@@ -111,12 +111,6 @@ const moveSpotlight = (event) => {
 }
 onUnmounted(() => cancelAnimationFrame(spotFrame))
 
-const STEPS = [
-  { title: 'Ask for your church', body: 'Sign in with Google and tell us your church’s name and the link you would like. It takes two minutes.' },
-  { title: 'We set it up', body: 'We look it over and open your church. You become its first administrator, with everything ready to fill in.' },
-  { title: 'Bring your people in', body: 'Share your church’s link. Members sign in and ask to join, and you let them in with one tap.' },
-]
-
 const faqs = FAQS.slice(0, HOME_FAQS)
 
 // Every call to action goes to Get started.
@@ -194,28 +188,6 @@ const PRICE_WINS = ['First month free', 'Monthly, or a year for the price of ten
 // The heading's light has crossed by the time it is halfway up the screen.
 const HEADING_LIGHT = { start: 0.92, end: 0.5 }
 const WINDOW_OPENS = { start: 1, end: 0.85 }
-
-// "How it works" plays one church's request through the three steps as the
-// reader scrolls past them: the name is typed, the request is approved, and
-// people start joining. It is the church they named in the welcome, if they did.
-// It finishes while the steps are still in the lower part of the screen, so a
-// reader who stops with them in the middle sees the whole story.
-const howProgress = ref(1)
-const HOW_RUN = { start: 0.95, end: 0.75, onProgress: (p) => (howProgress.value = p) }
-
-const sampleChurch = computed(() => namedChurch.value.trim() || 'Grace Baptist Church')
-const sampleAddress = computed(() => `${suggestChurchId(sampleChurch.value)}.${sampleDomain}`)
-
-// Each step runs through its own third of the scroll.
-const stepProgress = (index) => Math.min(1, Math.max(0, howProgress.value * 3 - index))
-const typedName = computed(() => {
-  const name = sampleChurch.value
-  return name.slice(0, Math.round(Math.min(1, stepProgress(0) / 0.8) * name.length))
-})
-const approved = computed(() => stepProgress(1) >= 0.5)
-const JOINED = 24
-const joined = computed(() => Math.round(stepProgress(2) * JOINED))
-const JOINER_INITIALS = ['AM', 'JR', 'LC', 'PD', 'RS', 'MV']
 
 </script>
 
@@ -343,85 +315,15 @@ const JOINER_INITIALS = ['AM', 'JR', 'LC', 'PD', 'RS', 'MV']
     </section>
 
     <!-- ======================================================= how it works -->
-    <section id="how" class="scroll-mt-20 bg-gray-900 py-20 text-white lg:py-28 dark:bg-gray-900">
-      <div class="mx-auto max-w-6xl px-4 sm:px-6">
-        <div class="mx-auto max-w-2xl text-center">
-          <p :class="[TYPE.eyebrow, 'text-primary-light']">How it works</p>
-          <h2 v-scroll-light="HEADING_LIGHT" :class="['lit-heading lit-bright mt-3', TYPE.title]">Up and running this week</h2>
-        </div>
-        <!-- One request, played through the steps by the scroll. A thread runs
-             from each step's number to the next, filling as the request moves
-             on: across the row on a desktop, down the column on a phone. -->
-        <ol v-scroll-light="HOW_RUN" class="relative mt-14 grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <li
-            v-for="(step, index) in STEPS"
-            :key="step.title"
-            :class="['step relative flex gap-4 rounded-3xl bg-white/5 p-6 ring-1 ring-white/10 lg:block', { reached: stepProgress(index) > 0 }]"
-          >
-            <span
-              v-if="index < STEPS.length - 1"
-              class="thread pointer-events-none absolute left-12 top-18 h-[calc(100%-1.5rem)] w-0.5 -translate-x-1/2 overflow-hidden rounded-full bg-white/10 lg:left-18 lg:top-12 lg:h-0.5 lg:w-[calc(100%-1.5rem)] lg:translate-x-0 lg:-translate-y-1/2"
-              :style="{ '--fill': stepProgress(index) }"
-              aria-hidden="true"
-            >
-              <span class="thread-fill absolute inset-0 rounded-full"></span>
-            </span>
-            <span class="step-number relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-lg font-black">
-              {{ index + 1 }}
-            </span>
-            <div class="min-w-0 flex-1">
-              <h3 class="text-xl font-bold lg:mt-5">{{ step.title }}</h3>
-              <p class="mt-2 text-sm leading-relaxed text-white/70">{{ step.body }}</p>
-
-              <!-- What the step looks like for one church. Sample data. -->
-              <div class="mt-5 min-h-14 rounded-2xl bg-white/5 px-3.5 py-3 text-sm ring-1 ring-white/10" aria-hidden="true">
-                <template v-if="index === 0">
-                  <p class="text-xs text-white/50">Church name</p>
-                  <p class="mt-0.5 truncate font-semibold">
-                    {{ typedName }}<span v-if="typedName.length < sampleChurch.length && stepProgress(0) > 0" class="caret">|</span>
-                  </p>
-                </template>
-                <template v-else-if="index === 1">
-                  <div class="flex items-center justify-between gap-2">
-                    <p class="min-w-0 truncate font-semibold">{{ sampleChurch }}</p>
-                    <span
-                      :class="[
-                        'status inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold',
-                        approved ? 'bg-emerald-400/15 text-emerald-300' : 'bg-amber-400/15 text-amber-300',
-                      ]"
-                    >
-                      <CheckCircle2 v-if="approved" class="h-3.5 w-3.5" />
-                      <Clock v-else class="h-3.5 w-3.5" />
-                      {{ approved ? 'Approved' : 'Waiting' }}
-                    </span>
-                  </div>
-                  <p :class="['mt-0.5 truncate font-mono text-xs transition-colors duration-500', approved ? 'text-primary-light' : 'text-white/30']">
-                    {{ sampleAddress }}
-                  </p>
-                </template>
-                <template v-else>
-                  <div class="flex items-center justify-between gap-3">
-                    <div class="flex -space-x-2">
-                      <span
-                        v-for="(initials, i) in JOINER_INITIALS"
-                        :key="initials"
-                        :class="[
-                          'joiner flex h-8 w-8 items-center justify-center rounded-full text-[0.625rem] font-bold ring-2 ring-gray-900',
-                          joined > (i * JOINED) / JOINER_INITIALS.length ? 'bg-primary text-white' : 'bg-white/10 text-transparent',
-                        ]"
-                      >{{ initials }}</span>
-                    </div>
-                    <p class="shrink-0 text-right text-xs text-white/60">
-                      <span class="block text-lg font-black tabular-nums text-white">{{ joined }}</span>
-                      joined
-                    </p>
-                  </div>
-                </template>
-              </div>
-            </div>
-          </li>
-        </ol>
-      </div>
+    <section id="how" class="scroll-mt-20 bg-gray-900 text-white lg:scroll-mt-17 dark:bg-gray-900">
+      <HowItWorks :church="namedChurch" :domain="sampleDomain" @start="goToStart">
+        <template #heading>
+          <div class="text-center lg:text-left">
+            <p :class="[TYPE.eyebrow, 'text-primary-light']">How it works</p>
+            <h2 v-scroll-light="HEADING_LIGHT" :class="['lit-heading lit-bright mt-3', TYPE.title]">Up and running this week</h2>
+          </div>
+        </template>
+      </HowItWorks>
     </section>
 
     <!-- ============================================================ pricing -->
@@ -637,15 +539,13 @@ const JOINER_INITIALS = ['AM', 'JR', 'LC', 'PD', 'RS', 'MV']
 
 /* The window's colours: the accent, warmed on one side and cooled on the other,
    as in the headline. A dark page's accent is already its light one. */
-.lit-heading,
-.thread-fill {
+.lit-heading {
   --glass-warm: color-mix(in oklch, var(--color-primary) 62%, oklch(0.8 0.16 75));
   --glass: var(--color-primary);
   --glass-cool: color-mix(in oklch, var(--color-primary) 62%, oklch(0.68 0.2 330));
 }
 
-.lit-heading.lit-bright,
-.thread-fill {
+.lit-heading.lit-bright {
   --glass-warm: color-mix(in oklch, var(--color-primary-light) 55%, oklch(0.85 0.15 80));
   --glass: var(--color-primary-light);
   --glass-cool: color-mix(in oklch, var(--color-primary-light) 55%, oklch(0.78 0.16 330));
@@ -671,50 +571,6 @@ const JOINER_INITIALS = ['AM', 'JR', 'LC', 'PD', 'RS', 'MV']
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-}
-
-/* "How it works": the number lights when the request reaches its step, and the
-   thread to the next step fills as the request travels along it. */
-.step-number {
-  background-color: rgb(255 255 255 / 0.08);
-  color: rgb(255 255 255 / 0.4);
-  transition:
-    background-color 0.4s ease,
-    color 0.4s ease,
-    box-shadow 0.4s ease;
-}
-
-.step.reached .step-number {
-  background-color: var(--color-primary);
-  color: white;
-  box-shadow: 0 10px 24px -6px color-mix(in oklab, var(--color-primary) 60%, transparent);
-}
-
-.thread-fill {
-  background: linear-gradient(to bottom, var(--glass-warm), var(--glass), var(--glass-cool));
-  transform-origin: top;
-  transform: scaleY(var(--fill, 1));
-}
-
-@media (min-width: 1024px) {
-  .thread-fill {
-    background: linear-gradient(to right, var(--glass-warm), var(--glass), var(--glass-cool));
-    transform-origin: left;
-    transform: scaleX(var(--fill, 1));
-  }
-}
-
-.caret {
-  margin-left: 1px;
-  color: var(--color-primary-light);
-  font-weight: 400;
-}
-
-.status,
-.joiner {
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
 }
 
 /* The last call, seen first through a narrow arched window that widens into
