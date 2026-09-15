@@ -3,7 +3,6 @@ import { computed, onUnmounted, ref, watch } from 'vue'
 import { ArrowRight, CheckCircle2 } from '../../icons'
 import { useMediaQuery } from '../../composables/useMediaQuery'
 import HowVisual from './HowVisual.vue'
-import { vScrollLight } from './scrollLight'
 import { prefersStill } from './useSceneTimeline'
 
 // "How it works": three steps from asking to a full church.
@@ -15,14 +14,14 @@ import { prefersStill } from './useSceneTimeline'
 // as tall as the walk (a screen, plus most of a screen per step), and its
 // content is pinned under the header for all of it.
 //
-// A phone has no room for that, so the steps stack, each with its card, and
-// each card plays as it comes up the screen.
+// A phone gets the same walk without holding the page: a walkthrough of tabs,
+// swipes and a "Next step" button, each step's card playing as it comes up.
 //
 // The heading comes in through the slot, so it keeps the page's own styles.
 
 defineProps({
   church: { type: String, default: '' },
-  domain: { type: String, default: 'ekkly.church' },
+  domain: { type: String, default: 'ekkly.online' },
 })
 
 const emit = defineEmits(['start'])
@@ -109,12 +108,70 @@ watch(active, (now, before) => (direction.value = now > before ? 'next' : 'prev'
 
 /* ---------------------------------------------------------------- phone */
 
-const phone = ref(STEPS.map(() => (still ? 1 : 0)))
-const phoneLight = (index) => ({
-  start: 0.85,
-  end: 0.45,
-  onProgress: (p) => (phone.value[index] = p),
+// A phone gets the steps as a walkthrough to tap or swipe through: one step at
+// a time, its card playing on its own when the step comes up (and again when
+// its tab is tapped), and a button for the next step.
+const phoneStep = ref(0)
+const phoneP = ref(still ? 1 : 0)
+const PLAY_MS = 2600
+
+let playFrame = 0
+const play = () => {
+  cancelAnimationFrame(playFrame)
+  if (still) {
+    phoneP.value = 1
+    return
+  }
+  const start = performance.now()
+  const tick = (now) => {
+    phoneP.value = Math.min(1, (now - start) / PLAY_MS)
+    if (phoneP.value < 1) playFrame = requestAnimationFrame(tick)
+  }
+  phoneP.value = 0
+  playFrame = requestAnimationFrame(tick)
+}
+onUnmounted(() => cancelAnimationFrame(playFrame))
+
+const goPhone = (index) => {
+  if (index < 0 || index >= STEPS.length) return
+  direction.value = index >= phoneStep.value ? 'next' : 'prev'
+  phoneStep.value = index
+  play()
+}
+
+// The first card waits until the walkthrough is on the screen, so it is seen
+// playing rather than already finished.
+const walkthrough = ref(null)
+let seen = null
+watch(walkthrough, (el) => {
+  seen?.disconnect()
+  if (!el) return
+  seen = new IntersectionObserver(
+    ([entry]) => {
+      if (!entry.isIntersecting) return
+      seen.disconnect()
+      play()
+    },
+    { threshold: 0.4 }
+  )
+  seen.observe(el)
 })
+onUnmounted(() => seen?.disconnect())
+
+// A sideways swipe on the card turns the step, as a phone's own screens turn.
+let touch = null
+const onTouchStart = (event) => {
+  const t = event.touches[0]
+  touch = event.touches.length === 1 ? { x: t.clientX, y: t.clientY } : null
+}
+const onTouchEnd = (event) => {
+  if (!touch) return
+  const t = event.changedTouches[0]
+  const dx = t.clientX - touch.x
+  const dy = t.clientY - touch.y
+  touch = null
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) goPhone(phoneStep.value + (dx < 0 ? 1 : -1))
+}
 </script>
 
 <template>
@@ -199,29 +256,89 @@ const phoneLight = (index) => ({
   <!-- -------------------------------------------------------------- phone -->
   <div v-else class="mx-auto max-w-xl px-4 py-20 sm:px-6">
     <slot name="heading" />
-    <ol class="mt-12 space-y-14">
-      <li v-for="(step, index) in STEPS" :key="step.title" v-scroll-light="phoneLight(index)">
-        <div class="flex gap-4">
-          <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-lg font-black text-white shadow-lg shadow-primary/40">
-            {{ index + 1 }}
+
+    <div ref="walkthrough" class="mt-8">
+      <!-- The three steps as tabs. The one showing fills as its card plays;
+           the ones before it are ticked. -->
+      <div class="grid grid-cols-3 gap-2" role="tablist" aria-label="Steps">
+        <button
+          v-for="(step, index) in STEPS"
+          :key="step.title"
+          type="button"
+          role="tab"
+          :aria-selected="index === phoneStep"
+          class="group flex flex-col gap-2 rounded-xl p-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
+          @click="goPhone(index)"
+        >
+          <span class="flex items-center gap-1.5">
+            <span
+              :class="[
+                'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-xs font-black transition-colors duration-300',
+                index === phoneStep ? 'bg-primary text-white' : index < phoneStep ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/10 text-white/50',
+              ]"
+            >
+              <CheckCircle2 v-if="index < phoneStep" class="h-4 w-4" />
+              <template v-else>{{ index + 1 }}</template>
+            </span>
+            <span :class="['truncate text-xs font-semibold transition-colors duration-300', index === phoneStep ? 'text-white' : 'text-white/50']">
+              {{ ['Ask', 'We open it', 'Invite'][index] }}
+            </span>
           </span>
-          <div class="min-w-0">
-            <p class="text-xs font-bold uppercase tracking-wider text-primary-light">Step {{ index + 1 }} of {{ STEPS.length }}</p>
-            <h3 class="mt-0.5 text-xl font-bold">{{ step.title }}</h3>
-            <p class="mt-2 text-sm leading-relaxed text-white/70">{{ step.body }}</p>
+          <span class="h-1 overflow-hidden rounded-full bg-white/10">
+            <span
+              class="rail-fill block h-full origin-left rounded-full"
+              :style="{ transform: `scaleX(${index < phoneStep ? 1 : index === phoneStep ? phoneP : 0})` }"
+            ></span>
+          </span>
+        </button>
+      </div>
+
+      <!-- The step: what it is, then it happening. Swipe the card, or use the
+           button, for the next. -->
+      <div class="mt-6 overflow-hidden" @touchstart.passive="onTouchStart" @touchend.passive="onTouchEnd">
+        <Transition :name="`slide-${direction}`" mode="out-in">
+          <div :key="phoneStep">
+            <p class="text-xs font-bold uppercase tracking-wider text-primary-light">Step {{ phoneStep + 1 }} of {{ STEPS.length }}</p>
+            <h3 class="mt-1 text-2xl font-bold">{{ STEPS[phoneStep].title }}</h3>
+            <p class="mt-2 min-h-12 text-base leading-relaxed text-white/70">{{ STEPS[phoneStep].body }}</p>
+            <!-- As tall as the tallest card, so the buttons below stay put. -->
+            <div class="mt-5 min-h-92">
+              <HowVisual :step="phoneStep" :p="phoneP" :church="church" :domain="domain" @click="play" />
+            </div>
           </div>
-        </div>
-        <HowVisual class="mt-5" :step="index" :p="still ? 1 : phone[index]" :church="church" :domain="domain" />
-      </li>
-    </ol>
-    <button
-      type="button"
-      class="group mt-12 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-white text-sm font-bold text-gray-900 transition-colors hover:bg-gray-100"
-      @click="emit('start')"
-    >
-      Ask for your church
-      <ArrowRight class="h-4 w-4 transition-transform group-hover:translate-x-1" />
-    </button>
+        </Transition>
+      </div>
+
+      <div class="mt-6 flex items-center gap-3">
+        <button
+          type="button"
+          :disabled="phoneStep === 0"
+          class="h-12 rounded-xl px-4 text-sm font-semibold text-white/70 transition-colors hover:bg-white/10 disabled:opacity-0"
+          @click="goPhone(phoneStep - 1)"
+        >
+          Back
+        </button>
+        <button
+          v-if="phoneStep < STEPS.length - 1"
+          type="button"
+          class="group flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-white text-sm font-bold text-gray-900 transition-colors hover:bg-gray-100"
+          @click="goPhone(phoneStep + 1)"
+        >
+          Next step
+          <ArrowRight class="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        </button>
+        <button
+          v-else
+          type="button"
+          class="group flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-white shadow-lg shadow-primary/40 transition-colors hover:bg-primary-hover"
+          @click="emit('start')"
+        >
+          Ask for your church
+          <ArrowRight class="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        </button>
+      </div>
+      <p class="mt-3 text-center text-xs text-white/40">Swipe the card, or tap a step</p>
+    </div>
   </div>
 </template>
 
@@ -259,7 +376,33 @@ const phoneLight = (index) => ({
   translate: 0 -1.5rem;
 }
 
+/* A phone's walkthrough turns sideways, the way it was swiped. */
+.slide-next-enter-active,
+.slide-next-leave-active,
+.slide-prev-enter-active,
+.slide-prev-leave-active {
+  transition:
+    opacity 0.2s ease,
+    translate 0.2s ease;
+}
+
+.slide-next-enter-from,
+.slide-prev-leave-to {
+  opacity: 0;
+  translate: 2rem 0;
+}
+
+.slide-next-leave-to,
+.slide-prev-enter-from {
+  opacity: 0;
+  translate: -2rem 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .slide-next-enter-active,
+  .slide-next-leave-active,
+  .slide-prev-enter-active,
+  .slide-prev-leave-active,
   .turn-next-enter-active,
   .turn-next-leave-active,
   .turn-prev-enter-active,

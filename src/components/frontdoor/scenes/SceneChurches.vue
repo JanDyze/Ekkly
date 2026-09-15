@@ -24,7 +24,7 @@ import { useSceneTimeline } from '../useSceneTimeline'
 // them.
 
 const props = defineProps({
-  domain: { type: String, default: 'ekkly.church' },
+  domain: { type: String, default: 'ekkly.online' },
   desktop: { type: Boolean, default: false },
   church: { type: String, default: '' },
 })

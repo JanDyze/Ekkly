@@ -38,8 +38,8 @@ import SceneMore from './scenes/SceneMore.vue'
 // Everything on the device is sample data.
 
 const props = defineProps({
-  // The address a sample church lives under, such as "ekkly.church".
-  domain: { type: String, default: 'ekkly.church' },
+  // The address a sample church lives under, such as "ekkly.online".
+  domain: { type: String, default: 'ekkly.online' },
   // The apps on sale, for the last scene.
   apps: { type: Array, default: () => [] },
   // The church the visitor named in the welcome. The scenes that name a

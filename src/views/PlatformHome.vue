@@ -52,7 +52,7 @@ initAuth().then(() => {
 
 const offeredApps = computed(() => catalog.value.filter((app) => app.available))
 
-const sampleDomain = rootDomain || 'ekkly.church'
+const sampleDomain = rootDomain || 'ekkly.online'
 
 // The headline arrives a word at a time, and its closing phrase is drawn in the
 // colours of Ekkly's window. The words are the console's, so the phrase is

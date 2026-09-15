@@ -11,6 +11,17 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.26.5] — 2026-09-15
+
+How it works on a phone, and the right address in the samples.
+
+### Changed
+
+- **How it works on a phone is a walkthrough:** tabs for the three steps, a
+  card that plays each one as it comes up, a Next step button, and a swipe to
+  turn. It takes a little over one screen instead of two.
+- **Sample links say ekkly.online**, in the tour, the welcome and How it works.
+
 ## [0.26.4] — 2026-09-15
 
 How it works, one step at a time.

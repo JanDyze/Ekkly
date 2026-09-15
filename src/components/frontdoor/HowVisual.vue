@@ -14,7 +14,7 @@ const props = defineProps({
   step: { type: Number, required: true },
   p: { type: Number, default: 1 },
   church: { type: String, default: '' },
-  domain: { type: String, default: 'ekkly.church' },
+  domain: { type: String, default: 'ekkly.online' },
 })
 
 const clamp = (n) => Math.min(1, Math.max(0, n))
