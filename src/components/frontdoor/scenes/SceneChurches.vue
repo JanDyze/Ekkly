@@ -4,6 +4,7 @@ import { suggestChurchId } from '../../../../lib/churchId.js'
 import { Calendar, LockSimple, Palette } from '../../../icons'
 import { appIcon } from '../appIcons'
 import AppWindow from '../AppWindow.vue'
+import ChurchMark from '../ChurchMark.vue'
 import ScaledScreen from '../ScaledScreen.vue'
 import FloatNote from '../FloatNote.vue'
 import { useSceneTimeline } from '../useSceneTimeline'
@@ -50,6 +51,8 @@ const church = ref(0)
 const current = computed(() =>
   visitor.value ? { ...CHURCHES[church.value], id: suggestChurchId(visitor.value), name: visitor.value } : CHURCHES[church.value]
 )
+// A sample church wears its made-up logo; the visitor's own church has none.
+const logo = computed(() => (visitor.value ? '' : CHURCHES[church.value].id))
 const address = ref('')
 const shownAddress = computed(() => (visitor.value ? current.value.id : address.value))
 const { at, type, erase, still } = useSceneTimeline()
@@ -89,10 +92,8 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
     <ScaledScreen v-if="!props.desktop" :width="272" :height="544" round="rounded-[2.1rem]" ground="">
       <div class="px-4 pt-12">
         <div class="fd-rise flex items-center gap-2.5">
-          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-black text-white shadow-md shadow-primary/30">
-            <Transition name="swap" mode="out-in">
-              <span :key="current.name">{{ current.name[0] }}</span>
-            </Transition>
+          <span class="h-9 w-9 shrink-0 text-sm">
+            <ChurchMark :church="logo" :initial="current.name[0]" />
           </span>
           <div class="min-w-0">
             <Transition name="swap" mode="out-in">
@@ -141,7 +142,7 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
     </ScaledScreen>
 
     <!-- --------------------------------------------------------- computer -->
-    <AppWindow v-else page="Home" :subtitle="`${current.name} · Good morning, Ana`" :initial="current.name[0]" active="home">
+    <AppWindow v-else page="Home" :subtitle="`${current.name} · Good morning, Ana`" :logo="logo" :initial="current.name[0]" active="home">
       <div class="grid grid-cols-[1.35fr_1fr] gap-2.5">
         <div class="fd-rise rounded-xl bg-linear-to-br from-primary to-primary-hover p-3 text-white shadow-md shadow-primary/30">
           <p class="flex items-center gap-1 text-[8px] font-semibold uppercase tracking-wider text-white/75">
@@ -197,8 +198,8 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
       </span>
     </div>
 
-    <FloatNote :icon="Palette" title="Your colour" body="everywhere in the app" :delay="1100" :class="props.desktop ? '-right-8 -bottom-6' : '-right-36 top-52'" />
-    <FloatNote :icon="LockSimple" tone="emerald" title="Records kept apart" body="for each church" :delay="1400" :class="props.desktop ? '-left-10 -top-5' : '-left-36 bottom-24'" />
+    <FloatNote :icon="Palette" title="Your colour" body="everywhere in the app" :delay="1100" :class="props.desktop ? '-right-3 sm:-right-8 -bottom-6' : 'fd-out-right sm:-right-36 top-52'" />
+    <FloatNote :icon="LockSimple" tone="emerald" title="Records kept apart" body="for each church" :delay="1400" :class="props.desktop ? '-left-3 top-24 sm:-left-10' : 'fd-out-left sm:-left-36 bottom-24'" />
   </div>
 </template>
 

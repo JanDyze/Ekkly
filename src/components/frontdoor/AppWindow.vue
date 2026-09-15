@@ -1,6 +1,7 @@
 <script setup>
 import { Home, MagnifyingGlass, ProjectorScreen } from '../../icons'
 import { appIcon } from './appIcons'
+import ChurchMark from './ChurchMark.vue'
 import ScaledScreen from './ScaledScreen.vue'
 
 // Ekkly as it looks on a computer, for the hero's computer scenes: the sidebar
@@ -14,7 +15,9 @@ defineProps({
   subtitle: { type: String, default: 'Grace Fellowship' },
   // The sidebar's highlighted page, one of NAV's keys.
   active: { type: String, default: 'home' },
-  // The first letter of the church, in its tile at the top of the sidebar.
+  // The church's logo at the top of the sidebar (ChurchMark's keys), or ''
+  // for a church without one, which shows its first letter instead.
+  logo: { type: String, default: 'grace' },
   initial: { type: String, default: 'G' },
 })
 
@@ -33,10 +36,8 @@ const NAV = [
   <ScaledScreen>
     <div class="flex h-full">
       <nav class="flex w-13 shrink-0 flex-col items-center gap-1.5 border-r border-gray-100 bg-gray-50 py-2.5 dark:border-gray-800 dark:bg-gray-950">
-        <span class="mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-[13px] font-black text-white shadow-sm shadow-primary/30">
-          <Transition name="app-swap" mode="out-in">
-            <span :key="initial">{{ initial }}</span>
-          </Transition>
+        <span class="mb-1.5 h-8 w-8 text-[13px]">
+          <ChurchMark :church="logo" :initial="initial" />
         </span>
         <span
           v-for="item in NAV"

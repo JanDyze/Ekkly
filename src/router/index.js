@@ -304,6 +304,13 @@ const platformRoutes = [
     meta: { requiresAuth: true }
   },
   {
+    // Ekkly's QR code, to see and download. Public: it is handed out.
+    path: '/qr',
+    name: 'QrCode',
+    component: () => import('../views/QrCode.vue'),
+    meta: { public: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/'
   }

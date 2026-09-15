@@ -4,6 +4,7 @@ import { ChatCircleDots, Loader2, LockSimple, Plus, Receipt, Save, SquaresFour, 
 import SectionCard from '../common/SectionCard.vue'
 import ToggleSwitch from '../common/ToggleSwitch.vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
+import CardBillingCard from './CardBillingCard.vue'
 import { callPlatform } from '../../api/platformService'
 import { useToast } from '../../composables/useToast'
 import { useFocusTrap } from '../../composables/useFocusTrap'
@@ -186,6 +187,8 @@ const input =
           Questions about paying: <a :href="`mailto:${branding.contactEmail}`" class="font-medium text-primary hover:underline dark:text-primary-light">{{ branding.contactEmail }}</a>
         </p>
       </SectionCard>
+
+      <CardBillingCard :plan="plan" @changed="load" />
 
       <SectionCard :icon="SquaresFour" title="Apps" subtitle="Turn off what the church does not use. Nothing in an app is deleted.">
         <ul class="divide-y divide-gray-100 dark:divide-gray-700">

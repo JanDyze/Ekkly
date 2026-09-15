@@ -1,6 +1,7 @@
 import { watch } from 'vue'
 import { getPlatformTheme, usePlatformConfig } from './usePlatformConfig'
 import { getChurchTheme, useAppSettings } from './useAppSettings'
+import { getChurchId } from '../api/church'
 import { resolveTheme } from '../../lib/platformDefaults.js'
 
 /** The colours in use right now, read once — for a spreadsheet being built. */
@@ -28,6 +29,36 @@ export const accentCell = () => ({ rgb: currentTheme().primary.slice(1).toUpperC
 // `:root` and `.dark`, so these win whatever order the stylesheets load in.
 
 const STYLE_ID = 'brand-theme'
+
+// The colours are also remembered, per address, so the next visit starts in
+// them. Both sources arrive late — the platform's from a live document, the
+// church's only once the account is known to belong to the church — and
+// without this every load opened in the built-in blue and then changed colour
+// a second later, loading screen and all. index.html reads this back in a
+// small script before anything is drawn; keep the key's shape the same there.
+//
+// The key is the host, plus the church a test address was switched to (see
+// devChurchOverride), so localhost's front door and localhost's church do not
+// share colours.
+const REMEMBER_PREFIX = 'ekkly.brandTheme:'
+
+const rememberKey = () => {
+  let church = ''
+  try {
+    church = sessionStorage.getItem('dev.church') ?? ''
+  } catch {
+    // A private window: the host alone.
+  }
+  return `${REMEMBER_PREFIX}${window.location.host}|${church}`
+}
+
+const remember = (theme) => {
+  try {
+    localStorage.setItem(rememberKey(), JSON.stringify({ css: themeCss(theme), primary: theme.primary }))
+  } catch {
+    // Nowhere to keep it; the next visit loads the colours the slow way.
+  }
+}
 
 export const themeCss = ({ primary, primaryDark }) => `
 html:root {
@@ -62,13 +93,32 @@ const apply = (theme) => {
   if (meta) meta.setAttribute('content', theme.primary)
 }
 
-/** Called once, from App.vue. Follows both sources live. */
+/**
+ * Called once, from App.vue. Follows both sources live.
+ *
+ * Until every source that can still change the answer has spoken, a
+ * remembered theme is left alone: the platform's colour arriving before the
+ * church's would otherwise paint over the church's remembered colour, which is
+ * the flash this exists to prevent. With nothing remembered, the best answer
+ * so far is shown, and only a settled answer is remembered.
+ */
 export function useBrandTheme() {
-  const { platformTheme } = usePlatformConfig()
-  const { theme: churchTheme } = useAppSettings()
+  const { platformTheme, loaded: platformLoaded } = usePlatformConfig()
+  const { theme: churchTheme, isConfigured: churchLoaded } = useAppSettings()
+  const startedRemembered = typeof document !== 'undefined' && document.getElementById(STYLE_ID)?.dataset.remembered === 'true'
+
   watch(
-    [platformTheme, churchTheme],
-    ([platform, church]) => apply(resolveTheme(platform, church)),
+    [platformTheme, churchTheme, platformLoaded, churchLoaded],
+    ([platform, church, platformReady, churchReady]) => {
+      const theme = resolveTheme(platform, church)
+      const settled = platformReady && (!getChurchId() || churchReady)
+      if (!settled) {
+        if (!startedRemembered) apply(theme)
+        return
+      }
+      apply(theme)
+      remember(theme)
+    },
     { immediate: true, deep: true }
   )
 }

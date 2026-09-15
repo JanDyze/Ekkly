@@ -1,20 +1,19 @@
 <script setup>
 import { computed, onActivated, ref } from 'vue'
-import { ArrowRight, ChartLine, CursorClick, GlobeSimple, Loader2, UsersFour } from '../../icons'
+import { ChartLine, CursorClick, EnvelopeSimple, HandWaving, Loader2, Phone, UsersFour } from '../../icons'
 import SectionCard from '../common/SectionCard.vue'
 import { callPlatform } from '../../api/platformService'
 import { useToast } from '../../composables/useToast'
 import { agoFrom } from '../../composables/usePlatformConsole'
 
-// Who has been looking at the front door, and which churches they are.
+// Who has been looking at the front door, and which churches said hello.
 //
-// Counted only for visitors who agreed to it, so these are floors rather than
-// totals: some people looked and were never counted. The names are the useful
-// part — each one is a church that got as far as typing its own name into the
-// hero, whether or not it went on to ask.
+// The counts are only for visitors who agreed to be counted, so they are floors
+// rather than totals. The churches are the useful part: each answered the
+// welcome with its name, and often a way to reach whoever typed it.
 
 const toast = useToast()
-const report = ref({ days: [], tried: [] })
+const report = ref({ days: [], leads: [] })
 const loading = ref(true)
 
 const load = async () => {
@@ -30,8 +29,6 @@ const load = async () => {
 }
 onActivated(load)
 
-const rootDomain = import.meta.env.VITE_ROOT_DOMAIN || 'ekkly.church'
-
 /** Oldest to newest, for the chart. */
 const days = computed(() => [...report.value.days].reverse())
 const busiest = computed(() => Math.max(1, ...days.value.map((d) => d.visits)))
@@ -40,24 +37,57 @@ const totals = computed(() =>
   report.value.days.reduce(
     (sum, day) => ({
       visits: sum.visits + day.visits,
-      tries: sum.tries + day.tries,
       starts: sum.starts + day.starts,
     }),
-    { visits: 0, tries: 0, starts: 0 }
+    { visits: 0, starts: 0 }
   )
 )
 
 const SUMMARY = computed(() => [
   { key: 'visits', icon: UsersFour, label: 'Visits', value: totals.value.visits },
-  { key: 'tries', icon: GlobeSimple, label: 'Names tried', value: totals.value.tries },
+  { key: 'leads', icon: HandWaving, label: 'Said hello', value: report.value.leads?.length || 0 },
   { key: 'starts', icon: CursorClick, label: 'Start pressed', value: totals.value.starts },
 ])
+
+// A tap to reach them: a mail or a call.
+const reachLink = (lead) => (lead.contactKind === 'email' ? `mailto:${lead.contact}` : `tel:${lead.contact.replace(/[^d+]/g, '')}`)
 
 const dayLabel = (day) => new Date(`${day}T00:00:00Z`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 </script>
 
 <template>
   <div class="space-y-4">
+    <SectionCard :icon="HandWaving" title="Churches that said hello" subtitle="From the welcome on a first visit. Reach out to the ones who left a way to.">
+      <div v-if="loading" class="animate-pulse space-y-2" aria-busy="true">
+        <div v-for="n in 2" :key="n" class="h-14 rounded-xl bg-gray-100 dark:bg-gray-800"></div>
+      </div>
+
+      <ul v-else-if="report.leads?.length" class="divide-y divide-gray-100 dark:divide-gray-700">
+        <li v-for="lead in report.leads" :key="lead.id" class="flex items-center gap-3 py-2.5">
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-medium text-gray-900 dark:text-white">{{ lead.churchName }}</p>
+            <p class="truncate text-xs text-gray-500 dark:text-gray-400">
+              {{ lead.name || (lead.contact ? 'No name given' : 'Skipped the contact') }} &middot; {{ agoFrom(lead.updatedAt) }}
+            </p>
+          </div>
+          <a
+            v-if="lead.contact"
+            :href="reachLink(lead)"
+            class="inline-flex h-9 max-w-[45%] shrink-0 items-center gap-1.5 rounded-lg bg-primary/10 px-3 text-sm font-medium text-primary hover:bg-primary/20 dark:bg-primary-light/15 dark:text-primary-light"
+          >
+            <component :is="lead.contactKind === 'email' ? EnvelopeSimple : Phone" class="h-4 w-4 shrink-0" />
+            <span class="truncate">{{ lead.contact }}</span>
+          </a>
+        </li>
+      </ul>
+
+      <div v-else class="flex flex-col items-center justify-center px-8 py-12 text-center text-gray-500 dark:text-gray-400">
+        <HandWaving class="mb-3 h-10 w-10 text-gray-300 dark:text-gray-600" />
+        <p class="mb-1 text-lg">No one yet</p>
+        <p class="text-sm">When a first-time visitor names their church in the welcome, it appears here.</p>
+      </div>
+    </SectionCard>
+
     <SectionCard :icon="ChartLine" title="The last 30 days" subtitle="Counted only where a visitor allowed it, so these are the least it has been.">
       <div v-if="loading" class="animate-pulse space-y-3" aria-busy="true">
         <div class="h-16 rounded-xl bg-gray-100 dark:bg-gray-800"></div>
@@ -82,39 +112,12 @@ const dayLabel = (day) => new Date(`${day}T00:00:00Z`).toLocaleDateString(undefi
               :style="{ height: `${Math.max(4, (day.visits / busiest) * 100)}%` }"
             ></span>
             <span class="pointer-events-none absolute bottom-full left-1/2 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white group-hover:block dark:bg-white dark:text-gray-900">
-              {{ dayLabel(day.day) }} · {{ day.visits }} visits · {{ day.tries }} names
+              {{ dayLabel(day.day) }} · {{ day.visits }} visits · {{ day.starts }} started
             </span>
           </div>
         </div>
         <p v-else class="mt-4 text-sm text-gray-500 dark:text-gray-400">Nothing counted yet.</p>
       </template>
-    </SectionCard>
-
-    <SectionCard :icon="GlobeSimple" title="Churches that tried their name" subtitle="Typed into “Curious? Type your church’s name” on the front door.">
-      <div v-if="loading" class="animate-pulse space-y-2" aria-busy="true">
-        <div v-for="n in 3" :key="n" class="h-12 rounded-xl bg-gray-100 dark:bg-gray-800"></div>
-      </div>
-
-      <ul v-else-if="report.tried.length" class="divide-y divide-gray-100 dark:divide-gray-700">
-        <li v-for="item in report.tried" :key="item.id" class="flex items-center gap-3 py-2.5">
-          <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-medium text-gray-900 dark:text-white">{{ item.name }}</p>
-            <p class="truncate font-mono text-xs text-gray-500 dark:text-gray-400">{{ item.slug }}.{{ rootDomain }}</p>
-          </div>
-          <div class="shrink-0 text-right">
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{ agoFrom(item.lastAt) }}</p>
-            <p v-if="item.referrer" class="flex items-center justify-end gap-1 text-xs text-gray-400 dark:text-gray-500">
-              <ArrowRight class="h-3 w-3" /> {{ item.referrer }}
-            </p>
-          </div>
-        </li>
-      </ul>
-
-      <div v-else class="flex flex-col items-center justify-center px-8 py-12 text-center text-gray-500 dark:text-gray-400">
-        <GlobeSimple class="mb-3 h-10 w-10 text-gray-300 dark:text-gray-600" />
-        <p class="mb-1 text-lg">No names tried yet</p>
-        <p class="text-sm">They appear here as soon as someone types their church’s name on the front door.</p>
-      </div>
     </SectionCard>
 
     <button

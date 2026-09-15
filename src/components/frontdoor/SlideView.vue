@@ -7,7 +7,9 @@ import { computed } from 'vue'
 
 const props = defineProps({
   slide: { type: Object, default: null },
-  // sm: the operator's preview · lg: the wall beside the monitor
+  // sm: the operator's preview · lg: a preview on the phone's screen ·
+  // wall: the projector beside the device, small on a phone-width page where
+  // it overlaps the device and full size from sm up
   size: { type: String, default: 'sm' },
 })
 
@@ -21,6 +23,15 @@ const SIZES = {
     line: 'text-[10px] sm:text-xs',
     inset: 'px-4 sm:px-6',
     deck: 'p-3 sm:p-5',
+  },
+  wall: {
+    lyrics: 'text-[9px] sm:text-base',
+    verse: 'text-[8px] sm:text-sm',
+    ref: 'text-[7px] sm:text-[10px]',
+    title: 'text-sm sm:text-2xl',
+    line: 'text-[8px] sm:text-xs',
+    inset: 'px-2 sm:px-6',
+    deck: 'p-2 sm:p-5',
   },
 }
 

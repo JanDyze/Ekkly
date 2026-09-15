@@ -39,7 +39,7 @@ const isMobile = useMediaQuery('(max-width: 1023px)')
 
 const canAddTasks = computed(() => canManage('tasks'))
 const canEditMinute = computed(() => canManage('minutes'))
-// Writing up is AI assist, an app of its own. Without it the notes are still
+// Writing up is EKRIS, an app of its own. Without it the notes are still
 // taken and the minute still written by hand.
 const canWriteUp = computed(() => canEditMinute.value && isAppEnabled('ai'))
 const mentions = useMentionPicker(members)

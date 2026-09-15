@@ -10,15 +10,23 @@ import { mergeCatalog } from '../../lib/apps.js'
 
 const stored = ref(null)
 const loaded = ref(false)
-let started = false
+let firstAnswer = null
 
+/**
+ * Starts the live settings, once. Resolves when the first answer arrives, so
+ * main.js can hold the loading screen for the platform's colours for a moment
+ * rather than show the built-in ones and change.
+ */
 export const initPlatformConfig = () => {
-  if (started) return
-  started = true
-  subscribeToPlatformPublic((data) => {
-    stored.value = data
-    loaded.value = true
+  if (firstAnswer) return firstAnswer
+  firstAnswer = new Promise((resolve) => {
+    subscribeToPlatformPublic((data) => {
+      stored.value = data
+      loaded.value = true
+      resolve()
+    })
   })
+  return firstAnswer
 }
 
 const fallbackName = () => import.meta.env.VITE_PLATFORM_NAME || 'Ekkly'

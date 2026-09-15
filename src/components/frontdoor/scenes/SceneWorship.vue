@@ -148,14 +148,14 @@ at(4300, () => (reminded.value = true))
       </div>
     </AppWindow>
 
-    <FloatNote :icon="MicrophoneStage" tone="amber" title="Keys for the band" body="set once, on every song" :delay="900" :class="props.desktop ? '-right-8 top-24' : '-right-40 top-40'" />
+    <FloatNote :icon="MicrophoneStage" tone="amber" title="Keys for the band" body="set once, on every song" :delay="900" :class="props.desktop ? '-right-3 sm:-right-8 top-24' : 'fd-out-right sm:-right-40 top-40'" />
     <Transition name="fade">
       <FloatNote
         v-if="reminded"
         :icon="Bell"
         title="Team reminded"
         body="by notification and email"
-        :class="props.desktop ? '-bottom-6 -left-10' : '-left-40 bottom-16'"
+        :class="props.desktop ? '-bottom-6 -left-3 sm:-left-10' : 'fd-out-left sm:-left-40 bottom-16'"
       />
     </Transition>
   </div>

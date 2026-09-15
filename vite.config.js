@@ -1,5 +1,5 @@
-import { readFileSync, statSync } from 'node:fs'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
@@ -13,9 +13,10 @@ import { VitePWA } from 'vite-plugin-pwa'
  * would fall back to the built-in defaults — precisely the thing it exists to
  * stop doing — and the song list could not search YouTube at all.
  *
- * Handlers are imported by file URL rather than through Vite: they are server
- * code that pulls in firebase-admin, and have no business going through the
- * browser pipeline. Restart the dev server after editing one.
+ * Handlers are loaded with Vite's server-side loader, not the browser pipeline:
+ * they are server code that pulls in firebase-admin, which stays an ordinary
+ * Node package. Editing a handler or anything in lib/ it imports takes effect
+ * on the next request, with no restart.
  *
  * Deliberately absent: /api/notify and /api/email, which send real push and
  * real mail. Those stay Vercel-only so a local dev session cannot ring every
@@ -58,6 +59,8 @@ const readJsonBody = (req) =>
     req.on('data', (chunk) => chunks.push(chunk))
     req.on('end', () => {
       const raw = Buffer.concat(chunks).toString('utf8')
+      // Kept as sent too: a webhook's signature is over these exact bytes.
+      req.rawBody = raw
       if (!raw) return resolve({})
       try {
         resolve(JSON.parse(raw))
@@ -97,14 +100,15 @@ const apiDevServer = (env) => ({
           }
 
           const handlerPath = fileURLToPath(new URL(modulePath, import.meta.url))
-          // Node keeps an ES module for the life of the process, so editing a
-          // handler left this serving whichever version it imported first —
-          // silently, which is the worst way to be wrong: the endpoint answers,
-          // just with last hour's code. The file's mtime in the specifier makes
-          // every save a new module to Node, so an edit lands on the next
-          // request while an untouched handler is still only imported once.
-          const stamp = statSync(handlerPath).mtimeMs
-          const { default: handler } = await import(`${pathToFileURL(handlerPath).href}?v=${stamp}`)
+          // Loaded through Vite rather than Node's own import. Node keeps an ES
+          // module for the life of the process, so editing a handler — or
+          // anything it imports from lib/ — left this serving whichever version
+          // it imported first, silently: the endpoint answers, just with last
+          // hour's code, or fails on an export added since. Busting the
+          // handler's own URL was not enough, because its imports stayed
+          // cached. Vite's module graph drops a changed file and everything
+          // that imports it, so an edit anywhere lands on the next request.
+          const { default: handler } = await server.ssrLoadModule(handlerPath)
           await handler(req, res)
         } catch (error) {
           next(error)

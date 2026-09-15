@@ -17,6 +17,7 @@ import { computed, ref, watch } from 'vue'
 import { Check, Search, UserRound, UsersRound, X } from '../../icons'
 import { getDisplayName, getFullName } from '../../utils/memberUtils'
 import { memberIdOf } from '../../utils/minuteAnnotations'
+import { useScrollLock } from '../../composables/useScrollLock'
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -34,6 +35,9 @@ const emit = defineEmits(['close', 'toggle', 'update:tag'])
 
 const query = ref('')
 watch(() => props.show, (open) => { if (!open) query.value = '' })
+
+// The minute behind holds still while the drawer is open.
+useScrollLock(() => props.show)
 
 const present = computed(() => new Set(props.attendees.map(String)))
 const isPresent = (member) => present.value.has(String(memberIdOf(member)))

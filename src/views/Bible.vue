@@ -7,6 +7,7 @@ import { fold, foldText, getBook, searchBooks } from '../api/bibleService'
 import { parseReference, formatReference } from '../utils/bibleRef'
 import { useBiblePlace } from '../composables/useBiblePlace'
 import SearchBar from '../components/common/SearchBar.vue'
+import { useScrollLock } from '../composables/useScrollLock'
 
 /**
  * Reading the Bible, as opposed to looking a verse up to put on a wall.
@@ -168,6 +169,8 @@ const turn = (spot) => {
 /* ---------- the picker ---------- */
 
 const pickerOpen = ref(false)
+// The reader behind holds still while the picker is up.
+useScrollLock(pickerOpen)
 // null while books are being shown, a slug once one is chosen and its chapters
 // have taken their place.
 const picking = ref(null)

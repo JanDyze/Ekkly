@@ -6,6 +6,7 @@ import {
   Buildings,
   ChartLine,
   ChatCircleDots,
+  ChatsCircle,
   ChevronRight,
   ClockCounterClockwise,
   LogOut,
@@ -21,7 +22,7 @@ import {
 import { initAuth, useAuth } from '../composables/useAuth'
 import { useMediaQuery } from '../composables/useMediaQuery'
 import { usePlatformConfig } from '../composables/usePlatformConfig'
-import { isPlatformAdmin, subscribeToChurchRequests } from '../api/platformService'
+import { callPlatform, isPlatformAdmin, subscribeToChurchRequests } from '../api/platformService'
 import PlatformLogo from '../components/common/PlatformLogo.vue'
 import SectionCardSkeleton from '../components/common/SectionCardSkeleton.vue'
 import ChurchRequestsAdmin from '../components/platform/ChurchRequestsAdmin.vue'
@@ -29,6 +30,7 @@ import ChurchesAdmin from '../components/platform/ChurchesAdmin.vue'
 import AppCatalogAdmin from '../components/platform/AppCatalogAdmin.vue'
 import FrontDoorAdmin from '../components/platform/FrontDoorAdmin.vue'
 import SupportRequestsAdmin from '../components/platform/SupportRequestsAdmin.vue'
+import ChatAdmin from '../components/platform/ChatAdmin.vue'
 import NewChurchDefaultsAdmin from '../components/platform/NewChurchDefaultsAdmin.vue'
 import BrandingAdmin from '../components/platform/BrandingAdmin.vue'
 import PlatformColoursAdmin from '../components/platform/PlatformColoursAdmin.vue'
@@ -54,7 +56,21 @@ const { branding } = usePlatformConfig()
 const checking = ref(true)
 const allowed = ref(false)
 const pendingRequests = ref(0)
+const unreadChats = ref(0)
 let unsubscribe = null
+let chatTimer = 0
+
+// Only the count of unanswered chat messages, for the list's status line, and
+// only every so often; the section itself checks far more often while open.
+const countUnreadChats = async () => {
+  if (document.visibilityState !== 'visible') return
+  try {
+    const chats = await callPlatform('chats')
+    unreadChats.value = chats.reduce((n, chat) => n + (chat.unread || 0), 0)
+  } catch {
+    // The status line keeps its last count.
+  }
+}
 
 watch(
   () => user.value?.uid,
@@ -70,12 +86,18 @@ watch(
       unsubscribe = subscribeToChurchRequests((list) => {
         pendingRequests.value = list.filter((r) => r.status === 'pending').length
       })
+      clearInterval(chatTimer)
+      countUnreadChats()
+      chatTimer = setInterval(countUnreadChats, 30 * 1000)
     }
   },
   { immediate: true }
 )
 
-onUnmounted(() => unsubscribe?.())
+onUnmounted(() => {
+  unsubscribe?.()
+  clearInterval(chatTimer)
+})
 
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
 
@@ -109,6 +131,14 @@ const GROUPS = computed(() => [
         icon: Storefront,
         status: 'What each app costs a month',
         component: AppCatalogAdmin,
+      },
+      {
+        key: 'chat',
+        label: 'Live chat',
+        icon: ChatsCircle,
+        status: unreadChats.value ? plural(unreadChats.value, 'unread message') : 'Visitors who messaged from the front door',
+        attention: unreadChats.value > 0,
+        component: ChatAdmin,
       },
       {
         key: 'frontdoor',

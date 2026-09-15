@@ -5,6 +5,7 @@ import { useNotifications } from './composables/useNotifications'
 import { useAppSettings } from './composables/useAppSettings'
 import { useVersionCheck } from './composables/useVersionCheck'
 import { useBrandTheme } from './composables/useBrandTheme'
+import { useHostPresence } from './composables/useHostPresence'
 import PullToRefresh from './components/common/PullToRefresh.vue'
 import ToastContainer from './components/common/ToastContainer.vue'
 import WhatsNewModal from './components/common/WhatsNewModal.vue'
@@ -20,6 +21,10 @@ const { isTransitioning, isDark, transitionOrigin } = useTheme()
 
 // The accent colour: the church's, the platform's, or the built-in one.
 useBrandTheme()
+
+// Whoever answers the front door's chat shows as online while any Ekkly tab of
+// theirs is open, here or in a church.
+useHostPresence()
 
 // The browser tab follows the uploaded logo too, so a rebranded install is not
 // still flying the old mark in the one place nobody thinks to look.
@@ -103,8 +108,11 @@ onUnmounted(() => {
     <!-- Global Toast Notifications -->
     <ToastContainer />
 
-    <!-- Tells the user what changed after the service worker moved them to a new build -->
-    <WhatsNewModal />
+    <!-- Tells the user what changed after the service worker moved them to a new build.
+         A church's app only, like the install prompt: release notes are written
+         for the people using a church's app, and on the front door they would
+         greet someone who has never used it with "the app you have been using". -->
+    <WhatsNewModal v-if="devChurchId" />
 
     <!-- Test addresses only (localhost, *.vercel.app): which church this tab is
          serving, and the way back to the front door. Every church shares the
