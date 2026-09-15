@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { ArrowRight, Check } from '../../icons'
 import { formatMoney } from '../../utils/moneyUtils'
 import { MONTHS_PER_YEAR_PAID, yearlyPrice } from '../../../lib/apps.js'
-import { appIcon } from './appIcons'
+import { appArt } from './appIcons'
 
 // "Build your plan": a visitor ticks the apps their church would use and
 // watches the monthly price add up. It is the front door's way of saying the
@@ -80,14 +80,12 @@ const monthsFree = 12 - MONTHS_PER_YEAR_PAID
               : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600',
           ]"
         >
-          <span
-            :class="[
-              'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors',
-              isOn(app) ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300',
-            ]"
-          >
-            <component :is="appIcon(app.key)" class="h-5 w-5" />
-          </span>
+          <img
+            :src="appArt(app.key)"
+            alt=""
+            draggable="false"
+            :class="['plan-art h-11 w-11 shrink-0 select-none', { 'is-off': !isOn(app) }]"
+          />
           <span class="min-w-0 flex-1">
             <span class="flex items-center justify-between gap-2">
               <span class="truncate text-sm font-semibold text-gray-900 dark:text-white">{{ app.name }}</span>
@@ -176,6 +174,18 @@ const monthsFree = 12 - MONTHS_PER_YEAR_PAID
 
 @keyframes bump {
   from { transform: scale(0.9); opacity: 0.4; }
+}
+
+/* An app's picture: in colour once it is in the plan, greyed while it is not. */
+.plan-art {
+  transition:
+    filter 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.plan-art.is-off {
+  filter: grayscale(1);
+  opacity: 0.5;
 }
 
 @media (prefers-reduced-motion: reduce) {

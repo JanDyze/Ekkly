@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="o" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB21E"/><stop offset=".5" stop-color="#FF7417"/><stop offset="1" stop-color="#EC4319"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D9DFF"/><stop offset=".55" stop-color="#1467E8"/><stop offset="1" stop-color="#0A4FC4"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BD4C0"/><stop offset="1" stop-color="#0B93AB"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  
+  <clipPath id="c"><rect x="5" y="6" width="54" height="52" rx="11"/></clipPath>
+  <g clip-path="url(#c)">
+    <rect x="5" y="6" width="54" height="52" fill="url(#b)"/>
+    <path d="M14.719999999999999 6 H59 V43.44 Z" fill="url(#o)"/>
+    <rect x="5" y="6" width="54" height="52" fill="url(#shine)"/>
+  </g>
+  <clipPath id="p"><rect x="11" y="12" width="42" height="40" rx="5"/></clipPath>
+  <g clip-path="url(#p)">
+    <rect x="11" y="12" width="42" height="40" fill="url(#b)"/>
+    <path d="M11 52L26 30l9 12 6-7 12 17z" fill="url(#t)"/>
+    <path d="M26 30l9 12-9 10z" fill="#0B7F95" opacity=".55"/>
+    <circle cx="42" cy="22.5" r="5" fill="#fff"/>
+  </g>
+</svg>

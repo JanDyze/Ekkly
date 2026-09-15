@@ -11,6 +11,18 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.25.1] — 2026-09-15
+
+The front door's apps get pictures of their own.
+
+### Changed
+
+- **App icons on the front door** are Ekkly's own artwork now — glossy
+  pictures in the mark's orange and blue, one per app — in What's inside, in an
+  app's details and in Pricing. They glow once they light up, and in Pricing
+  an app not in the plan stays greyed. Drawn as SVG, so they stay sharp at any
+  size; `brand/ekkly/make-app-icons.mjs` draws them.
+
 ## [0.25.0] — 2026-09-15
 
 Paying by card, a person to talk to on the front door, and a front door that

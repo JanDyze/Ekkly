@@ -149,7 +149,12 @@ ending on what the tour left out. It lives in
   instead of spilling over. [AppsInside.vue](src/components/frontdoor/AppsInside.vue)
   lays the apps out like a phone's home screen: an icon and a name, nothing
   more (4 across on a phone, 5 on a tablet, 7 on a desktop), lighting up in
-  turn as the grid rises. Opening an app shows what a church
+  turn as the grid rises. The icons are Ekkly's own artwork
+  ([src/assets/app-icons/](src/assets/app-icons/), from
+  `brand/ekkly/make-app-icons.mjs`, through `appArt()`): glossy SVGs in the
+  mark's orange and blue that keep those colours rather than the accent, glow
+  by CSS drop-shadow, and grey out until lit or while not in a plan. The tour's
+  simulated app screens keep the line icons the real app uses. Opening an app shows what a church
   gets from it, from [appDetails.js](src/components/frontdoor/appDetails.js):
   one benefit line and three practical wins of a few words, each with an icon.
   Keep it that short; paragraphs there go unread. On a

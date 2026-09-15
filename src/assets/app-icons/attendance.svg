@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="o" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB21E"/><stop offset=".5" stop-color="#FF7417"/><stop offset="1" stop-color="#EC4319"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D9DFF"/><stop offset=".55" stop-color="#1467E8"/><stop offset="1" stop-color="#0A4FC4"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BD4C0"/><stop offset="1" stop-color="#0B93AB"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  
+  <clipPath id="c"><rect x="5" y="11" width="54" height="47" rx="10"/></clipPath>
+  <g clip-path="url(#c)">
+    <rect x="5" y="11" width="54" height="47" fill="url(#b)"/>
+    <path d="M14.719999999999999 11 H59 V44.839999999999996 Z" fill="url(#o)"/>
+    <rect x="5" y="11" width="54" height="47" fill="url(#shine)"/>
+  </g>
+  <rect x="10.5" y="24" width="43" height="28.5" rx="4.5" fill="#fff"/>
+  <rect x="15" y="28" width="9.5" height="8.5" rx="2" fill="url(#b)"/><rect x="15" y="39" width="9.5" height="8.5" rx="2" fill="url(#b)"/><rect x="27" y="28" width="9.5" height="8.5" rx="2" fill="url(#b)"/><rect x="27" y="39" width="9.5" height="8.5" rx="2" fill="url(#b)"/><rect x="39" y="28" width="9.5" height="8.5" rx="2" fill="url(#b)"/>
+  <rect x="39" y="39" width="9.5" height="8.5" rx="2" fill="url(#o)"/>
+  <path d="M40.8 42.6 l2.0999999999999996 2.2800000000000002 l3.9000000000000004 -4.800000000000001" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="17" y="5" width="5.5" height="12" rx="2.75" fill="#EC4319" stroke="#fff" stroke-width="1.5"/>
+  <rect x="41.5" y="5" width="5.5" height="12" rx="2.75" fill="#EC4319" stroke="#fff" stroke-width="1.5"/>
+</svg>

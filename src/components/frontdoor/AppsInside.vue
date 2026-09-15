@@ -4,7 +4,7 @@ import { ArrowRight, Check, ChevronLeft, ChevronRight, X } from '../../icons'
 import { useMediaQuery } from '../../composables/useMediaQuery'
 import { useScrollLock } from '../../composables/useScrollLock'
 import { formatMoney } from '../../utils/moneyUtils'
-import { appIcon } from './appIcons'
+import { appArt } from './appIcons'
 import { appDetail } from './appDetails'
 import { vScrollLight } from './scrollLight'
 
@@ -172,8 +172,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
             ]"
             @click="open(app)"
           >
-            <span class="app-icon relative flex aspect-square w-14 items-center justify-center overflow-hidden rounded-[28%] sm:w-16 lg:w-[clamp(3.75rem,9dvh,5rem)]">
-              <component :is="appIcon(app.key)" class="relative h-[46%] w-[46%]" />
+            <span class="app-icon relative flex aspect-square w-14 items-center justify-center sm:w-16 lg:w-[clamp(3.75rem,9.5dvh,5.25rem)]">
+              <img :src="appArt(app.key)" alt="" draggable="false" class="h-full w-full select-none" />
             </span>
             <span class="line-clamp-2 text-xs font-semibold leading-tight text-gray-800 sm:text-sm dark:text-gray-100">{{ app.name }}</span>
           </button>
@@ -214,14 +214,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
                 :aria-label="app.name"
                 :title="app.name"
                 :class="[
-                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                  app.key === openKey
-                    ? 'bg-primary text-white shadow-md shadow-primary/30'
-                    : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-200',
+                  'tab flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                  app.key === openKey ? 'is-current bg-primary/10 ring-1 ring-primary/30 dark:bg-primary-light/15' : 'hover:bg-gray-100 dark:hover:bg-gray-800',
                 ]"
                 @click="openKey = app.key"
               >
-                <component :is="appIcon(app.key)" class="h-4.5 w-4.5" />
+                <img :src="appArt(app.key)" alt="" draggable="false" class="h-full w-full select-none" />
               </button>
             </div>
             <div class="flex shrink-0 items-center gap-1">
@@ -246,9 +244,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
               >
                 <div class="min-w-0">
                   <div class="flex items-center gap-3">
-                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-[28%] bg-linear-to-br from-primary to-primary-hover text-white shadow-lg shadow-primary/30">
-                      <component :is="appIcon(openApp.key)" class="h-5.5 w-5.5" />
-                    </span>
+                    <img :src="appArt(openApp.key)" alt="" draggable="false" class="art-glow h-12 w-12 shrink-0 select-none" />
                     <div class="min-w-0">
                       <h3 class="truncate text-base font-bold">{{ openApp.name }}</h3>
                       <p v-if="openApp.group !== openApp.name" class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ openApp.group }}</p>
@@ -333,45 +329,40 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
   background-color: color-mix(in oklab, var(--color-gray-800) 60%, transparent);
 }
 
-/* The icon: grey until it comes on, then the accent, lit from the top left like
-   an app icon, with a sheen that crosses it once. */
+/* The icon: Ekkly's artwork, grey and faint until it comes on, then in its own
+   colours with the glow of the glass behind it — orange above, blue below. */
 .app-icon {
-  background-color: var(--color-gray-100);
-  color: var(--color-gray-400);
-  box-shadow: none;
+  filter: grayscale(1);
+  opacity: 0.4;
   transition:
-    background-color 0.35s ease,
-    color 0.35s ease,
-    box-shadow 0.3s ease;
+    filter 0.5s ease,
+    opacity 0.5s ease;
 }
 
-.dark .app-icon {
-  background-color: var(--color-gray-800);
-  color: var(--color-gray-500);
-}
-
-.launch.is-on .app-icon {
-  background-color: var(--color-primary);
-  background-image: linear-gradient(145deg, color-mix(in oklab, white 18%, transparent), transparent 55%, color-mix(in oklab, black 14%, transparent));
-  color: white;
-  box-shadow: 0 8px 18px -8px color-mix(in oklab, var(--color-primary) 70%, transparent);
+.launch.is-on .app-icon,
+.art-glow {
+  filter: drop-shadow(0 -2px 8px rgb(255 140 30 / 0.28)) drop-shadow(0 6px 12px rgb(20 103 232 / 0.26));
+  opacity: 1;
 }
 
 .launch.is-on:hover .app-icon {
-  box-shadow: 0 14px 26px -10px color-mix(in oklab, var(--color-primary) 75%, transparent);
+  filter: drop-shadow(0 -3px 12px rgb(255 140 30 / 0.4)) drop-shadow(0 9px 18px rgb(20 103 232 / 0.36));
 }
 
-.app-icon::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.5) 50%, transparent 70%);
-  transform: translateX(-120%);
+/* The strip of apps in an open panel: the one showing in colour, the rest
+   quieter until pointed at. */
+.tab img {
+  filter: grayscale(0.85);
+  opacity: 0.55;
+  transition:
+    filter 0.2s ease,
+    opacity 0.2s ease;
 }
 
-.launch.is-on .app-icon::after {
-  transform: translateX(120%);
-  transition: transform 0.7s ease-in-out 0.15s;
+.tab:hover img,
+.tab.is-current img {
+  filter: none;
+  opacity: 1;
 }
 
 /* The open app grows out of where it was tapped: the panel is clipped to that
