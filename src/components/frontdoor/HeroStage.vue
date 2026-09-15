@@ -58,9 +58,9 @@ const emit = defineEmits(['explore'])
 const SCENES = [
   {
     key: 'churches',
-    chip: 'Your address',
+    chip: 'Your own link',
     art: 'mark',
-    title: 'Your address, your colours',
+    title: 'Your own link, your colours',
     component: markRaw(SceneChurches),
     duration: 7000,
     tab: 0,
@@ -151,7 +151,7 @@ const TABS = [Home, appIcon('attendance'), appIcon('lineups'), ProjectorScreen, 
 const showTabs = computed(() => !desktop.value && current.value.tab !== undefined)
 
 // The four apps in the "and more" folder.
-const FOLDER = ['members', 'events', 'finances', 'gallery']
+const FOLDER = ['members', 'events', 'finances', 'prayer']
 
 // A chip's picture plays its animation when its scene comes on.
 const chipPlays = ref({})

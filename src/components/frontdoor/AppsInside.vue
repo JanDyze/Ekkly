@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
-import { Check, ChevronLeft, ChevronRight, Plus, X } from '../../icons'
+import { ArrowRight, Check, ChevronLeft, ChevronRight, Plus, X } from '../../icons'
 import { useMediaQuery } from '../../composables/useMediaQuery'
 import { useScrollLock } from '../../composables/useScrollLock'
 import { formatMoney } from '../../utils/moneyUtils'
@@ -118,10 +118,38 @@ const close = async () => {
   tiles.get(key)?.focus({ preventScroll: true })
 }
 
+// Which way the apps are going, so the next one slides in from the side it
+// comes from.
+const direction = ref('next')
+
 const step = (by) => {
   const list = ordered.value
   if (!list.length || openIndex.value < 0) return
+  direction.value = by > 0 ? 'next' : 'prev'
   openKey.value = list[(openIndex.value + by + list.length) % list.length].key
+}
+
+const pick = (key) => {
+  const to = ordered.value.findIndex((app) => app.key === key)
+  direction.value = to < openIndex.value ? 'prev' : 'next'
+  openKey.value = key
+}
+
+// A sideways swipe on a phone goes to the next app or back to the last, the way
+// a phone's own screens turn. A swipe that is mostly up or down is the card
+// scrolling, and is left alone.
+let touch = null
+const onTouchStart = (event) => {
+  const t = event.touches[0]
+  touch = event.touches.length === 1 ? { x: t.clientX, y: t.clientY } : null
+}
+const onTouchEnd = (event) => {
+  if (!touch) return
+  const t = event.changedTouches[0]
+  const dx = t.clientX - touch.x
+  const dy = t.clientY - touch.y
+  touch = null
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx < 0 ? 1 : -1)
 }
 
 // What an app costs, beside the button that adds it. Whole pesos read as a
@@ -213,14 +241,14 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
           :aria-modal="!isDesktop"
           :aria-label="openApp.name"
           :class="[
-            'panel relative flex flex-col bg-white shadow-2xl shadow-gray-900/10 ring-1 ring-gray-900/5 focus:outline-none dark:bg-gray-900 dark:shadow-black/40 dark:ring-white/10',
+            'panel relative flex flex-col bg-gray-100 shadow-2xl shadow-gray-900/10 ring-1 ring-gray-900/5 focus:outline-none dark:bg-gray-900 dark:shadow-black/40 dark:ring-white/10',
             isDesktop ? 'h-full rounded-2xl' : 'max-h-[85dvh] w-full max-w-md rounded-3xl',
           ]"
         >
           <!-- Going from one app to the next. A desktop also has every app in a
                row, which fits it; a phone has only where it is, and the arrows,
                rather than a row that would have to scroll sideways. -->
-          <div class="panel-fade flex items-center gap-2 border-b border-gray-100 px-3 py-2.5 sm:px-4 dark:border-gray-800">
+          <div class="panel-fade flex items-center gap-2 border-b border-gray-200/80 px-3 py-2.5 sm:px-4 dark:border-gray-800">
             <p class="min-w-0 flex-1 px-1 text-sm font-semibold tabular-nums text-gray-500 lg:hidden dark:text-gray-400">
               {{ openIndex + 1 }} of {{ ordered.length }}
             </p>
@@ -235,123 +263,99 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
                 :title="app.name"
                 :class="[
                   'tab flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                  app.key === openKey ? 'is-current bg-primary/10 ring-1 ring-primary/30 dark:bg-primary-light/15' : 'hover:bg-gray-100 dark:hover:bg-gray-800',
+                  app.key === openKey ? 'is-current bg-white shadow-sm ring-1 ring-primary/30 dark:bg-gray-800' : 'hover:bg-gray-200/70 dark:hover:bg-gray-800',
                 ]"
-                @click="openKey = app.key"
+                @click="pick(app.key)"
               >
                 <img :src="appArt(app.key)" alt="" draggable="false" class="h-full w-full select-none" />
               </button>
             </div>
             <div class="flex shrink-0 items-center gap-1">
-              <button type="button" aria-label="Previous app" class="flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" @click="step(-1)">
+              <button type="button" aria-label="Previous app" class="flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200/70 dark:text-gray-400 dark:hover:bg-gray-800" @click="step(-1)">
                 <ChevronLeft class="h-5 w-5" />
               </button>
-              <button type="button" aria-label="Next app" class="flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" @click="step(1)">
+              <button type="button" aria-label="Next app" class="flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200/70 dark:text-gray-400 dark:hover:bg-gray-800" @click="step(1)">
                 <ChevronRight class="h-5 w-5" />
               </button>
-              <span class="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
-              <button type="button" aria-label="Close" class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" @click="close">
+              <span class="mx-1 h-5 w-px bg-gray-300 dark:bg-gray-700" aria-hidden="true"></span>
+              <button type="button" aria-label="Close" class="rounded-lg p-2 text-gray-500 hover:bg-gray-200/70 dark:text-gray-400 dark:hover:bg-gray-800" @click="close">
                 <X class="h-5 w-5" />
               </button>
             </div>
           </div>
 
-          <div class="panel-fade relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
-            <Transition name="swap" mode="out-in">
+          <div
+            class="panel-fade relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain"
+            @touchstart.passive="onTouchStart"
+            @touchend.passive="onTouchEnd"
+          >
+            <Transition :name="`swap-${direction}`" mode="out-in">
+              <!-- A phone reads it top to bottom: the app, its wins, then what to
+                   do. A desktop puts the app and what to do on the left and the
+                   wins beside them. -->
               <div
                 :key="openApp.key"
-                class="grid gap-6 p-5 lg:min-h-full lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:content-center lg:items-center lg:gap-12 lg:p-[clamp(1.25rem,5dvh,3rem)]"
+                class="grid gap-6 p-5 lg:min-h-full lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-rows-[1fr_auto_1fr] lg:gap-x-12 lg:gap-y-0 lg:p-[clamp(1.25rem,5dvh,3rem)]"
               >
-                <div class="min-w-0">
+                <div class="min-w-0 lg:row-start-2">
                   <div class="flex items-center gap-3">
                     <AppArt :key="openApp.key" :app-key="openApp.key" :play="1" class="art-glow h-12 w-12 shrink-0" />
                     <div class="min-w-0">
                       <h3 class="truncate text-base font-bold">{{ openApp.name }}</h3>
-                      <p v-if="openApp.group !== openApp.name" class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ openApp.group }}</p>
+                      <p v-if="openApp.group !== openApp.name" class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-500">{{ openApp.group }}</p>
                     </div>
                   </div>
                   <p class="mt-4 text-balance text-2xl font-black leading-[1.1] tracking-tight lg:mt-[clamp(1rem,3dvh,1.75rem)] lg:text-[clamp(1.75rem,5dvh,2.75rem)] lg:leading-[1.08]">{{ detail.headline }}</p>
-
-                  <div class="mt-5 hidden flex-wrap items-center gap-x-4 gap-y-2 lg:mt-[clamp(1.25rem,4dvh,2.25rem)] lg:flex">
-<span
-                    v-if="openApp.core"
-                    class="inline-flex h-11 items-center gap-1.5 rounded-xl bg-primary/10 px-4 text-sm font-semibold text-primary dark:bg-primary-light/15 dark:text-primary-light"
-                  >
-                    <Check class="h-4 w-4" />
-                    Always included
-                  </span>
-                  <!-- Added, it says so where the button was, and the panel stays
-                       open: there may be more apps to look at. -->
-                  <span
-                    v-else-if="inPlan(openApp)"
-                    :class="['inline-flex h-11 items-center gap-x-3 gap-y-1', { 'just-added': justAdded === openApp.key }]"
-                  >
-                    <span class="added inline-flex h-11 items-center gap-1.5 rounded-xl bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
-                      <Check class="h-4 w-4" />
-                      In your plan
-                    </span>
-                    <button type="button" class="text-sm font-semibold text-primary underline-offset-4 hover:underline dark:text-primary-light" @click="viewPlan">
-                      See my plan
-                    </button>
-                  </span>
-                  <button
-                    v-else
-                    type="button"
-                    class="group/add inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-colors hover:bg-primary-hover"
-                    @click="addToPlan(openApp)"
-                  >
-                    Add {{ openApp.name }} to my plan
-                    <Plus class="h-4 w-4" />
-                  </button>
-                    <span class="text-sm font-semibold tabular-nums text-gray-500 dark:text-gray-400">{{ priceOf(openApp) }}</span>
-                  </div>
                 </div>
 
-                <ul v-if="detail.wins.length" class="grid min-w-0 gap-2 lg:gap-[clamp(0.5rem,1.6dvh,0.875rem)]">
+                <ul v-if="detail.wins.length" class="grid min-w-0 gap-2 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:content-center lg:gap-[clamp(0.5rem,1.6dvh,0.875rem)]">
                   <li
                     v-for="(win, i) in detail.wins"
                     :key="win.text"
                     :style="{ '--i': i }"
-                    class="win flex items-center gap-3 rounded-2xl bg-gray-50 p-3 lg:gap-4 lg:p-[clamp(0.625rem,2dvh,1.125rem)] dark:bg-gray-800/60"
+                    class="win flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm shadow-gray-900/5 lg:gap-4 lg:p-[clamp(0.625rem,2dvh,1.125rem)] dark:bg-gray-800/60 dark:shadow-none"
                   >
-                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm lg:h-11 lg:w-11 dark:bg-gray-900 dark:text-primary-light">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary lg:h-11 lg:w-11 dark:bg-primary-light/15 dark:text-primary-light">
                       <component :is="win.icon" class="h-5 w-5 lg:h-5.5 lg:w-5.5" />
                     </span>
                     <span class="text-sm font-semibold text-gray-800 lg:text-base dark:text-gray-100">{{ win.text }}</span>
                   </li>
                 </ul>
 
-                <!-- A phone puts the price and the button last, under the wins. -->
-                <div class="flex flex-wrap items-center justify-between gap-3 lg:hidden">
-                  <span class="text-sm font-semibold tabular-nums text-gray-500 dark:text-gray-400">{{ priceOf(openApp) }}</span>
-<span
-                    v-if="openApp.core"
-                    class="inline-flex h-11 items-center gap-1.5 rounded-xl bg-primary/10 px-4 text-sm font-semibold text-primary dark:bg-primary-light/15 dark:text-primary-light"
-                  >
-                    <Check class="h-4 w-4" />
-                    Always included
-                  </span>
-                  <!-- Added, it says so where the button was, and the panel stays
-                       open: there may be more apps to look at. -->
-                  <span
-                    v-else-if="inPlan(openApp)"
-                    :class="['inline-flex h-11 items-center gap-x-3 gap-y-1', { 'just-added': justAdded === openApp.key }]"
-                  >
-                    <span class="added inline-flex h-11 items-center gap-1.5 rounded-xl bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
-                      <Check class="h-4 w-4" />
+                <!-- What to do, in one place: a single button that adds the app,
+                     and once it is in the plan becomes the way to see the plan,
+                     with a line beside it saying where the app stands. -->
+                <div class="flex items-center justify-between gap-3 lg:col-start-1 lg:row-start-3 lg:mt-[clamp(1.25rem,4dvh,2.25rem)] lg:flex-row-reverse lg:justify-end lg:self-start">
+                  <p class="min-w-0 text-sm font-semibold tabular-nums">
+                    <span v-if="openApp.core" class="flex items-center gap-1.5 text-primary dark:text-primary-light">
+                      <Check class="h-4 w-4 shrink-0" />
+                      Always included
+                    </span>
+                    <span v-else-if="inPlan(openApp)" :class="['flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400', { 'just-added': justAdded === openApp.key }]">
+                      <span class="added-check flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white dark:bg-emerald-500">
+                        <Check class="h-3 w-3" />
+                      </span>
                       In your plan
                     </span>
-                    <button type="button" class="text-sm font-semibold text-primary underline-offset-4 hover:underline dark:text-primary-light" @click="viewPlan">
-                      See my plan
-                    </button>
-                  </span>
+                    <span v-else class="text-gray-500 dark:text-gray-400">{{ priceOf(openApp) }}</span>
+                  </p>
+                  <button
+                    v-if="openApp.core || inPlan(openApp)"
+                    type="button"
+                    class="group/cta inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-gray-900 shadow-sm ring-1 ring-gray-900/10 transition-colors hover:bg-gray-50 lg:px-5 dark:bg-gray-800 dark:text-white dark:ring-white/10 dark:hover:bg-gray-700"
+                    @click="viewPlan"
+                  >
+                    See my plan
+                    <ArrowRight class="h-4 w-4 transition-transform group-hover/cta:translate-x-0.5" />
+                  </button>
                   <button
                     v-else
                     type="button"
-                    class="group/add inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-colors hover:bg-primary-hover"
+                    class="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-colors hover:bg-primary-hover lg:px-5"
                     @click="addToPlan(openApp)"
                   >
-                    Add to my plan
+                    <span class="lg:hidden">Add to my plan</span>
+                    <span class="hidden lg:inline">Add {{ openApp.name }} to my plan</span>
                     <Plus class="h-4 w-4" />
                   </button>
                 </div>
@@ -450,8 +454,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
   opacity: 0;
 }
 
-/* Just added: the "In your plan" mark arrives with a little give, once. */
-.just-added .added {
+/* Just added: the tick arrives with a little give, once. */
+.just-added .added-check {
   animation: added-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
@@ -462,19 +466,28 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
   }
 }
 
-/* Going from one app to another: a quick cross-fade, and the wins arrive one
-   after another. */
-.swap-enter-active,
-.swap-leave-active {
+/* Going from one app to another: the one showing slides away and the next
+   comes in from the side it lies on, as a phone's screens turn, and the wins
+   arrive one after another. */
+.swap-next-enter-active,
+.swap-next-leave-active,
+.swap-prev-enter-active,
+.swap-prev-leave-active {
   transition:
     opacity 0.18s ease,
-    filter 0.18s ease;
+    translate 0.18s ease;
 }
 
-.swap-enter-from,
-.swap-leave-to {
+.swap-next-enter-from,
+.swap-prev-leave-to {
   opacity: 0;
-  filter: blur(4px);
+  translate: 1.5rem 0;
+}
+
+.swap-next-leave-to,
+.swap-prev-enter-from {
+  opacity: 0;
+  translate: -1.5rem 0;
 }
 
 .win {
@@ -495,13 +508,15 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
   .grow-leave-active .panel-fade,
   .grow-enter-active .backdrop,
   .grow-leave-active .backdrop,
-  .swap-enter-active,
-  .swap-leave-active {
+  .swap-next-enter-active,
+  .swap-next-leave-active,
+  .swap-prev-enter-active,
+  .swap-prev-leave-active {
     transition: none;
   }
 
   .win,
-  .just-added .added {
+  .just-added .added-check {
     animation: none;
   }
 }

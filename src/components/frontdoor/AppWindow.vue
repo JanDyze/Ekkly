@@ -8,7 +8,7 @@ import ScaledScreen from './ScaledScreen.vue'
 // down the left, a bar across the top, and the page in the rest. A scene fills
 // the page through the default slot, in a 472 by 280 space.
 
-defineProps({
+const props = defineProps({
   // The page in the top bar.
   page: { type: String, required: true },
   // The line under it; the church's name, usually.
@@ -19,6 +19,9 @@ defineProps({
   // for a church without one, which shows its first letter instead.
   logo: { type: String, default: 'grace' },
   initial: { type: String, default: 'G' },
+  // The church the visitor named in the welcome, if they did. It has no logo,
+  // so its first letter stands in, the way it would in the app.
+  church: { type: String, default: '' },
 })
 
 const NAV = [
@@ -37,7 +40,7 @@ const NAV = [
     <div class="flex h-full">
       <nav class="flex w-13 shrink-0 flex-col items-center gap-1.5 border-r border-gray-100 bg-gray-50 py-2.5 dark:border-gray-800 dark:bg-gray-950">
         <span class="mb-1.5 h-8 w-8 text-[13px]">
-          <ChurchMark :church="logo" :initial="initial" />
+          <ChurchMark :church="props.church.trim() ? '' : logo" :initial="props.church.trim() ? props.church.trim()[0] : initial" />
         </span>
         <span
           v-for="item in NAV"

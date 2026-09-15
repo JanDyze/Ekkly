@@ -5,6 +5,7 @@ import AppWindow from '../AppWindow.vue'
 import ScaledScreen from '../ScaledScreen.vue'
 import FloatNote from '../FloatNote.vue'
 import { useSceneTimeline } from '../useSceneTimeline'
+import { SUNDAY, SUNDAY_DAY } from '../sceneDates'
 
 // Scene: a Sunday's lineup. The people serving come in, the songs are listed
 // with their keys and played through, and the team is reminded. Putting the
@@ -14,6 +15,7 @@ import { useSceneTimeline } from '../useSceneTimeline'
 const props = defineProps({
   domain: { type: String, default: '' },
   desktop: { type: Boolean, default: false },
+  church: { type: String, default: '' },
 })
 
 const TEAM = [
@@ -45,7 +47,7 @@ at(4300, () => (reminded.value = true))
       <div class="px-4 pt-12">
         <div class="fd-rise">
           <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Schedule</p>
-          <p class="text-sm font-bold text-gray-900 dark:text-white">Sunday 21 · Worship Service</p>
+          <p class="text-sm font-bold text-gray-900 dark:text-white">Sunday {{ SUNDAY_DAY }} · Worship Service</p>
         </div>
 
         <div class="mt-3 grid grid-cols-3 gap-2">
@@ -95,7 +97,7 @@ at(4300, () => (reminded.value = true))
     </ScaledScreen>
 
     <!-- --------------------------------------------------------- computer -->
-    <AppWindow v-else page="Schedules" subtitle="Sunday 21 September · Worship Service" active="lineups">
+    <AppWindow v-else page="Schedules" :subtitle="`Sunday ${SUNDAY} · Worship Service`" active="lineups" :church="props.church">
       <div class="grid h-full grid-cols-[150px_1fr] gap-2.5">
         <div class="fd-rise flex flex-col rounded-xl bg-white p-2.5 shadow-sm dark:bg-gray-800">
           <p class="px-1 text-[10px] font-semibold text-gray-900 dark:text-white">Serving</p>

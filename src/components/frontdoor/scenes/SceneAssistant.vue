@@ -151,7 +151,7 @@ at(5000, () => (step.value = 7))
       title="Reads your records"
       body="people, calendar, songs"
       :delay="1200"
-      :class="props.desktop ? '-left-3 sm:-left-10 top-24' : 'fd-out-left sm:-left-44 top-32'"
+      :class="props.desktop ? '-bottom-6 -left-3 sm:-left-10' : 'fd-out-left sm:-left-44 top-32'"
     />
     <FloatNote
       :icon="ShieldCheck"

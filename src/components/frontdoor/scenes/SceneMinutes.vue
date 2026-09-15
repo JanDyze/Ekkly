@@ -5,6 +5,7 @@ import AppWindow from '../AppWindow.vue'
 import ScaledScreen from '../ScaledScreen.vue'
 import FloatNote from '../FloatNote.vue'
 import { useSceneTimeline } from '../useSceneTimeline'
+import { BOARD_MET, CAMP, CAMP_NOTE, NEXT_BOARD, NEXT_BOARD_NOTE } from '../sceneDates'
 
 // Scene: minutes that write themselves. Rough notes are typed the way anyone
 // types in a meeting, the AI button is pressed, a sweep of light passes over,
@@ -15,14 +16,15 @@ import { useSceneTimeline } from '../useSceneTimeline'
 const props = defineProps({
   domain: { type: String, default: '' },
   desktop: { type: Boolean, default: false },
+  church: { type: String, default: '' },
 })
 
-const NOTES = 'youth camp nov 14-16, 25k ok\nben - quotes to repaint hall\nnext mtg oct 5'
+const NOTES = `youth camp ${CAMP_NOTE}, 25k ok\nben - quotes to repaint hall\nnext mtg ${NEXT_BOARD_NOTE}`
 
 const SECTIONS = [
-  { label: 'Decided', icon: CheckCircle, tone: 'text-emerald-500', text: 'Youth camp approved for 14–16 November, with a ₱25,000 budget.' },
+  { label: 'Decided', icon: CheckCircle, tone: 'text-emerald-500', text: `Youth camp approved for ${CAMP}, with a ₱25,000 budget.` },
   { label: 'To do', icon: ArrowRight, tone: 'text-primary dark:text-primary-light', text: 'Ben Cruz to get quotes for repainting the fellowship hall.' },
-  { label: 'Next meeting', icon: null, tone: '', text: 'Sunday, 5 October' },
+  { label: 'Next meeting', icon: null, tone: '', text: NEXT_BOARD },
 ]
 
 const notes = ref('')
@@ -92,7 +94,7 @@ at(typed + 3000, () => (filed.value = true))
     </ScaledScreen>
 
     <!-- --------------------------------------------------------- computer -->
-    <AppWindow v-else page="Minutes" subtitle="Church board meeting · 14 September" active="minutes">
+    <AppWindow v-else page="Minutes" :subtitle="`Church board meeting · ${BOARD_MET}`" active="minutes" :church="props.church">
       <div class="grid h-full grid-cols-2 gap-2.5">
         <div class="flex flex-col rounded-xl bg-white p-3 shadow-sm dark:bg-gray-800">
           <p class="text-[9px] font-semibold uppercase tracking-wider text-gray-400">Notes</p>
@@ -137,7 +139,7 @@ at(typed + 3000, () => (filed.value = true))
 
     </AppWindow>
 
-    <FloatNote :icon="FileText" title="Type as you talk" body="no tidy notes needed" :delay="700" :class="props.desktop ? '-left-3 sm:-left-10 top-20' : 'fd-out-right sm:-right-36 top-28'" />
+    <FloatNote :icon="FileText" title="Type as you talk" body="no tidy notes needed" :delay="700" :class="props.desktop ? '-bottom-6 -left-3 sm:-left-10' : 'fd-out-right sm:-right-36 top-28'" />
     <Transition name="write">
       <FloatNote
         v-if="written"

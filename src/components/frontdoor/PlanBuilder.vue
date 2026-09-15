@@ -1,9 +1,10 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { ArrowRight, Check } from '../../icons'
 import { formatMoney } from '../../utils/moneyUtils'
 import { MONTHS_PER_YEAR_PAID, yearlyPrice } from '../../../lib/apps.js'
 import AppArt from './AppArt.vue'
+import { useFrontDoor } from '../../composables/useFrontDoor'
 
 // "Build your plan": a visitor ticks the apps their church would use and
 // watches the monthly price add up. It is the front door's way of saying the
@@ -18,7 +19,7 @@ const props = defineProps({
   catalog: { type: Array, default: () => [] },
 })
 
-const emit = defineEmits(['start', 'change'])
+const emit = defineEmits(['start'])
 
 // Prices here are whole pesos, so they read as a price tag rather than a bill.
 const peso = (centavos) => formatMoney(centavos).replace(/\.00$/, '')
@@ -26,13 +27,10 @@ const peso = (centavos) => formatMoney(centavos).replace(/\.00$/, '')
 const offered = computed(() => props.catalog.filter((app) => app.available))
 const hasPrices = computed(() => offered.value.some((app) => app.price > 0))
 
-// A sensible first plan: the roll, the calendar and attendance.
-const STARTER = ['members', 'events', 'attendance']
-const picked = ref(new Set(STARTER))
-watch(offered, (apps) => {
-  const keys = new Set(apps.map((a) => a.key))
-  picked.value = new Set([...picked.value].filter((k) => keys.has(k)))
-})
+// The plan is the front door's, not this picker's: apps added from the home
+// page are already ticked here, and what is ticked here goes with them to Get
+// started (useFrontDoor). It starts with the roll, the calendar and attendance.
+const { hasPick, togglePick } = useFrontDoor()
 
 // An app's picture plays its animation when the app joins the plan.
 const plays = ref({})
@@ -42,29 +40,11 @@ const celebrate = (key) => {
 
 const toggle = (app) => {
   if (app.core) return
-  const next = new Set(picked.value)
-  if (next.has(app.key)) next.delete(app.key)
-  else {
-    next.add(app.key)
-    celebrate(app.key)
-  }
-  picked.value = next
+  if (!hasPick(app.key)) celebrate(app.key)
+  togglePick(app.key)
 }
 
-// Another part of the page can tick an app for them: "Add to my plan" in
-// What's inside does, on its way down here.
-const add = (key) => {
-  if (picked.value.has(key)) return
-  picked.value = new Set([...picked.value, key])
-  celebrate(key)
-}
-defineExpose({ add })
-
-// Which apps are in the plan, told to the page, so What's inside can say an app
-// is already in it.
-watch(picked, (keys) => emit('change', [...keys]), { immediate: true })
-
-const isOn = (app) => app.core || picked.value.has(app.key)
+const isOn = (app) => app.core || hasPick(app.key)
 const chosen = computed(() => offered.value.filter(isOn))
 const total = computed(() => chosen.value.reduce((n, app) => n + (app.price || 0), 0))
 

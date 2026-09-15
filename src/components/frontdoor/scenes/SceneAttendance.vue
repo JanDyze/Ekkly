@@ -5,6 +5,7 @@ import AppWindow from '../AppWindow.vue'
 import ScaledScreen from '../ScaledScreen.vue'
 import FloatNote from '../FloatNote.vue'
 import { useSceneTimeline } from '../useSceneTimeline'
+import { SUNDAY, WEEK_LABELS } from '../sceneDates'
 
 // Scene: Sunday's head count. The count climbs as an usher taps people in, the
 // weeks behind it rise into a chart, and it saves. Attendance in Ekkly is a
@@ -13,11 +14,11 @@ import { useSceneTimeline } from '../useSceneTimeline'
 const props = defineProps({
   domain: { type: String, default: '' },
   desktop: { type: Boolean, default: false },
+  church: { type: String, default: '' },
 })
 
 const TOTAL = 148
 const WEEKS = [58, 64, 61, 70, 67, 74, 79, 86]
-const WEEK_LABELS = ['3 Aug', '10', '17', '24', '31', '7 Sep', '14', '21']
 
 const count = ref(0)
 const saved = ref(false)
@@ -92,14 +93,14 @@ const done = computed(() => count.value === TOTAL)
         <Transition name="fade">
           <div v-if="saved" class="fd-rise absolute inset-x-4 bottom-20 flex items-center gap-2 rounded-xl bg-gray-900 px-3 py-2.5 text-xs font-semibold text-white shadow-xl dark:bg-white dark:text-gray-900">
             <CheckCircle class="h-4 w-4 text-emerald-400 dark:text-emerald-600" />
-            Saved for 21 September
+            Saved for {{ SUNDAY }}
           </div>
         </Transition>
       </div>
     </ScaledScreen>
 
     <!-- --------------------------------------------------------- computer -->
-    <AppWindow v-else page="Attendance" subtitle="Worship Service · Sunday 21 September" active="attendance">
+    <AppWindow v-else page="Attendance" :subtitle="`Worship Service · Sunday ${SUNDAY}`" active="attendance" :church="props.church">
       <div class="grid h-full grid-cols-[160px_1fr] gap-2.5">
         <div class="fd-rise flex flex-col items-center justify-center rounded-xl bg-white p-3 text-center shadow-sm dark:bg-gray-800">
           <p class="text-[9px] font-semibold uppercase tracking-wider text-gray-400">Head count</p>
@@ -119,7 +120,6 @@ const done = computed(() => count.value === TOTAL)
         <div class="fd-rise flex flex-col rounded-xl bg-white p-3 shadow-sm dark:bg-gray-800" style="--d: 120ms">
           <div class="flex items-center justify-between">
             <p class="text-[11px] font-semibold text-gray-900 dark:text-white">Last 8 Sundays</p>
-            <p class="flex items-center gap-1 text-[9px] font-semibold text-emerald-600 dark:text-emerald-400"><TrendUp class="h-3 w-3" /> Up 9% this month</p>
           </div>
           <div class="mt-3 flex flex-1 items-end gap-2.5">
             <div v-for="(h, i) in WEEKS" :key="i" class="flex h-full flex-1 flex-col justify-end">
@@ -136,7 +136,7 @@ const done = computed(() => count.value === TOTAL)
       <Transition name="fade">
         <div v-if="saved" class="fd-rise absolute bottom-4 right-4 flex items-center gap-1.5 rounded-lg bg-gray-900 px-2.5 py-2 text-[10px] font-semibold text-white shadow-xl dark:bg-white dark:text-gray-900">
           <CheckCircle class="h-3.5 w-3.5 text-emerald-400 dark:text-emerald-600" />
-          Saved for 21 September
+          Saved for {{ SUNDAY }}
         </div>
       </Transition>
     </AppWindow>

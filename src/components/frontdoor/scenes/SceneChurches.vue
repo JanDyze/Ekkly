@@ -2,7 +2,7 @@
 import { computed, onUnmounted, ref } from 'vue'
 import { suggestChurchId } from '../../../../lib/churchId.js'
 import { Calendar, LockSimple, Palette } from '../../../icons'
-import { appIcon } from '../appIcons'
+import AppArt from '../AppArt.vue'
 import AppWindow from '../AppWindow.vue'
 import ChurchMark from '../ChurchMark.vue'
 import ScaledScreen from '../ScaledScreen.vue'
@@ -17,9 +17,11 @@ import { useSceneTimeline } from '../useSceneTimeline'
 // church on the screen instead, at the address it would have, and only the
 // colours go round: the same point, made about them.
 //
-// The first church wears the platform's own accent. The others are sample
-// colours, written out here because they stand for other churches' choices
-// and must not follow this page's accent; the stage applies them.
+// The last church wears the platform's own accent, so the scene ends where
+// the rest of the tour carries on: Grace Fellowship, in Ekkly's colour. The
+// others are sample colours, written out here because they stand for other
+// churches' choices and must not follow this page's accent; the stage applies
+// them.
 
 const props = defineProps({
   domain: { type: String, default: 'ekkly.church' },
@@ -30,13 +32,22 @@ const props = defineProps({
 const emit = defineEmits(['tint'])
 
 const CHURCHES = [
-  { id: 'grace', name: 'Grace Fellowship', tint: null },
+  { id: 'livingword', name: 'Living Word', tint: { light: 'oklch(0.58 0.19 25)', dark: 'oklch(0.74 0.14 25)' } },
   { id: 'hope', name: 'Hope Community', tint: { light: 'oklch(0.55 0.2 293)', dark: 'oklch(0.74 0.14 293)' } },
   { id: 'cornerstone', name: 'Cornerstone', tint: { light: 'oklch(0.56 0.12 163)', dark: 'oklch(0.76 0.13 163)' } },
-  { id: 'livingword', name: 'Living Word', tint: { light: 'oklch(0.58 0.19 25)', dark: 'oklch(0.74 0.14 25)' } },
+  { id: 'grace', name: 'Grace Fellowship', tint: null },
 ]
 
-const TILES = ['members', 'events', 'attendance', 'lineups', 'minutes', 'finances']
+// The home screen's apps, each in its own artwork, under the short name the
+// app's home shows.
+const TILES = [
+  { key: 'members', name: 'People' },
+  { key: 'events', name: 'Events' },
+  { key: 'attendance', name: 'Attendance' },
+  { key: 'lineups', name: 'Schedules' },
+  { key: 'minutes', name: 'Minutes' },
+  { key: 'finances', name: 'Finances' },
+]
 const WEEK = [
   { day: 'Wed', what: 'Prayer meeting · 7:00 PM' },
   { day: 'Fri', what: 'Youth fellowship · 6:30 PM' },
@@ -118,15 +129,13 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
 
         <div class="mt-3 grid grid-cols-3 gap-2">
           <div
-            v-for="(key, i) in TILES"
-            :key="key"
+            v-for="(tile, i) in TILES"
+            :key="tile.key"
             class="fd-pop flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl bg-white shadow-sm dark:bg-gray-800"
             :style="{ '--d': `${260 + i * 60}ms` }"
           >
-            <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light">
-              <component :is="appIcon(key)" class="h-4.5 w-4.5" />
-            </span>
-            <span class="h-1.5 w-8 rounded-full bg-gray-200 dark:bg-gray-700"></span>
+            <AppArt :app-key="tile.key" class="h-8 w-8" />
+            <span class="text-[9px] font-semibold leading-tight text-gray-700 dark:text-gray-300">{{ tile.name }}</span>
           </div>
         </div>
 
@@ -169,15 +178,13 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
 
       <div class="mt-2.5 grid grid-cols-6 gap-2">
         <div
-          v-for="(key, i) in TILES"
-          :key="key"
-          class="fd-pop flex h-15 flex-col items-center justify-center gap-1.5 rounded-xl bg-white shadow-sm dark:bg-gray-800"
+          v-for="(tile, i) in TILES"
+          :key="tile.key"
+          class="fd-pop flex h-15 flex-col items-center justify-center gap-1 rounded-xl bg-white shadow-sm dark:bg-gray-800"
           :style="{ '--d': `${200 + i * 50}ms` }"
         >
-          <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light">
-            <component :is="appIcon(key)" class="h-4 w-4" />
-          </span>
-          <span class="h-1 w-7 rounded-full bg-gray-200 dark:bg-gray-700"></span>
+          <AppArt :app-key="tile.key" class="h-7 w-7" />
+          <span class="truncate text-[8px] font-semibold text-gray-700 dark:text-gray-300">{{ tile.name }}</span>
         </div>
       </div>
 
@@ -199,7 +206,7 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
     </div>
 
     <FloatNote :icon="Palette" title="Your colour" body="everywhere in the app" :delay="1100" :class="props.desktop ? '-right-3 sm:-right-8 -bottom-6' : 'fd-out-right sm:-right-36 top-52'" />
-    <FloatNote :icon="LockSimple" tone="emerald" title="Records kept apart" body="for each church" :delay="1400" :class="props.desktop ? '-left-3 top-24 sm:-left-10' : 'fd-out-left sm:-left-36 bottom-24'" />
+    <FloatNote :icon="LockSimple" tone="emerald" title="Records kept apart" body="for each church" :delay="1400" :class="props.desktop ? '-bottom-6 -left-3 sm:-left-10' : 'fd-out-left sm:-left-36 bottom-24'" />
   </div>
 </template>
 
