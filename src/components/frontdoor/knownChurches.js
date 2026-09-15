@@ -1,5 +1,7 @@
 import cityPraise from '../../assets/churches/city-praise.webp'
 import uec from '../../assets/churches/uec.webp'
+import jesusIsLord from '../../assets/churches/jesus-is-lord.webp'
+import newLife from '../../assets/churches/new-life.webp'
 
 // Churches the front door knows by name. When a visitor types one of these —
 // its name or what its people call it — the previews wear that church's own
@@ -27,6 +29,22 @@ export const KNOWN_CHURCHES = [
     logo: uec,
     names: ['UEC', 'UECPCOM', 'UEC Canubing', 'UEC Canubing II', 'UEC Canubing 2', 'UECPCOM Canubing II'],
     tint: { light: 'oklch(0.53 0.1 225)', dark: 'oklch(0.74 0.12 210)' },
+  },
+  {
+    key: 'jesusislord',
+    name: 'Jesus Is Lord',
+    logo: jesusIsLord,
+    names: ['Jesus Is Lord', 'Jesus Is Lord Church', 'JIL', 'JIL Church'],
+    tint: { light: 'oklch(0.3 0.1 280)', dark: 'oklch(0.72 0.1 280)' },
+  },
+  {
+    // The badge carries only its NL monogram: the words under it are too small
+    // to read at that size.
+    key: 'newlife',
+    name: 'New Life',
+    logo: newLife,
+    names: ['New Life', 'NewLife', 'New Life Church', 'NL'],
+    tint: { light: 'oklch(0.25 0 0)', dark: 'oklch(0.88 0 0)' },
   },
 ]
 
