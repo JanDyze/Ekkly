@@ -11,6 +11,17 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.26.7] — 2026-09-15
+
+How it works, drawn rather than screenshotted.
+
+### Changed
+
+- **Each step of How it works is a small illustration** instead of a card from
+  the app: your church's name writing itself with its link, an Approved stamp
+  landing, and seats filling with the people who join. Nothing in it looks like
+  something to fill in, and the Preview label is gone.
+
 ## [0.26.6] — 2026-09-15
 
 Previews that look like previews, of your own church.

@@ -213,11 +213,16 @@ ending on what the tour left out. It lives in
   section is a screen plus 0.8 of one per step, its content pinned under the
   header. The step being read is open in the list, the ones before it ticked
   and the ones to come dim, so nobody meets a step before its turn; each step's
-  name scrolls to it. Beside the list, a card from the app shows the step
-  happening ([HowVisual.vue](src/components/frontdoor/HowVisual.vue)) — the
-  request filled in, the church opened, people let in — with the church named in
-  the welcome, if any. A phone stacks the steps, each with its card playing as
-  it comes up the screen.
+  name scrolls to it. Beside the list, a small illustration shows the step
+  happening ([HowVisual.vue](src/components/frontdoor/HowVisual.vue)) — the name
+  writing itself and its link appearing, an Approved stamp landing, seats filling
+  with faces — with the church the visitor named, if any. It is deliberately
+  not a screen from the app: fields and buttons read as a form to fill in, and
+  the hero already shows the app on a device. Nothing in it looks tappable, and
+  it carries no "preview" label. A phone gets a walkthrough instead of the
+  pinned scroll: step tabs, a swipe, and a Next step button (full width on the
+  first step; a back arrow joins it after), each illustration playing as its
+  step comes up and again when tapped.
 - **Section headings share one scale:** `TYPE.eyebrow`, `TYPE.title` and
   `TYPE.lead` in [type.js](src/components/frontdoor/type.js), on every front door
   page. A new section uses them rather than its own
