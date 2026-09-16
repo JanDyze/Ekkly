@@ -4,6 +4,7 @@ import FrontDoorHeader from '../components/frontdoor/FrontDoorHeader.vue'
 import FrontDoorFooter from '../components/frontdoor/FrontDoorFooter.vue'
 import FrontDoorFaq from '../components/frontdoor/FrontDoorFaq.vue'
 import PlanBuilder from '../components/frontdoor/PlanBuilder.vue'
+import PlanBar from '../components/frontdoor/PlanBar.vue'
 import CookieBanner from '../components/frontdoor/CookieBanner.vue'
 import ChatBubble from '../components/frontdoor/ChatBubble.vue'
 import { FAQS } from '../components/frontdoor/faqs'
@@ -58,7 +59,10 @@ const start = () => {
       </section>
     </main>
 
-    <FrontDoorFooter />
+    <!-- The plan, always in reach on a phone. -->
+    <PlanBar :catalog="catalog" @start="start" />
+
+    <FrontDoorFooter class="pb-20 lg:pb-0" />
     <CookieBanner />
     <ChatBubble v-if="answered" />
   </div>

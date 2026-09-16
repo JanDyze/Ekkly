@@ -59,6 +59,11 @@ const picks = ref(readPicks())
 watch(picks, (list) => write(PICKS_KEY, JSON.stringify(list)))
 
 // A name kept from before this change lived in the tab; it carries over.
+// Monthly or yearly, shared as the plan is: the summary card, the bar at the
+// foot of Pricing on a phone and the header all say the same figure.
+const yearly = ref(read('ekkly.frontDoor.yearly') === 'yes')
+watch(yearly, (yes) => write('ekkly.frontDoor.yearly', yes ? 'yes' : 'no'))
+
 const namedChurch = ref(read(CHURCH_KEY, 'local') || read(CHURCH_KEY) || '')
 watch(namedChurch, (name) => write(CHURCH_KEY, name.trim(), 'local'), { immediate: true })
 
@@ -109,6 +114,7 @@ export function useFrontDoor() {
     addPick,
     togglePick,
     namedChurch,
+    yearly,
     admin: computed(() => admin.value),
     signal,
   }

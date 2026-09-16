@@ -2,8 +2,12 @@
 import { useRoute, useRouter } from 'vue-router'
 import { Moon, ShieldCheck, Sun } from '../../icons'
 import PlatformLogo from '../common/PlatformLogo.vue'
+import { computed } from 'vue'
 import { useAuth } from '../../composables/useAuth'
-import { useFrontDoor } from '../../composables/useFrontDoor'
+import { planFrom, useFrontDoor } from '../../composables/useFrontDoor'
+import { usePlatformConfig } from '../../composables/usePlatformConfig'
+import { formatMoney } from '../../utils/moneyUtils'
+import { yearlyPrice } from '../../../lib/apps.js'
 import { useTheme } from '../../composables/useTheme'
 
 // The bar across the top of every front door page. Its links go to the home
@@ -13,7 +17,15 @@ import { useTheme } from '../../composables/useTheme'
 const route = useRoute()
 const router = useRouter()
 const { isAuthenticated } = useAuth()
-const { admin, signal } = useFrontDoor()
+const { admin, signal, picks, yearly } = useFrontDoor()
+const { catalog } = usePlatformConfig()
+
+// On Pricing, the button carries the plan as it is built, so the total is in
+// view wherever the reader has got to.
+const onPricing = computed(() => route.path === '/pricing')
+const plan = computed(() => planFrom(catalog.value, picks.value))
+const total = computed(() => (yearly.value ? yearlyPrice(plan.value.total) : plan.value.total))
+const price = computed(() => formatMoney(total.value).replace(/\.00$/, ''))
 
 // Light or dark, the same switch the app has, with the same moment when it
 // changes (App.vue draws it).
@@ -82,7 +94,12 @@ const current = 'text-gray-900 dark:text-white'
           class="inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm shadow-primary/30 transition-colors hover:bg-primary-hover"
           @click="signal('start')"
         >
-          {{ isAuthenticated ? 'Your church' : 'Get started' }}
+          <template v-if="onPricing && plan.total">
+            <span class="hidden sm:inline">Start ·&nbsp;</span>
+            <span class="tabular-nums">{{ price }}</span>
+            <span class="hidden text-white/70 sm:inline">/ {{ yearly ? 'year' : 'month' }}</span>
+          </template>
+          <template v-else>{{ isAuthenticated ? 'Your church' : 'Get started' }}</template>
         </RouterLink>
       </div>
     </div>

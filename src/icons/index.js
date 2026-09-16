@@ -134,6 +134,10 @@ export const Camera = /*#__PURE__*/ icon(CameraSvg)
 export const CardsSvg = "<path d=\"M184,72H40A16,16,0,0,0,24,88V200a16,16,0,0,0,16,16H184a16,16,0,0,0,16-16V88A16,16,0,0,0,184,72Zm0,128H40V88H184V200ZM232,56V176a8,8,0,0,1-16,0V56H64a8,8,0,0,1,0-16H216A16,16,0,0,1,232,56Z\"/>"
 export const Cards = /*#__PURE__*/ icon(CardsSvg)
 
+/** Phosphor CaretUp */
+export const CaretUpSvg = "<path d=\"M213.66,165.66a8,8,0,0,1-11.32,0L128,91.31,53.66,165.66a8,8,0,0,1-11.32-11.32l80-80a8,8,0,0,1,11.32,0l80,80A8,8,0,0,1,213.66,165.66Z\"/>"
+export const CaretUp = /*#__PURE__*/ icon(CaretUpSvg)
+
 /** Phosphor ChartBar */
 export const ChartBarSvg = "<path d=\"M224,200h-8V40a8,8,0,0,0-8-8H152a8,8,0,0,0-8,8V80H96a8,8,0,0,0-8,8v40H48a8,8,0,0,0-8,8v64H32a8,8,0,0,0,0,16H224a8,8,0,0,0,0-16ZM160,48h40V200H160ZM104,96h40V200H104ZM56,144H88v56H56Z\"/>"
 export const ChartBar = /*#__PURE__*/ icon(ChartBarSvg)

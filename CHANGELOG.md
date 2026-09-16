@@ -11,6 +11,22 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.27.0] — 2026-09-16
+
+The plan stays in reach while you build it.
+
+### Added
+
+- **A plan bar at the foot of Pricing on a phone:** what your plan comes to, and
+  a Start button, wherever you have scrolled to. Tap it for the whole plan,
+  monthly or yearly, in a drawer.
+
+### Changed
+
+- **The header carries the total on Pricing**, so the figure is in view at the
+  top of the page as well.
+- Monthly or yearly is now one choice across the page, the drawer and the header.
+
 ## [0.26.10] — 2026-09-16
 
 A calmer first screen on a phone.

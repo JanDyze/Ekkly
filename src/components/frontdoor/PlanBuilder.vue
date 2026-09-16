@@ -30,7 +30,7 @@ const hasPrices = computed(() => offered.value.some((app) => app.price > 0))
 // The plan is the front door's, not this picker's: apps added from the home
 // page are already ticked here, and what is ticked here goes with them to Get
 // started (useFrontDoor). It starts with the roll, the calendar and attendance.
-const { hasPick, togglePick } = useFrontDoor()
+const { hasPick, togglePick, yearly } = useFrontDoor()
 
 // An app's picture plays its animation when the app joins the plan.
 const plays = ref({})
@@ -50,8 +50,8 @@ const total = computed(() => chosen.value.reduce((n, app) => n + (app.price || 0
 
 // Monthly, or a year up front for the price of ten months. The yearly figure
 // also says what that comes to a month, since that is the number they just
-// watched add up.
-const yearly = ref(false)
+// watched add up. Which it is belongs to the front door, so the bar at the
+// foot of the page on a phone says the same.
 const shown = computed(() => (yearly.value ? yearlyPrice(total.value) : total.value))
 // Rounded to the whole peso, like every other price here.
 const perMonthYearly = computed(() => Math.round(yearlyPrice(total.value) / 1200) * 100)
@@ -96,8 +96,9 @@ const monthsFree = 12 - MONTHS_PER_YEAR_PAID
       </li>
     </ul>
 
-    <!-- The running total, kept in view on a wide screen. -->
-    <aside class="lg:sticky lg:top-24 lg:self-start">
+    <!-- The running total, kept in view on a wide screen. A phone has it at
+         the foot of the page instead (PlanBar), where it is always in reach. -->
+    <aside class="hidden lg:sticky lg:top-24 lg:block lg:self-start">
       <div class="overflow-hidden rounded-3xl bg-gray-900 p-6 text-white shadow-2xl dark:bg-gray-800">
         <p class="text-xs font-semibold uppercase tracking-wider text-white/60">Your plan</p>
         <template v-if="hasPrices">
