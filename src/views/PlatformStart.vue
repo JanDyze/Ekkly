@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
-import { CheckCircle2, Clock, ExternalLink, Loader2, LogOut, Send, X } from '../icons'
+import { ArrowLeft, ArrowRight, CheckCircle2, Clock, ExternalLink, Loader2, LogOut, Pencil, Send, X } from '../icons'
 import GoogleSignInButton from '../components/auth/GoogleSignInButton.vue'
 import FrontDoorHeader from '../components/frontdoor/FrontDoorHeader.vue'
 import FrontDoorFooter from '../components/frontdoor/FrontDoorFooter.vue'
@@ -100,6 +100,8 @@ watch(
   (name) => {
     if (!linkEdited.value) form.churchId = suggestChurchId(name)
     if (name.trim()) namedChurch.value = name.trim()
+    // Typing answers whatever the step was complaining about.
+    if (error.value) error.value = ''
   },
   { immediate: true }
 )
@@ -115,6 +117,41 @@ const linkPreview = computed(() =>
 )
 
 const SIZES = ['Under 50', '50–150', '150–500', 'Over 500']
+
+/* --------------------------------------------------------------- steps */
+
+// Asked a few at a time rather than as one long form: a church's name, then
+// where it is, then how to reach them. Nobody faces six boxes at once, and
+// each step can say what it is for.
+const STEPS = [
+  { title: 'Your church', hint: 'Its name, and the link it will open at.' },
+  { title: 'About it', hint: 'So we know what to set up. Both can be skipped.' },
+  { title: 'Reaching you', hint: 'How we let you know, and anything else.' },
+]
+const step = ref(0)
+const last = computed(() => step.value === STEPS.length - 1)
+
+// Only the name is asked for; the rest may be left.
+const canGoOn = computed(() => (step.value > 0 ? true : Boolean(form.churchName.trim()) && linkValid.value))
+
+const back = () => {
+  error.value = ''
+  step.value = Math.max(0, step.value - 1)
+}
+
+const onwards = () => {
+  error.value = ''
+  if (!canGoOn.value) {
+    error.value = form.churchName.trim() ? 'The link can only use lowercase letters, numbers and single hyphens, 3 to 40 long.' : 'Give your church a name.'
+    return
+  }
+  if (last.value) return submit()
+  step.value += 1
+}
+
+// The link follows the name, so it is shown rather than asked for until
+// somebody wants to change it.
+const showLink = ref(false)
 
 const sending = ref(false)
 const error = ref('')
@@ -135,6 +172,8 @@ const submit = async () => {
     toast.success('Request sent')
     Object.assign(form, { churchName: '', churchId: '', location: '', size: '', contactNumber: '', message: '' })
     linkEdited.value = false
+    showLink.value = false
+    step.value = 0
   } catch (e) {
     console.error('Error requesting a church:', e)
     error.value = e.message || 'Could not send your request.'
@@ -264,74 +303,131 @@ const input =
               <h2 class="text-2xl font-black tracking-tight">About your church</h2>
               <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">We will look it over and let you know.</p>
 
-              <form class="mt-6 space-y-4" @submit.prevent="submit">
-                <div>
-                  <label for="church-name" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Church name</label>
-                  <input id="church-name" v-model="form.churchName" type="text" maxlength="120" required :class="input" />
-                </div>
+              <!-- Where they are, as a line that fills. -->
+              <div class="mt-5 flex items-center gap-2" aria-hidden="true">
+                <span
+                  v-for="(one, index) in STEPS"
+                  :key="one.title"
+                  :class="[
+                    'h-1.5 flex-1 rounded-full transition-colors duration-300',
+                    index <= step ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700',
+                  ]"
+                ></span>
+              </div>
+              <p class="mt-3 text-xs font-bold uppercase tracking-wider text-primary dark:text-primary-light">
+                Step {{ step + 1 }} of {{ STEPS.length }} · {{ STEPS[step].title }}
+              </p>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ STEPS[step].hint }}</p>
 
-                <div>
-                  <label for="church-link" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Your church’s link</label>
-                  <input
-                    id="church-link"
-                    :value="form.churchId"
-                    type="text"
-                    maxlength="40"
-                    inputmode="url"
-                    autocapitalize="off"
-                    spellcheck="false"
-                    :class="[input, 'font-mono', linkValid ? '' : 'border-red-400 focus:border-red-500 focus:ring-red-500']"
-                    @input="onLinkInput"
-                  />
-                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    People will open it at <span class="font-mono font-semibold">{{ linkPreview }}</span>
-                  </p>
-                </div>
-
-                <div class="grid gap-4 sm:grid-cols-2">
+              <form class="mt-5 space-y-4" @submit.prevent="onwards">
+                <!-- 1. The church, and the link it will open at. -->
+                <template v-if="step === 0">
                   <div>
-                    <label for="church-location" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Location</label>
+                    <label for="church-name" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Church name</label>
+                    <input id="church-name" v-model="form.churchName" type="text" maxlength="120" autocomplete="organization" :class="input" />
+                  </div>
+
+                  <div v-if="!showLink" class="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2.5 text-xs dark:bg-gray-800">
+                    <span class="min-w-0 flex-1 truncate text-gray-500 dark:text-gray-400">
+                      Opens at <span class="font-mono font-semibold text-gray-900 dark:text-white">{{ linkPreview }}</span>
+                    </span>
+                    <button type="button" class="inline-flex shrink-0 items-center gap-1 font-semibold text-primary dark:text-primary-light" @click="showLink = true">
+                      <Pencil class="h-3.5 w-3.5" />
+                      Change
+                    </button>
+                  </div>
+                  <div v-else>
+                    <label for="church-link" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Your church’s link</label>
+                    <input
+                      id="church-link"
+                      :value="form.churchId"
+                      type="text"
+                      maxlength="40"
+                      inputmode="url"
+                      autocapitalize="off"
+                      spellcheck="false"
+                      :class="[input, 'font-mono', linkValid ? '' : 'border-red-400 focus:border-red-500 focus:ring-red-500']"
+                      @input="onLinkInput"
+                    />
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      People will open it at <span class="font-mono font-semibold">{{ linkPreview }}</span>
+                    </p>
+                  </div>
+                </template>
+
+                <!-- 2. Where it is, and how many it holds. -->
+                <template v-else-if="step === 1">
+                  <div>
+                    <label for="church-location" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Where is it?</label>
                     <input id="church-location" v-model="form.location" type="text" maxlength="160" placeholder="City, province" :class="input" />
                   </div>
                   <div>
-                    <label for="church-size" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Congregation size</label>
-                    <select id="church-size" v-model="form.size" :class="input">
-                      <option value="">Choose one</option>
-                      <option v-for="size in SIZES" :key="size" :value="size">{{ size }}</option>
-                    </select>
+                    <span class="block text-xs font-semibold text-gray-700 dark:text-gray-300">How many people come?</span>
+                    <div class="mt-2 grid grid-cols-2 gap-2">
+                      <button
+                        v-for="size in SIZES"
+                        :key="size"
+                        type="button"
+                        :aria-pressed="form.size === size"
+                        :class="[
+                          'h-11 rounded-xl border text-sm font-semibold transition-colors',
+                          form.size === size
+                            ? 'border-primary bg-primary/10 text-primary dark:border-primary-light dark:bg-primary-light/15 dark:text-primary-light'
+                            : 'border-gray-200 text-gray-700 hover:border-gray-300 dark:border-gray-700 dark:text-gray-300',
+                        ]"
+                        @click="form.size = form.size === size ? '' : size"
+                      >
+                        {{ size }}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                </template>
 
-                <div>
-                  <label for="church-contact" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Contact number</label>
-                  <input id="church-contact" v-model="form.contactNumber" type="tel" maxlength="40" :class="input" />
-                </div>
-
-                <div>
-                  <label for="church-message" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Anything we should know</label>
-                  <textarea
-                    id="church-message"
-                    v-model="form.message"
-                    rows="3"
-                    maxlength="1000"
-                    placeholder="How many people would use it, when you would like to start"
-                    :class="[input, 'h-auto resize-none py-2.5']"
-                  ></textarea>
-                </div>
+                <!-- 3. How to reach them. -->
+                <template v-else>
+                  <div>
+                    <label for="church-contact" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Contact number</label>
+                    <input id="church-contact" v-model="form.contactNumber" type="tel" maxlength="40" inputmode="tel" placeholder="09XX XXX XXXX" :class="input" />
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">We answer by email as well, at {{ email || 'your account' }}.</p>
+                  </div>
+                  <div>
+                    <label for="church-message" class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Anything we should know</label>
+                    <textarea
+                      id="church-message"
+                      v-model="form.message"
+                      rows="3"
+                      maxlength="1000"
+                      placeholder="The apps you are most interested in, when you would like to start"
+                      :class="[input, 'h-auto resize-none py-2.5']"
+                    ></textarea>
+                  </div>
+                </template>
 
                 <p v-if="error" role="alert" class="rounded-xl bg-red-50 px-4 py-3 text-xs font-semibold text-red-600 dark:bg-red-500/10 dark:text-red-400">
                   {{ error }}
                 </p>
 
-                <button
-                  type="submit"
-                  :disabled="sending"
-                  class="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
-                >
-                  <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
-                  <Send v-else class="h-4 w-4" />
-                  Send request
-                </button>
+                <div class="flex items-center gap-3">
+                  <button
+                    v-if="step > 0"
+                    type="button"
+                    class="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl px-4 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                    @click="back"
+                  >
+                    <ArrowLeft class="h-4 w-4" />
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    :disabled="sending"
+                    class="group flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
+                  >
+                    <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
+                    <Send v-else-if="last" class="h-4 w-4" />
+                    {{ last ? 'Send request' : 'Continue' }}
+                    <ArrowRight v-if="!last" class="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+                </div>
               </form>
             </div>
 

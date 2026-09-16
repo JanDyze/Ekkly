@@ -11,6 +11,21 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.27.2] — 2026-09-16
+
+Asking for a church, a few questions at a time.
+
+### Changed
+
+- **The request form is three short steps** — your church, about it, reaching
+  you — with a line showing how far along you are, and Back to change an
+  answer. Only the church name is required.
+- **Your link is shown, not asked for.** It follows the name, with Change for
+  anyone who wants a different one.
+- **Congregation size is four buttons** instead of a dropdown.
+- **No Pricing link in the header while on Pricing**, where the button beside
+  it already carries the plan.
+
 ## [0.27.1] — 2026-09-16
 
 The chat bubble goes where you put it.

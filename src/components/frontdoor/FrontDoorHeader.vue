@@ -63,10 +63,12 @@ const current = 'text-gray-900 dark:text-white'
       </nav>
       <div class="ml-auto flex items-center gap-1 sm:gap-2">
         <!-- A phone has no room for the whole menu, but Pricing is its own page
-             now, so it keeps a way there. -->
+             now, so it keeps a way there — except on Pricing itself, where the
+             button beside it already carries the plan. -->
         <RouterLink
+          v-if="!onPricing"
           to="/pricing"
-          :class="['flex h-10 items-center rounded-lg px-3 text-sm font-medium text-gray-600 md:hidden dark:text-gray-300', route.path === '/pricing' && current]"
+          class="flex h-10 items-center rounded-lg px-3 text-sm font-medium text-gray-600 md:hidden dark:text-gray-300"
         >
           Pricing
         </RouterLink>
