@@ -11,6 +11,18 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.27.1] — 2026-09-16
+
+The chat bubble goes where you put it.
+
+### Changed
+
+- **Drag the chat bubble** anywhere on the front door: it settles against the
+  nearer side and is still there next visit. Dragged against the side of the
+  screen it tucks half off the edge, quiet but one tap from coming back — and a
+  reply brings it back on its own.
+- **It no longer sits on the plan bar** at the foot of Pricing.
+
 ## [0.27.0] — 2026-09-16
 
 The plan stays in reach while you build it.

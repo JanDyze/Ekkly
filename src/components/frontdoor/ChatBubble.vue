@@ -21,6 +21,11 @@ import developer from '../../assets/developer.png'
 //
 // It grows out of the bubble when opened, the way What's inside grows out of
 // an app, and nothing about it moves while it sits there.
+//
+// It can also be got out of the way: dragged anywhere (it settles against the
+// nearer side, and stays there next visit), or tucked half off the edge, where
+// it is quiet but still one tap away — dragged against the side of the screen
+// is how it goes there. A reply brings it back out.
 
 const { branding } = usePlatformConfig()
 const { isAuthenticated, displayName, email: signedInEmail } = useAuth()
@@ -150,7 +155,94 @@ const saveReply = async () => {
 
 /* ---------------------------------------------------------------- open */
 
+/* ------------------------------------------------------- where it sits */
+
+// Where the visitor put it, and whether they tucked it away, kept on their
+// own device.
+const SPOT_KEY = 'ekkly.chat.spot'
+
+const remembered = (() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SPOT_KEY) || 'null')
+    if (saved && (saved.side === 'left' || saved.side === 'right')) return saved
+  } catch {
+    // Nothing remembered; it starts in the corner.
+  }
+  return null
+})()
+
+const side = ref(remembered?.side || 'right')
+// Distance from the foot of the window, or null for its usual corner.
+const fromFoot = ref(typeof remembered?.bottom === 'number' ? remembered.bottom : null)
+const tucked = ref(Boolean(remembered?.tucked))
+
+const remember = () => {
+  try {
+    localStorage.setItem(SPOT_KEY, JSON.stringify({ side: side.value, bottom: fromFoot.value, tucked: tucked.value }))
+  } catch {
+    // A browser that cannot remember puts it back in the corner next time.
+  }
+}
+
+// A reply is worth seeing: it comes back out of the edge on its own.
+watch(unread, (count) => {
+  if (count && tucked.value) {
+    tucked.value = false
+    remember()
+  }
+})
+
+const clamp = (n, low, high) => Math.min(high, Math.max(low, n))
+
+// Dragging it. A press that never really moves is a tap, and opens the chat.
+const drag = ref(null)
+let from = null
+let moved = false
+
+const onPointerDown = (event) => {
+  if (open.value || event.button > 0) return
+  from = { x: event.clientX, y: event.clientY }
+  moved = false
+  event.currentTarget.setPointerCapture?.(event.pointerId)
+}
+
+const onPointerMove = (event) => {
+  if (!from) return
+  if (!moved && Math.hypot(event.clientX - from.x, event.clientY - from.y) < 8) return
+  moved = true
+  drag.value = { x: event.clientX, y: event.clientY }
+}
+
+const onPointerUp = (event) => {
+  if (!from) return
+  from = null
+  drag.value = null
+  if (!moved) return
+  moved = false
+  side.value = event.clientX < window.innerWidth / 2 ? 'left' : 'right'
+  fromFoot.value = clamp(window.innerHeight - event.clientY - 28, 12, window.innerHeight - 96)
+  // Pushed against the side of the screen: that is how it is tucked away.
+  const edge = 40
+  tucked.value = event.clientX < edge || event.clientX > window.innerWidth - edge
+  remember()
+}
+
+// While it is being dragged it follows the pointer; otherwise it rests against
+// its side, above whatever the page has put at the foot of the screen (the plan
+// bar on Pricing sets --chat-lift).
+const spotStyle = computed(() => {
+  if (drag.value) return { left: (drag.value.x - 28) + 'px', top: (drag.value.y - 28) + 'px', right: 'auto', bottom: 'auto' }
+  const foot = fromFoot.value === null ? 'calc(1rem + var(--chat-lift, 0px))' : 'calc(' + fromFoot.value + 'px + var(--chat-lift, 0px))'
+  return side.value === 'left' ? { left: '1rem', right: 'auto', bottom: foot } : { right: '1rem', left: 'auto', bottom: foot }
+})
+
 const openChat = () => {
+  // Tucked away, the first tap is for bringing it back.
+  if (tucked.value) {
+    tucked.value = false
+    remember()
+    return
+  }
   open.value = true
 }
 const close = () => (open.value = false)
@@ -209,7 +301,16 @@ const field =
 </script>
 
 <template>
-  <div v-if="enabled" class="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6" @keydown.esc="close">
+  <div
+    v-if="enabled"
+    :class="[
+      'spot fixed z-50 flex flex-col gap-3',
+      side === 'left' ? 'items-start' : 'items-end',
+      { 'is-dragging': drag, 'is-tucked': tucked && !open, 'to-left': side === 'left' },
+    ]"
+    :style="spotStyle"
+    @keydown.esc="close"
+  >
     <!-- The open conversation. On a phone it fills the screen above the keyboard. -->
     <Transition name="grow">
       <section
@@ -217,7 +318,8 @@ const field =
         role="dialog"
         aria-label="Chat with us"
         :style="phoneStyle"
-        class="panel fixed inset-x-0 top-0 flex h-dvh flex-col overflow-hidden bg-white sm:absolute sm:inset-x-auto sm:top-auto sm:bottom-18 sm:right-0 sm:h-[min(38rem,calc(100dvh-11rem))] sm:w-92 sm:transform-none sm:rounded-2xl sm:shadow-2xl sm:shadow-gray-900/20 sm:ring-1 sm:ring-gray-900/5 dark:bg-gray-900 dark:sm:shadow-black/50 dark:sm:ring-white/10"
+        :class="side === 'left' ? 'sm:left-0' : 'sm:right-0'"
+        class="panel fixed inset-x-0 top-0 flex h-dvh flex-col overflow-hidden bg-white sm:absolute sm:inset-x-auto sm:top-auto sm:bottom-18 sm:h-[min(38rem,calc(100dvh-11rem))] sm:w-92 sm:transform-none sm:rounded-2xl sm:shadow-2xl sm:shadow-gray-900/20 sm:ring-1 sm:ring-gray-900/5 dark:bg-gray-900 dark:sm:shadow-black/50 dark:sm:ring-white/10"
       >
         <!-- Who they are talking to, and the other ways to reach them. -->
         <header class="flex shrink-0 items-center gap-3 border-b border-gray-100 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-3 dark:border-gray-800">
@@ -390,7 +492,11 @@ const field =
     <button
       type="button"
       :aria-expanded="open"
-      :aria-label="online ? `${host} is online. Open chat` : 'Open chat'"
+      :aria-label="tucked ? 'Bring the chat back' : online ? `${host} is online. Open chat` : 'Open chat'"
+      @pointerdown="onPointerDown"
+      @pointermove="onPointerMove"
+      @pointerup="onPointerUp"
+      @pointercancel="onPointerUp"
       :class="[
         'relative flex h-14 items-center gap-3 rounded-full bg-white p-2 shadow-xl shadow-gray-900/15 ring-1 ring-gray-900/5 transition-shadow hover:shadow-2xl sm:pr-5 dark:bg-gray-900 dark:shadow-black/40 dark:ring-white/10',
         { 'max-sm:hidden': open },
@@ -417,6 +523,48 @@ const field =
 </template>
 
 <style scoped>
+/* Where it sits: moved by dragging, and tucked half off its side when it is
+   not wanted — quieter and smaller, but still a tap away. */
+.spot {
+  transition:
+    translate 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.3s ease,
+    scale 0.3s ease;
+  touch-action: none;
+}
+
+.spot.is-dragging {
+  transition: none;
+  cursor: grabbing;
+}
+
+.spot.is-tucked {
+  translate: 55% 0;
+  opacity: 0.55;
+  scale: 0.9;
+}
+
+.spot.is-tucked.to-left {
+  translate: -55% 0;
+}
+
+.spot.is-tucked:hover,
+.spot.is-tucked:focus-within {
+  opacity: 0.9;
+  translate: 25% 0;
+}
+
+.spot.is-tucked.to-left:hover,
+.spot.is-tucked.to-left:focus-within {
+  translate: -25% 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spot {
+    transition: none;
+  }
+}
+
 .bubble-host,
 .bubble-visitor {
   width: fit-content;

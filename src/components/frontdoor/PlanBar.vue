@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onUnmounted, ref, watchEffect } from 'vue'
 import { ArrowRight, CaretUp, Check, X } from '../../icons'
 import AppArt from './AppArt.vue'
 import { formatMoney } from '../../utils/moneyUtils'
@@ -27,6 +27,11 @@ const hasPrices = computed(() => plan.value.apps.some((app) => app.price > 0))
 const peso = (centavos) => formatMoney(centavos).replace(/\.00$/, '')
 const shown = computed(() => (yearly.value ? yearlyPrice(plan.value.total) : plan.value.total))
 const monthsFree = 12 - MONTHS_PER_YEAR_PAID
+
+// The chat bubble rests above the bar rather than on top of it.
+const LIFT = '4.5rem'
+watchEffect(() => document.documentElement.style.setProperty('--chat-lift', LIFT))
+onUnmounted(() => document.documentElement.style.removeProperty('--chat-lift'))
 
 const open = ref(false)
 const drawer = ref(null)
