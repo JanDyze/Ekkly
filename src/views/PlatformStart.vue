@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { ArrowLeft, ArrowRight, CheckCircle2, Clock, ExternalLink, Loader2, LogOut, Pencil, Send, X } from '../icons'
+import { ArrowLeft, ArrowRight, CaretDown, CheckCircle2, Clock, ExternalLink, Loader2, LogOut, Pencil, Send, Trash2, X } from '../icons'
 import GoogleSignInButton from '../components/auth/GoogleSignInButton.vue'
 import FrontDoorHeader from '../components/frontdoor/FrontDoorHeader.vue'
 import FrontDoorFooter from '../components/frontdoor/FrontDoorFooter.vue'
@@ -14,7 +14,7 @@ import { usePlatformConfig } from '../composables/usePlatformConfig'
 import { useFrontDoorConsent } from '../composables/useFrontDoorConsent'
 import { planFrom, useFrontDoor } from '../composables/useFrontDoor'
 import { churchLink as linkOf, churchLinkLabel as linkLabel, useChurchRequests } from '../composables/useChurchRequests'
-import { submitChurchRequest } from '../api/platformService'
+import { submitChurchRequest, withdrawChurchRequest } from '../api/platformService'
 import { isValidChurchId, suggestChurchId } from '../../lib/churchId.js'
 import { formatMoney } from '../utils/moneyUtils'
 
@@ -215,6 +215,56 @@ const submit = async () => {
 const formatDate = (date) =>
   date ? date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''
 
+/* ------------------------------------------------------ a sent request */
+
+// What was sent, for anyone who wants to check it — and, while it is still
+// waiting, the way to take it back. Sending again is how a request is changed,
+// plan and all, since the one already sent is what we are reading.
+const openRequest = ref('')
+const toggleRequest = (id) => (openRequest.value = openRequest.value === id ? '' : id)
+
+const detailsOf = (request) =>
+  [
+    { label: 'Its link', value: linkLabel(request) || request.churchId },
+    { label: 'Where', value: request.location },
+    { label: 'How many come', value: request.size },
+    { label: 'Contact number', value: request.contactNumber },
+    { label: 'What you told us', value: request.message },
+  ].filter((row) => row.value)
+
+const withdrawing = ref('')
+const confirming = ref('')
+
+const cancelRequest = async (request) => {
+  if (confirming.value !== request.id) {
+    confirming.value = request.id
+    return
+  }
+  withdrawing.value = request.id
+  try {
+    await withdrawChurchRequest(request.id)
+    toast.success('Request taken back')
+    confirming.value = ''
+    // Their answers come back, so sending again is a change rather than a
+    // fresh start.
+    Object.assign(form, {
+      churchName: request.churchName,
+      churchId: request.churchId,
+      location: request.location,
+      size: request.size,
+      contactNumber: request.contactNumber,
+      message: request.message,
+    })
+    linkEdited.value = true
+    step.value = 0
+  } catch (e) {
+    console.error('Error taking back a request:', e)
+    toast.error(e.message || 'Could not take that request back.')
+  } finally {
+    withdrawing.value = ''
+  }
+}
+
 const input =
   'mt-1 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-primary focus:ring-1 focus:ring-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white'
 </script>
@@ -243,8 +293,11 @@ const input =
               Your plan: {{ plan.apps.length }} {{ plan.apps.length === 1 ? 'app' : 'apps' }}<template v-if="hasPrices">, {{ peso(plan.total) }} a month</template>
             </span>
             <span class="block text-gray-500 dark:text-gray-400">
-              First month free.
-              <RouterLink to="/pricing" class="font-semibold text-primary underline-offset-4 hover:underline dark:text-primary-light">Change plan</RouterLink>
+              <template v-if="hasPending">Sent with your request. Take the request back to change it.</template>
+              <template v-else>
+                First month free.
+                <RouterLink to="/pricing" class="font-semibold text-primary underline-offset-4 hover:underline dark:text-primary-light">Change plan</RouterLink>
+              </template>
             </span>
           </p>
         </div>
@@ -303,6 +356,27 @@ const input =
                       <Clock class="h-3.5 w-3.5" /> Waiting
                     </span>
                   </div>
+                  <!-- What was sent, for checking it over. -->
+                  <div class="mt-3">
+                    <button
+                      type="button"
+                      :aria-expanded="openRequest === request.id"
+                      class="inline-flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                      @click="toggleRequest(request.id)"
+                    >
+                      {{ openRequest === request.id ? 'Hide details' : 'See details' }}
+                      <CaretDown :class="['h-3.5 w-3.5 transition-transform', openRequest === request.id ? 'rotate-180' : '']" />
+                    </button>
+                    <div class="grid transition-all duration-300" :class="openRequest === request.id ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'">
+                      <dl class="overflow-hidden text-sm">
+                        <div v-for="row in detailsOf(request)" :key="row.label" class="flex gap-3 pt-2">
+                          <dt class="w-32 shrink-0 text-xs text-gray-500 dark:text-gray-400">{{ row.label }}</dt>
+                          <dd class="min-w-0 flex-1 wrap-break-word">{{ row.value }}</dd>
+                        </div>
+                      </dl>
+                    </div>
+                  </div>
+
                   <a
                     v-if="request.status === 'approved' && linkOf(request)"
                     :href="linkOf(request)"
@@ -311,9 +385,37 @@ const input =
                     Open {{ linkLabel(request) }}
                     <ExternalLink class="h-3.5 w-3.5" />
                   </a>
+
                   <p v-if="request.status === 'declined' && request.note" class="mt-2 text-sm text-gray-600 dark:text-gray-300">
                     &ldquo;{{ request.note }}&rdquo;
                   </p>
+
+                  <!-- Taking it back, while nobody has answered it. -->
+                  <div v-if="request.status === 'pending'" class="mt-3 border-t border-gray-100 pt-3 dark:border-gray-800">
+                    <p v-if="confirming === request.id" class="text-xs text-gray-500 dark:text-gray-400">
+                      This takes the request back. Your answers stay in the form, so you can change them and send again.
+                    </p>
+                    <div class="mt-2 flex items-center gap-2">
+                      <button
+                        type="button"
+                        :disabled="withdrawing === request.id"
+                        class="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10"
+                        @click="cancelRequest(request)"
+                      >
+                        <Loader2 v-if="withdrawing === request.id" class="h-3.5 w-3.5 animate-spin" />
+                        <Trash2 v-else class="h-3.5 w-3.5" />
+                        {{ confirming === request.id ? 'Yes, take it back' : 'Cancel this request' }}
+                      </button>
+                      <button
+                        v-if="confirming === request.id"
+                        type="button"
+                        class="h-9 rounded-lg px-3 text-xs font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                        @click="confirming = ''"
+                      >
+                        Keep it
+                      </button>
+                    </div>
+                  </div>
                 </li>
               </ul>
             </div>

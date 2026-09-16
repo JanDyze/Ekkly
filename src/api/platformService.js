@@ -75,6 +75,9 @@ export const submitChurchRequest = async (user, form) => {
   return ref.id
 }
 
+/** Takes back a request this account sent, while it is still waiting. */
+export const withdrawChurchRequest = (requestId) => callPlatform('withdrawChurchRequest', { requestId })
+
 /** The signed-in account's own requests, newest first. */
 export const subscribeToMyChurchRequests = (uid, callback) =>
   onSnapshot(

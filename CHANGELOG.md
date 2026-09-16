@@ -11,6 +11,24 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.28.1] — 2026-09-16
+
+Your request, in your hands.
+
+### Added
+
+- **See details** on a request you sent: its link, where the church is, how
+  many come, your number and what you told us.
+- **Cancel a request** while it is still waiting, with a confirm first. Your
+  answers come back into the form, so you can change them — the plan included —
+  and send again.
+
+### Changed
+
+- **The plan on Get started says where it stands.** While a request is waiting
+  it reads "Sent with your request. Take the request back to change it", since
+  changing the plan afterwards changes nothing already sent.
+
 ## [0.28.0] — 2026-09-16
 
 The home page knows you have already asked.

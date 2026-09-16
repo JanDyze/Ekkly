@@ -10,6 +10,8 @@
 //   PLATFORM_ACTIONS  somebody in platformAdmins (lib/tenant.js requirePlatformAdmin)
 //   CHURCH_ACTIONS    an administrator of the church the request names, via
 //                     the X-Church-Id header (requireChurchAdmin)
+//   ACCOUNT_ACTIONS   anybody signed in, acting on their own account's things
+//                     (requireSignedIn)
 //   PUBLIC_ACTIONS    anyone at all, signed in or not. Only the front door's
 //                     own counting, its welcome and its chat bubble are here,
 //                     each written to be safe in the open: see
@@ -17,9 +19,9 @@
 //
 // The Admin SDK is not bound by Firestore's rules, so those checks are the
 // rules here. Every change an action makes is written to platformLog.
-import { requireChurchAdmin, requirePlatformAdmin } from "../lib/tenant.js";
+import { requireChurchAdmin, requirePlatformAdmin, requireSignedIn } from "../lib/tenant.js";
 import { Refusal } from "../lib/platform/common.js";
-import { approve, decline } from "../lib/platform/requests.js";
+import { approve, decline, withdraw } from "../lib/platform/requests.js";
 import { getChurch, listChurches, setChurchStatus, updateChurch } from "../lib/platform/churches.js";
 import { usageForAll } from "../lib/platform/usage.js";
 import { activity, addAdmin, listAdmins, removeAdmin } from "../lib/platform/admins.js";
@@ -98,6 +100,11 @@ const PUBLIC_ACTIONS = {
   frontDoorLead: recordLead,
 };
 
+// (caller, body) => result, for anybody signed in, about their own things.
+const ACCOUNT_ACTIONS = {
+  withdrawChurchRequest: withdraw,
+};
+
 // (caller, body) => result, where caller carries the church
 const CHURCH_ACTIONS = {
   myPlan: (caller) => myPlan(caller),
@@ -152,6 +159,12 @@ export default async function handler(req, res) {
       const admin = await requirePlatformAdmin(req);
       if (admin.error) return res.status(admin.status).json({ error: admin.error });
       return res.status(200).json(await PLATFORM_ACTIONS[action](admin, fields));
+    }
+
+    if (Object.hasOwn(ACCOUNT_ACTIONS, action)) {
+      const caller = await requireSignedIn(req);
+      if (caller.error) return res.status(caller.status).json({ error: caller.error });
+      return res.status(200).json(await ACCOUNT_ACTIONS[action](caller, fields));
     }
 
     if (Object.hasOwn(CHURCH_ACTIONS, action)) {
