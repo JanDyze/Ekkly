@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ArrowLeft, ArrowRight, CheckCircle2, Clock, ExternalLink, Loader2, LogOut, Pencil, Send, X } from '../icons'
 import GoogleSignInButton from '../components/auth/GoogleSignInButton.vue'
 import FrontDoorHeader from '../components/frontdoor/FrontDoorHeader.vue'
@@ -13,9 +13,9 @@ import { useToast } from '../composables/useToast'
 import { usePlatformConfig } from '../composables/usePlatformConfig'
 import { useFrontDoorConsent } from '../composables/useFrontDoorConsent'
 import { planFrom, useFrontDoor } from '../composables/useFrontDoor'
-import { submitChurchRequest, subscribeToMyChurchRequests } from '../api/platformService'
-import { churchOrigin, isValidChurchId, suggestChurchId } from '../../lib/churchId.js'
-import { canSwitchChurchHere, devChurchLink } from '../api/churchService'
+import { churchLink as linkOf, churchLinkLabel as linkLabel, useChurchRequests } from '../composables/useChurchRequests'
+import { submitChurchRequest } from '../api/platformService'
+import { isValidChurchId, suggestChurchId } from '../../lib/churchId.js'
 import { formatMoney } from '../utils/moneyUtils'
 
 // Get started: where every call to action on the front door lands. Someone
@@ -34,31 +34,18 @@ const { answered } = useFrontDoorConsent()
 const { picks, namedChurch } = useFrontDoor()
 const rootDomain = import.meta.env.VITE_ROOT_DOMAIN || ''
 
-const ready = ref(false)
-const requests = ref([])
-let unsubscribe = null
-
+const signedInKnown = ref(false)
 initAuth().then(() => {
-  ready.value = true
+  signedInKnown.value = true
 })
 
-watch(
-  [ready, () => user.value?.uid],
-  ([isReady, uid]) => {
-    unsubscribe?.()
-    unsubscribe = null
-    requests.value = []
-    if (!isReady || !uid) return
-    unsubscribe = subscribeToMyChurchRequests(uid, (list) => {
-      requests.value = list
-    })
-  },
-  { immediate: true }
-)
+// The requests this account has sent, shared with the home page's status strip.
+const { requests, hasPending, ready: requestsKnown } = useChurchRequests()
 
-onUnmounted(() => unsubscribe?.())
-
-const hasPending = computed(() => requests.value.some((r) => r.status === 'pending'))
+// Nothing is drawn until both are known: a form that appears and is replaced a
+// moment later by "your request is waiting" reads as a page that changed its
+// mind. The skeleton holds the place until the answer is in.
+const ready = computed(() => signedInKnown.value && (!isAuthenticated.value || requestsKnown.value))
 
 /* ------------------------------------------------------------- the plan */
 
@@ -224,16 +211,6 @@ const submit = async () => {
     sending.value = false
   }
 }
-
-// On localhost there is no domain to give a church a link under, so it opens
-// on this same address instead (see devChurchOverride).
-const linkOf = (request) =>
-  rootDomain
-    ? churchOrigin(request.churchId, { rootDomain })
-    : canSwitchChurchHere() && request.churchId
-      ? devChurchLink(request.churchId)
-      : ''
-const linkLabel = (request) => linkOf(request).replace(/^https:\/\//, '').replace(/^\/\?church=/, 'localhost ▸ ')
 
 const formatDate = (date) =>
   date ? date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''

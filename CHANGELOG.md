@@ -11,6 +11,24 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.28.0] — 2026-09-16
+
+The home page knows you have already asked.
+
+### Added
+
+- **A strip above the hero** once you have asked for a church: it is being
+  looked over, it is open, or it could not be opened and why. The whole strip
+  is a tap — to your church once it is open, to your request until then.
+- **The hero button says the same thing:** "See your request", or "Open
+  <your church>" once it is approved.
+
+### Changed
+
+- **Get started waits before it draws.** It kept its loading shape until the
+  sign-in was known but not the request, so the form appeared and was replaced
+  a moment later.
+
 ## [0.27.3] — 2026-09-16
 
 Prices in full, and a request form you can swipe through.

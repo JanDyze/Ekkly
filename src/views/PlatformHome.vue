@@ -13,12 +13,14 @@ import AppArt from '../components/frontdoor/AppArt.vue'
 import FrontDoorHeader from '../components/frontdoor/FrontDoorHeader.vue'
 import FrontDoorFooter from '../components/frontdoor/FrontDoorFooter.vue'
 import FrontDoorFaq from '../components/frontdoor/FrontDoorFaq.vue'
+import RequestStatus from '../components/frontdoor/RequestStatus.vue'
 import { FAQS, HOME_FAQS } from '../components/frontdoor/faqs'
 import { TYPE } from '../components/frontdoor/type'
 import { initAuth, useAuth } from '../composables/useAuth'
 import { usePlatformConfig } from '../composables/usePlatformConfig'
 import { useFrontDoorConsent } from '../composables/useFrontDoorConsent'
 import { planFrom, useFrontDoor } from '../composables/useFrontDoor'
+import { churchLink, useChurchRequests } from '../composables/useChurchRequests'
 import { knownChurch } from '../components/frontdoor/knownChurches'
 import { formatMoney } from '../utils/moneyUtils'
 import { vScrollLight } from '../components/frontdoor/scrollLight'
@@ -114,10 +116,25 @@ onUnmounted(() => cancelAnimationFrame(spotFrame))
 
 const faqs = FAQS.slice(0, HOME_FAQS)
 
-// Every call to action goes to Get started.
+// Every call to action goes to Get started — unless this account has already
+// asked for a church, when the hero offers what they came back for: the church
+// itself once it is open, or the request while it is being looked over. The
+// strip above the hero says the same, and is the same tap.
+const { latest, approved } = useChurchRequests()
+const heroCall = computed(() => {
+  if (approved.value) return { label: 'Open ' + approved.value.churchName, href: churchLink(approved.value) }
+  if (latest.value) return { label: 'See your request', href: '' }
+  return { label: 'Get your church on ' + branding.value.name, href: '' }
+})
+
 const goToStart = () => {
   signal('start')
   router.push('/start')
+}
+
+const heroPress = () => {
+  if (heroCall.value.href) window.location.assign(heroCall.value.href)
+  else goToStart()
 }
 const goTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
@@ -204,6 +221,9 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
 
     <!-- =============================================================== hero -->
     <section id="top" ref="hero" class="hero relative isolate" @pointermove="moveSpotlight">
+      <!-- A church that has asked already: where it stands, before the page
+           starts selling it anything. -->
+      <RequestStatus />
       <!-- Light through stained glass: the logo's four colours, blurred into
            the background, over a fine grid of dots that a soft light follows
            the pointer across. -->
@@ -245,10 +265,10 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
           <div class="hero-in mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start" :style="{ animationDelay: `${headline.glowDelay + 350}ms` }">
             <button
               type="button"
-              @click="goToStart"
+              @click="heroPress"
               class="cta group inline-flex h-14 items-center gap-2 rounded-2xl bg-primary px-7 text-base font-bold text-white shadow-xl shadow-primary/30 transition-colors hover:bg-primary-hover"
             >
-              Get your church on {{ branding.name }}
+              {{ heroCall.label }}
               <ArrowRight class="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </button>
             <button
