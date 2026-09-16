@@ -24,7 +24,7 @@ const { picks, yearly } = useFrontDoor()
 
 const plan = computed(() => planFrom(props.catalog, picks.value))
 const hasPrices = computed(() => plan.value.apps.some((app) => app.price > 0))
-const peso = (centavos) => formatMoney(centavos).replace(/\.00$/, '')
+const peso = (centavos) => formatMoney(centavos)
 const shown = computed(() => (yearly.value ? yearlyPrice(plan.value.total) : plan.value.total))
 const monthsFree = 12 - MONTHS_PER_YEAR_PAID
 

@@ -232,7 +232,8 @@ ending on what the tour left out. It lives in
   `TYPE.lead` in [type.js](src/components/frontdoor/type.js), on every front door
   page. A new section uses them rather than its own
   sizes; only colour changes, for the dark band.
-- **Prices are whole pesos** on the front door (no `.00`). The plan builder
+- **Prices are written in full**, centavos and all (`₱1.00`), wherever one is
+  shown. The plan builder
   switches between monthly and yearly, a year costing `MONTHS_PER_YEAR_PAID`
   months (`lib/apps.js`), and says the first month is free.
 - **The welcome** ([WelcomeSheet.vue](src/components/frontdoor/WelcomeSheet.vue))

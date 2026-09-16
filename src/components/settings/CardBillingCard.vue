@@ -34,7 +34,7 @@ const available = isCardPaymentAvailable()
 const card = computed(() => props.plan.card || {})
 const cycle = ref('month')
 
-const price = (centavos) => formatMoney(centavos).replace(/\.00$/, '')
+const price = (centavos) => formatMoney(centavos)
 const amount = computed(() => (cycle.value === 'year' ? props.plan.monthly * MONTHS_PER_YEAR_PAID : props.plan.monthly))
 
 const todayKey = () => new Date().toISOString().slice(0, 10)

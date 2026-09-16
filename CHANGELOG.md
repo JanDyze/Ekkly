@@ -11,6 +11,20 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.27.3] — 2026-09-16
+
+Prices in full, and a request form you can swipe through.
+
+### Changed
+
+- **Every price is written out with its centavos** (₱1.00), on the front door
+  and on the card in Settings.
+- **The request form slides between steps**, and a sideways swipe moves between
+  them.
+- **A step nobody answered says Skip** rather than Continue — and Skip and send
+  on the last one. The apps filled in for you do not count as an answer.
+- **A blank Get started page** is fixed: the step form threw as the page loaded.
+
 ## [0.27.2] — 2026-09-16
 
 Asking for a church, a few questions at a time.

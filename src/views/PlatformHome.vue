@@ -175,7 +175,7 @@ const viewPlan = () => router.push('/pricing')
 /* ------------------------------------------------------------- pricing */
 
 // A word about price, and the plan so far. The whole builder is on Pricing.
-const peso = (centavos) => formatMoney(centavos).replace(/\.00$/, '')
+const peso = (centavos) => formatMoney(centavos)
 const plan = computed(() => planFrom(catalog.value, picks.value))
 const priceLine = computed(() => {
   const prices = offeredApps.value.map((app) => app.price || 0).filter((price) => price > 0)

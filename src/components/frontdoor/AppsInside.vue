@@ -152,9 +152,8 @@ const onTouchEnd = (event) => {
   if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx < 0 ? 1 : -1)
 }
 
-// What an app costs, beside the button that adds it. Whole pesos read as a
-// price tag; the centavos only matter on a bill.
-const priceOf = (app) => (app.price > 0 ? `${formatMoney(app.price).replace(/\.00$/, '')} a month` : 'Free')
+// What an app costs, beside the button that adds it.
+const priceOf = (app) => (app.price > 0 ? `${formatMoney(app.price)} a month` : 'Free')
 
 const inPlan = (app) => props.planned.includes(app.key)
 

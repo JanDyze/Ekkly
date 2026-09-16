@@ -65,9 +65,13 @@ const hasPending = computed(() => requests.value.some((r) => r.status === 'pendi
 // The plan they built on the way here, so it goes with the request.
 const plan = computed(() => planFrom(catalog.value, picks.value))
 const hasPrices = computed(() => plan.value.apps.some((app) => app.price > 0))
-const peso = (centavos) => formatMoney(centavos).replace(/\.00$/, '')
+const peso = (centavos) => formatMoney(centavos)
 
 /* ------------------------------------------------------------------ form */
+
+// Declared before the watches below, which clear it as the visitor types.
+const sending = ref(false)
+const error = ref('')
 
 const form = reactive({
   churchName: '',
@@ -83,10 +87,16 @@ const form = reactive({
 onMounted(() => {
   if (!form.churchName) form.churchName = namedChurch.value
 })
+// What the message says before they have written anything of their own. The
+// last step reads it too: a message nobody has touched is not an answer.
+const suggestedMessage = ref('')
 watch(
   () => plan.value.apps.map((app) => app.name).join(', '),
   (names) => {
-    if (names && (!form.message || form.message.startsWith('Apps we would use:'))) form.message = `Apps we would use: ${names}.`
+    if (!names) return
+    if (form.message && form.message !== suggestedMessage.value) return
+    suggestedMessage.value = `Apps we would use: ${names}.`
+    form.message = suggestedMessage.value
   },
   { immediate: true }
 )
@@ -134,8 +144,25 @@ const last = computed(() => step.value === STEPS.length - 1)
 // Only the name is asked for; the rest may be left.
 const canGoOn = computed(() => (step.value > 0 ? true : Boolean(form.churchName.trim()) && linkValid.value))
 
+// Nothing filled in on a step that did not have to be: the button says so,
+// rather than asking them to "continue" past a question they have skipped.
+const stepAnswered = computed(() =>
+  step.value === 1
+    ? Boolean(form.location.trim() || form.size)
+    : Boolean(form.contactNumber.trim() || (form.message.trim() && form.message !== suggestedMessage.value))
+)
+const onwardsLabel = computed(() => {
+  if (step.value === 0) return 'Continue'
+  if (last.value) return stepAnswered.value ? 'Send request' : 'Skip and send'
+  return stepAnswered.value ? 'Continue' : 'Skip'
+})
+
+// Which way the steps are going, so one slides out the way the next comes in.
+const direction = ref('next')
+
 const back = () => {
   error.value = ''
+  direction.value = 'prev'
   step.value = Math.max(0, step.value - 1)
 }
 
@@ -146,15 +173,31 @@ const onwards = () => {
     return
   }
   if (last.value) return submit()
+  direction.value = 'next'
   step.value += 1
+}
+
+// A sideways swipe moves between steps, the way the rest of the front door
+// turns. A swipe that is mostly up or down is the page scrolling.
+let touch = null
+const onTouchStart = (event) => {
+  const t = event.touches[0]
+  touch = event.touches.length === 1 ? { x: t.clientX, y: t.clientY } : null
+}
+const onTouchEnd = (event) => {
+  if (!touch) return
+  const t = event.changedTouches[0]
+  const dx = t.clientX - touch.x
+  const dy = t.clientY - touch.y
+  touch = null
+  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+  if (dx < 0 && !last.value) onwards()
+  else if (dx > 0 && step.value > 0) back()
 }
 
 // The link follows the name, so it is shown rather than asked for until
 // somebody wants to change it.
 const showLink = ref(false)
-
-const sending = ref(false)
-const error = ref('')
 
 const submit = async () => {
   error.value = ''
@@ -319,7 +362,9 @@ const input =
               </p>
               <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ STEPS[step].hint }}</p>
 
-              <form class="mt-5 space-y-4" @submit.prevent="onwards">
+              <form class="mt-5 overflow-hidden" @submit.prevent="onwards" @touchstart.passive="onTouchStart" @touchend.passive="onTouchEnd">
+                <Transition :name="`step-${direction}`" mode="out-in">
+                <div :key="step" class="space-y-4">
                 <!-- 1. The church, and the link it will open at. -->
                 <template v-if="step === 0">
                   <div>
@@ -407,7 +452,10 @@ const input =
                   {{ error }}
                 </p>
 
-                <div class="flex items-center gap-3">
+                </div>
+                </Transition>
+
+                <div class="mt-4 flex items-center gap-3">
                   <button
                     v-if="step > 0"
                     type="button"
@@ -424,7 +472,7 @@ const input =
                   >
                     <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
                     <Send v-else-if="last" class="h-4 w-4" />
-                    {{ last ? 'Send request' : 'Continue' }}
+                    {{ onwardsLabel }}
                     <ArrowRight v-if="!last" class="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </button>
                 </div>
@@ -448,3 +496,37 @@ const input =
     <ChatBubble v-if="answered" />
   </div>
 </template>
+
+<style scoped>
+/* One step slides away and the next comes in from the side it lies on, as the
+   rest of the front door turns. */
+.step-next-enter-active,
+.step-next-leave-active,
+.step-prev-enter-active,
+.step-prev-leave-active {
+  transition:
+    opacity 0.2s ease,
+    translate 0.2s ease;
+}
+
+.step-next-enter-from,
+.step-prev-leave-to {
+  opacity: 0;
+  translate: 1.5rem 0;
+}
+
+.step-next-leave-to,
+.step-prev-enter-from {
+  opacity: 0;
+  translate: -1.5rem 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-next-enter-active,
+  .step-next-leave-active,
+  .step-prev-enter-active,
+  .step-prev-leave-active {
+    transition: none;
+  }
+}
+</style>

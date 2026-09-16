@@ -21,8 +21,8 @@ const props = defineProps({
 
 const emit = defineEmits(['start'])
 
-// Prices here are whole pesos, so they read as a price tag rather than a bill.
-const peso = (centavos) => formatMoney(centavos).replace(/\.00$/, '')
+// Prices are written out in full, centavos and all, the way a bill has them.
+const peso = (centavos) => formatMoney(centavos)
 
 const offered = computed(() => props.catalog.filter((app) => app.available))
 const hasPrices = computed(() => offered.value.some((app) => app.price > 0))

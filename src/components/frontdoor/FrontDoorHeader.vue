@@ -25,7 +25,7 @@ const { catalog } = usePlatformConfig()
 const onPricing = computed(() => route.path === '/pricing')
 const plan = computed(() => planFrom(catalog.value, picks.value))
 const total = computed(() => (yearly.value ? yearlyPrice(plan.value.total) : plan.value.total))
-const price = computed(() => formatMoney(total.value).replace(/\.00$/, ''))
+const price = computed(() => formatMoney(total.value))
 
 // Light or dark, the same switch the app has, with the same moment when it
 // changes (App.vue draws it).
