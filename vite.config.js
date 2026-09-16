@@ -235,6 +235,10 @@ export default defineConfig(({ mode }) => ({
       '84960e178ae6.ngrok-free.app',
       '.ngrok-free.app', // This allows all ngrok subdomains
       '.ngrok.io', // Also allow ngrok.io domains
+      // Cloudflare's quick tunnels (`cloudflared tunnel --url
+      // http://localhost:5173`), for trying the app on a phone. Its URL is a
+      // new one each run, so the whole domain is allowed rather than one host.
+      '.trycloudflare.com',
       'localhost',
       // uec.localhost:5173 is the church "uec", app.localhost:5173 the
       // platform's front door — the development twin of *.church.app.
