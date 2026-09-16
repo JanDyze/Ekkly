@@ -11,6 +11,19 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.26.10] — 2026-09-16
+
+A calmer first screen on a phone.
+
+### Changed
+
+- **The hero holds one button on a phone.** "See what's inside" and "Say hello"
+  leave it — the first is what the section below already invites, and the
+  second waits by the last call — and the three promises become one short line.
+  The app on its phone now shows on the first screen.
+- **Section subtitles read at the hero's size**, small on a phone and full size
+  on a wider screen, instead of 18px everywhere.
+
 ## [0.26.9] — 2026-09-15
 
 Two more churches we know.

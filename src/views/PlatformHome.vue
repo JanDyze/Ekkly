@@ -254,12 +254,16 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
             <button
               type="button"
               @click="goTo('features')"
-              class="inline-flex h-14 items-center gap-2 rounded-2xl px-6 text-base font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+              class="hidden h-14 items-center gap-2 rounded-2xl px-6 text-base font-semibold text-gray-700 transition-colors hover:bg-gray-100 lg:inline-flex dark:text-gray-200 dark:hover:bg-gray-800"
             >
               See what’s inside
             </button>
           </div>
-          <p class="hero-in mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-gray-500 lg:justify-start dark:text-gray-400" :style="{ animationDelay: `${headline.glowDelay + 450}ms` }">
+          <p class="hero-in mt-5 flex items-center justify-center gap-1.5 text-sm text-gray-500 lg:hidden dark:text-gray-400" :style="{ animationDelay: `${headline.glowDelay + 450}ms` }">
+            <CheckCircle2 class="h-4 w-4 shrink-0 text-emerald-500" />
+            First month free · your own link
+          </p>
+          <p class="hero-in mt-6 hidden flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 lg:flex dark:text-gray-400" :style="{ animationDelay: `${headline.glowDelay + 450}ms` }">
             <span class="inline-flex items-center gap-1.5"><CheckCircle2 class="h-4 w-4 text-emerald-500" /> First month free</span>
             <span class="inline-flex items-center gap-1.5"><CheckCircle2 class="h-4 w-4 text-emerald-500" /> Your church’s own link</span>
             <span class="inline-flex items-center gap-1.5"><CheckCircle2 class="h-4 w-4 text-emerald-500" /> Pay only for the apps you turn on</span>
@@ -267,7 +271,7 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
 
           <!-- The welcome again, for anyone who skipped it and changed their
                mind: name the church, leave a way to be reached. -->
-          <div class="hero-in mt-8 flex justify-center lg:justify-start" :style="{ animationDelay: `${headline.glowDelay + 550}ms` }">
+          <div class="hero-in mt-8 hidden justify-center lg:flex lg:justify-start" :style="{ animationDelay: `${headline.glowDelay + 550}ms` }">
             <button
               type="button"
               class="group inline-flex h-11 items-center gap-2.5 rounded-full border border-gray-200 bg-white/70 pl-1.5 pr-4 text-sm font-semibold text-gray-700 backdrop-blur transition-colors hover:border-gray-300 hover:bg-white dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-200 dark:hover:border-gray-600 dark:hover:bg-gray-900"
@@ -414,6 +418,14 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
             Get your church on {{ branding.name }}
             <ArrowRight class="h-5 w-5 transition-transform group-hover:translate-x-1" />
           </button>
+          <!-- Not ready to ask: the welcome, where the hero offers it on a
+               wider screen. -->
+          <p class="relative mt-5 lg:hidden">
+            <button type="button" class="inline-flex items-center gap-2 text-sm font-semibold text-white/80 underline-offset-4 hover:underline" @click="openWelcome">
+              <HandWaving class="h-4.5 w-4.5" />
+              Or say hello, we’ll reach out
+            </button>
+          </p>
         </div>
       </div>
     </section>
