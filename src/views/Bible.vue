@@ -1,11 +1,21 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { BookOpen, ChevronDown, ChevronLeft, ChevronRight, Loader2, SearchX, X } from '../icons'
-import { BIBLE_BOOKS, BIBLE_VERSION } from '../data/bibleBooks'
+import {
+  BookOpen,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  SearchX,
+  X,
+} from '../icons'
+import { BIBLE_BOOKS } from '../data/bibleBooks'
 import { fold, foldText, getBook, searchBooks } from '../api/bibleService'
-import { parseReference, formatReference } from '../utils/bibleRef'
+import { parseReference, formatReference, bookName } from '../utils/bibleRef'
 import { useBiblePlace } from '../composables/useBiblePlace'
+import { useBibleVersion } from '../composables/useBibleVersion'
 import SearchBar from '../components/common/SearchBar.vue'
 import { useScrollLock } from '../composables/useScrollLock'
 
@@ -18,14 +28,19 @@ import { useScrollLock } from '../composables/useScrollLock'
  * the other way round.
  *
  * The page is a reader first: a chapter of text, and a way to the next one.
- * Everything else — the picker, the search — stays folded away until it is
- * asked for, because the common case is opening the app to carry on.
+ * Everything else — the picker, the translation, the search — stays folded
+ * away until it is asked for, because the common case is opening the app to
+ * carry on.
  */
 const route = useRoute()
 const router = useRouter()
 const { place, remember } = useBiblePlace()
+const { version, versionMeta, versions, setVersion } = useBibleVersion()
 
 const bookBySlug = new Map(BIBLE_BOOKS.map((b) => [b.slug, b]))
+
+/** A book's name in the translation being read: "Mga Awit", or "Psalms". */
+const nameOf = (slug) => bookName(bookBySlug.get(slug), version.value)
 
 /* ---------- where we are ---------- */
 
@@ -49,7 +64,11 @@ const current = computed(() => {
   return { slug, chapter }
 })
 
-const meta = computed(() => bookBySlug.get(current.value.slug))
+/** The open book, carrying the name the translation being read gives it. */
+const meta = computed(() => {
+  const book = bookBySlug.get(current.value.slug)
+  return { ...book, name: bookName(book, version.value) }
+})
 
 /** Every chapter there is, in order, so turning a page can cross a book. */
 const spine = BIBLE_BOOKS.flatMap((b) =>
@@ -61,7 +80,7 @@ const at = computed(() => spineIndex.get(current.value.slug + ':' + current.valu
 const previous = computed(() => spine[at.value - 1] || null)
 const next = computed(() => spine[at.value + 1] || null)
 
-const labelOf = (spot) => (spot ? bookBySlug.get(spot.slug).tl + ' ' + spot.chapter : '')
+const labelOf = (spot) => (spot ? nameOf(spot.slug) + ' ' + spot.chapter : '')
 
 /**
  * `replace` for turning a page, `push` for a jump.
@@ -97,14 +116,13 @@ const loadCurrentBook = async () => {
   error.value = ''
 
   try {
-    const book = await getBook(slug)
+    const book = await getBook(slug, version.value)
     if (token !== loadToken) return // A faster tap overtook this one.
     chapters.value = book.chapters
   } catch {
     if (token !== loadToken) return
     chapters.value = []
-    error.value =
-      'Could not load ' + (bookBySlug.get(slug)?.tl || slug) + '. Check your connection.'
+    error.value = 'Could not load ' + (nameOf(slug) || slug) + '. Check your connection.'
   } finally {
     if (token === loadToken) loading.value = false
   }
@@ -139,7 +157,10 @@ const settle = async () => {
   fadeTimer = setTimeout(() => (highlighted.value = null), 2600)
 }
 
-watch(() => current.value.slug, loadCurrentBook, { immediate: true })
+// The chapter is fetched again when the translation changes: same place,
+// different words. Keeping the place translation-independent is what lets
+// somebody compare a verse by switching and switching back.
+watch([() => current.value.slug, version], loadCurrentBook, { immediate: true })
 
 watch(
   () => [current.value.slug, current.value.chapter].join(':'),
@@ -179,6 +200,30 @@ const openPicker = () => {
   picking.value = current.value.slug
   pickerOpen.value = true
 }
+
+/* ---------- the translation ---------- */
+
+const versionOpen = ref(false)
+useScrollLock(versionOpen)
+
+const chooseVersion = (id) => {
+  versionOpen.value = false
+  setVersion(id)
+}
+
+/**
+ * The translations grouped under their language, in the order the table lists
+ * them — which puts the default first, so a church that has never touched this
+ * sees its own Bible at the top.
+ */
+const languages = computed(() => {
+  const groups = new Map()
+  versions.forEach((entry) => {
+    if (!groups.has(entry.language)) groups.set(entry.language, [])
+    groups.get(entry.language).push(entry)
+  })
+  return [...groups].map(([language, entries]) => ({ language, entries }))
+})
 
 const testaments = [
   { key: 'OT', label: 'Old Testament' },
@@ -221,7 +266,7 @@ const searchable = computed(() => typed.value.length >= 2)
 /** The reference the box holds, if it holds one. Never touches the network. */
 const jumpTo = computed(() => {
   if (!typed.value) return null
-  const parsed = parseReference(typed.value)
+  const parsed = parseReference(typed.value, version.value)
   return parsed.error ? null : parsed.ref
 })
 
@@ -237,6 +282,7 @@ const runSearch = async (slugs, nextScope) => {
   progress.value = nextScope === 'all' ? { done: 0, total: slugs.length } : null
 
   const outcome = await searchBooks(typed.value, slugs, {
+    version: version.value,
     isCancelled: () => token !== searchToken,
     onProgress: ({ done, total }) => {
       if (token === searchToken && nextScope === 'all') progress.value = { done, total }
@@ -259,7 +305,11 @@ const searchWholeBible = () =>
 // Searching the open book costs nothing — it is already in memory — so it runs
 // as you type, and works with the network down. The other sixty-five are five
 // megabytes, and are only fetched when somebody asks for them by name.
-watch([typed, () => current.value.slug], () => {
+//
+// A change of translation re-runs it rather than clearing it: the words are
+// different, so the hits are different, and leaving the old ones up would
+// attribute Tagalog verses to the King James.
+watch([typed, () => current.value.slug, version], () => {
   clearTimeout(debounce)
   searchToken += 1
   searching.value = false
@@ -340,12 +390,26 @@ const showingResults = computed(() => searchable.value)
       >
         <BookOpen class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
         <span class="truncate text-base font-bold text-gray-900 dark:text-white">
-          {{ meta.tl }} {{ current.chapter }}
+          {{ meta.name }} {{ current.chapter }}
         </span>
         <ChevronDown class="h-4 w-4 shrink-0 text-gray-400" />
       </button>
 
       <div class="flex flex-1 items-center justify-end gap-2">
+        <!-- The translation, as the short code a reader recognises. It sits
+             beside the search rather than inside the picker because switching
+             is something you do while reading a verse, not while going to find
+             one — and it hides with the book name when the search takes the
+             row over on a phone. -->
+        <button
+          v-if="!searchOpen"
+          @click="versionOpen = true"
+          class="shrink-0 rounded-md border border-gray-200 px-2 py-1 text-[11px] font-bold tracking-wide text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200"
+          :title="versionMeta.name"
+        >
+          {{ versionMeta.short }}
+        </button>
+
         <SearchBar
           v-model="query"
           v-model:open="searchOpen"
@@ -375,11 +439,11 @@ const showingResults = computed(() => searchable.value)
           <template v-if="searching && progress">
             Reading {{ progress.done }} of {{ progress.total }} books…
           </template>
-          <template v-else-if="searching">Searching {{ meta.tl }}…</template>
+          <template v-else-if="searching">Searching {{ meta.name }}…</template>
           <template v-else>
             {{ results.length }}{{ truncated ? '+' : '' }}
             {{ results.length === 1 ? 'verse' : 'verses' }}
-            in {{ scope === 'all' ? 'the whole Bible' : meta.tl }}
+            in {{ scope === 'all' ? 'the whole Bible' : meta.name }}
           </template>
         </p>
         <button
@@ -401,7 +465,7 @@ const showingResults = computed(() => searchable.value)
       >
         <SearchX class="mx-auto h-5 w-5 text-gray-400" />
         <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Nothing in {{ scope === 'all' ? 'the Bible' : meta.tl }} matches “{{ typed }}”.
+          Nothing in {{ scope === 'all' ? 'the Bible' : meta.name }} matches “{{ typed }}”.
         </p>
         <button
           v-if="scope === 'book'"
@@ -462,9 +526,9 @@ const showingResults = computed(() => searchable.value)
            laptop is a Bible nobody finishes a chapter of. -->
       <article v-else class="mx-auto max-w-prose">
         <h1 class="mb-3 text-lg font-bold text-gray-900 dark:text-white">
-          {{ meta.tl }} {{ current.chapter }}
+          {{ meta.name }} {{ current.chapter }}
           <span class="ml-1 text-[11px] font-medium text-gray-400 dark:text-gray-500">
-            {{ BIBLE_VERSION }}
+            {{ versionMeta.short }}
           </span>
         </h1>
 
@@ -541,7 +605,7 @@ const showingResults = computed(() => searchable.value)
               <ChevronLeft class="h-5 w-5" />
             </button>
             <h2 class="flex-1 truncate text-sm font-bold text-gray-900 dark:text-white">
-              {{ picking ? bookBySlug.get(picking).tl : 'Choose a book' }}
+              {{ picking ? nameOf(picking) : 'Choose a book' }}
             </h2>
             <button
               @click="pickerOpen = false"
@@ -597,10 +661,95 @@ const showingResults = computed(() => searchable.value)
                       : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
                   ]"
                 >
-                  {{ book.tl }}
+                  {{ bookName(book, version) }}
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Which translation to read. Grouped by language, because that is the
+         choice somebody is actually making — the difference between the King
+         James and the World English is a matter of taste, but the difference
+         between English and Tagalog is the difference between a Bible you can
+         read and one you cannot. -->
+    <Transition name="sheet">
+      <div
+        v-if="versionOpen"
+        class="fixed inset-0 z-80 flex items-end justify-center sm:items-center"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Choose a translation"
+      >
+        <div class="absolute inset-0 bg-black/40" @click="versionOpen = false" />
+        <div
+          class="sheet-panel relative z-10 flex max-h-[85dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800 sm:max-w-sm sm:rounded-2xl sm:border"
+        >
+          <div
+            class="flex shrink-0 items-center gap-2 border-b border-gray-200 px-4 py-3 dark:border-gray-700"
+          >
+            <h2 class="flex-1 truncate text-sm font-bold text-gray-900 dark:text-white">
+              Choose a translation
+            </h2>
+            <button
+              @click="versionOpen = false"
+              class="rounded-lg p-1 text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+              aria-label="Close"
+            >
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+
+          <div
+            class="min-h-0 flex-1 overflow-y-auto p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-3"
+          >
+            <div v-for="group in languages" :key="group.language" class="mb-3 last:mb-0">
+              <p
+                class="mb-1.5 px-1 text-[9px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500"
+              >
+                {{ group.language }}
+              </p>
+              <button
+                v-for="entry in group.entries"
+                :key="entry.id"
+                @click="chooseVersion(entry.id)"
+                :class="[
+                  'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors',
+                  entry.id === version
+                    ? 'bg-primary/10 dark:bg-primary-light/10'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-700/50',
+                ]"
+              >
+                <span class="min-w-0 flex-1">
+                  <span
+                    :class="[
+                      'block truncate text-sm font-semibold',
+                      entry.id === version
+                        ? 'text-primary dark:text-primary-light'
+                        : 'text-gray-900 dark:text-white',
+                    ]"
+                  >
+                    {{ entry.name }}
+                  </span>
+                  <span class="block truncate text-[11px] text-gray-500 dark:text-gray-400">
+                    {{ entry.note }}
+                  </span>
+                </span>
+                <Check
+                  v-if="entry.id === version"
+                  class="h-4 w-4 shrink-0 text-primary dark:text-primary-light"
+                />
+              </button>
+            </div>
+
+            <!-- Said once, quietly, where somebody choosing a Bible can see it:
+                 every translation here is free to reproduce, which is why they
+                 can be read with the wifi off and at no cost to the church. -->
+            <p class="px-3 pt-1 text-[10px] leading-relaxed text-gray-400 dark:text-gray-500">
+              Each one is stored in the app, so it reads with no connection.
+            </p>
           </div>
         </div>
       </div>

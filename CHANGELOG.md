@@ -11,6 +11,37 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.28.2] — 2026-09-16
+
+The Bible speaks English too.
+
+### Added
+
+- **Two English translations** beside the Tagalog: the King James Version and
+  the World English Bible. The short code beside the search on the Bible page —
+  MBBTAG, KJV or WEB — opens the list and changes which one you are reading.
+- **The choice is yours, not the church's.** One person can read the King James
+  while another reads the Tagalog on the same office tablet, and your choice
+  follows you to your phone.
+
+### Changed
+
+- **A reference works whichever Bible you are in.** "Juan 3:16" finds the
+  passage while you are reading the King James, and "John 3:16" finds it while
+  you are reading the Tagalog. What comes back is named the way the translation
+  you are in names it.
+- **Switching keeps your place** — the same book and chapter, in the other
+  words — so a verse can be read both ways without hunting for it again.
+- **A reading on the Presentation page** comes from whichever translation you
+  last chose, and the run sheet records which one it was.
+- **Searching a phrase searches the Bible you are reading**, and says so.
+
+### Fixed
+
+- **Books held for reading offline are no longer crowded out.** The app kept
+  room for one Bible's worth; opening a second translation would have pushed
+  the first out a book at a time.
+
 ## [0.28.1] — 2026-09-16
 
 Your request, in your hands.

@@ -191,12 +191,13 @@ export default defineConfig(({ mode }) => ({
         // sign-in returns to a blank app shell instead of completing.
         navigateFallbackDenylist: [/^\/api\//, /^\/__\//],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        // The Bible is 4.7 MB across 66 files and is deliberately not
-        // precached — globPatterns above does not list json, so it stays out of
-        // the install. A church does not need Habakkuk on every phone.
+        // Each translation is around 4.7 MB across 66 files, and none of them
+        // is precached — globPatterns above does not list json, so they stay
+        // out of the install. A church does not need Habakkuk on every phone,
+        // let alone Habakkuk three times over.
         //
-        // It is cached once fetched, though, and cache-first forever after: a
-        // verse is not going to be revised, and the service a passage was
+        // They are cached once fetched, though, and cache-first forever after:
+        // a verse is not going to be revised, and the service a passage was
         // looked up for has to survive the hall's wifi giving out mid-reading.
         runtimeCaching: [
           {
@@ -219,7 +220,12 @@ export default defineConfig(({ mode }) => ({
             handler: 'CacheFirst',
             options: {
               cacheName: 'bible-books',
-              expiration: { maxEntries: 70 },
+              // Room for every book of every translation installed, and then
+              // some. Sized to one Bible, the second translation a reader
+              // opened would evict the first book by book, and the offline
+              // promise would quietly stop holding for the one they came back
+              // to.
+              expiration: { maxEntries: 400 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },

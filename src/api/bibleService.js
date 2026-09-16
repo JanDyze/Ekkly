@@ -1,29 +1,37 @@
-import { BIBLE_VERSION } from '../data/bibleBooks'
+import { DEFAULT_BIBLE_VERSION } from '../data/bibleBooks'
 import { parseReference, formatReference } from '../utils/bibleRef'
 
 /**
- * Reading verses out of the translation shipped in public/bible/.
+ * Reading verses out of the translations shipped in public/bible/.
  *
- * Static JSON rather than Firestore, one file per book, fetched the first time
- * something asks for it and then kept. Gzipped that is 2 KB for Judas, 35 KB
- * for Juan and 89 KB for Mga Awit at the worst — so the second reading from
- * Juan on a Sunday costs nothing, and a service whose passages have all been
- * looked up once will run with the network down. That last part is the point:
- * a projector must not stop because the church wifi did.
+ * Static JSON rather than Firestore, one file per book per translation, fetched
+ * the first time something asks for it and then kept. Gzipped that is 2 KB for
+ * Judas, 35 KB for Juan and 89 KB for Mga Awit at the worst — so the second
+ * reading from Juan on a Sunday costs nothing, and a service whose passages
+ * have all been looked up once will run with the network down. That last part
+ * is the point: a projector must not stop because the church wifi did.
+ *
+ * Which translation is a decision every call carries, defaulting to the one a
+ * church gets before anybody chooses. Nothing here reads the preference itself
+ * — that is useBibleVersion's job — because the presentation page and the
+ * reader can legitimately be looking at different translations at once.
  *
  * Nothing here writes. A verse is not church data; it is the same for everyone
  * and never edited, which is why it sits in the bundle's neighbourhood instead
  * of in the database.
  */
 
-/** slug -> Promise<book>. The promise is cached, not the result, so two
- *  lookups racing for the same book share one request. */
+/** "<version>:<slug>" -> Promise<book>. The promise is cached, not the result,
+ *  so two lookups racing for the same book share one request. Keyed by
+ *  translation as well, so switching to the King James and back does not throw
+ *  away the Tagalog Juan somebody is about to read from again. */
 const books = new Map()
 
-const loadBook = (slug) => {
-  if (books.has(slug)) return books.get(slug)
+const loadBook = (slug, version = DEFAULT_BIBLE_VERSION) => {
+  const key = `${version}:${slug}`
+  if (books.has(key)) return books.get(key)
 
-  const pending = fetch(`/bible/${BIBLE_VERSION}/${slug}.json`)
+  const pending = fetch(`/bible/${version}/${slug}.json`)
     .then((response) => {
       if (!response.ok) throw new Error(`${slug} is not in this translation`)
       return response.json()
@@ -31,11 +39,11 @@ const loadBook = (slug) => {
     .catch((error) => {
       // A failed fetch must not poison the cache: the operator will try again,
       // and next time the wifi may be back.
-      books.delete(slug)
+      books.delete(key)
       throw error
     })
 
-  books.set(slug, pending)
+  books.set(key, pending)
   return pending
 }
 
@@ -48,12 +56,15 @@ const loadBook = (slug) => {
  * different matter and comes back as an error, because it means the reference
  * itself is wrong.
  *
- * @param {object} ref  from parseReference
+ * @param {object} ref      from parseReference, which records the translation
+ *                          it named the book in
+ * @param {string} version  overrides that, for a caller reading elsewhere
  * @returns {Promise<{reference: string, version: string, verses: Array}>}
  */
-export const lookupPassage = async (ref) => {
+export const lookupPassage = async (ref, version) => {
   if (!ref?.slug) throw new Error('No reference to look up')
-  const book = await loadBook(ref.slug)
+  const from = version || ref.version || DEFAULT_BIBLE_VERSION
+  const book = await loadBook(ref.slug, from)
 
   const byNumber = new Map(book.chapters.map((chapter) => [chapter.chapter, chapter]))
   const first = byNumber.get(ref.startChapter)
@@ -83,7 +94,7 @@ export const lookupPassage = async (ref) => {
 
   if (!verses.length) throw new Error('That reference has no verses in it')
 
-  return { reference: formatReference(ref), version: book.version || BIBLE_VERSION, verses }
+  return { reference: formatReference(ref), version: book.version || from, verses }
 }
 
 /**
@@ -93,19 +104,21 @@ export const lookupPassage = async (ref) => {
  * one field and wants to know whether it worked, so both arrive as `error`
  * rather than one being thrown and the other returned.
  */
-export const lookupReference = async (input) => {
-  const parsed = parseReference(input)
+export const lookupReference = async (input, version = DEFAULT_BIBLE_VERSION) => {
+  const parsed = parseReference(input, version)
   if (parsed.error) return { error: parsed.error }
 
   try {
-    const passage = await lookupPassage(parsed.ref)
+    const passage = await lookupPassage(parsed.ref, version)
     return { ...passage, ref: parsed.ref }
   } catch (error) {
     return { error: error.message || 'Could not load that passage' }
   }
 }
 
-/** Drops the cached books. Only of interest to a translation switch. */
+/** Drops every cached book, in every translation. Nothing needs this in normal
+ *  use — switching translation keeps its cache — but a stale build served a
+ *  revised file has nowhere else to be corrected from. */
 export const clearBibleCache = () => books.clear()
 
 /**
@@ -114,9 +127,10 @@ export const clearBibleCache = () => books.clear()
  * The reader pages through chapters, so handing it the book rather than a
  * chapter means the first chapter costs a fetch and the other forty-nine cost
  * nothing — and a passage already looked up on the Presentation page is
- * already here, and the other way round.
+ * already here, and the other way round, as long as both are reading the same
+ * translation.
  */
-export const getBook = (slug) => loadBook(slug)
+export const getBook = (slug, version = DEFAULT_BIBLE_VERSION) => loadBook(slug, version)
 
 /**
  * Folds away everything that stops a typed word matching a printed one: case,
@@ -165,13 +179,17 @@ export const fold = (value) => foldText(value).replace(/\s+/g, ' ').trim()
  *
  * @param query      what was typed
  * @param slugs      which books to look in, in the order to look
- * @param options    limit: stop after this many hits.
+ * @param options    version: which translation to read. A phrase is searched in
+ *                   the translation on screen and no other — "lumakad" finds
+ *                   nothing in the King James, and saying so is the honest
+ *                   answer rather than quietly searching somewhere else.
+ *                   limit: stop after this many hits.
  *                   onProgress({done, total, hits}): after each book.
  *                   isCancelled(): checked between books, to abandon the walk.
  * @returns {Promise<{hits: Array, truncated: boolean, cancelled: boolean, searched: number}>}
  */
 export const searchBooks = async (query, slugs, options = {}) => {
-  const { limit = 200, onProgress, isCancelled } = options
+  const { version = DEFAULT_BIBLE_VERSION, limit = 200, onProgress, isCancelled } = options
   const needle = fold(query)
   const hits = []
   let truncated = false
@@ -184,7 +202,7 @@ export const searchBooks = async (query, slugs, options = {}) => {
 
     let book
     try {
-      book = await loadBook(slug)
+      book = await loadBook(slug, version)
     } catch {
       // One missing book must not end the search — the other sixty-five are
       // still worth reading.

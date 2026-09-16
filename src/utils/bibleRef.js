@@ -1,4 +1,4 @@
-import { BIBLE_BOOKS } from '../data/bibleBooks'
+import { BIBLE_BOOKS, DEFAULT_BIBLE_VERSION } from '../data/bibleBooks'
 
 /**
  * Making sense of a reference somebody typed.
@@ -9,10 +9,20 @@ import { BIBLE_BOOKS } from '../data/bibleBooks'
  * is guess: an ambiguous abbreviation comes back as an error naming the
  * candidates, because a wrong passage on the wall is worse than a retype.
  *
+ * Matching ignores which translation is open. Somebody reading the King James
+ * still types "Juan" from memory, and somebody reading the Tagalog still
+ * pastes "John 3:16" out of a message — so every name every installed
+ * translation uses is accepted, and only what comes back follows the
+ * translation being read.
+ *
  * Nothing here touches the network. The book table is in the bundle, so a
  * reference is accepted or refused instantly, and only fetching the verses
  * needs a connection.
  */
+
+/** What a book is called in the translation being read. */
+export const bookName = (book, version = DEFAULT_BIBLE_VERSION) =>
+  book?.names?.[version] || book?.en || ''
 
 /** "Mga Awit" and "Awit" should both find Psalms; the article carries nothing. */
 const stripArticle = (name) => name.replace(/^mga\s+/, '')
@@ -67,13 +77,17 @@ const ALIASES = {
   hebreo: 'Hebrews',
 }
 
-/** Every name a book answers to, exactly: English, Tagalog, article-stripped. */
+/** Every name a book answers to, in any installed translation. */
+const allNames = (book) => [book.en, ...Object.values(book.names || {})]
+
+/** Those names exactly, each also with its article taken off. */
 const exact = new Map()
 BIBLE_BOOKS.forEach((book) => {
-  const names = [book.en, book.tl, stripArticle(normalize(book.tl))]
-  names.forEach((name) => {
+  allNames(book).forEach((name) => {
     const key = normalize(name)
     if (key && !exact.has(key)) exact.set(key, book)
+    const bare = stripArticle(key)
+    if (bare && !exact.has(bare)) exact.set(bare, book)
   })
 })
 Object.entries(ALIASES).forEach(([alias, target]) => {
@@ -131,17 +145,25 @@ const splitOrdinal = (name) => {
 }
 
 /** The names a book answers to, with any leading ordinal already removed. */
-const namesOf = (book) => [
-  normalize(book.en).replace(/^[123] /, ''),
-  normalize(book.tl).replace(/^[123] /, ''),
-  stripArticle(normalize(book.tl).replace(/^[123] /, '')),
-]
+const namesOf = (book) => {
+  const bare = allNames(book).map((name) => normalize(name).replace(/^[123] /, ''))
+  return [...new Set([...bare, ...bare.map(stripArticle)])]
+}
+
+/** Whether any of a book's names carries this ordinal: "1 Juan", "1 John". */
+const hasOrdinal = (book, ordinal) => allNames(book).some((n) => n.startsWith(ordinal + ' '))
+
+/** Whether a book is numbered at all, in any translation. */
+const isNumbered = (book) => allNames(book).some((n) => /^[123] /.test(n))
 
 /**
  * A book from whatever was typed in its place.
+ *
+ * @param input    what was typed where the book goes
+ * @param version  only words the error; the matching itself ignores it
  * @returns {{book: object}|{error: string}}
  */
-export const findBook = (input) => {
+export const findBook = (input, version = DEFAULT_BIBLE_VERSION) => {
   const raw = normalize(input)
   if (!raw) return { error: 'Which book?' }
 
@@ -155,8 +177,8 @@ export const findBook = (input) => {
   // the ordinal is known the candidates are the books that start with it —
   // and without one, the numbered books are out of the running entirely.
   const pool = ordinal
-    ? BIBLE_BOOKS.filter((b) => b.en.startsWith(ordinal + ' ') || b.tl.startsWith(ordinal + ' '))
-    : BIBLE_BOOKS.filter((b) => !/^[123] /.test(b.en))
+    ? BIBLE_BOOKS.filter((b) => hasOrdinal(b, ordinal))
+    : BIBLE_BOOKS.filter((b) => !isNumbered(b))
 
   const hit = pool.find((book) => namesOf(book).includes(stripped))
   if (hit) return { book: hit }
@@ -178,7 +200,7 @@ export const findBook = (input) => {
     const matches = pool.filter((book) => namesOf(book).some((n) => n.startsWith(stripped)))
     if (matches.length === 1) return { book: matches[0] }
     if (matches.length > 1) {
-      const shown = matches.map((b) => b.tl).join(', ')
+      const shown = matches.map((b) => bookName(b, version)).join(', ')
       return { error: '"' + String(input).trim() + '" could be ' + shown }
     }
   }
@@ -186,10 +208,11 @@ export const findBook = (input) => {
   return { error: 'No book called "' + String(input).trim() + '"' }
 }
 
-const buildRef = (book, startChapter, startVerse, endChapter, endVerse) => {
+const buildRef = (book, startChapter, startVerse, endChapter, endVerse, version) => {
+  const name = bookName(book, version)
   const chapterWord = book.chapters === 1 ? 'chapter' : 'chapters'
   if (startChapter < 1 || startChapter > book.chapters || endChapter > book.chapters) {
-    return { error: book.tl + ' has ' + book.chapters + ' ' + chapterWord }
+    return { error: name + ' has ' + book.chapters + ' ' + chapterWord }
   }
   const backwards =
     endChapter < startChapter ||
@@ -199,8 +222,11 @@ const buildRef = (book, startChapter, startVerse, endChapter, endVerse) => {
   return {
     ref: {
       slug: book.slug,
-      book: book.tl,
+      // Named as the translation being read prints it, because this is the
+      // string that ends up on the wall and in the run sheet.
+      book: name,
       bookEn: book.en,
+      version,
       startChapter,
       startVerse,
       endChapter,
@@ -218,9 +244,11 @@ const buildRef = (book, startChapter, startVerse, endChapter, endVerse) => {
  * Accepts "Juan 3", "Juan 3:16", "Juan 3:16-18" and "Genesis 1:1-2:3". A range
  * with no verses on either side ("Juan 3-4") is read as whole chapters.
  *
+ * @param input    what was typed
+ * @param version  the translation to name the book in and to read it from
  * @returns {{ref: object}|{error: string}}
  */
-export const parseReference = (input) => {
+export const parseReference = (input, version = DEFAULT_BIBLE_VERSION) => {
   const raw = normalize(input)
   if (!raw) return { error: 'Type a reference, e.g. Juan 3:16-18' }
 
@@ -230,14 +258,14 @@ export const parseReference = (input) => {
   if (!match) {
     // No numbers at all is still a reference when the book has one chapter:
     // "Judas" is the whole of Jude.
-    const only = findBook(raw)
+    const only = findBook(raw, version)
     if (only.error) return { error: only.error }
-    if (only.book.chapters === 1) return buildRef(only.book, 1, null, 1, null)
-    return { error: 'Which chapter of ' + only.book.tl + '?' }
+    if (only.book.chapters === 1) return buildRef(only.book, 1, null, 1, null, version)
+    return { error: 'Which chapter of ' + bookName(only.book, version) + '?' }
   }
 
   const bookPart = match[1]
-  const found = findBook(bookPart)
+  const found = findBook(bookPart, version)
   if (found.error) return { error: found.error }
   const book = found.book
 
@@ -259,7 +287,7 @@ export const parseReference = (input) => {
     }
   }
 
-  return buildRef(book, startChapter, startVerse, endChapter, endVerse)
+  return buildRef(book, startChapter, startVerse, endChapter, endVerse, version)
 }
 
 /** The reference as it should appear on the wall: "Juan 3:16-18". */

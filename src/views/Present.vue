@@ -26,6 +26,7 @@ import {
   deleteServicePlan,
 } from '../api/servicePlansService'
 import { lookupReference } from '../api/bibleService'
+import { useBibleVersion } from '../composables/useBibleVersion'
 import { auth } from '../api/firebase'
 import { useToast } from '../composables/useToast'
 import { usePermissions } from '../composables/usePermissions'
@@ -489,6 +490,12 @@ const cancelDraft = () => {
 // Scripture is the one text item nobody should have to type. The operator gives
 // a reference and the verses are read out of the translation in public/bible/,
 // so what goes on the wall is neither retyped nor mis-transcribed.
+//
+// Which translation is the operator's own choice, the same one the Bible page
+// reads — so a church that reads the King James builds its run sheets in it
+// without being asked twice.
+
+const { version: bibleVersion, versionMeta: bibleVersionMeta } = useBibleVersion()
 
 const lookup = ref({ loading: false, error: '', reference: '', verses: [] })
 
@@ -513,20 +520,26 @@ const runLookup = async (input) => {
   const token = (lookupToken += 1)
   lookup.value = { loading: true, error: '', reference: '', verses: [] }
 
-  const result = await lookupReference(typed)
+  const result = await lookupReference(typed, bibleVersion.value)
   if (token !== lookupToken) return
 
   lookup.value = result.error
     ? { loading: false, error: result.error, reference: '', verses: [] }
-    : { loading: false, error: '', reference: result.reference, verses: result.verses }
+    : {
+        loading: false,
+        error: '',
+        reference: result.reference,
+        verses: result.verses,
+        version: result.version,
+      }
 }
 
 // Debounced rather than looked up on every keystroke: "Genesis 1" is a valid
 // reference on the way to typing "Genesis 1:1-5", and flashing the whole first
 // chapter up in the preview on the way past is just noise.
 watch(
-  () => draftItem.value?.reference,
-  (typed) => {
+  [() => draftItem.value?.reference, bibleVersion],
+  ([typed]) => {
     if (draftItem.value?.type !== 'scripture') return
     clearTimeout(lookupTimer)
     lookupTimer = setTimeout(() => runLookup(typed), 350)
@@ -556,6 +569,11 @@ const commitDraft = () => {
   // run sheet can never hold a passage that was mistyped. The verses come with
   // it; the reference becomes the title, which is what the run sheet should
   // show and what goes under the words on the wall.
+  //
+  // The translation is recorded alongside them. The words are already saved, so
+  // this changes nothing about what gets projected — it is there so that a run
+  // sheet reopened months later can say which Bible it was read from, rather
+  // than leaving somebody to guess from the wording.
   if (draft.type === 'scripture') {
     if (!lookup.value.verses.length) {
       toast.warning(lookup.value.error || 'Find the passage first.')
@@ -568,6 +586,7 @@ const commitDraft = () => {
         title: lookup.value.reference,
         reference: lookup.value.reference,
         verses: lookup.value.verses,
+        version: lookup.value.version || bibleVersion.value,
       },
     ]
     draftItem.value = null
@@ -1229,7 +1248,11 @@ onUnmounted(() => {
               >
                 <div class="flex items-baseline justify-between gap-2">
                   <p class="text-[11px] font-bold text-primary">{{ lookup.reference }}</p>
+                  <!-- Which Bible this came out of. The operator picks it on the
+                       Bible page, so the only thing that has to happen here is
+                       that they can see which one is answering. -->
                   <p class="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                    {{ bibleVersionMeta.short }} ·
                     {{ lookup.verses.length }}
                     {{ lookup.verses.length === 1 ? 'verse' : 'verses' }}
                   </p>

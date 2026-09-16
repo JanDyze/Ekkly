@@ -174,7 +174,8 @@ export const NAV_GROUPS = [
         // carry that, it is named here.
         app: 'bible',
         icon: BookOpen,
-        description: 'Read the Bible in Tagalog, and find a verse by reference or by what it says.',
+        description:
+          'Read the Bible in Tagalog or English, and find a verse by reference or by what it says.',
       },
       {
         name: 'Minutes',

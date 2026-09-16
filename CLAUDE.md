@@ -61,6 +61,14 @@ installable PWA.
   Never put hex values in classes. The platform and each church can change
   what the tokens are (`useBrandTheme`), so a hex value is one that won't
   follow.
+- **Bible translations ship as files, not calls.** Each one is a folder of 66
+  JSON files under `public/bible/<id>/`, and `src/data/bibleBooks.js` is
+  generated from whatever is installed — neither is edited by hand. Add a
+  public-domain English one with `node scripts/fetch-bible.mjs <id>`; the
+  Tagalog comes from a scrape through `scripts/sync-bible.mjs`. Only
+  out-of-copyright translations can live here; a licensed one (NIV, ESV)
+  would have to be fetched from a paid API at runtime and would lose the
+  offline guarantee the projector depends on.
 
 ## Adding a page
 

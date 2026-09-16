@@ -8,6 +8,19 @@
 
 export const versionHistory = [
   {
+    version: '0.28.2',
+    date: '2026-09-16',
+    title: 'The Bible in English as well',
+    summary:
+      'The Bible page now carries the King James and the World English Bible alongside the Tagalog, and remembers which one you read.',
+    highlights: [
+      'Tap the short code beside the search — MBBTAG, KJV or WEB — to change translation. Your book and chapter stay where they were.',
+      'The choice is yours rather than the church’s, so two people sharing a tablet can read different Bibles.',
+      'Type a reference either way round: “Juan 3:16” works in the King James, “John 3:16” works in the Tagalog.',
+      'Readings you add on the Presentation page come from whichever one you chose, and every translation still reads with the wifi off.',
+    ],
+  },
+  {
     version: '0.25.0',
     date: '2026-09-15',
     title: 'Pay by card, and meet EKRIS',

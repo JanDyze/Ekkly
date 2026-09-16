@@ -52,6 +52,11 @@ const normalizeItem = (item, index) => ({
         text: verse?.text || '',
       }))
     : [],
+  // Which translation those verses came out of. Nothing reads it back to
+  // project with — the words are already here — but a run sheet from two years
+  // ago should be able to say whether the reading was the Tagalog or the King
+  // James, and the wording alone is a poor way to ask.
+  version: item?.version || '',
   // Where a video or a deck lives, for the operator to open.
   source: item?.source || '',
 })

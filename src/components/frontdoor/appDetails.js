@@ -96,7 +96,7 @@ export const APP_DETAILS = {
     ],
   },
   bible: {
-    headline: 'The Tagalog Bible, always open',
+    headline: 'Tagalog and English, always open',
     wins: [
       { icon: MagnifyingGlass, text: 'Find a verse by a word you remember' },
       { icon: BookmarkSimple, text: 'Pick up where you left off' },
