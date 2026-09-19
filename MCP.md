@@ -65,9 +65,11 @@ Four things hold across all of them:
   ledger category is refused with the real list attached, so the next attempt
   succeeds. A ministry is the only field that grants access, and this must not
   become the way round that.
-- **Every write is signed.** Records carry "Claude (MCP connector)" in their
-  createdBy/updatedBy, so anything changed through a conversation can be told
-  from something a person typed.
+- **Every write is signed.** Records carry `mcp` in their createdBy/updatedBy
+  whoever connected, so anything changed through a conversation can be told
+  from something a person typed; the name beside it says whose link it was —
+  "Claude (for Ana Reyes)" — and the audit entry carries their uid, so the log
+  can be read by person.
 - **Nothing notifies anybody.** The app raises a push when a person saves an
   event or a task; these do not. Ringing every phone in the congregation is not
   a side effect a tool call should have — so if something needs announcing, it
@@ -87,17 +89,37 @@ explicit `replace: true`.
 
 ---
 
+## Whose link it is
+
+One endpoint serves every church on the platform, and a link answers two
+questions before a single tool runs:
+
+- **Which church.** The link decides, and it decides once and for all — that
+  church's records and nobody else's.
+- **Whose it is.** A link belongs to the account that made it. It reaches only
+  what that person can reach in the app, it stops working the moment they leave
+  the church, and what it changes carries their name.
+
+So the tools on offer are not the same for everyone. Somebody who cannot open
+Finances in the app has no `finance_summary` in their connector; somebody who
+can see the roll but not edit it has `search_members` and no `add_member`, even
+with writing switched on. The write switch is a ceiling over what the person
+could already do by hand, never a grant of anything more. A tool held back says
+which of the three reasons it was — read-only link, app switched off, or access
+the person does not have — so the conversation can say something useful instead
+of looking like it guessed a name wrong.
+
+Each account makes its own link, and making one leaves everybody else's alone.
+An administrator sees every link in the church in Settings and can switch any
+of them off.
+
 ## Setting it up
 
-One endpoint serves every church on the platform. **Each church has its own
-link, and the link decides which church Claude sees** — that church's records
-and nobody else's.
+### 1. Make your link
 
-### 1. Make the church's link
-
-An administrator of the church opens **Settings → Claude connector** and presses
-*Make a link*, ticking *Let Claude add and change records* first if the
-connector should be able to write. The link is shown **once**:
+Open **Settings → Claude connector** and press *Make a link*, ticking *Let
+Claude add and change records* first if the connector should be able to write.
+The link is shown **once**:
 
 ```
 https://uec.church.app/api/mcp/THE_TOKEN
@@ -105,7 +127,7 @@ https://uec.church.app/api/mcp/THE_TOKEN
 
 Only a SHA-256 fingerprint of the token is kept (`mcpTokens/{hash}`, which no
 browser can read), so a lost link cannot be shown again — make a new one, which
-also switches the old one off.
+also switches your old one off and leaves everybody else's alone.
 
 The endpoint reads with the Firebase Admin SDK, so Firestore's security rules
 do not apply to it. **The token is the only thing standing between this URL and
@@ -115,7 +137,13 @@ deployment; nothing else is.
 `MCP_TOKEN` in the environment still works as the old single-church door — it
 opens `MCP_CHURCH_ID` (or `VITE_DEFAULT_CHURCH`), with writes governed by
 `MCP_WRITE_TOOLS` — so a connector set up before churches existed keeps working
-through the move. Unset it once every church has a link of its own.
+through the move. It belongs to the deployment rather than to a person, so
+there is nobody to scope it to and it sees everything. Unset it once every
+church has links of its own.
+
+A link made before links belonged to accounts is read as belonging to whoever
+issued it, so it keeps working, is theirs to replace from Settings, and answers
+to their access like any other.
 
 ### 2. Add it to Claude
 
@@ -144,7 +172,7 @@ which church a token opens:
 
 ```bash
 curl -H "Authorization: Bearer THE_TOKEN" https://uec.church.app/api/mcp
-# {"server":{...},"authorised":true,"church":"uec","writesEnabled":false}
+# {"server":{...},"authorised":true,"church":"uec","owner":"Ana Reyes","writesEnabled":false}
 
 curl -X POST https://uec.church.app/api/mcp \
   -H "Authorization: Bearer THE_TOKEN" \
@@ -162,7 +190,8 @@ understanding rather than glossing over:
 
 - A URL ends up in more places than a header does — browser history, server
   logs, anything that records where a request went.
-- Anyone holding that URL holds the whole congregation's records.
+- Anyone holding that URL holds everything its owner can reach — which, for an
+  administrator's link, is the whole congregation's records.
 
 So: treat the URL itself as the password. Do not paste it into a group chat or a
 shared document. Where a client can send `Authorization: Bearer <token>` — Claude
@@ -179,9 +208,9 @@ server here to find.
 ## Turning writes on
 
 A link made with *Let Claude add and change records* ticked offers the twelve
-tools in the table above; one made without it offers none of them. It is one
-switch for all of them, and it belongs to the link — to change it, make a new
-link.
+tools in the table above, minus any the person could not do by hand; one made
+without it offers none of them. It is one switch for all of them, and it
+belongs to the link — to change it, make a new link.
 
 Read-only, the worst this connector can do is answer a question badly. With
 writes on it edits the church's actual records — the roll, the calendar, the
@@ -216,10 +245,11 @@ npx @modelcontextprotocol/inspector
 ## How it is put together
 
 ```
-api/mcp.js         HTTP: CORS, the token -> church check, and the POST/GET contract
-api/mcp-token.js   a church administrator making, describing or revoking the link
-lib/mcpTokens.js   tokens stored as hashes, one per church
-lib/mcp/church.js  the request's church, carried to every tool (AsyncLocalStorage)
+api/mcp.js         HTTP: CORS, the token -> church -> person checks, and the POST/GET contract
+api/mcp-token.js   an account making, describing or revoking a link; administrators see every one
+lib/mcpTokens.js   tokens stored as hashes, one per account per church
+lib/audience.js    accessFor(): is this account still here, and what may it do
+lib/mcp/church.js  the request's church and actor, carried to every tool (AsyncLocalStorage)
 lib/mcp/server.js  the protocol: JSON-RPC dispatch, initialize, tools/list, tools/call
 lib/mcp/tools.js   the twenty-seven tools — schemas and handlers
 lib/mcp/data.js    shared Firestore reads, the member index, formatting
@@ -229,6 +259,18 @@ Every tool reaches Firestore through `church()`, which is
 `churches/{churchId}` for the church the token opened, and the short-lived
 cache in `data.js` is keyed by church — a warm instance serves every church's
 connector, and must never hand one congregation's roll to another's conversation.
+
+The person is resolved on every request rather than once when the link was
+made, so access taken away in the app is access gone from the connector by the
+next message. `accessFor` asks about one account rather than loading the whole
+roll the way `loadAudience` does for notifications — three documents, and the
+roles only where the person actually holds a ministry — because a connector
+pays that cost on every tool call.
+
+Which capability a tool answers to is `TOOL_AREAS` in `tools.js`: `TOOL_APPS`
+plus the roll, since a capability's area is its app key. A read needs
+`<area>.view`, a write `<area>.manage`. The one tool in neither map —
+`church_profile` — is what any signed-in account sees on the dashboard.
 
 There is no MCP SDK dependency. A tools-only server over Streamable HTTP is a
 dispatch table, and a Vercel function cannot hold a session between requests

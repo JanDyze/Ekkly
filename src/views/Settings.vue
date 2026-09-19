@@ -92,9 +92,9 @@ const GROUPS = computed(() => [
       },
       {
         key: 'colours',
-        label: 'Colours',
+        label: 'Colours and type',
         icon: Palette,
-        status: Object.keys(churchTheme.value || {}).length ? 'Your church’s own' : `${branding.value.name}’s colours`,
+        status: Object.keys(churchTheme.value || {}).length ? 'Your church’s own' : `${branding.value.name}’s look`,
         component: ChurchColoursAdmin,
       },
     ],

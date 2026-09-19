@@ -22,7 +22,6 @@ const fill = (defaults) => {
   if (!defaults) return
   form.value = {
     timezone: defaults.timezone,
-    landingEnabled: defaults.landingEnabled,
     allApps: !defaults.apps,
     apps: new Set(defaults.apps || APPS.map((a) => a.key)),
     ministries: [...defaults.ministries],
@@ -73,7 +72,6 @@ const save = async () => {
     await saveConfig('saveDefaults', {
       defaults: {
         timezone: form.value.timezone,
-        landingEnabled: form.value.landingEnabled,
         apps: form.value.allApps ? null : [...form.value.apps],
         ministries: form.value.ministries,
         tags: form.value.tags,
@@ -118,14 +116,6 @@ const LISTS = computed(() => [
           <input id="defaults-trial" v-model="form.trialDays" type="number" min="0" max="365" :class="input" />
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">0 starts it with no plan instead.</p>
         </div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">Public page on from the start</p>
-          <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Off is safer: its starting words are another church's example until edited.</p>
-        </div>
-        <ToggleSwitch v-model="form.landingEnabled" label="Public page on from the start" />
       </div>
 
       <div>

@@ -58,7 +58,7 @@ const facesIn = computed(() => Math.min(FACES.length, joined.value))
 </script>
 
 <template>
-  <div class="flex min-h-64 flex-col justify-center rounded-3xl bg-white/5 p-6 ring-1 ring-white/10 sm:p-7" aria-hidden="true">
+  <div class="flex min-h-64 flex-col justify-center rounded-2xl bg-white/5 p-6 ring-1 ring-white/10 sm:p-7" aria-hidden="true">
     <!-- 1. The name writing itself, its link appearing, and the request going. -->
     <template v-if="step === 0">
       <p class="flex items-center gap-2 text-sm text-white/60">

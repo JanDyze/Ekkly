@@ -13,6 +13,7 @@ import {
   EyeOff,
   Image as ImageIcon,
   ShieldAlert,
+  Sparkles,
 } from '../../icons'
 import { usePermissions } from '../../composables/usePermissions'
 import { useAppSettings } from '../../composables/useAppSettings'
@@ -25,16 +26,10 @@ import {
 } from '../../composables/useRecurringSchedules'
 import { subscribeToAlbums } from '../../api/galleryService'
 import { formatTime } from '../../../lib/occurrences'
-import { compressImageToBase64 } from '../../utils/imageUtils'
+import { compressImageToBase64, HERO_OPTIONS } from '../../utils/imageUtils'
 import { uploadImage } from '../../api/blobService'
 import bundledHero from '../../assets/hero-cover.webp'
 
-// The hero rides inside appSettings/church, which every signed-in screen
-// subscribes to in full — so it gets a budget close to the logo's rather than a
-// gallery photo's. It is now an arch about 300px wide rather than a full-bleed
-// backdrop, so 900px on the long edge is already twice what any screen draws,
-// and the old 1400px budget was paying for pixels nobody ever saw.
-const HERO_OPTIONS = { maxSize: 100 * 1024, maxDim: 900 }
 
 const toast = useToast()
 const { isAdmin } = usePermissions()
@@ -106,15 +101,6 @@ const persist = async (partial, message) => {
     console.error('Error saving landing settings:', error)
     toast.error('Could not save. Please try again.')
   }
-}
-
-const toggleEnabled = () => {
-  const enabled = !form.value.enabled
-  form.value.enabled = enabled
-  persist(
-    { enabled },
-    enabled ? 'Public page is live at /' : 'Visitors now go straight to sign-in'
-  )
 }
 
 const toggleEvents = () => {
@@ -338,7 +324,7 @@ const labelClass = 'block text-xs font-medium text-gray-500 dark:text-gray-400 m
         </p>
       </div>
       <a
-        href="/?preview=1"
+        href="/"
         target="_blank"
         rel="noopener noreferrer"
         class="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-600 px-3 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -353,31 +339,23 @@ const labelClass = 'block text-xs font-medium text-gray-500 dark:text-gray-400 m
     </p>
 
     <template v-else>
-      <!-- Live switch -->
+      <!-- The guide, for anyone who skipped it or would rather be asked one
+           thing at a time than face this whole screen. It walks the same
+           fields and writes to the same place. -->
       <div class="flex items-center gap-3 px-4 py-4 border-b border-gray-100 dark:border-gray-700">
         <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">Show the public page</p>
+          <p class="text-sm font-medium text-gray-900 dark:text-white">Setup guide</p>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            When off, visitors landing on the site go straight to the sign-in screen
+            The basics, one question at a time.
           </p>
         </div>
-        <button
-          @click="toggleEnabled"
-          :class="[
-            'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors',
-            form.enabled ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600',
-          ]"
-          role="switch"
-          :aria-checked="form.enabled"
-          aria-label="Show the public page"
+        <RouterLink
+          to="/setup"
+          class="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary/10 px-3 text-xs font-semibold text-primary hover:bg-primary/20 dark:bg-primary-light/15 dark:text-primary-light transition-colors"
         >
-          <span
-            :class="[
-              'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
-              form.enabled ? 'translate-x-6' : 'translate-x-1',
-            ]"
-          ></span>
-        </button>
+          <Sparkles class="h-3.5 w-3.5" />
+          Start
+        </RouterLink>
       </div>
 
       <!-- What's coming up -->
@@ -501,7 +479,7 @@ const labelClass = 'block text-xs font-medium text-gray-500 dark:text-gray-400 m
                 Photos from the gallery
               </p>
               <p class="text-[11px] text-gray-400">
-                They fill the "Buhay sa simbahan" strip near the foot of the page
+                They fill the "Life together" strip near the foot of the page
               </p>
             </div>
             <button
@@ -675,7 +653,7 @@ const labelClass = 'block text-xs font-medium text-gray-500 dark:text-gray-400 m
           <input
             v-model="form.verseReference"
             type="text"
-            placeholder="Mateo 18:20"
+            placeholder="Matthew 18:20"
             :class="inputClass"
           />
         </div>

@@ -205,7 +205,7 @@ const skip = 'h-12 rounded-xl px-4 text-sm font-semibold text-gray-500 transitio
         <div class="fixed inset-0 bg-gray-950/30 backdrop-blur-[2px]" @click="finish"></div>
 
         <div
-          class="welcome-panel relative max-h-full w-full max-w-md overflow-y-auto rounded-3xl bg-white pb-5 shadow-2xl ring-1 ring-gray-900/5 sm:pb-6 dark:bg-gray-900 dark:ring-white/10"
+          class="welcome-panel relative max-h-full w-full max-w-md overflow-y-auto rounded-2xl bg-white pb-5 shadow-2xl ring-1 ring-gray-900/5 sm:pb-6 dark:bg-gray-900 dark:ring-white/10"
         >
           <!-- The window's colours, a thin band along the top. -->
           <div class="mark-band h-1 w-full" aria-hidden="true"></div>

@@ -175,9 +175,9 @@ const GROUPS = computed(() => [
       },
       {
         key: 'colours',
-        label: 'Colours',
+        label: 'Colours and type',
         icon: Palette,
-        status: 'The accent every church starts with',
+        status: 'The look every church starts with',
         component: PlatformColoursAdmin,
       },
     ],

@@ -2,7 +2,7 @@
 import { computed, markRaw, onMounted, onUnmounted, ref, watch } from 'vue'
 import { DeviceMobile, Home, Monitor, Pause, Play, ProjectorScreen } from '../../icons'
 import { appIcon } from './appIcons'
-import AppArt from './AppArt.vue'
+import AppArt from '../common/AppArt.vue'
 import mark from '../../assets/ekkly-mark.svg'
 import ScaledScreen from './ScaledScreen.vue'
 import { prefersStill } from './useSceneTimeline'
@@ -234,19 +234,8 @@ const tintStyle = computed(() =>
     @focusout="onFocusOut"
   >
     <div class="stage tint relative mx-auto mt-8 w-full" :class="{ tinted: tint, 'is-desktop': desktop }" :style="tintStyle">
-      <!-- Two still rings behind the device, for depth, at every width. On a
-           phone-width page they run past the edges of the screen, which the
-           page clips. -->
-      <div class="rings pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[max(100cqh,100cqw)] w-[max(100cqh,100cqw)]" aria-hidden="true">
-        <div class="ring-in absolute inset-0 rounded-full border border-dashed border-gray-300/70 dark:border-gray-700/70"></div>
-        <div class="ring-in absolute inset-10 rounded-full border border-gray-200/60 sm:inset-16 dark:border-gray-800/60" style="animation-delay: 150ms"></div>
-      </div>
-
       <!-- The device: a phone, or a monitor for the computer pass. -->
       <div :class="['device absolute left-1/2', desktop ? 'is-desktop' : 'is-phone']">
-        <!-- The accent's light, pooled under it. -->
-        <div class="pointer-events-none absolute -inset-8 -z-10 rounded-full bg-primary/25 blur-3xl" aria-hidden="true"></div>
-
         <!-- Its body. The scenes draw the screen. -->
         <div class="frame absolute inset-0 border-10 border-gray-900 bg-gray-50 shadow-2xl shadow-gray-900/25 dark:border-gray-700 dark:bg-gray-900 dark:shadow-black/50" aria-hidden="true"></div>
 
@@ -541,27 +530,6 @@ const tintStyle = computed(() =>
   }
 }
 
-/* The rings do not turn; they open out once behind the device. They are as
-   wide as the stage or as tall, whichever is more, so a monitor that fills a
-   phone-width page still has one around it, and they resize with the device. */
-.rings {
-  translate: -50% -50%;
-  transition:
-    width 0.55s cubic-bezier(0.65, 0, 0.35, 1),
-    height 0.55s cubic-bezier(0.65, 0, 0.35, 1);
-}
-
-.ring-in {
-  animation: ring-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-@keyframes ring-in {
-  from {
-    opacity: 0;
-    transform: scale(0.85);
-  }
-}
-
 .tab-highlight,
 .thumb {
   transition: translate 0.45s cubic-bezier(0.65, 0, 0.35, 1);
@@ -633,8 +601,7 @@ const tintStyle = computed(() =>
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .frame,
-  .ring-in {
+  .frame {
     animation: none;
   }
   .tint,

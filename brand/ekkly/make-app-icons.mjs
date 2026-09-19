@@ -64,6 +64,16 @@ const person = (cx, headY, headR, shoulderW, bottom, fill) => `
 const check = (x, y, s, stroke, width = 2.6, i = 0) =>
   `<path class="a-draw" style="--i:${i}" pathLength="1" d="M${x} ${y + s * 0.5} l${s * 0.35} ${s * 0.38} l${s * 0.65} -${s * 0.8}" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"/>`
 
+// A gear, as a circle with rounded teeth around it. Several shapes rather than
+// one path so the teeth keep the rounded ends every other icon's parts have;
+// a clipPath unions them, which is how the two-tone fill gets poured in.
+const gearShape = (teeth = 8) =>
+  `<circle cx="32" cy="32" r="20"/>` +
+  Array.from(
+    { length: teeth },
+    (_, i) => `<rect x="27.5" y="4" width="9" height="16" rx="4" transform="rotate(${(360 / teeth) * i} 32 32)"/>`
+  ).join('')
+
 // Every moving part carries an \`a-…\` class, which AppArt.vue animates: once as
 // an icon comes on, and again when it is pointed at or opened. Parts that
 // already sit under an SVG transform move inside a group of their own, so the
@@ -126,20 +136,27 @@ const ICONS = {
     </g>
   </g>`),
 
-  // A presentation board: its bars growing across.
+  // A roster: three people named against their turn, and the hour it is for.
+  //
+  // It used to be a board on a tripod, which was the only icon in this set not
+  // built on the split tile — and three spindly legs at sidebar size read as
+  // fraying rather than as furniture. A schedule is who is on and when, so it
+  // is faces beside names, with a clock for the when.
   lineups: svg(`
-  <path d="M32 44L20 61M32 44L44 61" stroke="url(#b)" stroke-width="3.8" stroke-linecap="round"/>
-  <path d="M32 44V61" stroke="url(#o)" stroke-width="3.8" stroke-linecap="round"/>
-  <rect x="29.5" y="3" width="5" height="7" rx="2" fill="${O3}"/>
-  <rect x="4" y="8" width="56" height="7" rx="3.5" fill="url(#o)"/>
-  <rect x="8" y="14" width="48" height="29" fill="#fff"/>
-  <rect x="4" y="42" width="56" height="5.5" rx="2.75" fill="url(#b)"/>
-  <rect class="a-cell" style="--i:0" x="13" y="19" width="6" height="5" rx="1.5" fill="url(#b)"/>
-  <rect class="a-cell" style="--i:1" x="13" y="26.5" width="6" height="5" rx="1.5" fill="url(#b)"/>
-  <rect class="a-cell" style="--i:2" x="13" y="34" width="6" height="5" rx="1.5" fill="url(#b)"/>
-  <rect class="a-line" style="--i:1" x="22" y="19" width="14" height="5" rx="2.5" fill="url(#o)"/>
-  <rect class="a-line" style="--i:2" x="26" y="26.5" width="22" height="5" rx="2.5" fill="url(#b)"/>
-  <rect class="a-line" style="--i:3" x="34" y="34" width="17" height="5" rx="2.5" fill="url(#t)"/>`),
+  ${splitTile(4, 7, 47, 50, 10, 'c')}
+  <rect x="9.5" y="13" width="36" height="38" rx="4.5" fill="#fff"/>
+  ${[0, 1, 2]
+    .map(
+      (i) => `
+  <circle class="a-cell" style="--i:${i}" cx="17.5" cy="${22 + i * 11}" r="4" fill="url(#${['o', 'b', 't'][i]})"/>
+  <rect class="a-line" style="--i:${i}" x="24.5" y="${19.4 + i * 11}" width="${17 - i * 3}" height="5.2" rx="2.6" fill="${LINE}"/>`
+    )
+    .join('')}
+  <g class="a-pop" style="--i:3">
+    <circle cx="48" cy="46" r="12.5" fill="#fff"/>
+    <circle cx="48" cy="46" r="10" fill="url(#o)"/>
+    <path d="M48 40.2V46.4l4.2 2.8" fill="none" stroke="#fff" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>`),
 
   // A Bible: the cross appearing, and the ribbon falling.
   bible: svg(`
@@ -272,6 +289,98 @@ const ICONS = {
     <circle class="a-dot" style="--i:1" cx="50" cy="13" r="1.9" fill="${NAVY}"/>
     <circle class="a-dot" style="--i:2" cx="55.5" cy="13" r="1.9" fill="${NAVY}"/>
   </g>`),
+  // The six below are pages rather than apps a church can buy, but they sit in
+  // the same sidebar as the fourteen above, so they are drawn from the same
+  // palette and with the same parts.
+
+  // The week at a glance: three figures land, then the line climbs through them.
+  dashboard: svg(`
+  ${splitTile(4, 6, 56, 52, 11, 'c')}
+  <rect x="9" y="11" width="46" height="42" rx="5" fill="#fff"/>
+  <rect class="a-cell" style="--i:0" x="13.5" y="15.5" width="12" height="9" rx="2.5" fill="url(#b)"/>
+  <rect class="a-cell" style="--i:1" x="26" y="15.5" width="12" height="9" rx="2.5" fill="url(#t)"/>
+  <rect class="a-cell" style="--i:2" x="38.5" y="15.5" width="12" height="9" rx="2.5" fill="url(#o)"/>
+  <path class="a-draw" style="--i:3" pathLength="1" d="M14 46l10-9 7 5 14-13" fill="none" stroke="url(#o)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="a-pop" style="--i:4" cx="45" cy="29" r="4" fill="${O3}" stroke="#fff" stroke-width="1.8"/>`),
+
+  // A screen pulled down for the service, the words arriving on it, the line
+  // being shown in the accent. It stands on one post where Schedules' board
+  // stands on splayed legs, so the two don't read as one thing.
+  presentation: svg(`
+  <rect x="29.5" y="1" width="5" height="6" rx="2.5" fill="${O3}"/>
+  ${splitTile(3, 5, 58, 41, 8, 'c')}
+  <rect x="8" y="10" width="48" height="31" rx="3" fill="#fff"/>
+  <rect class="a-line" style="--i:0" x="14" y="16" width="36" height="4.6" rx="2.3" fill="${LINE}"/>
+  <rect class="a-line" style="--i:1" x="18" y="26" width="28" height="4.6" rx="2.3" fill="url(#o)"/>
+  <rect x="29.5" y="45" width="5" height="11" rx="2.5" fill="url(#b)"/>
+  <rect x="19" y="55" width="26" height="5.5" rx="2.75" fill="${B3}"/>`),
+
+  // The backlog: notes landing on the pile, one job done and one still open.
+  todos: svg(`
+  <g class="a-drop" style="--i:0">
+    <rect x="7" y="16" width="38" height="38" rx="6" fill="url(#t)" transform="rotate(-11 26 35)"/>
+  </g>
+  <g class="a-drop" style="--i:1">
+    <rect x="21" y="11" width="38" height="38" rx="6" fill="url(#b)" transform="rotate(9 40 30)"/>
+  </g>
+  <g class="a-pop" style="--i:2">
+    <rect x="13" y="13" width="38" height="38" rx="6" fill="#fff" stroke="#C9D8EE" stroke-width="1.8"/>
+    ${check(17.5, 18, 8, O2, 3, 2)}
+    <rect class="a-line" style="--i:3" x="29" y="21.5" width="16" height="3.8" rx="1.9" fill="${LINE}"/>
+    <rect x="18" y="31" width="8.5" height="8.5" rx="2.5" fill="none" stroke="${LINE}" stroke-width="2.4"/>
+    <rect class="a-line" style="--i:4" x="31" y="33.5" width="13" height="3.8" rx="1.9" fill="${LINE}"/>
+  </g>`),
+
+  // A card with someone on it and the key that lets them in.
+  accounts: svg(`
+  ${splitTile(3, 9, 58, 46, 10, 'c')}
+  <rect x="8" y="14" width="48" height="36" rx="5" fill="#fff"/>
+  ${person(21, 26, 6.5, 20, 44, 'url(#b)')}
+  <rect class="a-line" style="--i:0" x="35" y="22" width="16" height="4.2" rx="2.1" fill="${LINE}"/>
+  <rect class="a-line" style="--i:1" x="35" y="31" width="12" height="4.2" rx="2.1" fill="${LINE}"/>
+  <g class="a-pop" style="--i:2">
+    <g transform="rotate(-40 44 46)">
+      <g stroke="#fff" stroke-width="2.8" paint-order="stroke">
+        <rect x="44" y="43.2" width="19" height="5.6" rx="2.8" fill="url(#o)"/>
+        <rect x="56.5" y="46" width="3.8" height="7" rx="1.9" fill="url(#o)"/>
+        <circle cx="44" cy="46" r="9.5" fill="url(#o)"/>
+      </g>
+      <circle cx="44" cy="46" r="3.8" fill="#fff"/>
+    </g>
+  </g>`),
+
+  // The record, read back: the lines written, then the glass held over them,
+  // the two inside it the same lines seen larger.
+  audit: svg(`
+  ${splitTile(4, 4, 44, 50, 9, 'c')}
+  <rect x="9" y="9" width="34" height="40" rx="4" fill="#fff"/>
+  <rect class="a-line" style="--i:0" x="14" y="15" width="24" height="3.8" rx="1.9" fill="${LINE}"/>
+  <rect class="a-line" style="--i:1" x="14" y="23.5" width="18" height="3.8" rx="1.9" fill="${LINE}"/>
+  <rect class="a-line" style="--i:2" x="14" y="32" width="22" height="3.8" rx="1.9" fill="${LINE}"/>
+  <g class="a-pop" style="--i:3">
+    <path d="M50.5 48.5L60 58" stroke="url(#o)" stroke-width="6.5" stroke-linecap="round"/>
+    <circle cx="42" cy="40" r="13" fill="#fff" fill-opacity=".92" stroke="url(#o)" stroke-width="5"/>
+    <path d="M36 36.5h12M36 43.5h8" stroke="url(#b)" stroke-width="3" stroke-linecap="round"/>
+  </g>`),
+
+  // A gear, in the same two tones as everything else.
+  // A gear, turning to a stop. The turn is on a group wrapping the clipped
+  // fills rather than on the fills themselves: a transform inside the clip
+  // would swirl the colours behind a gear that never moved.
+  settings: svg(`
+  <clipPath id="g">${gearShape()}</clipPath>
+  <g class="a-spin">
+    <g clip-path="url(#g)">
+      <rect x="0" y="0" width="64" height="64" fill="url(#b)"/>
+      <path d="M14 2H62V52Z" fill="url(#o)"/>
+      <rect x="0" y="0" width="64" height="64" fill="url(#shine)"/>
+    </g>
+  </g>
+  <g class="a-pop">
+    <circle cx="32" cy="32" r="9" fill="#fff"/>
+    <circle cx="32" cy="32" r="4.4" fill="url(#o)"/>
+  </g>`),
+
 }
 
 for (const [key, text] of Object.entries(ICONS)) writeFileSync(join(outDir, `${key}.svg`), text)

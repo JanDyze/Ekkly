@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { Plus, SquaresFour } from '../../../icons'
-import AppArt from '../AppArt.vue'
+import AppArt from '../../common/AppArt.vue'
 import AppWindow from '../AppWindow.vue'
 import ScaledScreen from '../ScaledScreen.vue'
 import FloatNote from '../FloatNote.vue'

@@ -153,6 +153,19 @@ watch(
   animation: art-pop 0.45s var(--art-spring) 0.35s both;
 }
 
+/* A gear, turning to a stop. Half a turn rather than a full one: a whole
+   revolution on an eight-toothed gear ends exactly where it started, which
+   reads as a glitch rather than as a turn. */
+.app-art.playing .a-spin {
+  animation: art-spin 0.8s var(--art-ease) both;
+}
+
+@keyframes art-spin {
+  from {
+    rotate: -180deg;
+  }
+}
+
 /* A star, turning as it lands. */
 .app-art.playing .a-star {
   animation: art-star 0.6s var(--art-spring) 0.1s both;

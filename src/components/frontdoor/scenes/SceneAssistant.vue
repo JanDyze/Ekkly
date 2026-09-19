@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { Cake, CheckCircle, PaperPlaneRight, PlugsConnected, ShieldCheck, Sparkle } from '../../../icons'
+import { Cake, ChatCircleText, CheckCircle, PaperPlaneRight, PlugsConnected, ShieldCheck } from '../../../icons'
 import FloatNote from '../FloatNote.vue'
 import ScaledScreen from '../ScaledScreen.vue'
 import { useSceneTimeline } from '../useSceneTimeline'
@@ -44,8 +44,8 @@ at(5000, () => (step.value = 7))
     <ScaledScreen v-if="!props.desktop" :width="272" :height="544" round="rounded-[2.1rem]" ground="">
       <div class="flex h-full flex-col pt-10">
         <div class="fd-rise flex items-center gap-2.5 border-b border-gray-200 px-4 pb-3 dark:border-gray-800">
-          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-primary to-primary-hover text-white shadow-sm shadow-primary/30">
-            <Sparkle class="h-4 w-4" />
+          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white">
+            <ChatCircleText class="h-4 w-4" />
           </span>
           <div class="min-w-0">
             <p class="text-sm font-bold text-gray-900 dark:text-white">EKRIS</p>
@@ -96,8 +96,8 @@ at(5000, () => (step.value = 7))
     <ScaledScreen v-else>
       <div class="flex h-full flex-col">
         <div class="flex h-10 shrink-0 items-center gap-2 border-b border-gray-100 px-3 dark:border-gray-800">
-          <span class="flex h-7 w-7 items-center justify-center rounded-full bg-linear-to-br from-primary to-primary-hover text-white shadow-sm shadow-primary/30">
-            <Sparkle class="h-3.5 w-3.5" />
+          <span class="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white">
+            <ChatCircleText class="h-3.5 w-3.5" />
           </span>
           <span class="text-[13px] font-bold text-gray-900 dark:text-white">EKRIS</span>
           <span class="text-[10px] text-gray-400">{{ churchName }}</span>

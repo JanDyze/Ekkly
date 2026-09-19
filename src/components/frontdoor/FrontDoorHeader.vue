@@ -51,7 +51,7 @@ const current = 'text-gray-900 dark:text-white'
 </script>
 
 <template>
-  <header class="sticky top-0 z-40 border-b border-gray-200/70 bg-white/80 backdrop-blur-lg dark:border-gray-800 dark:bg-gray-950/80">
+  <header class="sticky top-0 z-40 border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
     <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
       <a href="/" class="min-w-0" @click.prevent="home">
         <PlatformLogo mark-class="h-8 w-8" text-class="text-2xl" />
@@ -93,7 +93,7 @@ const current = 'text-gray-900 dark:text-white'
         <RouterLink
           v-if="route.path !== '/start'"
           to="/start"
-          class="inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm shadow-primary/30 transition-colors hover:bg-primary-hover"
+          class="inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
           @click="signal('start')"
         >
           <template v-if="onPricing && plan.total">

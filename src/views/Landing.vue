@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import {
   ArrowDown,
   ArrowRight,
@@ -17,10 +17,13 @@ import {
   Sun,
 } from '../icons'
 import { getMemberByUid } from '../api/membersService'
+import { isAdminUid } from '../api/adminsService'
 import { getDisplayName } from '../utils/memberUtils'
 import { usePublicSite, initPublicSite } from '../composables/usePublicSite'
 import { useAuth } from '../composables/useAuth'
 import { usePermissions } from '../composables/usePermissions'
+import { appSettingsReady, useAppSettings } from '../composables/useAppSettings'
+import { initChurchAccess } from '../composables/useChurchAccess'
 import { useTheme } from '../composables/useTheme'
 import StageIcon from '../components/landing/StageIcon.vue'
 import artPunla from '../assets/stage-punla.webp'
@@ -31,10 +34,12 @@ import BirthdayConfetti from '../components/landing/BirthdayConfetti.vue'
 import BrandReveal from '../components/common/BrandReveal.vue'
 import bundledHero from '../assets/hero-cover.webp'
 
-// The public face of the app, in Filipino — the congregation this is for reads
-// Tagalog, and a visitor's first screen is the wrong place to make them read a
-// second language. The service times, the address and the calendar are still
-// whatever an admin typed, so those come through in their own words.
+// The public face of the app, in English. It was Filipino while the app served
+// one Manila-province congregation; sold to churches anywhere, a page that
+// ships in a language the church may not use is a page it has to translate
+// before it can be shown to anybody. The headings here are ours; everything
+// that speaks for the church comes from its own settings, so a Tagalog
+// congregation writes Tagalog and the page reads Tagalog.
 //
 // Everything a congregation must supply itself is typed under
 // Settings > Public page or comes from the church's own calendar and gallery,
@@ -43,10 +48,41 @@ import bundledHero from '../assets/hero-cover.webp'
 // None of it can be read from Firestore by a visitor: the rules refuse
 // anonymous reads, so the data arrives from /api/public. See usePublicSite.
 initPublicSite()
-const { church, landing, logoUrl, enabled, gatherings, photos } = usePublicSite()
+const { church, landing, logoUrl, gatherings, photos, ready } = usePublicSite()
 const { isDark, toggleTheme } = useTheme()
 const { isAuthenticated, displayName, user } = useAuth()
 const { isAdmin } = usePermissions()
+const { setupPending } = useAppSettings()
+const router = useRouter()
+
+/* ------------------------------------------------- a church nobody set up */
+
+// The link a new church is handed is this page, so this is where its
+// administrator arrives — and until they have been through the setup guide
+// once, this page is the built-in starting words rather than their church.
+// They are moved on to the guide instead.
+//
+// Done here rather than in the router guard because "/" resolves for anyone,
+// signed in or not, and making every visitor wait on listeners that only an
+// administrator's answer depends on would cost the public page its speed for
+// nothing. The page draws first; the redirect happens when the answer lands,
+// which is the same shape the old public-page switch used.
+//
+// isAdminUid rather than usePermissions for the same reason: one document
+// read, not a subscription to the whole roll.
+watch(
+  () => user.value?.uid,
+  async (uid) => {
+    if (!uid) return
+    // Access is what lets the settings be read at all, and it starts the
+    // listener this waits on.
+    if ((await initChurchAccess(user.value)) !== 'granted') return
+    await appSettingsReady()
+    if (!setupPending.value) return
+    if (await isAdminUid(uid)) router.replace('/setup')
+  },
+  { immediate: true }
+)
 
 /* --------------------------------------------------------- the greeting */
 
@@ -82,9 +118,9 @@ watch(
 const term = computed(() => terms.value[termIndex.value] || '')
 
 // A signed-in member gets their own name in the slot instead of a term off the
-// list. Not only because it is warmer: ate/kuya, nanay/tatay and lola/lolo are
-// gendered, and picking one at random for somebody the app can actually name
-// would get it wrong half the time. The roll is for strangers precisely
+// list. Not only because it is warmer: brother/sister — and ate/kuya for a
+// church that has typed those in — are gendered, and picking one at random for
+// somebody the app can actually name would get it wrong half the time. The roll is for strangers precisely
 // because nobody is being addressed yet.
 // What the church actually calls them: the nickname on their member record
 // when it carries one, otherwise their first name. Same rule as the lineups
@@ -273,19 +309,6 @@ const warmAppRoute = () => {
   }
 }
 
-// The router lets "/" through while the settings are still in flight, so the
-// decision is finished here: an install that has switched the public page off
-// sends its visitors to sign-in as soon as that setting lands.
-const route = useRoute()
-const router = useRouter()
-watch(
-  enabled,
-  (value) => {
-    if (value === false && route.query.preview === undefined) router.replace(appLink.value)
-  },
-  { immediate: true }
-)
-
 /* ------------------------------------------------------------------ hero */
 
 // One photograph, bundled with the app, drawn as an arch — a window rather
@@ -309,10 +332,18 @@ const services = computed(() => (landing.value.services || []).filter((s) => s.n
 
 // A stage with no name renders nothing, so it is dropped rather than drawn as
 // an empty step. Same rule the service rows follow.
+// Nothing until the church's own settings have landed: Know, Grow and Serve
+// are a starting value, and a congregation that teaches something else should
+// never see that something else on its own page, even for a moment. The stage
+// walk already waits on the count, so it starts itself when they arrive.
 const path = computed(() =>
-  (landing.value.path || []).filter((step) => step.stage?.trim())
+  ready.value ? (landing.value.path || []).filter((step) => step.stage?.trim()) : []
 )
-const hasPurpose = computed(() => Boolean(landing.value.vision || landing.value.mission))
+// Same reason: both lines have a starting value, so the section stays away
+// until the church's own answer is in.
+const hasPurpose = computed(
+  () => ready.value && Boolean(landing.value.vision || landing.value.mission)
+)
 
 /* --------------------------------------------------- the discipleship stages
 
@@ -376,7 +407,7 @@ const hasVisit = computed(() => Boolean(landing.value.address) || hasContact.val
 const visitAnchor = computed(() => (services.value.length ? 'gather' : 'visit'))
 
 // The address doubles as a map search when no explicit link is set, so filling
-// in one field is enough to get a working "Kunin ang direksyon".
+// in one field is enough to get a working "Get directions".
 const mapHref = computed(() => {
   if (landing.value.mapUrl) return landing.value.mapUrl
   if (!landing.value.address) return ''
@@ -617,10 +648,16 @@ const sectionNumbers = computed(() => {
 // Only an administrator ever sees this, and only while the page really is a
 // shell: the settings exist, they just have not been filled in, and there is
 // nowhere else this would be noticed until a visitor arrives. It stays in
-// English — it is a note about the Settings screen, not part of the page.
+// English — it is a note about the setup guide, not part of the page.
+//
+// Not the same thing as the redirect above. That fires once, for a church
+// nobody has ever set up; this is the standing reminder for a page that was
+// skipped through, or one an administrator emptied out later.
 const needsSetup = computed(
   () =>
     isAdmin.value &&
+    // A page still loading looks exactly like a page nobody filled in.
+    ready.value &&
     !landing.value.about &&
     !landing.value.address &&
     !services.value.length
@@ -640,17 +677,27 @@ const year = new Date().getFullYear()
          below it simply reads as a masthead. -->
     <header class="fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[#062832]">
       <div class="mx-auto flex h-16 max-w-5xl items-center gap-3 px-4 sm:px-6">
-        <img :src="logoUrl" :alt="church.shortName" class="h-10 w-auto shrink-0" />
+        <!-- Placeholders until the church's own name and mark arrive, rather
+             than Ekkly's mark and the word "Church" - see ready in
+             usePublicSite. They are white at low opacity rather than
+             DESIGN.md's grey: the masthead and the hero are ink in both
+             themes, and a grey block there reads as a missing image rather
+             than as something still loading. -->
+        <img v-if="ready" :src="logoUrl" :alt="church.shortName" class="h-10 w-auto shrink-0" />
+        <div v-else class="h-10 w-10 shrink-0 animate-pulse rounded-full bg-white/15"></div>
         <div class="min-w-0 flex-1">
-          <p class="truncate font-serif text-lg font-semibold leading-tight text-white">
-            {{ church.shortName }}
-          </p>
-          <p
-            v-if="church.branch"
-            class="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-primary-light"
-          >
-            {{ church.branch }}
-          </p>
+          <template v-if="ready">
+            <p class="truncate font-serif text-lg font-semibold leading-tight text-white">
+              {{ church.shortName }}
+            </p>
+            <p
+              v-if="church.branch"
+              class="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-primary-light"
+            >
+              {{ church.branch }}
+            </p>
+          </template>
+          <div v-else class="h-4 w-40 max-w-full animate-pulse rounded bg-white/15"></div>
         </div>
 
         <button
@@ -669,7 +716,7 @@ const year = new Date().getFullYear()
           <Loader2 v-if="navigating" class="h-4 w-4 animate-spin" />
           <ArrowRight v-else-if="isAuthenticated" class="h-4 w-4" />
           <LogIn v-else class="h-4 w-4" />
-          <span>{{ navigating ? 'Sandali…' : isAuthenticated ? 'Open app' : 'Log in' }}</span>
+          <span>{{ navigating ? 'One moment…' : isAuthenticated ? 'Open app' : 'Log in' }}</span>
         </button>
       </div>
     </header>
@@ -696,23 +743,41 @@ const year = new Date().getFullYear()
           <h1
             class="max-w-xl font-serif text-[2.5rem] font-semibold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-[3.5rem]"
           >
-            <span class="block h-[1.25em]">
-              <Transition name="roll" mode="out-in">
-                <span :key="greeting || term" class="inline-block text-primary-light">
-                  {{ greeting || term }},
-                </span>
-              </Transition>
-            </span>
-            <span class="block">
-              {{ welcomeLine }}
-            </span>
+            <template v-if="ready">
+              <span class="block h-[1.25em]">
+                <Transition name="roll" mode="out-in">
+                  <span :key="greeting || term" class="inline-block text-primary-light">
+                    {{ greeting || term }},
+                  </span>
+                </Transition>
+              </span>
+              <span class="block">
+                {{ welcomeLine }}
+              </span>
+            </template>
+            <!-- The greeting is the church's too: which names it calls a
+                 stranger by, and the line that follows one, are both settings.
+                 Two bars in the shape of the two lines, so nothing moves when
+                 the words replace them. -->
+            <template v-else>
+              <span class="block h-[1.25em]">
+                <span class="block h-[0.6em] w-64 max-w-full animate-pulse rounded bg-white/15"></span>
+              </span>
+              <span class="block h-[1.05em]">
+                <span class="block h-[0.6em] w-80 max-w-full animate-pulse rounded bg-white/15"></span>
+              </span>
+            </template>
           </h1>
           <p
-            v-if="landing.intro"
+            v-if="ready && landing.intro"
             class="mt-6 max-w-lg text-base leading-relaxed text-white/70 sm:text-lg"
           >
             {{ landing.intro }}
           </p>
+          <div v-else-if="!ready" class="mt-6 max-w-lg space-y-3">
+            <div class="h-4 w-full animate-pulse rounded bg-white/10"></div>
+            <div class="h-4 w-3/4 animate-pulse rounded bg-white/10"></div>
+          </div>
 
           <!-- What is coming up used to sit here, in the middle of the one
                paragraph a stranger is trying to read. It lives in the corner
@@ -740,12 +805,19 @@ const year = new Date().getFullYear()
               class="pointer-events-none absolute -inset-3 rounded-t-full border border-primary-light/25"
             ></div>
             <img
+              v-if="ready"
               :src="heroImage"
               :alt="church.shortName"
               fetchpriority="high"
               decoding="async"
               class="relative aspect-2/3 w-full rounded-t-full object-cover"
             />
+            <!-- The arch holds its shape while it waits, so the hero never
+                 reflows around the picture landing in it. -->
+            <div
+              v-else
+              class="relative aspect-2/3 w-full animate-pulse rounded-t-full bg-white/10"
+            ></div>
           </div>
         </div>
       </div>
@@ -753,8 +825,11 @@ const year = new Date().getFullYear()
 
     <!-- The verse the church gathers on. One band of brand colour, one
          sentence, nothing to click. -->
+    <!-- No placeholder band: a church may have chosen no verse at all, and a
+         stripe that appears only to disappear again is worse than one that
+         arrives a moment late. -->
     <section
-      v-if="landing.verse"
+      v-if="ready && landing.verse"
       class="bg-primary px-4 py-10 sm:px-6 sm:py-12 dark:bg-primary/15"
     >
       <blockquote class="mx-auto max-w-3xl text-center">
@@ -779,14 +854,13 @@ const year = new Date().getFullYear()
       <div class="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3 sm:px-6">
         <SettingsIcon class="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
         <p class="min-w-0 flex-1 text-xs text-amber-800 dark:text-amber-200">
-          This is what visitors see. Add your service times, a few words about the church
-          and where to find you.
+          This is what visitors see. Add your service times and where to find you.
         </p>
         <router-link
-          to="/settings"
+          to="/setup"
           class="shrink-0 text-xs font-bold text-amber-700 underline underline-offset-2 dark:text-amber-300"
         >
-          Settings
+          Set up
         </router-link>
       </div>
     </div>
@@ -911,19 +985,18 @@ const year = new Date().getFullYear()
                framework *is*, the way the stage names are. -->
           <blockquote class="mt-10 border-t border-white/10 pt-6">
             <p class="max-w-2xl font-serif text-sm italic leading-relaxed text-white/55 sm:text-base">
-              &ldquo;Ang mabuting lupang hinasikan ng punla ay ang taong nakikinig sa Salita ng
-              Dios, at iniingatan ito sa kanilang puso at pinagsisikapang sundin hanggang sila
-              ay mamunga.&rdquo;
+              &ldquo;The seed on good soil stands for those with a noble and good heart, who
+              hear the word, retain it, and by persevering produce a crop.&rdquo;
             </p>
             <footer class="mt-2 text-[10px] font-bold uppercase tracking-[0.28em] text-primary-light">
-              Lucas 8:15
+              Luke 8:15
             </footer>
           </blockquote>
         </div>
       </div>
     </section>
 
-    <!-- Kailan kami nagtitipon. Set like an order of service rather than as
+    <!-- When we gather. Set like an order of service rather than as
          cards: name, leader dots, time. -->
     <section
       v-if="services.length"
@@ -936,7 +1009,7 @@ const year = new Date().getFullYear()
             {{ sectionNumbers.gather }}
           </span>
           <h2 class="min-w-0 font-serif text-xl font-semibold tracking-tight sm:text-2xl">
-            Kailan kami nagtitipon
+            When we gather
           </h2>
           <span class="hidden h-px min-w-8 flex-1 bg-stone-300 sm:block dark:bg-gray-800"></span>
         </div>
@@ -975,7 +1048,7 @@ const year = new Date().getFullYear()
       </div>
     </section>
 
-    <!-- Sino kami -->
+    <!-- Who we are -->
     <section
       v-if="landing.about"
       class="border-y border-stone-200 bg-white dark:border-gray-800 dark:bg-gray-800/30"
@@ -986,7 +1059,7 @@ const year = new Date().getFullYear()
             {{ sectionNumbers.about }}
           </span>
           <h2 class="min-w-0 font-serif text-xl font-semibold tracking-tight sm:text-2xl">
-            {{ landing.aboutTitle || 'Sino kami' }}
+            {{ landing.aboutTitle || 'Who we are' }}
           </h2>
           <span class="hidden h-px min-w-8 flex-1 bg-stone-300 sm:block dark:bg-gray-800"></span>
         </div>
@@ -998,7 +1071,7 @@ const year = new Date().getFullYear()
       </div>
     </section>
 
-    <!-- Buhay sa simbahan, sa mga larawang ibinahagi ng admin album by album.
+    <!-- Life together, from the albums an admin has shared.
          Every one of these is lazy and below the fold: nothing here is in the
          way of the hero. -->
     <section v-if="gallery.length" class="py-14 sm:py-20">
@@ -1008,7 +1081,7 @@ const year = new Date().getFullYear()
             {{ sectionNumbers.life }}
           </span>
           <h2 class="min-w-0 font-serif text-xl font-semibold tracking-tight sm:text-2xl">
-            Buhay sa simbahan
+            Life together
           </h2>
           <span class="hidden h-px min-w-8 flex-1 bg-stone-300 sm:block dark:bg-gray-800"></span>
         </div>
@@ -1080,7 +1153,7 @@ const year = new Date().getFullYear()
             <button
               type="button"
               class="grid h-9 w-9 place-items-center rounded-full border border-stone-300 text-stone-600 transition hover:border-primary hover:text-primary dark:border-gray-700 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-primary-light"
-              aria-label="Nakaraang larawan"
+              aria-label="Previous photo"
               @click="deckBack"
             >
               <ChevronLeft class="h-4 w-4" />
@@ -1102,7 +1175,7 @@ const year = new Date().getFullYear()
             <button
               type="button"
               class="grid h-9 w-9 place-items-center rounded-full border border-stone-300 text-stone-600 transition hover:border-primary hover:text-primary dark:border-gray-700 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-primary-light"
-              aria-label="Susunod na larawan"
+              aria-label="Next photo"
               @click="deckNext"
             >
               <ChevronRight class="h-4 w-4" />
@@ -1110,7 +1183,7 @@ const year = new Date().getFullYear()
           </div>
 
           <p v-if="gallery.length > 1" class="mt-3 text-xs text-stone-400 dark:text-gray-500">
-            I-swipe ang larawan
+            Swipe the photos
           </p>
         </div>
       </div>
@@ -1161,7 +1234,7 @@ const year = new Date().getFullYear()
       </div>
     </section>
 
-    <!-- Saan kami matatagpuan -->
+    <!-- Where to find us -->
     <section
       v-if="hasVisit"
       id="visit"
@@ -1172,7 +1245,7 @@ const year = new Date().getFullYear()
           {{ sectionNumbers.visit }}
         </span>
         <h2 class="min-w-0 font-serif text-xl font-semibold tracking-tight sm:text-2xl">
-          Saan kami matatagpuan
+          Where to find us
         </h2>
         <span class="hidden h-px min-w-8 flex-1 bg-stone-300 sm:block dark:bg-gray-800"></span>
       </div>
@@ -1194,7 +1267,7 @@ const year = new Date().getFullYear()
                 rel="noopener noreferrer"
                 class="mt-2 inline-flex items-center gap-1 text-sm font-bold text-primary dark:text-primary-light"
               >
-                Kunin ang direksyon
+                Get directions
                 <ArrowRight class="h-4 w-4" />
               </a>
             </div>
@@ -1227,7 +1300,7 @@ const year = new Date().getFullYear()
           class="flex items-center gap-3 bg-[#faf8f4] p-5 transition-colors hover:bg-white dark:bg-gray-900 dark:hover:bg-gray-800/60 sm:p-6"
         >
           <Facebook class="h-5 w-5 shrink-0 text-primary dark:text-primary-light" />
-          <span class="min-w-0 truncate text-sm font-semibold">Sundan kami sa Facebook</span>
+          <span class="min-w-0 truncate text-sm font-semibold">Follow us on Facebook</span>
         </a>
       </div>
     </section>
@@ -1263,7 +1336,7 @@ const year = new Date().getFullYear()
               class="inline-flex h-12 items-center gap-2 bg-primary-light px-5 text-sm font-bold text-[#062832] transition-transform active:scale-95"
             >
               <MapPin class="h-4 w-4" />
-              Kunin ang direksyon
+              Get directions
             </a>
             <a
               v-if="landing.email"
@@ -1271,7 +1344,7 @@ const year = new Date().getFullYear()
               class="inline-flex h-12 items-center gap-2 border border-white/30 px-5 text-sm font-bold text-white transition-colors hover:bg-white/10"
             >
               <Mail class="h-4 w-4" />
-              Magpadala ng mensahe
+              Send a message
             </a>
           </div>
         </div>
@@ -1295,15 +1368,17 @@ const year = new Date().getFullYear()
       <div
         class="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6"
       >
-        <div class="min-w-0">
-          <p class="font-serif text-base font-semibold">{{ church.fullName }}</p>
-          <p v-if="church.branch" class="text-xs text-stone-500 dark:text-gray-400">
-            {{ church.branch }}
+        <template v-if="ready">
+          <div class="min-w-0">
+            <p class="font-serif text-base font-semibold">{{ church.fullName }}</p>
+            <p v-if="church.branch" class="text-xs text-stone-500 dark:text-gray-400">
+              {{ church.branch }}
+            </p>
+          </div>
+          <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400">
+            &copy; {{ year }} {{ church.shortName }}
           </p>
-        </div>
-        <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400">
-          &copy; {{ year }} {{ church.shortName }}
-        </p>
+        </template>
       </div>
     </footer>
   </div>

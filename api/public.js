@@ -79,11 +79,8 @@ const MAX_BIRTHDAYS = 6;
  */
 const CACHE_PAYLOAD = "no-store";
 
-/** Nothing to publish, and no reason to remember that either. */
-const CACHE_OFF = "no-store";
-
 // How many photos the page may draw on. The hero is one static bundled photo
-// now, so this feeds the "Buhay sa simbahan" strip alone, which draws six. The
+// now, so this feeds the "Life together" strip alone, which draws six. The
 // pool stays deliberately wider than that: this response is edge-cached, and
 // the shuffle below picking six out of twelve is what makes the strip look
 // different from one cache window to the next. Only ids and captions travel,
@@ -257,7 +254,7 @@ const publicBirthdays = (members, today, until) => {
 
       return {
         id: `birthday-${member.id}`,
-        title: `Kaarawan ni ${name}`,
+        title: `${name}’s birthday`,
         type: "birthday",
         date,
         time: "",
@@ -419,13 +416,6 @@ export default async function handler(req, res) {
     const settings = await firestore.collection("appSettings").doc("church").get();
     const data = settings.exists ? settings.data() || {} : {};
     const landing = data.landing || {};
-
-    // Off means off: an install using this only as an internal tool answers
-    // with nothing to publish rather than with its address and phone number.
-    if (landing.enabled === false) {
-      res.setHeader("Cache-Control", CACHE_OFF);
-      return res.status(200).json({ enabled: false });
-    }
 
     const stamp = data.updatedAt?.toMillis?.() || 0;
     const today = zonedDateString(new Date(), timeZone);

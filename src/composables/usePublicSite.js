@@ -67,21 +67,21 @@ export function usePublicSite() {
     return isDark.value ? dark : light
   })
 
-  /**
-   * Whether the public page is switched on. `null` while that is still
-   * unknown — the router lets "/" through on a cold load rather than making
-   * every visitor wait, and the page finishes the decision once an answer
-   * arrives.
-   */
-  const enabled = computed(() => {
-    if (isConfigured.value) return storedLanding.value.enabled !== false
-    if (site.value) return site.value.enabled !== false
-    if (failed.value) return true
-    return null
-  })
+  // Whether what is on screen is the church's own words yet.
+  //
+  // Until the first answer lands, the two computeds above are the built-in
+  // starting values — "Church", an intro nobody wrote, a verse nobody chose —
+  // and a church's front door must never publish those, however briefly. The
+  // page draws placeholders for anything it does not know yet and fills them
+  // in when this turns true.
+  //
+  // A failed fetch counts as ready: the defaults are then the only thing left
+  // to draw, and holding placeholders open for a page that will never load is
+  // worse than showing them.
+  const ready = computed(() => isConfigured.value || !loading.value)
 
   const gatherings = computed(() => site.value?.gatherings || [])
   const photos = computed(() => site.value?.photos || [])
 
-  return { church, landing, logoUrl, enabled, gatherings, photos, loading, failed }
+  return { church, landing, logoUrl, gatherings, photos, ready, loading, failed }
 }

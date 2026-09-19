@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { AlertTriangle, Copy, Loader2, Sparkles, Trash2 } from '../../icons'
 import { useToast } from '../../composables/useToast'
 import { copyText } from '../../utils/clipboard'
@@ -7,30 +7,42 @@ import { timeAgo } from '../../utils/timeUtils'
 import {
   getConnectorStatus,
   issueConnectorToken,
+  revokeConnectorLink,
   revokeConnectorToken,
 } from '../../api/mcpTokenService'
 
-// This church's Claude connector: the link that lets Claude answer questions
-// about the church's records in a conversation (see MCP.md).
+// The Claude connector: a link that lets Claude answer questions about this
+// church's records in a conversation (see MCP.md).
 //
-// Each church has its own link, and the link opens that church and no other.
+// A link belongs to the account that made it, not to the church, so everyone
+// who needs one makes their own and nobody's link switches off anybody else's.
+// It opens this church and no other, and it can only reach what its owner can
+// reach in the app — so a link is never a way round the permissions.
+//
 // It is shown once, when it is made — only a fingerprint of it is kept — so
 // making a new one is also how an old one that went astray is switched off.
 
 const toast = useToast()
 
 const loading = ref(true)
-const status = ref({ exists: false })
+const status = ref({ isAdmin: false, mine: null, links: [] })
 const failed = ref('')
-const busy = ref(false)
+const busy = ref('')
 const allowWrites = ref(false)
 const issued = ref(null) // { url } — only for as long as this page is open
+
+// Everybody else's, for an administrator: a link left behind by somebody who
+// has moved on is the one worth being able to see and switch off.
+const others = computed(() => (status.value.links || []).filter((link) => link.id !== status.value.mine?.id))
+
+const owner = (link) => link.displayName || link.email || (link.uid ? 'Someone who has left' : 'An older church-wide link')
 
 const load = async () => {
   loading.value = true
   failed.value = ''
   try {
     status.value = await getConnectorStatus()
+    allowWrites.value = status.value.mine?.allowWrites === true
   } catch (error) {
     failed.value = error.message
   } finally {
@@ -41,8 +53,8 @@ const load = async () => {
 onMounted(load)
 
 const issue = async () => {
-  if (status.value.exists && !window.confirm('Make a new link? The current one stops working straight away.')) return
-  busy.value = true
+  if (status.value.mine && !window.confirm('Make a new link? Your current one stops working straight away.')) return
+  busy.value = 'mine'
   try {
     const { url } = await issueConnectorToken(allowWrites.value)
     issued.value = { url }
@@ -50,22 +62,36 @@ const issue = async () => {
   } catch (error) {
     toast.error(error.message)
   } finally {
-    busy.value = false
+    busy.value = ''
   }
 }
 
 const revoke = async () => {
-  if (!window.confirm('Switch the connector off? Any conversation using the link loses access.')) return
-  busy.value = true
+  if (!window.confirm('Switch your link off? Any conversation using it loses access.')) return
+  busy.value = 'mine'
   try {
     await revokeConnectorToken()
     issued.value = null
     await load()
-    toast.success('Connector switched off')
+    toast.success('Your link is off')
   } catch (error) {
     toast.error(error.message)
   } finally {
-    busy.value = false
+    busy.value = ''
+  }
+}
+
+const revokeOther = async (link) => {
+  if (!window.confirm(`Switch off ${owner(link)}’s link? Any conversation using it loses access.`)) return
+  busy.value = link.id
+  try {
+    await revokeConnectorLink(link.id)
+    await load()
+    toast.success('Link switched off')
+  } catch (error) {
+    toast.error(error.message)
+  } finally {
+    busy.value = ''
   }
 }
 
@@ -109,8 +135,8 @@ const copy = async () => {
           Copy it now — it is not shown again
         </p>
         <p class="mt-1 text-xs text-amber-800/80 dark:text-amber-300/80">
-          Anyone holding this link can read every record the church keeps. Treat it like a
-          password.
+          Anyone holding this link can read everything you can read in the app. Treat it like
+          a password.
         </p>
         <div class="mt-2 flex items-center gap-2">
           <input
@@ -129,14 +155,14 @@ const copy = async () => {
         </div>
       </div>
 
-      <p v-if="status.exists" class="text-sm text-gray-700 dark:text-gray-300">
-        The connector is <span class="font-semibold text-emerald-600 dark:text-emerald-400">on</span>,
-        {{ status.allowWrites ? 'and can add and change records' : 'read-only' }}.
-        <span v-if="status.createdAt" class="text-gray-500 dark:text-gray-400">
-          Made {{ timeAgo(new Date(status.createdAt)) }}<template v-if="status.createdByEmail"> by {{ status.createdByEmail }}</template>.
+      <p v-if="status.mine" class="text-sm text-gray-700 dark:text-gray-300">
+        Your link is <span class="font-semibold text-emerald-600 dark:text-emerald-400">on</span>,
+        {{ status.mine.allowWrites ? 'and can add and change records' : 'read-only' }}.
+        <span v-if="status.mine.createdAt" class="text-gray-500 dark:text-gray-400">
+          Made {{ timeAgo(new Date(status.mine.createdAt)) }}.
         </span>
       </p>
-      <p v-else class="text-sm text-gray-500 dark:text-gray-400">The connector is off.</p>
+      <p v-else class="text-sm text-gray-500 dark:text-gray-400">You have no link yet.</p>
 
       <label class="flex items-start gap-3">
         <input
@@ -147,24 +173,24 @@ const copy = async () => {
         <span class="text-sm text-gray-700 dark:text-gray-300">
           Let Claude add and change records
           <span class="block text-xs text-gray-500 dark:text-gray-400">
-            Adding people, events, tasks, songs, prayer concerns and ledger entries. Nothing
-            is ever deleted. Leave off for read-only.
+            Adding people, events, tasks, songs, prayer concerns and ledger entries — and only
+            the ones you can add yourself. Nothing is ever deleted. Leave off for read-only.
           </span>
         </span>
       </label>
 
       <div class="flex gap-2">
         <button
-          :disabled="busy"
+          :disabled="busy === 'mine'"
           class="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-semibold text-white disabled:opacity-60"
           @click="issue"
         >
-          <Loader2 v-if="busy" class="h-4 w-4 animate-spin" />
-          {{ status.exists ? 'Make a new link' : 'Make a link' }}
+          <Loader2 v-if="busy === 'mine'" class="h-4 w-4 animate-spin" />
+          {{ status.mine ? 'Make a new link' : 'Make a link' }}
         </button>
         <button
-          v-if="status.exists"
-          :disabled="busy"
+          v-if="status.mine"
+          :disabled="busy === 'mine'"
           class="flex h-10 items-center justify-center gap-1.5 rounded-lg border border-red-200 dark:border-red-500/30 px-3 text-sm font-semibold text-red-600 dark:text-red-400 disabled:opacity-60"
           @click="revoke"
         >
@@ -172,6 +198,48 @@ const copy = async () => {
           Switch off
         </button>
       </div>
+
+      <!-- Everybody else's, for an administrator. A link is somebody's own, so
+           there is nothing here to change about it — only to switch it off. -->
+      <div v-if="status.isAdmin && others.length" class="border-t border-gray-100 dark:border-gray-700 pt-4">
+        <h3 class="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          Other links in this church
+        </h3>
+        <ul class="mt-2 space-y-2">
+          <li
+            v-for="link in others"
+            :key="link.id"
+            class="flex items-center gap-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 px-3 py-2"
+          >
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">
+                {{ owner(link) }}
+              </span>
+              <span class="block text-xs text-gray-500 dark:text-gray-400">
+                {{ link.allowWrites ? 'Can add and change records' : 'Read-only' }}<template
+                  v-if="link.createdAt"
+                >
+                  · made {{ timeAgo(new Date(link.createdAt)) }}</template
+                >
+              </span>
+            </span>
+            <button
+              :disabled="busy === link.id"
+              class="flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-60"
+              @click="revokeOther(link)"
+            >
+              <Loader2 v-if="busy === link.id" class="h-3.5 w-3.5 animate-spin" />
+              <Trash2 v-else class="h-3.5 w-3.5" />
+              Switch off
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <p class="text-xs text-gray-500 dark:text-gray-400">
+        A link is yours: it opens this church only, reaches only what you can reach in the app,
+        and stops working if you leave the church.
+      </p>
     </div>
   </section>
 </template>

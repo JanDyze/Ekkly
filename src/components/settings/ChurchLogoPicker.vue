@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { ImagePlus, Loader2, RotateCcw } from '../../icons'
-import { compressImageToBase64, LOGO_OPTIONS } from '../../utils/imageUtils'
+import { prepareLogo } from '../../utils/logoUtils'
 import { uploadImage } from '../../api/blobService'
 import { useAppSettings } from '../../composables/useAppSettings'
 import { useToast } from '../../composables/useToast'
@@ -29,16 +29,23 @@ const handleFile = async (mode, event) => {
     // The logo rides in appSettings/church, which every signed-in screen
     // subscribes to in full — as a data URL it was downloaded once per
     // session on every device; as a URL it is a hundred characters.
-    const compressed = await uploadImage(
-      await compressImageToBase64(file, LOGO_OPTIONS),
-      'branding'
-    )
+    //
+    // prepareLogo, the same call the setup guide makes, so a logo uploaded
+    // here and a logo uploaded there come out identical: a flat background is
+    // cut away, and anything else is left exactly as it arrived. The accent
+    // colour it also works out is ignored — colours have their own card on
+    // this screen, and quietly changing them from a file picker would be a
+    // surprise. The guide offers that because it is asking both questions at
+    // once, in order.
+    const prepared = await prepareLogo(file)
+    const stored = await uploadImage(prepared.dataUrl, 'branding')
+    const cut = prepared.removed ? ', background removed' : ''
     if (mode === 'dark') {
-      await saveLogoDark(compressed)
-      toast.success('Dark-mode logo updated')
+      await saveLogoDark(stored)
+      toast.success(`Dark-mode logo updated${cut}`)
     } else {
-      await saveLogo(compressed)
-      toast.success('Light-mode logo updated')
+      await saveLogo(stored)
+      toast.success(`Light-mode logo updated${cut}`)
     }
   } catch (error) {
     console.error(`Error saving the ${mode} logo:`, error)

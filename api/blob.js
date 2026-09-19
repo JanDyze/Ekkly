@@ -133,10 +133,27 @@ export default async function handler(req, res) {
     return res.status(200).json({ url: blob.url });
   } catch (error) {
     console.error("Error talking to Blob storage:", error);
+    const message = String(error?.message || "");
+
+    // A store created with private access refuses the `access: "public"` above
+    // outright. Worth naming, because the store is the thing that has to
+    // change and nothing in this file can make up for it: every image here is
+    // rendered as a plain <img src> by people who are not signed in — the
+    // public page's hero and logo, a gallery album — from a URL saved in
+    // Firestore once and read for years. A private store answers those URLs
+    // with 403 and wants a fresh signed one per request, which there is nobody
+    // to sign for a visitor.
+    if (/private store|public access/i.test(message)) {
+      return res.status(500).json({
+        error:
+          "This Blob store is private, and these images are served to visitors who are not signed in. Connect a store with public access.",
+      });
+    }
+
     // The store's credentials are an OIDC token that expires within hours, and
     // locally it is only as fresh as the last `vercel env pull`. That is the
     // failure somebody will actually hit, so it is worth naming.
-    const denied = /oidc|token|credential|access denied/i.test(String(error?.message || ""));
+    const denied = /oidc|token|credential|access denied/i.test(message);
     return res.status(denied ? 401 : 500).json({
       error: denied
         ? "The image store refused these credentials. Run `vercel env pull .env.local`."

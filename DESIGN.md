@@ -169,11 +169,37 @@ ending on what the tour left out. It lives in
   Grace Fellowship throughout, and the first scene ends on it; the visitor's own
   church replaces it once they have named one. A note beside the computer
   (FloatNote) sits on a corner of the window, never over what it describes.
-  Home screens and app lists on the device wear the app artwork; sidebars and
-  bottom bars keep the line icons the real app uses.
+  Home screens and app lists on the device wear the app artwork; its sidebar
+  and bottom bar draw their icons at 16px, too small for artwork, so those
+  stay line icons even though the real app now paints them.
 - **"Say hello, we'll reach out"** sits under the hero's buttons and opens the
   welcome again, straight away, for anyone who skipped it. The church named
   there goes on the device in the tour and into the request form.
+- **The light comes through a window.** Behind the hero is a room: the mark as
+  an arched window in a wall, turned, throwing the colour of each pane across
+  the floor (`.hero-room` in [PlatformHome.vue](src/views/PlatformHome.vue)).
+  It is a picture, one per theme, not one picture dimmed — a lit room and a
+  dark one are not the same photograph. Each is levelled on the way in so its
+  wall is exactly the page's ground, white or `gray-950`, and so the picture
+  ends where the light runs out rather than drawing a rectangle; the light one
+  is held at 70% because colour carries further on white. It is the same arch
+  the last call is cut out of, so the page opens and closes on the one shape.
+  From `sm` up only: a phone's hero is the words and the device on plain
+  ground, because at that width anything behind them is behind the sentence
+  that explains Ekkly.
+- **The front door does not wear the software look.** No blurred circles of
+  colour behind the hero, no dot grid, no light that follows the pointer, no
+  badge-shaped chip above the headline, no gradient clipped to a word, no
+  frosted panels, no coloured halo under a button, and no sheen crossing one.
+  Those are what every product's home page is made of, and a church can tell.
+  A call to action is the flat accent at the radius
+  [Buttons](#buttons) gives it; a heading is ink, and the light crossing it as
+  it scrolls (`lit-heading`) is where the colour goes. Anything decorative
+  earns its place by being a church's — the window, the mark, the app artwork.
+- **An icon says what a thing does.** Nothing on the front door wears a sparkle
+  or a wand to mean "this part is clever": EKRIS writes minutes up, so it wears
+  a pencil, and it answers questions, so it wears a speech bubble. The button
+  that runs it names it ("Write up with EKRIS"), not the category.
 - **Motion shows something happening.** Nothing idles: no breathing, no
   bobbing, and no button that lifts or grows under the pointer. Every scene
   also has a finished state for `prefers-reduced-motion`.
@@ -427,6 +453,13 @@ Show placeholders shaped like the content: `animate-pulse bg-gray-200
 dark:bg-gray-600` blocks in the layout of a real row, or a
 `<Thing>CardSkeleton` component. Don't show "Loading…" text.
 
+A starting value is not a loading state. Where a field has a built-in default
+— the church name, the landing copy, the discipleship stages — draw the
+placeholder until the real answer lands rather than the default, or the page
+publishes another congregation's words for as long as the network takes. The
+public page does this off `ready` from [usePublicSite](src/composables/usePublicSite.js);
+over ink, the placeholder is `bg-white/15` rather than grey.
+
 ### Empty states
 
 ```
@@ -479,7 +512,17 @@ The words depend on why the list is empty (see Tasks.vue):
   `src/style.css`, and the platform and each church can re-colour them at run
   time (`src/composables/useBrandTheme.js`). A hard-coded value stays teal when
   a church chooses purple.
+- **The mark's own four colours never follow a re-colour**, and should not:
+  the mark in the header does not either. Nothing on a page names them today.
+  What they are, and the one rule for spending them anywhere, is
+  [BRAND.md](BRAND.md).
 - Scoped CSS that needs the accent uses `var(--color-primary)`, never its value.
+- **The typeface is a token too.** The platform and each church can set the
+  whole app in one of the faces in `BRAND_FONTS` (`lib/platformDefaults.js`),
+  which lands on `--font-sans` and on the root `font-family`. Anything that
+  should follow the church just inherits, or wears `font-sans`; a component
+  that names its own face (`.font-pixel`, the wordmark's Poppins) is opting
+  out on purpose.
 
 ## Type and icons
 

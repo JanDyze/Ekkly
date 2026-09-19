@@ -23,6 +23,7 @@ installable PWA.
 | Working on | Read |
 |---|---|
 | Any page, component, or visual change | [DESIGN.md](DESIGN.md) |
+| Anything Ekkly's own: the mark, colours, type, artwork, voice | [BRAND.md](BRAND.md) |
 | Churches, addresses, access, data layout, the platform console, apps & billing | [TENANCY.md](TENANCY.md) |
 | Routes in `api/` | [ENDPOINTS.md](ENDPOINTS.md) |
 | The Claude connector (`api/mcp.js`, `lib/mcp/`) | [MCP.md](MCP.md) |
@@ -57,10 +58,11 @@ installable PWA.
   `subscription`, `payments` or `usage`.
 - **`api/` is full.** It holds 12 functions, Vercel Hobby's limit. Add an
   action to an existing route instead of a new file.
-- **Colours are tokens:** `primary`, `primary-hover`, `primary-light`.
-  Never put hex values in classes. The platform and each church can change
-  what the tokens are (`useBrandTheme`), so a hex value is one that won't
-  follow.
+- **Colours and the typeface are tokens:** `primary`, `primary-hover`,
+  `primary-light`, and the root font. Never put hex values in classes, and
+  never name a face outside `BRAND_FONTS` (`lib/platformDefaults.js`). The
+  platform and each church can change what the tokens are (`useBrandTheme`),
+  so a hard-coded value is one that won't follow.
 - **Bible translations ship as files, not calls.** Each one is a folder of 66
   JSON files under `public/bible/<id>/`, and `src/data/bibleBooks.js` is
   generated from whatever is installed — neither is edited by hand. Add a

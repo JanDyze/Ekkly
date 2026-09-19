@@ -13,11 +13,18 @@
 // ------------------------------------------------------------------ access
 //
 // This endpoint reads with the Admin SDK, which means Firestore's rules do not
-// apply to it: everything a church has recorded is behind this URL. Each church
-// has its own token, issued by one of its administrators under Settings, and
-// the token is what decides which church a conversation sees — that church, and
-// never any other (lib/mcpTokens.js, lib/mcp/church.js). It fails closed: an
-// absent or unknown token is a refusal, never an open door.
+// apply to it: everything a church has recorded is behind this URL. So the door
+// is checked twice, and fails closed at both.
+//
+// The token says which church and whose link it is (lib/mcpTokens.js). That is
+// the tenancy boundary: that church, and never any other.
+//
+// Then the account is asked about, on every request rather than once when the
+// link was made (lib/audience.js accessFor). Somebody who has left the church
+// finds their link already dead, and what is left decides which tools are
+// offered at all — the person's own capabilities, the same ones the app hides
+// pages by. The write switch on the link is a ceiling over that and not a
+// grant: a link can never do what its owner could not do by hand.
 //
 // The token may travel in the path because Claude's custom connectors take a
 // URL and nothing else. That is a real trade-off: a URL is written into more
@@ -27,10 +34,11 @@
 // Settings if it is ever pasted somewhere it should not be — that retires the
 // old one.
 import { respondToBody, SERVER_INFO, ERRORS } from "../lib/mcp/server.js";
-import { runInChurch } from "../lib/mcp/church.js";
+import { actorFor, runInChurch, MCP_ACTOR_ID } from "../lib/mcp/church.js";
 import { grantFor } from "../lib/mcpTokens.js";
 import { churchRef, loadChurch } from "../lib/tenant.js";
 import { enabledAppsFrom } from "../lib/apps.js";
+import { accessFor } from "../lib/audience.js";
 
 /**
  * The credential, from wherever the client could put it: the standard header,
@@ -95,12 +103,18 @@ export default async function handler(req, res) {
     return res.end();
   }
 
-  // Which church the token opens, if any, and whether its administrator allowed
-  // writing when they issued it. A closed church opens nothing.
+  // Which church the token opens, whose link it is, and whether writing was
+  // allowed when it was made. A closed church opens nothing, and neither does
+  // an account that is no longer part of the one it names.
   let grant = null;
+  let access = null;
   try {
     grant = await grantFor(presentedToken(req));
     if (grant && !(await loadChurch(grant.churchId))) grant = null;
+    if (grant?.uid) {
+      access = await accessFor(churchRef(grant.churchId), grant.uid);
+      if (!access) grant = null;
+    }
   } catch (error) {
     console.error("Could not check the MCP token:", error);
     return send(res, 503, {
@@ -129,6 +143,7 @@ export default async function handler(req, res) {
       endpoint: "POST this URL with a JSON-RPC 2.0 message",
       authorised,
       church: grant?.churchId || null,
+      owner: grant?.name || null,
       writesEnabled: Boolean(grant?.allowWrites),
     });
   }
@@ -171,9 +186,14 @@ export default async function handler(req, res) {
     .then((snapshot) => enabledAppsFrom(snapshot.exists ? snapshot.data() : null))
     .catch(() => null);
 
-  // Every tool this message reaches reads and writes inside the token's church.
-  const reply = await runInChurch(grant.churchId, () =>
-    respondToBody(body, { allowWrites: grant.allowWrites, apps })
+  // Every tool this message reaches reads and writes inside the token's church,
+  // and signs what it changes with the name of the person whose link this is.
+  const reply = await runInChurch(
+    {
+      churchId: grant.churchId,
+      actor: { id: MCP_ACTOR_ID, name: actorFor(grant.name), uid: grant.uid },
+    },
+    () => respondToBody(body, { allowWrites: grant.allowWrites, apps, capabilities: access?.capabilities || null })
   );
 
   // Every message in the body was a notification. There is nothing to answer

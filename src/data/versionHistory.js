@@ -8,6 +8,19 @@
 
 export const versionHistory = [
   {
+    version: '0.29.0',
+    date: '2026-09-19',
+    title: 'Your own type, and your own Claude link',
+    summary:
+      'Your church can now pick the typeface the whole app is set in, and everyone who needs a Claude connector makes their own.',
+    highlights: [
+      'Settings → Colours and type has seven faces to choose from. Pick one and the whole app changes, on every phone.',
+      'A Claude connector link is now yours rather than the church’s: making one no longer switches off anybody else’s, and it can only reach what you can reach in the app.',
+      'A link stops working the moment somebody leaves the church, and administrators can see and switch off every link from Settings.',
+      'The sidebar reads better — the app icons sit on tiles and the one you are on comes to life as the page opens.',
+    ],
+  },
+  {
     version: '0.28.2',
     date: '2026-09-16',
     title: 'The Bible in English as well',

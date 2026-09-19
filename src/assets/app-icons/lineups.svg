@@ -14,16 +14,24 @@
     </linearGradient>
   </defs>
 
-  <path d="M32 44L20 61M32 44L44 61" stroke="url(#b)" stroke-width="3.8" stroke-linecap="round"/>
-  <path d="M32 44V61" stroke="url(#o)" stroke-width="3.8" stroke-linecap="round"/>
-  <rect x="29.5" y="3" width="5" height="7" rx="2" fill="#EC4319"/>
-  <rect x="4" y="8" width="56" height="7" rx="3.5" fill="url(#o)"/>
-  <rect x="8" y="14" width="48" height="29" fill="#fff"/>
-  <rect x="4" y="42" width="56" height="5.5" rx="2.75" fill="url(#b)"/>
-  <rect class="a-cell" style="--i:0" x="13" y="19" width="6" height="5" rx="1.5" fill="url(#b)"/>
-  <rect class="a-cell" style="--i:1" x="13" y="26.5" width="6" height="5" rx="1.5" fill="url(#b)"/>
-  <rect class="a-cell" style="--i:2" x="13" y="34" width="6" height="5" rx="1.5" fill="url(#b)"/>
-  <rect class="a-line" style="--i:1" x="22" y="19" width="14" height="5" rx="2.5" fill="url(#o)"/>
-  <rect class="a-line" style="--i:2" x="26" y="26.5" width="22" height="5" rx="2.5" fill="url(#b)"/>
-  <rect class="a-line" style="--i:3" x="34" y="34" width="17" height="5" rx="2.5" fill="url(#t)"/>
+  
+  <clipPath id="c"><rect x="4" y="7" width="47" height="50" rx="10"/></clipPath>
+  <g clip-path="url(#c)">
+    <rect x="4" y="7" width="47" height="50" fill="url(#b)"/>
+    <path d="M12.459999999999999 7 H51 V43 Z" fill="url(#o)"/>
+    <rect x="4" y="7" width="47" height="50" fill="url(#shine)"/>
+  </g>
+  <rect x="9.5" y="13" width="36" height="38" rx="4.5" fill="#fff"/>
+  
+  <circle class="a-cell" style="--i:0" cx="17.5" cy="22" r="4" fill="url(#o)"/>
+  <rect class="a-line" style="--i:0" x="24.5" y="19.4" width="17" height="5.2" rx="2.6" fill="#8E9CB3"/>
+  <circle class="a-cell" style="--i:1" cx="17.5" cy="33" r="4" fill="url(#b)"/>
+  <rect class="a-line" style="--i:1" x="24.5" y="30.4" width="14" height="5.2" rx="2.6" fill="#8E9CB3"/>
+  <circle class="a-cell" style="--i:2" cx="17.5" cy="44" r="4" fill="url(#t)"/>
+  <rect class="a-line" style="--i:2" x="24.5" y="41.4" width="11" height="5.2" rx="2.6" fill="#8E9CB3"/>
+  <g class="a-pop" style="--i:3">
+    <circle cx="48" cy="46" r="12.5" fill="#fff"/>
+    <circle cx="48" cy="46" r="10" fill="url(#o)"/>
+    <path d="M48 40.2V46.4l4.2 2.8" fill="none" stroke="#fff" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
 </svg>

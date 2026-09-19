@@ -27,11 +27,6 @@ const toast = useToast()
 const { church: churchInfo, logoUrl, landing } = useAppSettings()
 const { isDark, toggleTheme } = useTheme()
 
-// The mark is the way back out to the church's public page — but only while
-// that page is published. With the landing page turned off "/" resolves to
-// this screen, so the link would go nowhere.
-const showPublicLink = computed(() => landing.value.enabled !== false)
-
 // The same picture the public page opens on, so signing in reads as walking
 // further into the building rather than arriving somewhere else. Falls back to
 // the bundled 54 KB webp, which is also what a signed-out reader gets: the
@@ -74,9 +69,8 @@ const handleSignedIn = (user) => {
     ></div>
     <div class="vignette absolute inset-0"></div>
 
-    <!-- Back out to the public page. -->
+    <!-- Back out to the public page, which every church has. -->
     <RouterLink
-      v-if="showPublicLink"
       to="/"
       :aria-label="`Go to the ${churchInfo.shortName} public page`"
       class="chip absolute left-4 z-20"

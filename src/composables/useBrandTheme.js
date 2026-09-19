@@ -2,7 +2,7 @@ import { watch } from 'vue'
 import { getPlatformTheme, usePlatformConfig } from './usePlatformConfig'
 import { getChurchTheme, useAppSettings } from './useAppSettings'
 import { getChurchId } from '../api/church'
-import { resolveTheme } from '../../lib/platformDefaults.js'
+import { brandFont, fontsUrl, resolveTheme } from '../../lib/platformDefaults.js'
 
 /** The colours in use right now, read once — for a spreadsheet being built. */
 export const currentTheme = () => resolveTheme(getPlatformTheme(), getChurchTheme())
@@ -14,16 +14,19 @@ export const currentTheme = () => resolveTheme(getPlatformTheme(), getChurchThem
  */
 export const accentCell = () => ({ rgb: currentTheme().primary.slice(1).toUpperCase() })
 
-// The app's accent colour, chosen at run time.
+// The app's accent colour and typeface, both chosen at run time.
 //
 // Every `bg-primary`, `text-primary` and `ring-primary/30` in the app reads a
 // CSS variable (Tailwind v4 emits utilities against var(--color-primary)), and
 // style.css sets those variables on :root and .dark. Overriding the same
 // variables from a style element of our own re-colours the whole app in one
-// place, dark mode included, with no class changed anywhere.
+// place, dark mode included, with no class changed anywhere. The face works
+// the same way: `--font-sans` behind `font-sans`, and the root font-family
+// everything else inherits.
 //
-// Whose colours: the church's own if it chose some, then the platform's, then
-// the ones the app was built in (lib/platformDefaults.js resolveTheme).
+// Whose colours, whose face: the church's own where it chose them, then the
+// platform's, then the ones the app was built in (lib/platformDefaults.js
+// resolveTheme).
 //
 // `html:root` and `html.dark` are one step more specific than style.css's
 // `:root` and `.dark`, so these win whatever order the stylesheets load in.
@@ -60,8 +63,22 @@ const remember = (theme) => {
   }
 }
 
-export const themeCss = ({ primary, primaryDark }) => `
+// The face is fetched by an @import at the top of the same style element
+// rather than a link tag of its own, so the remembered theme carries it: the
+// small script in index.html writes this CSS back before anything is drawn,
+// and the download starts there instead of waiting for the app to boot.
+//
+// `font-synthesis` is switched back on because :root turns it off. Poppins
+// ships no italic, and the few italics in the app should still lean.
+export const themeCss = ({ primary, primaryDark, font }) => {
+  const face = brandFont(font)
+  const url = fontsUrl([face.key])
+  return `${url ? `@import url('${url}');
+` : ''}
 html:root {
+  --font-sans: ${face.stack};
+  font-family: ${face.stack};
+  font-synthesis: weight style;
   --color-primary: ${primary};
   --color-primary-hover: color-mix(in oklab, ${primary} 78%, black);
   --color-primary-light: ${primaryDark};
@@ -77,6 +94,7 @@ html.dark {
 html body { color: ${primary}; }
 html.dark body { color: ${primaryDark}; }
 `
+}
 
 const apply = (theme) => {
   if (typeof document === 'undefined') return

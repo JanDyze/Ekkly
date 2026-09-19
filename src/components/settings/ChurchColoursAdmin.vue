@@ -3,14 +3,15 @@ import { computed, ref, watch } from 'vue'
 import { Loader2, Palette, Save } from '../../icons'
 import SectionCard from '../common/SectionCard.vue'
 import ColourEditor from '../common/ColourEditor.vue'
+import FontPicker from '../common/FontPicker.vue'
 import { useAppSettings } from '../../composables/useAppSettings'
 import { usePlatformConfig } from '../../composables/usePlatformConfig'
 import { useToast } from '../../composables/useToast'
 import { isHexColor, resolveTheme, themeForStorage } from '../../../lib/platformDefaults.js'
 
-// This church's own accent colours. Until it chooses some it wears the
-// platform's, and a reset puts it back on them — including whatever the
-// platform changes them to later.
+// This church's own accent colours and typeface. Until it chooses its own it
+// wears the platform's, and a reset puts it back on them — including whatever
+// the platform changes them to later.
 
 const toast = useToast()
 const { theme: saved, saveTheme } = useAppSettings()
@@ -21,11 +22,12 @@ watch(saved, (value) => {
   theme.value = { ...(value || {}) }
 }, { immediate: true })
 
-// What an empty colour becomes: the platform's, or the original.
+// What an unchosen colour or face becomes: the platform's, or the original.
 const fallback = computed(() => resolveTheme(platformTheme.value, {}))
 const hasOwn = computed(() => Object.keys(themeForStorage(saved.value)).length > 0)
 
-const invalid = computed(() => Object.values(theme.value).some((v) => v && !isHexColor(v)))
+// Only the colours can be typed wrong; the face is picked from a list.
+const invalid = computed(() => ['primary', 'primaryDark'].some((key) => theme.value[key] && !isHexColor(theme.value[key])))
 const changed = computed(() => JSON.stringify(themeForStorage(theme.value)) !== JSON.stringify(themeForStorage(saved.value)))
 
 const saving = ref(false)
@@ -33,10 +35,10 @@ const save = async (value) => {
   saving.value = true
   try {
     await saveTheme(value)
-    toast.success(Object.keys(themeForStorage(value)).length ? 'Colours saved' : `Back to ${branding.value.name}’s colours`)
+    toast.success(Object.keys(themeForStorage(value)).length ? 'Saved' : `Back to ${branding.value.name}’s look`)
   } catch (error) {
-    console.error('Error saving colours:', error)
-    toast.error('Could not save the colours. Please try again.')
+    console.error('Error saving the look:', error)
+    toast.error('Could not save that. Please try again.')
   } finally {
     saving.value = false
   }
@@ -46,11 +48,15 @@ const save = async (value) => {
 <template>
   <SectionCard
     :icon="Palette"
-    title="Colours"
-    :subtitle="hasOwn ? 'Your church’s own accent' : `Using ${branding.name}’s colours. Choose your own if you like.`"
+    title="Colours and type"
+    :subtitle="hasOwn ? 'Your church’s own look' : `Using ${branding.name}’s look. Choose your own if you like.`"
   >
-    <div class="space-y-4 p-4">
+    <div class="space-y-6 p-4">
       <ColourEditor v-model="theme" :fallback="fallback" />
+      <div>
+        <h3 class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Typeface</h3>
+        <FontPicker v-model="theme.font" :fallback="fallback.font" />
+      </div>
       <div class="flex flex-wrap items-center justify-end gap-3">
         <button
           v-if="hasOwn"
@@ -59,7 +65,7 @@ const save = async (value) => {
           :disabled="saving"
           class="mr-auto rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
         >
-          Use {{ branding.name }}’s colours
+          Use {{ branding.name }}’s look
         </button>
         <button
           type="button"
@@ -72,7 +78,7 @@ const save = async (value) => {
         >
           <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
           <Save v-else class="h-4 w-4" />
-          Save colours
+          Save changes
         </button>
       </div>
     </div>

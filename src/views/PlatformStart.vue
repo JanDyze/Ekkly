@@ -1,12 +1,12 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { ArrowLeft, ArrowRight, CaretDown, CheckCircle2, Clock, ExternalLink, Loader2, LogOut, Pencil, Send, Trash2, X } from '../icons'
+import { ArrowLeft, ArrowRight, CaretDown, CheckCircle2, Clock, ExternalLink, Loader2, LogOut, Pencil, Plus, Send, Trash2, X } from '../icons'
 import GoogleSignInButton from '../components/auth/GoogleSignInButton.vue'
 import FrontDoorHeader from '../components/frontdoor/FrontDoorHeader.vue'
 import FrontDoorFooter from '../components/frontdoor/FrontDoorFooter.vue'
 import CookieBanner from '../components/frontdoor/CookieBanner.vue'
 import ChatBubble from '../components/frontdoor/ChatBubble.vue'
-import AppArt from '../components/frontdoor/AppArt.vue'
+import AppArt from '../components/common/AppArt.vue'
 import { TYPE } from '../components/frontdoor/type'
 import { initAuth, useAuth } from '../composables/useAuth'
 import { useToast } from '../composables/useToast'
@@ -40,7 +40,7 @@ initAuth().then(() => {
 })
 
 // The requests this account has sent, shared with the home page's status strip.
-const { requests, hasPending, ready: requestsKnown } = useChurchRequests()
+const { requests, hasPending, latest, ready: requestsKnown } = useChurchRequests()
 
 // Nothing is drawn until both are known: a form that appears and is replaced a
 // moment later by "your request is waiting" reads as a page that changed its
@@ -186,6 +186,38 @@ const onTouchEnd = (event) => {
 // somebody wants to change it.
 const showLink = ref(false)
 
+/* ------------------------------------------------ asking for another one */
+
+// A request that has been answered does not put the form back by itself. An
+// approved one means the church is open, and greeting its new administrator
+// with "About your church" reads as though the ask had not landed. So the page
+// offers the choice instead: one account can look after more than one church,
+// and a declined request can be sent again once it is put right.
+const hasApproved = computed(() => requests.value.some((request) => request.status === 'approved'))
+const answeredAlready = computed(() => requests.value.length > 0 && !hasPending.value)
+const askingAgain = ref(false)
+const showForm = computed(() => !hasPending.value && (!answeredAlready.value || askingAgain.value))
+
+const askAgain = () => {
+  askingAgain.value = true
+  // Somebody turned down puts right what was wrong, so their answers come
+  // back. Somebody whose church is open is asking for a second one, and a
+  // form still holding the first church's name would ask for it twice.
+  const again = !hasApproved.value && latest.value?.status === 'declined' ? latest.value : null
+  Object.assign(form, {
+    churchName: again?.churchName || '',
+    churchId: again?.churchId || '',
+    location: again?.location || '',
+    size: again?.size || '',
+    contactNumber: again?.contactNumber || '',
+    message: again?.message || suggestedMessage.value,
+  })
+  linkEdited.value = Boolean(again?.churchId)
+  showLink.value = false
+  error.value = ''
+  step.value = 0
+}
+
 const submit = async () => {
   error.value = ''
   if (!form.churchName.trim()) {
@@ -203,6 +235,7 @@ const submit = async () => {
     Object.assign(form, { churchName: '', churchId: '', location: '', size: '', contactNumber: '', message: '' })
     linkEdited.value = false
     showLink.value = false
+    askingAgain.value = false
     step.value = 0
   } catch (e) {
     console.error('Error requesting a church:', e)
@@ -256,6 +289,7 @@ const cancelRequest = async (request) => {
       message: request.message,
     })
     linkEdited.value = true
+    askingAgain.value = true
     step.value = 0
   } catch (e) {
     console.error('Error taking back a request:', e)
@@ -304,7 +338,7 @@ const input =
 
         <div class="mt-6">
           <!-- Restoring the session: the card's shape, not a spinner. -->
-          <div v-if="!ready" class="animate-pulse space-y-3 rounded-3xl border border-gray-200 p-6 dark:border-gray-800" aria-busy="true">
+          <div v-if="!ready" class="animate-pulse space-y-3 rounded-2xl border border-gray-200 p-6 dark:border-gray-800" aria-busy="true">
             <div class="h-6 w-48 rounded bg-gray-200 dark:bg-gray-800"></div>
             <div class="h-4 w-full rounded bg-gray-100 dark:bg-gray-800/60"></div>
             <div class="h-4 w-2/3 rounded bg-gray-100 dark:bg-gray-800/60"></div>
@@ -312,7 +346,7 @@ const input =
           </div>
 
           <!-- Signed out -->
-          <div v-else-if="!isAuthenticated" class="rounded-3xl bg-gray-900 p-6 text-white shadow-xl sm:p-8 dark:ring-1 dark:ring-gray-800">
+          <div v-else-if="!isAuthenticated" class="rounded-2xl bg-gray-900 p-6 text-white shadow-xl sm:p-8 dark:ring-1 dark:ring-gray-800">
             <h2 class="text-2xl font-black tracking-tight">Sign in to ask</h2>
             <p class="mt-2 text-sm leading-relaxed text-white/70">
               Use the Google account you will run the church with. You become its first administrator once the request is
@@ -421,7 +455,7 @@ const input =
             </div>
 
             <!-- The form -->
-            <div v-if="!hasPending" class="rounded-3xl border border-gray-200 bg-white p-6 shadow-xl shadow-gray-900/5 sm:p-8 dark:border-gray-800 dark:bg-gray-900">
+            <div v-if="showForm" class="rounded-2xl border border-gray-200 bg-white p-6 shadow-xl shadow-gray-900/5 sm:p-8 dark:border-gray-800 dark:bg-gray-900">
               <h2 class="text-2xl font-black tracking-tight">About your church</h2>
               <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">We will look it over and let you know.</p>
 
@@ -556,6 +590,32 @@ const input =
                   </button>
                 </div>
               </form>
+            </div>
+
+            <!-- Answered already, and not asked to ask again: the choice, not
+                 the form. -->
+            <div
+              v-else-if="!hasPending"
+              class="rounded-2xl border border-dashed border-gray-300 p-6 text-center dark:border-gray-700"
+            >
+              <h2 class="text-lg font-black tracking-tight">{{ hasApproved ? 'Another church?' : 'Ask again?' }}</h2>
+              <p class="mx-auto mt-1 max-w-sm text-sm text-gray-500 dark:text-gray-400">
+                <template v-if="hasApproved">
+                  Your church is open. If you look after another one, you can ask for it with this same account.
+                </template>
+                <template v-else>
+                  You can send another request whenever you are ready. Your answers come back, so you only change what
+                  needs changing.
+                </template>
+              </p>
+              <button
+                type="button"
+                class="mt-4 inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-white transition-colors hover:bg-primary-hover"
+                @click="askAgain"
+              >
+                <Plus class="h-4 w-4" />
+                {{ hasApproved ? 'Ask for another church' : 'Ask again' }}
+              </button>
             </div>
 
             <div class="mt-6 flex items-center justify-between gap-3 text-xs text-gray-500 dark:text-gray-400">

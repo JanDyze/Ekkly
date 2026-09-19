@@ -16,9 +16,11 @@ import AnimatedMark from './AnimatedMark.vue'
  * soft pulse, where it used to loop a clip cut from UEC's logo animation — a
  * clip only one congregation's logo could have.
  *
- * The curtain is deliberately short, and it is not waiting for the navigation
- * — the new page renders underneath it and is ready before it lifts. Its whole
- * job is to make the swap read as one movement rather than a flicker.
+ * It only appears for a navigation that is actually slow. A chunk the browser
+ * already has swaps in a few milliseconds, and a logo flashing over that reads
+ * as the app stumbling rather than covering for itself — so the mark is armed
+ * on every navigation and shown by almost none of them. Once it is down it
+ * holds briefly, so a curtain that did appear is never a blink.
  */
 
 const router = useRouter()
@@ -26,16 +28,27 @@ const router = useRouter()
 // window light up pane by pane.
 const { logoUrl, hasCustomLogo } = useAppSettings()
 
-// How long the mark holds once a navigation starts. Short enough that a member
-// clicking through the sidebar is not waiting on it, long enough that the logo
-// registers as a logo rather than a flash. If it ever wears out its welcome,
-// the gentler setting is to show it only when a navigation is genuinely slow:
-// start a ~100ms timer in the guard below and show from that instead, so a
-// warm, already-fetched chunk swaps with no curtain at all.
+// How long a navigation has to be taking before the mark is shown at all. A
+// chunk that is already in the browser swaps in a few milliseconds, and
+// curtaining that is the app making a ceremony of something instant — which is
+// what this number exists to stop. Only a page that is genuinely keeping
+// somebody waiting gets a curtain.
+const SHOW_AFTER = 2000
+
+// How long the mark holds once it has been shown. Long enough that a logo
+// reads as a logo rather than a flash, so a curtain that did appear is never a
+// blink. It costs nothing on a fast navigation, because on a fast navigation
+// the curtain never came down.
 const HOLD = 420
 
 const active = ref(false)
+let showTimer = null
 let holdTimer = null
+
+const stopTimers = () => {
+  clearTimeout(showTimer)
+  clearTimeout(holdTimer)
+}
 
 // The mark is only in the DOM while the curtain is down, so without this the
 // browser would not begin fetching it until the first navigation — and the
@@ -56,6 +69,14 @@ const stopBefore = router.beforeEach((to, from) => {
   // exactly the interruption that route's meta exists to prevent.
   if (to.meta?.projector || from.meta?.projector) return true
 
+  // Not the first navigation of the session. That gap is already covered:
+  // index.html's boot screen has been lighting the same four panes since
+  // before this app had any code, and it clears only when Vue mounts — which
+  // is the moment this guard first runs. Curtaining over it played the mark's
+  // animation twice in a row, from two different drawings of it. `matched` is
+  // empty only for the router's start location.
+  if (!from.matched.length) return true
+
   // Only a real change of page. A view that writes its search or its open tab
   // into the query string navigates constantly, and curtaining every keystroke
   // would make the app feel like it were fighting the user.
@@ -65,8 +86,12 @@ const stopBefore = router.beforeEach((to, from) => {
   // plain, the same bargain PullToRefresh strikes with its spin.
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return true
 
-  clearTimeout(holdTimer)
-  active.value = true
+  // Not shown yet — only armed. Most navigations resolve before this fires and
+  // are never curtained at all.
+  stopTimers()
+  showTimer = setTimeout(() => {
+    active.value = true
+  }, SHOW_AFTER)
   return true
 })
 
@@ -74,6 +99,10 @@ const stopBefore = router.beforeEach((to, from) => {
 // or failed navigation too, so a guard that bounces the user — or a chunk that
 // fails to load — cannot leave the curtain down over the app.
 const stopAfter = router.afterEach(() => {
+  // Disarmed before anything else: a navigation that finished inside the wait
+  // must not have the curtain drop afterwards, over a page that is already
+  // there. That would be worse than the flicker this whole file exists to fix.
+  clearTimeout(showTimer)
   if (!active.value) return
   clearTimeout(holdTimer)
   holdTimer = setTimeout(() => {
@@ -82,7 +111,7 @@ const stopAfter = router.afterEach(() => {
 })
 
 onUnmounted(() => {
-  clearTimeout(holdTimer)
+  stopTimers()
   stopBefore()
   stopAfter()
 })

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onUnmounted, ref, watchEffect } from 'vue'
 import { ArrowRight, CaretUp, Check, X } from '../../icons'
-import AppArt from './AppArt.vue'
+import AppArt from '../common/AppArt.vue'
 import { formatMoney } from '../../utils/moneyUtils'
 import { planFrom, useFrontDoor } from '../../composables/useFrontDoor'
 import { useFocusTrap } from '../../composables/useFocusTrap'

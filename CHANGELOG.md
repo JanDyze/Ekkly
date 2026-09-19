@@ -11,6 +11,55 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.29.0] — 2026-09-19
+
+A church can now choose its typeface as well as its colours, and the Claude
+connector belongs to the person who made it rather than to the church at large.
+The sidebar was reworked along the way.
+
+### Added
+
+- **The typeface is a brand token.** The console sets the face every church
+  starts with, and a church can choose its own in Settings → Colours and type.
+  Seven faces, all licensed to embed and all legible at row-title size on a
+  phone; the face is fetched by an `@import` inside the remembered theme, so it
+  starts downloading before the app boots rather than after.
+- **App icons in the sidebar sit on a tile and animate.** The chosen page's
+  icon plays the same animation it plays on the front door, once, as the page
+  opens. `AppArt` moved from `frontdoor/` to `common/` — the platform views
+  were already using it — and every nav item carries an `art` key.
+- Groundwork for two admin-only pages still being built: a church setup flow at
+  `/setup` and a landing lab at `/landing-lab`. Neither is finished and neither
+  is announced in the app.
+
+### Changed
+
+- **A connector link belongs to an account, not to a church.** Making one no
+  longer switches off everybody else's, a link reaches only what its owner can
+  reach in the app, and it stops working the moment they leave the church —
+  checked on every request rather than once when the link was made. The write
+  switch is a ceiling over what the person could already do by hand, never a
+  grant of more. Administrators see every link in the church and can switch any
+  of them off. Writes carry the owner's name, and the audit entry their uid.
+  A link made before this is read as belonging to whoever issued it, so it
+  keeps working and is theirs to replace.
+- **The page-change curtain only appears for a slow navigation.** It is armed
+  on every navigation and shown by almost none of them: a chunk the browser
+  already has swaps with no curtain at all.
+- The sidebar header no longer strands the church logo at the far edge, and it
+  drops the second line when a church's full name just repeats its short one.
+  The selected row's icon grows, and the left accent edge is gone.
+- **Schedules has new artwork.** It was the only icon in its set not built on
+  the split tile, and its tripod legs frayed at sidebar size; it is now a
+  roster with a clock. The settings gear turns.
+
+### Fixed
+
+- **`church_profile` never worked.** The connector's first call — the one
+  Claude makes to learn a church's vocabulary before anything else — threw
+  `Cannot access 'church' before initialization`, because the handler shadowed
+  the Firestore reader it calls with a local of the same name.
+
 ## [0.28.2] — 2026-09-16
 
 The Bible speaks English too.

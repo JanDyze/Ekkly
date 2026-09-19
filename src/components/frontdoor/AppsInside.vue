@@ -5,7 +5,7 @@ import { useMediaQuery } from '../../composables/useMediaQuery'
 import { useScrollLock } from '../../composables/useScrollLock'
 import { formatMoney } from '../../utils/moneyUtils'
 import { appArt } from './appIcons'
-import AppArt from './AppArt.vue'
+import AppArt from '../common/AppArt.vue'
 import { appDetail } from './appDetails'
 import { vScrollLight } from './scrollLight'
 
@@ -241,7 +241,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
           :aria-label="openApp.name"
           :class="[
             'panel relative flex flex-col bg-gray-100 shadow-2xl shadow-gray-900/10 ring-1 ring-gray-900/5 focus:outline-none dark:bg-gray-900 dark:shadow-black/40 dark:ring-white/10',
-            isDesktop ? 'h-full rounded-2xl' : 'max-h-[85dvh] w-full max-w-md rounded-3xl',
+            isDesktop ? 'h-full rounded-2xl' : 'max-h-[85dvh] w-full max-w-md rounded-2xl',
           ]"
         >
           <!-- Going from one app to the next. A desktop also has every app in a
@@ -350,7 +350,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
                   <button
                     v-else
                     type="button"
-                    class="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-colors hover:bg-primary-hover lg:px-5"
+                    class="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary-hover lg:px-5"
                     @click="addToPlan(openApp)"
                   >
                     <span class="lg:hidden">Add to my plan</span>
@@ -398,6 +398,19 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 
 .launch.is-on:hover .app-icon {
   filter: drop-shadow(0 -3px 12px rgb(255 140 30 / 0.4)) drop-shadow(0 9px 18px rgb(20 103 232 / 0.36));
+}
+
+/* A drop-shadow lays its colour over whatever is behind it, so the value that
+   reads as a hint of warmth on white reads as a lamp on gray-900: the same
+   alpha is a far bigger jump in luminance against a dark ground. Held at about
+   three fifths here, which still lights the artwork without haloing it. */
+.dark .launch.is-on .app-icon,
+.dark .art-glow {
+  filter: drop-shadow(0 -2px 8px rgb(255 140 30 / 0.17)) drop-shadow(0 6px 12px rgb(20 103 232 / 0.16));
+}
+
+.dark .launch.is-on:hover .app-icon {
+  filter: drop-shadow(0 -3px 12px rgb(255 140 30 / 0.24)) drop-shadow(0 9px 18px rgb(20 103 232 / 0.22));
 }
 
 /* The strip of apps in an open panel: the one showing in colour, the rest

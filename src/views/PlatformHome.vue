@@ -1,7 +1,7 @@
 <script setup>
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowRight, CheckCircle2, HandPointing, HandWaving } from '../icons'
+import { ArrowRight, CheckCircle2, Clock, HandPointing, HandWaving, X } from '../icons'
 import AnimatedMark from '../components/common/AnimatedMark.vue'
 import CookieBanner from '../components/frontdoor/CookieBanner.vue'
 import ChatBubble from '../components/frontdoor/ChatBubble.vue'
@@ -9,11 +9,12 @@ import WelcomeSheet from '../components/frontdoor/WelcomeSheet.vue'
 import HeroStage from '../components/frontdoor/HeroStage.vue'
 import AppsInside from '../components/frontdoor/AppsInside.vue'
 import HowItWorks from '../components/frontdoor/HowItWorks.vue'
-import AppArt from '../components/frontdoor/AppArt.vue'
+import AppArt from '../components/common/AppArt.vue'
 import FrontDoorHeader from '../components/frontdoor/FrontDoorHeader.vue'
 import FrontDoorFooter from '../components/frontdoor/FrontDoorFooter.vue'
 import FrontDoorFaq from '../components/frontdoor/FrontDoorFaq.vue'
-import RequestStatus from '../components/frontdoor/RequestStatus.vue'
+import heroBgLight from '../assets/hero-bg-light.webp'
+import heroBgDark from '../assets/hero-bg-dark.webp'
 import { FAQS, HOME_FAQS } from '../components/frontdoor/faqs'
 import { TYPE } from '../components/frontdoor/type'
 import { initAuth, useAuth } from '../composables/useAuth'
@@ -57,22 +58,21 @@ const offeredApps = computed(() => catalog.value.filter((app) => app.available))
 
 const sampleDomain = rootDomain || 'ekkly.online'
 
-// The headline arrives a word at a time, and its closing phrase is drawn in the
-// colours of Ekkly's window. The words are the console's, so the phrase is
-// found rather than written: whatever follows the last comma, or else the last
-// two words.
+// The headline arrives a word at a time, and its closing phrase lands last, in
+// the accent. The words are the console's, so the phrase is found rather than
+// written: whatever follows the last comma, or else the last two words.
 const headline = computed(() => {
   const text = branding.value.frontDoor.headline.trim()
   const comma = text.lastIndexOf(',')
   const words = text.split(/\s+/)
-  const [lead, glow] =
+  const [lead, accent] =
     comma > 0 && comma < text.length - 1
       ? [text.slice(0, comma + 1), text.slice(comma + 1).trim()]
       : words.length > 2
         ? [words.slice(0, -2).join(' '), words.slice(-2).join(' ')]
         : ['', text]
   const leadWords = lead ? lead.split(/\s+/) : []
-  return { text, lead: leadWords, glow, glowDelay: 120 + leadWords.length * 90 }
+  return { text, lead: leadWords, accent, accentDelay: 120 + leadWords.length * 90 }
 })
 
 /* ------------------------------------------------------------- counting */
@@ -92,39 +92,58 @@ watch(
   { immediate: true }
 )
 
-// The chip above the headline, unless it only says the headline again.
+// The line above the headline, unless it only says the headline again.
 const sameWords = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase()
 const showTagline = computed(
   () => !!branding.value.tagline?.trim() && !sameWords(branding.value.tagline, branding.value.frontDoor.headline)
 )
 
-// A soft light follows the pointer across the hero. Only a mouse or trackpad
-// moves it; on a touch screen it rests where it starts.
-const hero = ref(null)
-let spotFrame = 0
-const moveSpotlight = (event) => {
-  if (event.pointerType !== 'mouse' || spotFrame) return
-  spotFrame = requestAnimationFrame(() => {
-    spotFrame = 0
-    const box = hero.value?.getBoundingClientRect()
-    if (!box) return
-    hero.value.style.setProperty('--mx', `${event.clientX - box.left}px`)
-    hero.value.style.setProperty('--my', `${event.clientY - box.top}px`)
-  })
-}
-onUnmounted(() => cancelAnimationFrame(spotFrame))
-
 const faqs = FAQS.slice(0, HOME_FAQS)
 
 // Every call to action goes to Get started — unless this account has already
 // asked for a church, when the hero offers what they came back for: the church
-// itself once it is open, or the request while it is being looked over. The
-// strip above the hero says the same, and is the same tap.
+// itself once it is open, or the request while it is being looked over.
+//
+// This used to be said twice: a coloured strip sat above the hero saying where
+// the request stood, and the button under it said the same thing in the same
+// words. A strip across the top of a page that only reports is the summary tile
+// this app does not use, and it pushed the sentence explaining Ekkly down the
+// screen for the one visitor who no longer needed to read it. The button says
+// it instead, and the line under the button carries the detail.
 const { latest, approved } = useChurchRequests()
 const heroCall = computed(() => {
   if (approved.value) return { label: 'Open ' + approved.value.churchName, href: churchLink(approved.value) }
   if (latest.value) return { label: 'See your request', href: '' }
   return { label: 'Get your church on ' + branding.value.name, href: '' }
+})
+
+// What sits under the call. Somebody who has not asked yet gets the three
+// reasons to; somebody who has gets the answer to the only question they came
+// back with, because selling to them again is beside the point — they already
+// said yes. Declined is grey rather than red: it is not dangerous, and the
+// reason itself is on the request.
+const heroNote = computed(() => {
+  const request = latest.value
+  if (!request) return null
+  if (request.status === 'approved') {
+    return {
+      icon: CheckCircle2,
+      mark: 'text-emerald-500',
+      says: `${request.churchName} is open — you are its first administrator.`,
+    }
+  }
+  if (request.status === 'declined') {
+    return {
+      icon: X,
+      mark: 'text-gray-400 dark:text-gray-500',
+      says: `We could not open ${request.churchName}. Your request says why.`,
+    }
+  }
+  return {
+    icon: Clock,
+    mark: 'text-amber-500',
+    says: `We are looking over ${request.churchName}. We will email you the moment it is open.`,
+  }
 })
 
 const goToStart = () => {
@@ -220,53 +239,93 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
     <FrontDoorHeader />
 
     <!-- =============================================================== hero -->
-    <section id="top" ref="hero" class="hero relative isolate" @pointermove="moveSpotlight">
-      <!-- A church that has asked already: where it stands, before the page
-           starts selling it anything. -->
-      <RequestStatus />
-      <!-- Light through stained glass: the logo's four colours, blurred into
-           the background, over a fine grid of dots that a soft light follows
-           the pointer across. -->
-      <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
-        <div class="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-primary/25 blur-3xl dark:bg-primary/15"></div>
-        <div class="absolute right-0 top-10 h-96 w-96 rounded-full bg-primary-light/30 blur-3xl dark:bg-primary/10"></div>
-        <div class="absolute bottom-0 left-1/3 h-96 w-md rounded-full bg-primary/20 blur-3xl dark:bg-primary/10"></div>
-        <div class="absolute -bottom-20 right-10 h-80 w-80 rounded-full bg-primary-light/25 blur-3xl dark:bg-primary-light/10"></div>
-        <div class="dots absolute inset-0 text-gray-900/15 dark:text-white/10"></div>
-        <div class="spotlight absolute inset-0"></div>
+    <section id="top" class="relative isolate">
+      <!-- The room the page is standing in. It used to be four blurred circles
+           of the accent over a grid of dots, which is the background every
+           software product has; a church has a better one of its own. Then it
+           was a hairline arch with two shafts drawn in the accent. It is now
+           the thing itself: the mark as a window in a wall, turned, throwing
+           the colour of each pane across the floor — so the shape a visitor
+           meets first is the shape the last call is cut out of, and the light
+           on this page has somewhere it comes from.
+
+           One picture per theme rather than one picture dimmed, because a
+           lit room and a dark one are not the same photograph. Each was
+           levelled on the way in so its wall is exactly the page's ground —
+           white here, gray-950 there — and the picture therefore ends where
+           the light runs out instead of drawing a rectangle.
+
+           The layer is capped at 52rem rather than filling the section.
+           `cover` scales the picture to whatever it is stretched over, so on a
+           tall window the hero grew and took the window with it until the
+           light washed across the headline. Capped, it keeps its size and the
+           foot of it fades as before.
+
+           The light one is held at 70%. On white, colour carries much further
+           than it does on near-black: at full strength the cast light washed
+           across the middle of the page and the headline had to compete with
+           it. Fading it costs nothing, because the wall is already the page's
+           white and only the light itself dims.
+
+           These are the mark's own colours and do not follow a church's
+           re-colour, which is the rule for anything of the mark's (BRAND.md).
+           The front door is the platform's page, so there is nothing here for
+           a church's colour to be.
+
+           From sm up only. A phone's hero is the headline, the buttons and the
+           device with nothing behind them: at that width the window would have
+           to fall across the words to be seen at all, and a stranger reading
+           the one sentence that explains Ekkly should not be reading it through
+           anything. -->
+      <div class="pointer-events-none absolute inset-0 -z-10 hidden overflow-hidden sm:block" aria-hidden="true">
+        <div
+          class="hero-room absolute inset-x-0 top-0 h-full max-h-[52rem] bg-cover bg-right bg-no-repeat opacity-70 dark:hidden"
+          :style="{ backgroundImage: `url(${heroBgLight})` }"
+        ></div>
+        <div
+          class="hero-room absolute inset-x-0 top-0 h-full max-h-[52rem] hidden bg-cover bg-right bg-no-repeat dark:block"
+          :style="{ backgroundImage: `url(${heroBgDark})` }"
+        ></div>
       </div>
 
       <!-- On a desktop the hero fills the first screen, less the header. -->
       <div class="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-20 pt-10 sm:px-6 lg:min-h-[calc(100dvh-4.25rem)] lg:grid-cols-[1fr_1fr] lg:gap-14 lg:py-10">
         <div class="text-center lg:text-left">
-          <span v-if="showTagline" class="hero-in inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/70 px-3 py-1 text-xs font-semibold text-gray-600 backdrop-blur dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-300">
-            <AnimatedMark mode="once" class="h-4 w-4" />
+          <!-- The tagline reads as the eyebrow every other section on this page
+               uses, rather than as a bordered, blurred chip with an icon in it:
+               that chip is the badge every AI product wears above its headline,
+               and it was the only place on the front door that set a label this
+               way. -->
+          <p v-if="showTagline" :class="['hero-in text-primary dark:text-primary-light', TYPE.eyebrow]">
             {{ branding.tagline }}
-          </span>
+          </p>
 
-          <h1 class="mt-5 text-balance text-4xl font-black leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl" :aria-label="headline.text">
+          <h1 class="mt-3 text-balance text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl" :aria-label="headline.text">
             <span aria-hidden="true">
               <template v-for="(word, i) in headline.lead" :key="`${word}-${i}`">
                 <span class="word inline-block" :style="{ animationDelay: `${120 + i * 90}ms` }">{{ word }}</span>{{ ' ' }}
               </template>
-              <span class="glow-phrase relative inline-block" :style="{ '--glow-delay': `${headline.glowDelay}ms` }">
-                <span class="glow-text">{{ headline.glow }}</span>
-                <!-- A stroke of the accent, drawn once under the phrase. -->
-                <svg class="absolute -bottom-2 left-0 h-3 w-full text-primary dark:text-primary-light" viewBox="0 0 200 12" preserveAspectRatio="none">
-                  <path class="underline-draw" d="M3 9 C 50 3, 120 2, 197 7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" pathLength="1" />
-                </svg>
+              <!-- The closing phrase lands last, in the accent. Flat: it used to
+                   be a gradient clipped to the text, running amber through the
+                   accent to magenta, which is the one effect that says "AI
+                   product" loudest and said nothing about a church. The accent
+                   on its own is Ekkly's colour, and it is the colour a church
+                   re-picks in the console — a gradient with two invented ends
+                   was never going to follow it. -->
+              <span class="accent-phrase inline-block text-primary dark:text-primary-light" :style="{ '--accent-delay': `${headline.accentDelay}ms` }">
+                {{ headline.accent }}
               </span>
             </span>
           </h1>
 
-          <p class="hero-in mx-auto mt-4 max-w-xl text-sm leading-relaxed text-gray-600 sm:mt-6 sm:text-base lg:mx-0 lg:text-lg dark:text-gray-300" :style="{ animationDelay: `${headline.glowDelay + 250}ms` }">
+          <p class="hero-in mx-auto mt-4 max-w-xl text-sm leading-relaxed text-gray-600 sm:mt-6 sm:text-base lg:mx-0 lg:text-lg dark:text-gray-300" :style="{ animationDelay: `${headline.accentDelay + 250}ms` }">
             {{ branding.frontDoor.intro }}
           </p>
-          <div class="hero-in mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start" :style="{ animationDelay: `${headline.glowDelay + 350}ms` }">
+          <div class="hero-in mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start" :style="{ animationDelay: `${headline.accentDelay + 350}ms` }">
             <button
               type="button"
               @click="heroPress"
-              class="cta group inline-flex h-14 items-center gap-2 rounded-2xl bg-primary px-7 text-base font-bold text-white shadow-xl shadow-primary/30 transition-colors hover:bg-primary-hover"
+              class="group inline-flex h-14 items-center gap-2 rounded-xl bg-primary px-7 text-base font-bold text-white transition-colors hover:bg-primary-hover"
             >
               {{ heroCall.label }}
               <ArrowRight class="h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -274,27 +333,39 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
             <button
               type="button"
               @click="goTo('features')"
-              class="hidden h-14 items-center gap-2 rounded-2xl px-6 text-base font-semibold text-gray-700 transition-colors hover:bg-gray-100 lg:inline-flex dark:text-gray-200 dark:hover:bg-gray-800"
+              class="hidden h-14 items-center gap-2 rounded-xl px-6 text-base font-semibold text-gray-700 transition-colors hover:bg-gray-100 lg:inline-flex dark:text-gray-200 dark:hover:bg-gray-800"
             >
               See what’s inside
             </button>
           </div>
-          <p class="hero-in mt-5 flex items-center justify-center gap-1.5 text-sm text-gray-500 lg:hidden dark:text-gray-400" :style="{ animationDelay: `${headline.glowDelay + 450}ms` }">
-            <CheckCircle2 class="h-4 w-4 shrink-0 text-emerald-500" />
-            First month free · your own link
+          <!-- Where the request stands, for somebody who has one; otherwise the
+               reasons to ask. One line either way, in the same place. -->
+          <p
+            v-if="heroNote"
+            class="hero-in mx-auto mt-5 flex max-w-md items-start justify-center gap-1.5 text-left text-sm text-gray-500 lg:mx-0 lg:mt-6 lg:justify-start dark:text-gray-400"
+            :style="{ animationDelay: `${headline.accentDelay + 450}ms` }"
+          >
+            <component :is="heroNote.icon" :class="['mt-0.5 h-4 w-4 shrink-0', heroNote.mark]" />
+            {{ heroNote.says }}
           </p>
-          <p class="hero-in mt-6 hidden flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 lg:flex dark:text-gray-400" :style="{ animationDelay: `${headline.glowDelay + 450}ms` }">
-            <span class="inline-flex items-center gap-1.5"><CheckCircle2 class="h-4 w-4 text-emerald-500" /> First month free</span>
-            <span class="inline-flex items-center gap-1.5"><CheckCircle2 class="h-4 w-4 text-emerald-500" /> Your church’s own link</span>
-            <span class="inline-flex items-center gap-1.5"><CheckCircle2 class="h-4 w-4 text-emerald-500" /> Pay only for the apps you turn on</span>
-          </p>
+          <template v-else>
+            <p class="hero-in mt-5 flex items-center justify-center gap-1.5 text-sm text-gray-500 lg:hidden dark:text-gray-400" :style="{ animationDelay: `${headline.accentDelay + 450}ms` }">
+              <CheckCircle2 class="h-4 w-4 shrink-0 text-emerald-500" />
+              First month free · your own link
+            </p>
+            <p class="hero-in mt-6 hidden flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 lg:flex dark:text-gray-400" :style="{ animationDelay: `${headline.accentDelay + 450}ms` }">
+              <span class="inline-flex items-center gap-1.5"><CheckCircle2 class="h-4 w-4 text-emerald-500" /> First month free</span>
+              <span class="inline-flex items-center gap-1.5"><CheckCircle2 class="h-4 w-4 text-emerald-500" /> Your church’s own link</span>
+              <span class="inline-flex items-center gap-1.5"><CheckCircle2 class="h-4 w-4 text-emerald-500" /> Pay only for the apps you turn on</span>
+            </p>
+          </template>
 
           <!-- The welcome again, for anyone who skipped it and changed their
                mind: name the church, leave a way to be reached. -->
-          <div class="hero-in mt-8 hidden justify-center lg:flex lg:justify-start" :style="{ animationDelay: `${headline.glowDelay + 550}ms` }">
+          <div class="hero-in mt-8 hidden justify-center lg:flex lg:justify-start" :style="{ animationDelay: `${headline.accentDelay + 550}ms` }">
             <button
               type="button"
-              class="group inline-flex h-11 items-center gap-2.5 rounded-full border border-gray-200 bg-white/70 pl-1.5 pr-4 text-sm font-semibold text-gray-700 backdrop-blur transition-colors hover:border-gray-300 hover:bg-white dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-200 dark:hover:border-gray-600 dark:hover:bg-gray-900"
+              class="group inline-flex h-11 items-center gap-2.5 rounded-full border border-gray-200 bg-white pl-1.5 pr-4 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-600 dark:hover:bg-gray-800"
               @click="openWelcome"
             >
               <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light">
@@ -344,7 +415,18 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
     </section>
 
     <!-- ======================================================= how it works -->
-    <section id="how" class="scroll-mt-20 bg-gray-900 text-white lg:scroll-mt-17 dark:bg-gray-900">
+    <!-- The one band on the front door that turns the page over: browsing the
+         apps stops here and following a process starts, and the ground says so
+         before the heading does.
+
+         A step lighter than the page's dark ground rather than two. On white it
+         used to be gray-900, which since the hero became a photograph of a lit
+         room read as a hole cut in the page. Ramping into it was tried first
+         and was worse: every value between white and gray-900 is a mid grey, so
+         the ramp arrived as a band of haze. The edge is better crisp — it is a
+         threshold, and a threshold is a line. Dark mode keeps gray-900, where
+         the band sits on gray-950 and there is no jump to soften. -->
+    <section id="how" class="scroll-mt-20 bg-gray-800 text-white lg:scroll-mt-17 dark:bg-gray-900">
       <HowItWorks :church="demoChurch" :domain="sampleDomain" @start="goToStart">
         <template #heading>
           <div class="text-center lg:text-left">
@@ -371,7 +453,7 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
           </ul>
           <RouterLink
             to="/pricing"
-            class="group mt-8 inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-colors hover:bg-primary-hover"
+            class="group mt-8 inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-white transition-colors hover:bg-primary-hover"
           >
             Build your plan
             <ArrowRight class="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -379,7 +461,7 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
         </div>
 
         <!-- The plan so far: the starter apps, and whatever was added above. -->
-        <aside class="rounded-3xl bg-gray-900 p-6 text-white shadow-2xl dark:bg-gray-800">
+        <aside class="rounded-2xl bg-gray-900 p-6 text-white shadow-2xl dark:bg-gray-800">
           <p class="text-xs font-semibold uppercase tracking-wider text-white/60">Your plan so far</p>
           <div class="mt-4 flex flex-wrap gap-2">
             <AppArt v-for="app in plan.apps" :key="app.key" :app-key="app.key" :title="app.name" class="h-10 w-10" />
@@ -421,7 +503,7 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
       <div class="arch-frame mx-auto max-w-5xl">
         <div
           v-scroll-light="WINDOW_OPENS"
-          class="arch-window relative overflow-hidden rounded-4xl bg-linear-to-br from-primary via-primary-hover to-gray-900 px-6 py-14 text-center text-white shadow-2xl shadow-primary/30 sm:px-12"
+          class="arch-window relative overflow-hidden bg-primary px-6 py-14 text-center text-white sm:px-12"
         >
           <div class="pointer-events-none absolute -right-10 -top-10 h-56 w-56 opacity-20" aria-hidden="true">
             <AnimatedMark mode="once" />
@@ -433,7 +515,7 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
           <button
             type="button"
             @click="goToStart"
-            class="cta group relative mt-8 inline-flex h-14 items-center gap-2 rounded-2xl bg-white px-8 text-base font-bold text-gray-900 shadow-xl transition-colors hover:bg-gray-100"
+            class="group relative mt-8 inline-flex h-14 items-center gap-2 rounded-xl bg-white px-8 text-base font-bold text-gray-900 transition-colors hover:bg-gray-100"
           >
             Get your church on {{ branding.name }}
             <ArrowRight class="h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -486,86 +568,18 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
   }
 }
 
-/* Its closing phrase lands last, in the colours of the window. */
-.glow-phrase {
-  animation: word-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) var(--glow-delay) both;
+/* Its closing phrase lands last. */
+.accent-phrase {
+  animation: word-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) var(--accent-delay) both;
 }
 
-/* The accent, with light passing through it — the mark's warm end on one
-   side and its cool end on the other. Both ends are mostly the accent itself,
-   so the platform's colour carries the headline and a re-colour in the console
-   changes it here too, while it still reads as stained glass rather than one
-   flat word. The padding keeps the descenders inside the text's box, which the
-   clip would otherwise cut. */
-.glow-text {
-  padding-bottom: 0.08em;
-  background-image: linear-gradient(
-    100deg,
-    color-mix(in oklch, var(--color-primary) 62%, oklch(0.8 0.16 75)),
-    var(--color-primary) 45%,
-    color-mix(in oklch, var(--color-primary) 62%, oklch(0.68 0.2 330))
-  );
-  background-clip: text;
-  color: transparent;
-}
-
-.dark .glow-text {
-  background-image: linear-gradient(
-    100deg,
-    color-mix(in oklch, var(--color-primary) 55%, oklch(0.85 0.15 80)),
-    var(--color-primary) 45%,
-    color-mix(in oklch, var(--color-primary) 55%, oklch(0.78 0.16 330))
-  );
-}
-
-.underline-draw {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: underline 0.7s cubic-bezier(0.65, 0, 0.35, 1) calc(var(--glow-delay) + 500ms) forwards;
-}
-
-@keyframes underline {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-/* A fine grid of dots, fading out towards the edges. */
-.dots {
-  background-image: radial-gradient(currentColor 1px, transparent 1.5px);
-  background-size: 22px 22px;
-  mask-image: radial-gradient(ellipse 75% 65% at 50% 40%, black 30%, transparent 75%);
-}
-
-/* The light that follows the pointer. It rests over the phone until the
-   pointer moves. */
-.spotlight {
-  background: radial-gradient(
-    32rem circle at var(--mx, 75%) var(--my, 40%),
-    color-mix(in oklab, var(--color-primary) 12%, transparent),
-    transparent 70%
-  );
-}
-
-/* The main buttons: a sheen crosses once when the pointer arrives. The button
-   itself stays where it is. */
-.cta {
-  position: relative;
-  overflow: hidden;
-}
-
-.cta::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(110deg, transparent 35%, rgb(255 255 255 / 0.3) 50%, transparent 65%);
-  transform: translateX(-120%);
-  pointer-events: none;
-}
-
-.cta:hover::after {
-  transform: translateX(120%);
-  transition: transform 0.7s ease-in-out;
+/* `cover` crops the picture to whatever shape the hero is, so what lands at the
+   foot of the section is wherever the crop falls rather than the quiet bottom
+   of the render. Fading the last quarter stops a beam of light ending in a
+   straight horizontal line across the page. */
+.hero-room {
+  mask-image: linear-gradient(to bottom, #000 76%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 76%, transparent);
 }
 
 /* ------------------------------------------------------ scrolling down */
@@ -632,15 +646,8 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
 @media (prefers-reduced-motion: reduce) {
   .hero-in,
   .word,
-  .glow-phrase {
+  .accent-phrase {
     animation: none;
-  }
-  .underline-draw {
-    animation: none;
-    stroke-dashoffset: 0;
-  }
-  .cta:hover::after {
-    transition: none;
   }
 }
 </style>

@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "bounce-easing",
+        "value": "var(--art-spring)",
+        "createdAt": "2026-09-19T05:43:06.271Z",
+        "reason": "AppArt's named motion token for the app-icon artwork. Predates this session; deliberate and documented per part ('something arriving with a little give', a star landing, links joining). Retuning it would restyle the whole front-door icon set, which is outside the current task."
+      }
+    ]
+  }
+}

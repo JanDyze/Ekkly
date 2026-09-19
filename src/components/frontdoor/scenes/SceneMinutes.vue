@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { ArrowRight, CheckCircle, FileText, MagicWand, Sparkle } from '../../../icons'
+import { ArrowRight, CheckCircle, FileText, NotePencil } from '../../../icons'
 import AppWindow from '../AppWindow.vue'
 import ScaledScreen from '../ScaledScreen.vue'
 import FloatNote from '../FloatNote.vue'
@@ -65,8 +65,8 @@ at(typed + 3000, () => (filed.value = true))
                   pressed ? 'bg-primary-hover' : 'bg-primary',
                 ]"
               >
-                <MagicWand class="h-4 w-4" />
-                Write up with AI
+                <NotePencil class="h-4 w-4" />
+                Write up with EKRIS
               </div>
             </div>
 
@@ -105,8 +105,8 @@ at(typed + 3000, () => (filed.value = true))
               pressed ? 'bg-primary-hover' : 'bg-primary',
             ]"
           >
-            <MagicWand class="h-3.5 w-3.5" />
-            Write up with AI
+            <NotePencil class="h-3.5 w-3.5" />
+            Write up with EKRIS
           </div>
         </div>
 
@@ -143,8 +143,7 @@ at(typed + 3000, () => (filed.value = true))
     <Transition name="write">
       <FloatNote
         v-if="written"
-        :icon="Sparkle"
-        tone="violet"
+        :icon="NotePencil"
         title="Written up"
         body="in a few seconds"
         :delay="300"

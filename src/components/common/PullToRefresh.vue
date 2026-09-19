@@ -31,7 +31,7 @@ watch(() => route.fullPath, disarm)
 const hint = computed(() => {
   const release = progress.value >= 1 && state.value === 'pulling'
   if (route.meta.public) {
-    return release ? 'Bitawan para mag-reload' : 'I-swipe ulit para mag-reload'
+    return release ? 'Release to reload' : 'Pull again to reload'
   }
   return release ? 'Release to reload' : 'Swipe down again to reload'
 })

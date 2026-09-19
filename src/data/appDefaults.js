@@ -28,96 +28,83 @@ export const DEFAULT_CHURCH = {
 // address, phone) start empty, and their sections stay hidden until filled in
 // rather than showing invented details.
 export const DEFAULT_LANDING = {
-  // Turning this off sends "/" straight to the sign-in screen, for an install
-  // that is only ever used as an internal tool.
-  enabled: true,
-  // No headline setting any more: the hero greets whoever is reading by name
-  // — ate, kuya, nanay, or their own if they are signed in — and that is not
-  // a line one congregation writes differently from another. This paragraph
+  // No switch to hide this page any more. A church's address is its own, and
+  // "/" is what that address is for: a visitor who types it gets the church,
+  // not a sign-in form for an app they have no account in. What a church does
+  // control is what the page says — every field below — and the sections it
+  // has nothing to put in stay hidden rather than showing invented details.
+  //
+  // English throughout, because a starting value is read by every church that
+  // has not edited it yet and Ekkly is sold to all of them. These were Tagalog
+  // while the app served one Manila-province congregation; published as another
+  // church's own words, they were a language that church may not even use.
+  // Every line here is editable, so a Tagalog congregation writes Tagalog in
+  // the setup guide and loses nothing.
+  //
+  // No headline setting any more: the hero greets whoever is reading by name —
+  // friend, brother, sister, or their own if they are signed in — and that is
+  // not a line one congregation writes differently from another. This paragraph
   // sits under it and is still theirs to change.
-  intro: 'Bago ka pa dumating, may silya nang nakahanda para sa iyo.',
+  intro: 'Before you even arrive, there is a seat already waiting for you.',
 
-  // The greeting at the top of the page rolls through the names somebody at
-  // the door would actually use. Editable because a congregation may well say
-  // it differently — a Visayan church would want Manoy and Inday in here, and
-  // a church that finds one of these too familiar should be able to drop it
-  // without a code change. A signed-in member sees their own name instead.
+  // The greeting at the top of the page rolls through the names somebody at the
+  // door would actually use. Editable because a congregation will say it
+  // differently — a Filipino church wants Ate, Kuya and Nanay in here, a
+  // Visayan one Manong and Inday — and a church that finds one of these too
+  // familiar should be able to drop it without a code change. A signed-in
+  // member sees their own name instead.
   welcomeTerms: [
-    // Brothers and sisters, and where you fall among them
-    'Ate',
-    'Kuya',
-    'Bunso',
-    'Panganay',
-    'Kapatid',
-    // The ones who raised you
-    'Nanay',
-    'Tatay',
-    'Inay',
-    'Itay',
-    'Mama',
-    'Papa',
-    'Lolo',
-    'Lola',
-    // Aunts and uncles, both ways of saying it
-    'Tita',
-    'Tito',
-    'Tiya',
-    'Tiyo',
-    // The family you get at a baptism rather than at birth
-    'Ninong',
-    'Ninang',
-    'Kumare',
-    'Kumpare',
-    // Further out along the tree
-    'Anak',
-    'Apo',
-    'Pinsan',
-    'Bayaw',
-    'Hipag',
-    // What the provinces up north would call you
-    'Manong',
-    'Manang',
-    // Not blood, but close enough to count
-    'Kaibigan',
+    // What a stranger at the door is called
+    'Friend',
+    'Neighbour',
+    'Visitor',
+    // The family you get at church rather than at birth
+    'Brother',
+    'Sister',
+    // Warmer, for a church that talks that way
+    'Beloved',
     'Kababayan',
-    'Kapitbahay',
-    'Kapamilya',
-    'Bes',
   ],
   // What follows the name. Two versions: a stranger is being welcomed, a
   // member who has signed in is being welcomed back.
-  welcomeLine: 'welcome ka dito.',
-  welcomeLineMember: 'welcome ulit!',
+  welcomeLine: 'you are welcome here.',
+  welcomeLineMember: 'welcome back!',
 
   // The verse the church gathers on, in the band under the hero. Empty hides
   // the band rather than leaving a coloured stripe with nothing in it.
   verse:
-    'Sapagkat kung saan may dalawa o tatlong nagkakatipon sa aking pangalan, ako ay naroroon sa gitna nila.',
-  verseReference: 'Mateo 18:20',
+    'For where two or three gather in my name, there am I with them.',
+  verseReference: 'Matthew 18:20',
 
   // Why the church is here. Either may be left empty; with both empty the
   // section goes.
-  vision: 'Isang simbahang sumasamba, lumalago, at namumunga.',
-  mission: 'Ihatid ang Ebanghelyo, palaguin ang mananampalataya, paglingkuran ang kapwa.',
+  vision: 'A church that worships, stands together, and serves.',
+  mission: 'To carry the Gospel, grow believers, and serve our neighbours.',
 
-  // Punla, Puno, Prutas — the discipleship process, as [{ stage, note }].
-  // Three by default because that is what this church teaches, but the page
-  // draws however many are given a name.
+  // The discipleship process, as [{ stage, note }]. The page draws however
+  // many stages are given a name.
+  //
+  // These used to be Punla, Puno and Prutas — the three UEC teaches by name.
+  // That was fine while the app was UEC's alone and wrong the moment it was
+  // sold: a church in Cebu opening its own address would have found another
+  // congregation's framework published as its own. Know, grow, serve is the
+  // shape almost every church would recognise, which is what a starting value
+  // should be — something to edit in the setup guide, not a claim.
   path: [
-    { stage: 'Punla', note: 'Pagsisimula kay Kristo.' },
-    { stage: 'Puno', note: 'Nag-uugat sa Salita.' },
-    { stage: 'Prutas', note: 'Namumunga sa kapwa.' },
+    { stage: 'Know', note: 'Starting out with Christ.' },
+    { stage: 'Grow', note: 'Putting down roots in the Word.' },
+    { stage: 'Serve', note: 'Giving yourself to others.' },
   ],
 
   // The last word on the page, above the footer.
-  closingTitle: 'May lugar para sa iyo rito.',
-  closingBody: 'Masaya kaming makilala ka sa linggong ito.',
+  closingTitle: 'There is a place for you here.',
+  closingBody: 'We would be glad to meet you this week.',
   // Base64 webp uploaded from Settings. Empty means the bundled photo. This is
   // the one static picture in the hero arch — the hero no longer crossfades
   // through gallery photos, so nothing above the fold waits on the network.
   heroImage: '',
-  // Whether the gallery feeds the public page at all. On, the "Buhay sa
-  // simbahan" strip fills itself from photographs picked at random across every
+  // Whether the gallery feeds the public page at all. On, the "Life together"
+  // strip fills itself from photographs picked at random across every
   // album — all of them lazy and below the fold; off, no gallery photo is
   // reachable from the public page.
   showPhotos: true,
@@ -140,7 +127,7 @@ export const DEFAULT_LANDING = {
   showBirthdays: false,
   // [{ name, when, note }] — rendered in the order they are added.
   services: [],
-  aboutTitle: 'Sino kami',
+  aboutTitle: 'Who we are',
   about: '',
   address: '',
   mapUrl: '',

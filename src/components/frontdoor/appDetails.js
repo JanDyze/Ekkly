@@ -32,7 +32,6 @@ import {
   Scroll,
   ShareNetwork,
   Slideshow,
-  Sparkle,
   TrendUp,
   UserFocus,
   UsersFour,
@@ -107,7 +106,7 @@ export const APP_DETAILS = {
     headline: 'Minutes done before you get home',
     wins: [
       { icon: Keyboard, text: 'Just type notes in the meeting' },
-      { icon: Sparkle, text: 'Written up for you by EKRIS' },
+      { icon: NotePencil, text: 'Written up for you by EKRIS' },
       { icon: Printer, text: 'Print or export to file' },
     ],
   },

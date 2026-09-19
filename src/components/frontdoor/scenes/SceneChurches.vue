@@ -2,7 +2,7 @@
 import { computed, onUnmounted, ref } from 'vue'
 import { suggestChurchId } from '../../../../lib/churchId.js'
 import { Calendar, LockSimple, Palette } from '../../../icons'
-import AppArt from '../AppArt.vue'
+import AppArt from '../../common/AppArt.vue'
 import AppWindow from '../AppWindow.vue'
 import ChurchMark from '../ChurchMark.vue'
 import { knownChurch } from '../knownChurches'

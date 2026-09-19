@@ -17,15 +17,35 @@ import { themeForStorage } from '../../lib/platformDefaults.js'
 const stored = ref(null)
 let started = false
 
+// Resolved by the first snapshot, the same way initPermissions and
+// initChurchApps report. The router guard has to know whether this church has
+// been through the setup guide before it resolves a route, and a listener that
+// has not answered yet would read as "already set up" and let an administrator
+// past the one screen they were meant to land on.
+let resolveReady
+const ready = new Promise((resolve) => {
+  resolveReady = resolve
+})
+
 // Started by useChurchAccess once the account is known to belong to the church,
 // never on a page serving no church at all.
 export const initAppSettings = () => {
-  if (started || !getChurchId()) return
+  if (started || !getChurchId()) {
+    // Nothing will ever arrive on a page serving no church, so anything
+    // waiting on the first answer would wait for good.
+    if (!getChurchId()) resolveReady()
+    return ready
+  }
   started = true
   subscribeToAppSettings((data) => {
     stored.value = data
+    resolveReady()
   })
+  return ready
 }
+
+/** Resolves once the settings document has reported for the first time. */
+export const appSettingsReady = () => ready
 
 // The merges themselves live with the defaults, because the public page reads
 // the same settings through the server rather than through Firestore and has
@@ -51,6 +71,20 @@ export const getChurchIdentity = () => churchOf(stored.value)
 /** The church's own accent colours, non-reactively; empty when it chose none. */
 export const getChurchTheme = () => stored.value?.theme || {}
 
+/**
+ * Whether this church still owes us the setup guide.
+ *
+ * `setup.done === false` is written by /api/platform when the church is made,
+ * and the guide turns it true — whether the administrator filled every step in
+ * or skipped the lot. A document with no `setup` field at all is a church from
+ * before the guide existed, and those are left alone: being sold the app in
+ * March is not a reason to be marched through a wizard in September.
+ */
+const setupOf = (data) => data?.setup || {}
+
+/** Non-reactive, for the router guard, which runs before any component. */
+export const isSetupPending = () => setupOf(stored.value).done === false
+
 /** The uploaded logo, or the bundled one while none has been set. Everything
  *  that draws the mark reads this, so one upload changes them all at once. */
 export const getChurchLogo = () => {
@@ -60,14 +94,6 @@ export const getChurchLogo = () => {
   const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
   return isDark ? darkLogo : lightLogo
 }
-
-/**
- * Non-reactive read for the router guard, which decides whether "/" shows the
- * public page before any component exists. While the document is still loading
- * this reports the default (shown) — see the watch in Landing.vue, which sends
- * visitors on once a "hidden" setting actually arrives.
- */
-export const getLandingEnabled = () => landingOf(stored.value).enabled !== false
 
 export function useAppSettings() {
   const { isDark } = useTheme()
@@ -89,6 +115,10 @@ export function useAppSettings() {
   // True once the document exists; until then the views run on defaults.
   const isConfigured = computed(() => stored.value !== null)
 
+  // Whether the setup guide is still owed, reactively — the Landing page
+  // watches this to move an administrator on once the answer lands.
+  const setupPending = computed(() => setupOf(stored.value).done === false)
+
   const saveChurch = (church) => saveAppSettings({ church })
   const saveCategories = (categories) => saveAppSettings({ categories })
   // Nested maps merge, so writing the logo alone cannot drop the names.
@@ -104,6 +134,12 @@ export function useAppSettings() {
   // the old value underneath and the reset would do nothing.
   const saveTheme = (value) => replaceAppSettingsField('theme', themeForStorage(value))
 
+  // The guide is over. Written whether every step was filled in or every one
+  // was skipped: it records that the administrator has been shown the screen,
+  // not that the church is finished. Settings links straight to /setup for
+  // anyone who wants to walk it again, so there is nothing to un-write.
+  const finishSetup = () => replaceAppSettingsField('setup', { done: true, at: new Date().toISOString() })
+
   return {
     church,
     logoUrl,
@@ -115,6 +151,7 @@ export function useAppSettings() {
     scheduleRoles,
     theme,
     isConfigured,
+    setupPending,
     saveChurch,
     saveCategories,
     saveLogo,
@@ -122,5 +159,6 @@ export function useAppSettings() {
     saveLanding,
     saveScheduleRoles,
     saveTheme,
+    finishSetup,
   }
 }

@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import AdminLayout from '../layouts/AdminLayout.vue'
 import { initAuth, useAuth } from '../composables/useAuth'
 import { initPermissions, usePermissions } from '../composables/usePermissions'
-import { getLandingEnabled } from '../composables/useAppSettings'
+import { appSettingsReady, isSetupPending } from '../composables/useAppSettings'
 import { initChurchAccess, isChurchOpen, useChurchAccess } from '../composables/useChurchAccess'
 import { getChurchId } from '../api/church'
 import { churchAppsReady, isAppEnabled } from '../composables/useChurchApps'
@@ -27,9 +27,10 @@ const churchRoutes = [
     component: () => import('../views/JoinChurch.vue'),
     meta: { public: true }
   },
-  // The public front door. Registered before the app shell below so it — not
-  // the shell — is what "/" resolves to; the guard sends signed-in members on
-  // to their dashboard.
+  // The church's public front door. Registered before the app shell below so
+  // it — not the shell — is what "/" resolves to, and reachable by anyone who
+  // knows the address: a church's own page is the first thing its address is
+  // for, so nothing behind a sign-in stands in front of it.
   {
     path: '/',
     name: 'Landing',
@@ -48,6 +49,44 @@ const churchRoutes = [
     // Google sign-in creates the account anyway, so /login is where it went.
     path: '/register',
     redirect: '/login'
+  },
+  {
+    // A new church's first screen. Outside the app shell on purpose: an
+    // administrator who has not filled anything in yet has no use for a
+    // sidebar of empty pages, and the guide is something you finish rather
+    // than somewhere you browse from. The guard below sends them here until
+    // the guide has been through once; after that it is reachable from
+    // Settings, which is why it is not gated on `setup` itself.
+    path: '/setup',
+    name: 'Setup',
+    component: () => import('../views/ChurchSetup.vue'),
+    meta: { requiresAuth: true, adminOnly: true }
+  },
+  {
+    // PROTOTYPE, for looking at rather than using: a page builder for a
+    // church's public page, on mock content that is never saved. Here to
+    // settle whether that page should be a stack of sections a church chooses
+    // and orders, instead of today's one fixed layout. Unlinked from anywhere
+    // on purpose — it is reached by typing the address.
+    //
+    // Two screens, because a front door has to be judged the way a visitor
+    // meets it rather than squeezed beside a rail of fields: /landing-lab is
+    // all controls, /landing-lab/preview is all page. The model they share is
+    // in src/composables/useLandingLab.js.
+    //
+    // To remove the experiment: these two routes, LandingLab.vue,
+    // LandingLabPreview.vue, LabPreview.vue, useLandingLab.js and
+    // landingLabMock.js.
+    path: '/landing-lab',
+    name: 'LandingLab',
+    component: () => import('../views/LandingLab.vue'),
+    meta: { requiresAuth: true, adminOnly: true }
+  },
+  {
+    path: '/landing-lab/preview',
+    name: 'LandingLabPreview',
+    component: () => import('../views/LandingLabPreview.vue'),
+    meta: { requiresAuth: true, adminOnly: true }
   },
   {
     // The projector's own window. Registered outside the app shell on purpose:
@@ -401,10 +440,6 @@ const createChurchRouter = () => {
     }
 
     if (to.name === 'Landing') {
-      // Turned off, this install is an internal tool with no public face. On a
-      // cold load the setting may not have arrived yet, so it reads as "shown"
-      // here and Landing.vue finishes the decision once it does.
-      if (!getLandingEnabled()) return { name: 'Login' }
       // Signed in or not, "/" stays the public page. A member who follows the
       // church's own link should land where visitors land — the page itself
       // offers them the way back into the app.
@@ -430,15 +465,26 @@ const createChurchRouter = () => {
     if (isAuthenticated.value && to.meta.requiresAuth) {
       // Awaited on every navigation, not just guarded ones: the sidebar and
       // bottom bar filter themselves by capability, so the map has to be loaded
-      // even on a page that grants itself freely.
-      // Which apps the church has is part of every answer below: can() refuses
-      // a capability whose app is off, so the map has to be in first.
-      await Promise.all([initPermissions(), churchAppsReady()])
+      // even on a page that grants itself freely. Which apps the church has is
+      // part of every answer below — can() refuses a capability whose app is
+      // off — and the settings say whether this church has ever been set up,
+      // which decides the redirect before any of the rest is worth asking.
+      await Promise.all([initPermissions(), churchAppsReady(), appSettingsReady()])
 
       const capability = to.matched.reduce((cap, record) => record.meta.capability || cap, null)
       const adminOnly = to.matched.some((record) => record.meta.adminOnly)
       const app = to.matched.reduce((key, record) => record.meta.app || key, null)
       const { can, isAdmin, hasNoAdmins } = usePermissions()
+
+      // A church nobody has set up yet has one screen for whoever runs it. The
+      // guide writes `setup.done` on the way out — finished or abandoned — so
+      // this is a redirect somebody sees once, not a wall. Only administrators:
+      // a member who happens to sign in first has nothing to fill in, and
+      // being shown a half-built page is better than being shown a form for
+      // somebody else's job.
+      if (to.name !== 'Setup' && isAdmin.value && isSetupPending()) {
+        return { name: 'Setup' }
+      }
 
       if (app && !isAppEnabled(app)) return { path: HOME, query: { denied: to.path } }
 

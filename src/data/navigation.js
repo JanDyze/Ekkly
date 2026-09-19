@@ -21,34 +21,37 @@ import {
 } from '../icons'
 import { isAppEnabled } from '../composables/useChurchApps'
 
-// Painted icons for the pages that have one. Imported rather than referenced by
-// URL so Vite fingerprints them and they cache properly; the folder name has a
-// space in it, which is fine in an import specifier.
+// Ekkly's own artwork for each page, from src/assets/app-icons — the same
+// drawing the page wears on the front door, so a church sees the picture it
+// was sold. Imported rather than referenced by URL so Vite fingerprints them
+// and they cache properly.
 //
-// Only some pages have artwork. Anything without falls back to its line icon,
-// which is why both fields exist side by side rather than one replacing the
-// other.
+// The artwork is Ekkly's and keeps its orange and blue (BRAND.md): it is not a
+// token, so it does not follow the church's accent, and both colours are
+// saturated enough to hold their own against a light page and a dark one.
 //
-// All of them are the same drawing in the church's red and blue on a
-// transparent ground. Both colours are saturated enough to hold their own
-// against a light page and a dark one, so no icon needs a dark-mode twin.
-import accountsArt from '../assets/sidebar items/accounts.png'
-import attendanceArt from '../assets/sidebar items/attendance.png'
-import dashboardArt from '../assets/sidebar items/dashboard.png'
-import eventsArt from '../assets/sidebar items/events.png'
-import financesArt from '../assets/sidebar items/finances.png'
-import galleryArt from '../assets/sidebar items/gallery.png'
-import lineupsArt from '../assets/sidebar items/lineups.png'
-import linksArt from '../assets/sidebar items/links.png'
-import minutesArt from '../assets/sidebar items/minutes.png'
-import peopleArt from '../assets/sidebar items/people.png'
-import prayerArt from '../assets/sidebar items/prayer.png'
-import presentationArt from '../assets/sidebar items/presentation.png'
-import settingsArt from '../assets/sidebar items/settings.png'
-import smallGroupsArt from '../assets/sidebar items/small groups.png'
-import songsArt from '../assets/sidebar items/song list.png'
-import tasksArt from '../assets/sidebar items/tasks.png'
-import todosArt from '../assets/sidebar items/todos.png'
+// `icon` stays beside it, the line icon anything without a drawing falls back
+// to. Every page has one today; the pair is what lets a new one arrive before
+// its drawing does.
+import accountsArt from '../assets/app-icons/accounts.svg'
+import attendanceArt from '../assets/app-icons/attendance.svg'
+import auditArt from '../assets/app-icons/audit.svg'
+import bibleArt from '../assets/app-icons/bible.svg'
+import dashboardArt from '../assets/app-icons/dashboard.svg'
+import eventsArt from '../assets/app-icons/events.svg'
+import financesArt from '../assets/app-icons/finances.svg'
+import galleryArt from '../assets/app-icons/gallery.svg'
+import lineupsArt from '../assets/app-icons/lineups.svg'
+import linksArt from '../assets/app-icons/links.svg'
+import minutesArt from '../assets/app-icons/minutes.svg'
+import peopleArt from '../assets/app-icons/members.svg'
+import prayerArt from '../assets/app-icons/prayer.svg'
+import presentationArt from '../assets/app-icons/presentation.svg'
+import settingsArt from '../assets/app-icons/settings.svg'
+import smallGroupsArt from '../assets/app-icons/smallgroups.svg'
+import songsArt from '../assets/app-icons/songs.svg'
+import tasksArt from '../assets/app-icons/tasks.svg'
+import todosArt from '../assets/app-icons/todos.svg'
 
 /**
  * Every place in the app you can go, in one list.
@@ -79,6 +82,7 @@ export const NAV_GROUPS = [
         name: 'Dashboard',
         path: '/dashboard',
         image: dashboardArt,
+        art: 'dashboard',
         icon: Home,
         capability: 'dashboard.view',
         description: 'The week at a glance — who is serving, what is coming, what needs attention.',
@@ -87,6 +91,7 @@ export const NAV_GROUPS = [
         name: 'Tasks',
         path: '/tasks',
         image: tasksArt,
+        art: 'tasks',
         icon: ListChecks,
         capability: 'tasks.view',
         description: 'Jobs the church has to get done, and who agreed to do them.',
@@ -101,6 +106,7 @@ export const NAV_GROUPS = [
         name: 'People',
         path: '/members',
         image: peopleArt,
+        art: 'members',
         icon: Users,
         capability: 'members.view',
         description: 'Everyone the church knows, their details and the ministries they serve in.',
@@ -110,6 +116,7 @@ export const NAV_GROUPS = [
         path: '/small-groups',
         short: 'Groups',
         image: smallGroupsArt,
+        art: 'smallgroups',
         icon: UsersRound,
         capability: 'smallgroups.view',
         description: 'The groups that meet through the week, who is in them and how each session went.',
@@ -118,6 +125,7 @@ export const NAV_GROUPS = [
         name: 'Attendance',
         path: '/attendance',
         image: attendanceArt,
+        art: 'attendance',
         icon: ClipboardCheck,
         capability: 'attendance.view',
         description: 'Who came on a Sunday, and whether that is holding up over the weeks.',
@@ -132,6 +140,7 @@ export const NAV_GROUPS = [
         name: 'Events',
         path: '/events',
         image: eventsArt,
+        art: 'events',
         icon: Calendar,
         capability: 'events.view',
         description: 'The church calendar — services, meetings and everything else that is on.',
@@ -141,6 +150,7 @@ export const NAV_GROUPS = [
         path: '/songs',
         short: 'Songs',
         image: songsArt,
+        art: 'songs',
         icon: ListMusic,
         capability: 'songs.view',
         description: 'Every song the church sings, with its key, its words and who leads it.',
@@ -149,6 +159,7 @@ export const NAV_GROUPS = [
         name: 'Schedules',
         path: '/schedules',
         image: lineupsArt,
+        art: 'lineups',
         icon: Mic2,
         capability: 'lineups.view',
         description: 'Who is serving each Sunday — worship, ushers, teachers, preaching — and the songs.',
@@ -161,6 +172,7 @@ export const NAV_GROUPS = [
         path: '/present',
         short: 'Present',
         image: presentationArt,
+        art: 'presentation',
         icon: ProjectorScreen,
         capability: 'lineups.view',
         description: 'Put the songs and readings on the screen while the service runs.',
@@ -173,6 +185,8 @@ export const NAV_GROUPS = [
         // Its own app, so a church can leave it out; with no capability to
         // carry that, it is named here.
         app: 'bible',
+        image: bibleArt,
+        art: 'bible',
         icon: BookOpen,
         description:
           'Read the Bible in Tagalog or English, and find a verse by reference or by what it says.',
@@ -181,6 +195,7 @@ export const NAV_GROUPS = [
         name: 'Minutes',
         path: '/minutes',
         image: minutesArt,
+        art: 'minutes',
         icon: FileText,
         capability: 'minutes.view',
         description: 'Notes typed during a meeting, written up into minutes the church can file.',
@@ -190,6 +205,7 @@ export const NAV_GROUPS = [
         path: '/prayer-concerns',
         short: 'Prayer',
         image: prayerArt,
+        art: 'prayer',
         icon: Heart,
         capability: 'prayer.view',
         description: 'What the church is praying for, and who asked for it.',
@@ -204,6 +220,7 @@ export const NAV_GROUPS = [
         name: 'Gallery',
         path: '/gallery',
         image: galleryArt,
+        art: 'gallery',
         icon: Image,
         capability: 'gallery.view',
         description: 'Photos from services and events.',
@@ -212,6 +229,7 @@ export const NAV_GROUPS = [
         name: 'Links',
         path: '/links',
         image: linksArt,
+        art: 'links',
         icon: Link2,
         capability: 'links.view',
         description: 'The links the church hands out — forms, giving, and where to find it online.',
@@ -226,6 +244,7 @@ export const NAV_GROUPS = [
         name: 'Finances',
         path: '/finances',
         image: financesArt,
+        art: 'finances',
         icon: Wallet,
         capability: 'finances.view',
         description: 'What comes in and goes out, and the statement for the month.',
@@ -234,6 +253,7 @@ export const NAV_GROUPS = [
         name: 'To-do',
         path: '/todo',
         image: todosArt,
+        art: 'todos',
         icon: NotebookPen,
         adminOnly: true,
         description: 'The backlog for building this app — bugs, features and chores.',
@@ -242,6 +262,7 @@ export const NAV_GROUPS = [
         name: 'Accounts',
         path: '/accounts',
         image: accountsArt,
+        art: 'accounts',
         icon: UserCog,
         adminOnly: true,
         description: 'Who can sign in, and which member each account belongs to.',
@@ -249,9 +270,8 @@ export const NAV_GROUPS = [
       {
         name: 'Audit log',
         path: '/audit',
-        // No drawing of its own yet; it borrows Accounts', the page it sits
-        // beside and answers to — who did what, next to who can sign in.
-        image: accountsArt,
+        image: auditArt,
+        art: 'audit',
         icon: History,
         adminOnly: true,
         description: 'Every change made in the app, who made it, and when.',
@@ -260,6 +280,7 @@ export const NAV_GROUPS = [
         name: 'Settings',
         path: '/settings',
         image: settingsArt,
+        art: 'settings',
         icon: Settings,
         adminOnly: true,
         description: 'Church details, ministries, roles, and what the public page shows.',

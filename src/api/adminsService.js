@@ -4,6 +4,7 @@ import {
   doc,
   setDoc,
   deleteDoc,
+  getDoc,
   getDocs,
   onSnapshot,
   Timestamp,
@@ -38,6 +39,27 @@ export const subscribeToAdmins = (callback) => {
       callback([])
     }
   )
+}
+
+/**
+ * Whether one account administers this church, as a single document read.
+ *
+ * subscribeToAdmins hands back the whole list, and usePermissions subscribes
+ * to the roll beside it — the right shape for the app, and far more than the
+ * public page should pay. That page asks only one question, of one account:
+ * are you the administrator who still has to set this church up?
+ */
+export const isAdminUid = async (uid) => {
+  if (!uid) return false
+  try {
+    const snapshot = await getDoc(doc(db, ADMINS_COLLECTION, uid))
+    return snapshot.exists()
+  } catch (error) {
+    // Not in the church, most likely, and the rules said so. Not an
+    // administrator is the right answer either way.
+    console.error('Error checking administrator status:', error)
+    return false
+  }
 }
 
 export const addAdmin = async (user, addedBy) => {

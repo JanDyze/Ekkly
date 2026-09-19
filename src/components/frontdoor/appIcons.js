@@ -9,7 +9,8 @@ import {
   ListChecks,
   ListMusic,
   Mic2,
-  Sparkles,
+  NotePencil,
+  SquaresFour,
   Users,
   UsersRound,
   Wallet,
@@ -45,10 +46,12 @@ const ICONS = {
   links: Link2,
   finances: Wallet,
   tasks: ListChecks,
-  ai: Sparkles,
+  // EKRIS types things up for a church; a sparkle only says "this bit is AI",
+  // which is the badge every product wears and tells a pastor nothing.
+  ai: NotePencil,
 }
 
-export const appIcon = (key) => ICONS[key] || Sparkles
+export const appIcon = (key) => ICONS[key] || SquaresFour
 
 // The app's picture on the front door: Ekkly's own glossy artwork in the mark's
 // orange and blue (made by brand/ekkly/make-app-icons.mjs), where a line icon

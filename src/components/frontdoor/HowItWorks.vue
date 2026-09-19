@@ -93,6 +93,14 @@ const active = computed(() => Math.min(STEPS.length - 1, Math.floor(progress.val
 // How far into the step being read, from 0 to 1.
 const within = computed(() => (still ? 1 : Math.min(1, progress.value * STEPS.length - active.value)))
 
+// The ring around each step. r=46 in a 100-unit box, so the circumference is
+// what a dash array has to be measured in; the offset walks it back to nothing.
+const RING = 2 * Math.PI * 46
+// Full for the steps already read, filling for the one being read, empty for
+// the ones still to come. `within` is already 1 for a reader who has asked for
+// less motion, so their rings arrive drawn rather than never drawing.
+const ringFill = (index) => (index < active.value ? 1 : index === active.value ? within.value : 0)
+
 // The step names are buttons: pressing one scrolls to where that step begins.
 const goToStep = (index) => {
   const box = track.value?.getBoundingClientRect()
@@ -182,13 +190,16 @@ const onTouchEnd = (event) => {
         <div>
           <slot name="heading" />
 
-          <!-- The steps, as a line with a stop for each. The line fills as the
-               reader goes; the step being read is open, the ones before it
-               ticked, and the ones to come still dim. -->
+          <!-- The steps, each a round stop with its own ring. The ring draws
+               itself as the reader moves through that step, so the progress is
+               on the thing it belongs to rather than on a rail beside it: a
+               line running the height of the list had to pass behind every
+               marker, and a marker with a line showing through it is not a
+               stop at all.
+
+               Every stop is a solid colour, the ticked ones included — the
+               rings are the only thing here that is meant to be partly drawn. -->
           <ol class="relative mt-10">
-            <span class="pointer-events-none absolute bottom-6 left-6 top-6 w-0.5 -translate-x-1/2 overflow-hidden rounded-full bg-white/10" aria-hidden="true">
-              <span class="rail-fill absolute inset-0 origin-top rounded-full" :style="{ transform: `scaleY(${progress})` }"></span>
-            </span>
             <li v-for="(step, index) in STEPS" :key="step.title" class="relative">
               <button
                 type="button"
@@ -196,18 +207,35 @@ const onTouchEnd = (event) => {
                 class="group flex w-full gap-5 rounded-2xl py-3 pr-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
                 @click="goToStep(index)"
               >
-                <span
-                  :class="[
-                    'relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-lg font-black transition-colors duration-300',
-                    index === active
-                      ? 'bg-primary text-white shadow-lg shadow-primary/40'
-                      : index < active
-                        ? 'bg-emerald-500/15 text-emerald-300'
-                        : 'bg-gray-800 text-white/40 ring-1 ring-white/10',
-                  ]"
-                >
-                  <CheckCircle2 v-if="index < active" class="h-6 w-6" />
-                  <template v-else>{{ index + 1 }}</template>
+                <span class="relative flex h-12 w-12 shrink-0 items-center justify-center">
+                  <!-- Turned a quarter back, so the ring starts at the top
+                       rather than at three o'clock. -->
+                  <svg class="pointer-events-none absolute -inset-1.5 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+                    <circle class="ring-track" cx="50" cy="50" r="46" fill="none" stroke-width="5" />
+                    <circle
+                      :class="['ring-fill', index < active ? 'is-done' : '']"
+                      cx="50"
+                      cy="50"
+                      r="46"
+                      fill="none"
+                      stroke-width="5"
+                      stroke-linecap="round"
+                      :style="{ strokeDasharray: RING, strokeDashoffset: RING * (1 - ringFill(index)) }"
+                    />
+                  </svg>
+                  <span
+                    :class="[
+                      'flex h-12 w-12 items-center justify-center rounded-full text-lg font-black transition-colors duration-300',
+                      index === active
+                        ? 'bg-primary text-white'
+                        : index < active
+                          ? 'bg-emerald-900 text-emerald-300'
+                          : 'bg-gray-700 text-white/40 dark:bg-gray-800',
+                    ]"
+                  >
+                    <CheckCircle2 v-if="index < active" class="h-6 w-6" />
+                    <template v-else>{{ index + 1 }}</template>
+                  </span>
                 </span>
                 <span class="min-w-0 flex-1 pt-1">
                   <span :class="['block text-xs font-bold uppercase tracking-wider transition-colors duration-300', index === active ? 'text-primary-light' : 'text-white/40']">
@@ -273,8 +301,8 @@ const onTouchEnd = (event) => {
           <span class="flex items-center gap-1.5">
             <span
               :class="[
-                'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-xs font-black transition-colors duration-300',
-                index === phoneStep ? 'bg-primary text-white' : index < phoneStep ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/10 text-white/50',
+                'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-black transition-colors duration-300',
+                index === phoneStep ? 'bg-primary text-white' : index < phoneStep ? 'bg-emerald-900 text-emerald-300' : 'bg-white/10 text-white/50',
               ]"
             >
               <CheckCircle2 v-if="index < phoneStep" class="h-4 w-4" />
@@ -333,7 +361,7 @@ const onTouchEnd = (event) => {
         <button
           v-else
           type="button"
-          class="group flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-white shadow-lg shadow-primary/40 transition-colors hover:bg-primary-hover"
+          class="group flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-white transition-colors hover:bg-primary-hover"
           @click="emit('start')"
         >
           Ask for your church
@@ -347,6 +375,23 @@ const onTouchEnd = (event) => {
 
 <style scoped>
 /* The line between the steps, in the window's colours. */
+/* The ring: a groove all the way round, and the accent drawn into it as far as
+   the reader has come. Only the offset moves, which is a property the
+   compositor can animate on its own — this runs on every scroll frame. A
+   ticked step turns its ring green to agree with its tick. */
+.ring-track {
+  stroke: rgb(255 255 255 / 0.12);
+}
+
+.ring-fill {
+  stroke: var(--color-primary-light);
+  transition: stroke 0.3s ease;
+}
+
+.ring-fill.is-done {
+  stroke: var(--color-emerald-400);
+}
+
 .rail-fill {
   background: linear-gradient(
     to bottom,

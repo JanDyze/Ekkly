@@ -15,7 +15,7 @@ church can also bring a domain of its own; see [Custom domains](#custom-domains)
 | Address | What it serves |
 | --- | --- |
 | `church.app`, `app.church.app` | The platform's front door: the home page, `/pricing`, `/start` (sign in, ask for a church, see your requests), `/privacy` and `/terms`. Platform admins also get the console at `/platform`. |
-| `<id>.church.app` | That church's app, its sign-in page and its public page. |
+| `<id>.church.app` | That church's public page at `/`, open to anyone who knows the address, and behind sign-in its app. |
 
 **Records live under the church.** Every collection the app has always used
 (`members`, `events`, `appSettings`, …) now lives at `churches/{id}/<collection>`.
@@ -36,8 +36,8 @@ Beside the churches sit a few platform collections:
 | `churchRequests` | requests for a new church | the person asking, then `/api/platform` |
 | `platformAdmins/{uid}` | people who run the platform | the first by `scripts/make-platform-admin.mjs`, then the console |
 | `domains/{host}` | custom domain → church id | the console (Church → Domains) |
-| `mcpTokens/{sha256}` | a church's connector token | `/api/mcp-token` |
-| `platform/public` | platform name, front-door wording, colours, app prices (readable by anyone) | the console |
+| `mcpTokens/{sha256}` | one account's connector link into one church | `/api/mcp-token` |
+| `platform/public` | platform name, front-door wording, colours, typeface, app prices (readable by anyone) | the console |
 | `platform/private` | AI model per feature, new church defaults | the console |
 | `platformLog` | everything done from the console | `/api/platform` |
 | `supportRequests` | a church asking for an app, a change, or with feedback | `/api/platform` |
@@ -74,9 +74,9 @@ admin and writes a `platformLog` entry with the change.
 | Apps & prices | The monthly price of each app, whether it is on offer, and how it is described to churches. |
 | Live chat | Conversations from the front door's chat bubble, and your replies. The bubble says you are online while the account named in **Name & front door → Chat bubble** has any Ekkly tab open; a message left while you are away is emailed to that address. |
 | Support requests | What churches asked for, with a status and a reply they see in their Settings. |
-| New church defaults | Timezone, public page on or off, starting apps, trial length, starter ministries and tags. |
+| New church defaults | Timezone, starting apps, trial length, starter ministries and tags. |
 | Name & front door | The platform's name, tagline, contact email and front-door wording, and the chat bubble: on or off, the name visitors see, who answers, a phone for "Call" and a Messenger link. |
-| Colours | The accent colours every church starts with. |
+| Colours and type | The accent colours and the typeface every church starts with. |
 | AI | Whether AI runs at all, and which Claude model each feature uses. |
 | Platform admins | Add or remove platform admins. The last one cannot be removed. |
 | Activity | The platform log. |
@@ -105,9 +105,13 @@ subscription before recording anything. Keys are in [.env.example](.env.example)
 `churches/{id}/subscription/billing.card` holds the PayMongo ids, and
 `cardSubscriptions/{subscriptionId}` maps a subscription back to its church.
 
-**Colours.** A church's own colours (Settings → Colours) win over the
-platform's, which win over the built-in ones. `src/composables/useBrandTheme.js`
-applies them by overriding the CSS variables Tailwind's `primary` classes read.
+**Colours and type.** A church's own (Settings → Colours and type) win over
+the platform's, which win over the built-in ones, each part falling back on its
+own. `src/composables/useBrandTheme.js` applies them by overriding the CSS
+variables Tailwind's `primary` and `font-sans` classes read. The typeface is one
+of the short list in `BRAND_FONTS` (`lib/platformDefaults.js`) — never a name
+typed in — and is fetched by an `@import` inside the same style element, so the
+remembered theme in `index.html` starts its download before the app boots.
 
 **AI.** Minutes write-up, song lookup and lyrics layout run only when the AI
 switch in the console is on *and* the church has the EKRIS app. Each call
@@ -126,8 +130,24 @@ is counted in the church's `usage` for the month.
    - an audit entry, and a platform log entry
 
    It then adds `<id>.church.app` to Firebase Auth's authorised domains.
-4. The requester opens `<id>.church.app`. They are its administrator. The
-   public page starts switched off.
+4. The requester opens `<id>.church.app`. They are its administrator, and the
+   address is already the church's public page — so the first thing they get
+   is **the setup guide** ([ChurchSetup.vue](src/views/ChurchSetup.vue),
+   `/setup`), which asks for what that page shows, a few fields at a time.
+
+### The setup guide
+
+The church document written in step 3 carries `setup: { done: false }`. While
+that is false, an administrator is sent to `/setup` from anywhere in the app —
+the router guard does it for the app's pages, and `Landing.vue` does it for
+`/`, which is the address they were actually given. Every step can be skipped
+and *I'll finish this later* leaves at any point; both write `setup.done: true`,
+so nobody is sent back twice. A church with no `setup` field at all predates
+the guide and is left alone.
+
+The guide writes through `useAppSettings` to the same `appSettings/church`
+document Settings writes to — it is a friendlier way into those fields, never
+a second place they live. Settings > Public page links back to it.
 
 ### Joining a church
 

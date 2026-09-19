@@ -46,7 +46,7 @@ const iconFor = (type) => TYPE_ICONS[type] || Calendar
 const labelFor = (type) =>
   type === 'birthday' ? 'Birthday' : type ? type[0].toUpperCase() + type.slice(1) : 'Gathering'
 
-// A birthday arrives from the server titled "Kaarawan ni Dyze", because the
+// A birthday arrives from the server titled "Dyze’s birthday", because the
 // server is answering for a page anyone may be reading. When the reader is
 // Dyze, that is the app talking about them in the third person to their face.
 // The id carries the member it was built from, so the one entry that is
@@ -55,7 +55,7 @@ const titleOf = (gathering) =>
   gathering.type === 'birthday' &&
   props.myMemberId &&
   gathering.id === `birthday-${props.myMemberId}`
-    ? 'Birthday Mo'
+    ? 'Your birthday'
     : gathering.title
 
 const open = ref(false)

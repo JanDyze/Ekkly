@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { ArrowRight, Check } from '../../icons'
 import { formatMoney } from '../../utils/moneyUtils'
 import { MONTHS_PER_YEAR_PAID, yearlyPrice } from '../../../lib/apps.js'
-import AppArt from './AppArt.vue'
+import AppArt from '../common/AppArt.vue'
 import { useFrontDoor } from '../../composables/useFrontDoor'
 
 // "Build your plan": a visitor ticks the apps their church would use and
@@ -60,7 +60,7 @@ const monthsFree = 12 - MONTHS_PER_YEAR_PAID
 
 <template>
   <div class="grid gap-6 lg:grid-cols-[1fr_20rem]">
-    <ul class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+    <ul class="grid grid-cols-2 gap-2.5">
       <li v-for="app in offered" :key="app.key">
         <button
           type="button"
@@ -68,14 +68,14 @@ const monthsFree = 12 - MONTHS_PER_YEAR_PAID
           :aria-pressed="isOn(app)"
           :disabled="app.core"
           :class="[
-            'group flex h-full w-full items-start gap-3 rounded-2xl border p-3.5 text-left transition-all',
+            'group flex h-full w-full flex-col items-start gap-2 rounded-2xl border p-3 text-left transition-all sm:flex-row sm:gap-3 sm:p-3.5',
             isOn(app)
               ? 'border-primary/40 bg-primary/5 shadow-sm dark:border-primary-light/40 dark:bg-primary-light/10'
               : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600',
           ]"
         >
-          <AppArt :app-key="app.key" :play="plays[app.key] || 0" :class="['plan-art h-11 w-11 shrink-0', { 'is-off': !isOn(app) }]" />
-          <span class="min-w-0 flex-1">
+          <AppArt :app-key="app.key" :play="plays[app.key] || 0" :class="['plan-art h-10 w-10 shrink-0 sm:h-11 sm:w-11', { 'is-off': !isOn(app) }]" />
+          <span class="w-full min-w-0 flex-1 sm:w-auto">
             <span class="flex items-center justify-between gap-2">
               <span class="truncate text-sm font-semibold text-gray-900 dark:text-white">{{ app.name }}</span>
               <span
@@ -87,7 +87,9 @@ const monthsFree = 12 - MONTHS_PER_YEAR_PAID
                 <Check class="h-3 w-3" />
               </span>
             </span>
-            <span class="mt-0.5 block text-xs leading-relaxed text-gray-500 dark:text-gray-400">{{ app.description }}</span>
+            <!-- Two apps to a row on a phone leaves a narrow card, so the
+                 description is trimmed to two lines to keep the rows even. -->
+            <span class="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-gray-500 dark:text-gray-400 sm:line-clamp-none">{{ app.description }}</span>
             <span v-if="hasPrices" class="mt-1.5 block text-xs font-semibold tabular-nums text-gray-700 dark:text-gray-300">
               {{ app.core ? `Included · ${peso(app.price)}` : app.price ? `${peso(app.price)} / month` : 'Included' }}
             </span>
@@ -99,7 +101,7 @@ const monthsFree = 12 - MONTHS_PER_YEAR_PAID
     <!-- The running total, kept in view on a wide screen. A phone has it at
          the foot of the page instead (PlanBar), where it is always in reach. -->
     <aside class="hidden lg:sticky lg:top-24 lg:block lg:self-start">
-      <div class="overflow-hidden rounded-3xl bg-gray-900 p-6 text-white shadow-2xl dark:bg-gray-800">
+      <div class="overflow-hidden rounded-2xl bg-gray-900 p-6 text-white shadow-2xl dark:bg-gray-800">
         <p class="text-xs font-semibold uppercase tracking-wider text-white/60">Your plan</p>
         <template v-if="hasPrices">
           <!-- Monthly or yearly: two choices, so a segment control. -->
