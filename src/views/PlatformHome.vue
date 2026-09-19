@@ -15,6 +15,13 @@ import FrontDoorFooter from '../components/frontdoor/FrontDoorFooter.vue'
 import FrontDoorFaq from '../components/frontdoor/FrontDoorFaq.vue'
 import heroBgLight from '../assets/hero-bg-light.webp'
 import heroBgDark from '../assets/hero-bg-dark.webp'
+// The same room, framed upright for a phone. A 2:1 picture in a portrait box
+// crops to a slice of empty wall — the window is in the right-hand third and
+// `cover` throws it away. These are that third, stood on a taller canvas of
+// the same wall colour, so the window keeps its place and the light has room
+// to fall. Made from the wide ones by brand/ekkly/make-hero-portraits.mjs.
+import heroBgLightTall from '../assets/hero-bg-light-portrait.webp'
+import heroBgDarkTall from '../assets/hero-bg-dark-portrait.webp'
 import { FAQS, HOME_FAQS } from '../components/frontdoor/faqs'
 import { TYPE } from '../components/frontdoor/type'
 import { initAuth, useAuth } from '../composables/useAuth'
@@ -272,19 +279,23 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
            The front door is the platform's page, so there is nothing here for
            a church's colour to be.
 
-           From sm up only. A phone's hero is the headline, the buttons and the
-           device with nothing behind them: at that width the window would have
-           to fall across the words to be seen at all, and a stranger reading
-           the one sentence that explains Ekkly should not be reading it through
-           anything. -->
-      <div class="pointer-events-none absolute inset-0 -z-10 hidden overflow-hidden sm:block" aria-hidden="true">
+           A phone gets it too, but lower down. The hero is one column there —
+           headline, buttons, then the device — so the window sits under the
+           device and fades out before it reaches the words, rather than
+           falling across them. A stranger reading the one sentence that
+           explains Ekkly still reads it off a plain page; what the light
+           catches is the thing being shown. See .hero-room below. -->
+      <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+        <!-- Which picture is chosen in CSS, not here: an inline
+             background-image would outrank any media query. Each div hands
+             both framings over as custom properties and .hero-room picks. -->
         <div
           class="hero-room absolute inset-x-0 top-0 h-full max-h-[52rem] bg-cover bg-right bg-no-repeat opacity-70 dark:hidden"
-          :style="{ backgroundImage: `url(${heroBgLight})` }"
+          :style="{ '--hero-wide': `url(${heroBgLight})`, '--hero-tall': `url(${heroBgLightTall})` }"
         ></div>
         <div
           class="hero-room absolute inset-x-0 top-0 h-full max-h-[52rem] hidden bg-cover bg-right bg-no-repeat dark:block"
-          :style="{ backgroundImage: `url(${heroBgDark})` }"
+          :style="{ '--hero-wide': `url(${heroBgDark})`, '--hero-tall': `url(${heroBgDarkTall})` }"
         ></div>
       </div>
 
@@ -578,8 +589,28 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
    of the render. Fading the last quarter stops a beam of light ending in a
    straight horizontal line across the page. */
 .hero-room {
+  background-image: var(--hero-wide);
   mask-image: linear-gradient(to bottom, #000 76%, transparent);
   -webkit-mask-image: linear-gradient(to bottom, #000 76%, transparent);
+}
+
+/* Below sm the window moves out from behind the words and under the device,
+   and the fade turns over with it: transparent at the top, where the headline
+   is, solid across the middle, gone again before the section ends.
+   Deliberately no opacity of its own — the light one is already held at 70%
+   and the dark one at full, and those were picked against the page's own
+   ground. Dimming them further for a small screen made the wash invisible
+   rather than subtle, which is how this first shipped. */
+@media (max-width: 639px) {
+  .hero-room {
+    background-image: var(--hero-tall);
+    top: 26%;
+    height: 74%;
+    max-height: none;
+    background-position: center top;
+    mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
+  }
 }
 
 /* ------------------------------------------------------ scrolling down */

@@ -11,6 +11,22 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.29.1] — 2026-09-19
+
+### Fixed
+
+- **The front door's window now shows on a phone.** It was hidden below `sm`
+  on purpose — at that width the wide picture's window falls behind the
+  headline — but hiding it left a phone with a plain white hero. It now sits
+  under the device instead of behind the words, and the fade turns over with
+  it: clear at the top where the headline is, solid through the middle, gone
+  before the section ends.
+- The phone gets a picture framed for it. The wide art is 2:1 with the window
+  in its right-hand third, and `cover` in a portrait box keeps the middle and
+  throws both ends away — the window with them. `brand/ekkly/make-hero-portraits.mjs`
+  stands that third on a taller canvas of the wall's own colour; 12 KB and
+  14 KB, and only a phone downloads them.
+
 ## [0.29.0] — 2026-09-19
 
 A church can now choose its typeface as well as its colours, and the Claude
