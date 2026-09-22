@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, nextTick, onBeforeUnmount, watch } from "vue";
-import { X, Upload, Camera, Move, ZoomIn, ZoomOut, RotateCw, Check } from '../../icons';
+import { X, Upload, Camera, ZoomIn, ZoomOut, RotateCw, RotateCcw, Check } from '../../icons';
 import { useFocusTrap } from "../../composables/useFocusTrap";
 
 const props = defineProps({
@@ -18,92 +18,133 @@ const emit = defineEmits(["update:modelValue", "update:show"]);
 
 const fileInput = ref(null);
 const cameraInput = ref(null);
-const originalImageSrc = ref(null); // Store original uploaded image
-const previewImageSrc = ref(null); // For preview display
 const canvas = ref(null);
-const container = ref(null);
 
-// Crop state
-const scale = ref(1);
-const position = ref({ x: 0, y: 0 });
-const isDragging = ref(false);
-const dragStart = ref({ x: 0, y: 0 });
-const imageLoaded = ref(false);
-const imageSize = ref({ width: 0, height: 0 });
-const containerSize = ref({ width: 300, height: 300 });
+// The picture being framed: a decoded Image, so its natural size is known
+// before anything is drawn. Rotating replaces it with a turned copy.
+const image = ref(null);
+const imageLoaded = computed(() => !!image.value);
+const loadError = ref('');
 
-const outputSize = 300; // Square output size
+// A square PNG with the circle already cut, a little larger than any avatar
+// is drawn so it stays sharp on a high-density screen.
+const OUTPUT_SIZE = 400;
+const MAX_ZOOM = 5;
 
-// Computed
-const imageStyle = computed(() => {
+/* ------------------------------------------------------------ the framing
+ * The same model as ImageCropModal, for the same reason: at zoom 1 the photo
+ * exactly covers the frame, and it can never be moved or shrunk far enough
+ * to open a gap at an edge. The old cropper let a photo be dragged clean out
+ * of the circle and zoomed out to half the frame, then quietly clamped the
+ * crop when it was saved - so what was saved was not what had been shown.
+ */
+const frameRef = ref(null);
+const frameSize = ref(0);
+const zoom = ref(1);
+const offset = ref({ x: 0, y: 0 });
+
+/** Scale at which the photo exactly covers the square - the zoom 1 baseline. */
+const baseScale = computed(() => {
+  if (!image.value || !frameSize.value) return 1;
+  return Math.max(
+    frameSize.value / image.value.naturalWidth,
+    frameSize.value / image.value.naturalHeight
+  );
+});
+
+const displaySize = computed(() => {
+  if (!image.value) return { width: 0, height: 0 };
+  const scale = baseScale.value * zoom.value;
   return {
-    transform: `translate(calc(-50% + ${position.value.x}px), calc(-50% + ${position.value.y}px)) scale(${scale.value})`,
+    width: image.value.naturalWidth * scale,
+    height: image.value.naturalHeight * scale,
   };
 });
 
-// Watch for show prop
-watch(() => props.show, (newVal) => {
-  if (newVal && props.modelValue) {
-    originalImageSrc.value = props.modelValue;
-    previewImageSrc.value = props.modelValue;
-    loadImage(props.modelValue);
-  } else if (!newVal) {
-    reset();
-  }
+/** How far the photo may slide before a gap would open at an edge. */
+const maxOffset = computed(() => ({
+  x: Math.max(0, (displaySize.value.width - frameSize.value) / 2),
+  y: Math.max(0, (displaySize.value.height - frameSize.value) / 2),
+}));
+
+const clamp = (value, limit) => Math.min(limit, Math.max(-limit, value));
+const clampOffset = (next = offset.value) => {
+  offset.value = { x: clamp(next.x, maxOffset.value.x), y: clamp(next.y, maxOffset.value.y) };
+};
+
+const imageStyle = computed(() => ({
+  width: `${displaySize.value.width}px`,
+  height: `${displaySize.value.height}px`,
+  transform: `translate(-50%, -50%) translate(${offset.value.x}px, ${offset.value.y}px)`,
+}));
+
+/**
+ * Zoom about a point - the spot between two fingers, or under the cursor - so
+ * whatever is there stays there, rather than everything sliding towards the
+ * middle. `point` is relative to the centre of the frame.
+ */
+const zoomAround = (nextZoom, point = { x: 0, y: 0 }) => {
+  const target = Math.min(MAX_ZOOM, Math.max(1, nextZoom));
+  const ratio = target / zoom.value;
+  const next = {
+    x: point.x - (point.x - offset.value.x) * ratio,
+    y: point.y - (point.y - offset.value.y) * ratio,
+  };
+  zoom.value = target;
+  clampOffset(next);
+};
+
+// The slider zooms about the middle; its value is written through here so the
+// offset is kept inside the new bounds as it changes.
+const zoomModel = computed({
+  get: () => zoom.value,
+  set: (value) => zoomAround(Number(value)),
 });
 
-// Watch for modelValue changes
-watch(() => props.modelValue, (newVal) => {
-  if (newVal && props.show) {
-    originalImageSrc.value = newVal;
-    previewImageSrc.value = newVal;
-    loadImage(newVal);
-  }
-});
+const measure = () => {
+  frameSize.value = frameRef.value?.clientWidth || 0;
+  clampOffset();
+};
 
-// Load image
+const resetFraming = () => {
+  zoom.value = 1;
+  offset.value = { x: 0, y: 0 };
+};
+
 const loadImage = (src) => {
+  loadError.value = '';
   const img = new Image();
-  img.onload = () => {
-    imageSize.value = { width: img.width, height: img.height };
-    imageLoaded.value = true;
-    // Update container size
-    if (container.value) {
-      const rect = container.value.getBoundingClientRect();
-      containerSize.value = { width: rect.width, height: rect.width }; // Square
-    }
-    // Center image initially
-    centerImage();
+  // A stored photo lives on another origin (Blob storage); without this the
+  // canvas it is drawn into would be tainted and refuse to export.
+  if (!src.startsWith('data:')) img.crossOrigin = 'anonymous';
+  img.onload = async () => {
+    image.value = img;
+    resetFraming();
+    await nextTick();
+    measure();
+  };
+  img.onerror = () => {
+    loadError.value = 'That photo could not be opened. Try another one.';
   };
   img.src = src;
 };
 
-// Center image
-const centerImage = () => {
-  const imgAspect = imageSize.value.width / imageSize.value.height;
-  const containerAspect = containerSize.value.width / containerSize.value.height;
-  
-  let initialScale = 1;
-  if (imgAspect > containerAspect) {
-    initialScale = containerSize.value.height / imageSize.value.height;
-  } else {
-    initialScale = containerSize.value.width / imageSize.value.width;
+// Opening on an existing photo starts from it, so a small adjustment does not
+// mean finding the picture again.
+watch(
+  () => props.show,
+  (open) => {
+    if (open && props.modelValue) loadImage(props.modelValue);
+    else if (!open) reset();
   }
-  
-  scale.value = initialScale * 1.2; // Slightly larger to allow cropping
-  position.value = { x: 0, y: 0 };
-};
+);
 
 // Handle file selection
 const handleFileSelect = (event) => {
   const file = event.target.files?.[0];
   if (file && file.type.startsWith('image/')) {
     const reader = new FileReader();
-    reader.onload = (e) => {
-      originalImageSrc.value = e.target.result; // Store original
-      previewImageSrc.value = e.target.result; // Use for preview
-      loadImage(e.target.result);
-    };
+    reader.onload = (e) => loadImage(e.target.result);
     reader.readAsDataURL(file);
   }
 };
@@ -187,142 +228,156 @@ const takePhoto = () => {
     side
   );
 
-  const dataUrl = shot.toDataURL('image/png');
   stopCamera();
-  originalImageSrc.value = dataUrl;
-  previewImageSrc.value = dataUrl;
-  loadImage(dataUrl);
+  loadImage(shot.toDataURL('image/png'));
 };
 
 onBeforeUnmount(stopCamera);
 
-// Mouse/Touch handlers
-const startDrag = (e) => {
-  if (!imageLoaded.value) return;
-  isDragging.value = true;
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  dragStart.value = {
-    x: clientX - position.value.x,
-    y: clientY - position.value.y,
+/* ----------------------------------------------------------- pan and pinch */
+// Pointer events cover mouse, pen and fingers alike. One pointer drags; a
+// second turns it into a pinch, which zooms about the midpoint of the two and
+// follows that midpoint as it moves, so zooming and moving happen together
+// the way they do in a phone's own photo editor.
+const pointers = new Map();
+let dragStart = null;
+let pinchStart = null;
+
+const fromCentre = (clientX, clientY) => {
+  const box = frameRef.value.getBoundingClientRect();
+  return { x: clientX - box.left - box.width / 2, y: clientY - box.top - box.height / 2 };
+};
+
+const pinchMetrics = () => {
+  const [a, b] = [...pointers.values()];
+  return {
+    distance: Math.hypot(a.x - b.x, a.y - b.y) || 1,
+    mid: fromCentre((a.x + b.x) / 2, (a.y + b.y) / 2),
   };
 };
 
-const drag = (e) => {
-  if (!isDragging.value || !imageLoaded.value) return;
-  e.preventDefault();
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  position.value = {
-    x: clientX - dragStart.value.x,
-    y: clientY - dragStart.value.y,
-  };
-};
-
-const endDrag = () => {
-  isDragging.value = false;
-};
-
-// Zoom
-const zoom = (delta) => {
+const onPointerDown = (event) => {
   if (!imageLoaded.value) return;
-  const newScale = Math.max(0.5, Math.min(3, scale.value + delta));
-  scale.value = newScale;
+  frameRef.value?.setPointerCapture?.(event.pointerId);
+  pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  if (pointers.size === 2) {
+    const { distance, mid } = pinchMetrics();
+    pinchStart = { distance, mid, zoom: zoom.value, offset: { ...offset.value } };
+    dragStart = null;
+  } else if (pointers.size === 1) {
+    dragStart = { x: event.clientX, y: event.clientY, offset: { ...offset.value } };
+  }
 };
 
-// Rotate (90 degrees)
-const rotate = () => {
+const onPointerMove = (event) => {
+  if (!pointers.has(event.pointerId)) return;
+  pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+  if (pointers.size === 2 && pinchStart) {
+    const { distance, mid } = pinchMetrics();
+    const target = Math.min(MAX_ZOOM, Math.max(1, pinchStart.zoom * (distance / pinchStart.distance)));
+    const ratio = target / pinchStart.zoom;
+    // The point that was under the fingers when the pinch began stays under
+    // them, wherever they have moved to.
+    zoom.value = target;
+    clampOffset({
+      x: mid.x - (pinchStart.mid.x - pinchStart.offset.x) * ratio,
+      y: mid.y - (pinchStart.mid.y - pinchStart.offset.y) * ratio,
+    });
+    return;
+  }
+  if (!dragStart) return;
+  clampOffset({
+    x: dragStart.offset.x + (event.clientX - dragStart.x),
+    y: dragStart.offset.y + (event.clientY - dragStart.y),
+  });
+};
+
+const endPointer = (event) => {
+  pointers.delete(event.pointerId);
+  if (pointers.size < 2) pinchStart = null;
+  // Lifting one finger of a pinch carries on as a drag from where it is,
+  // rather than jumping back to where the first finger went down.
+  if (pointers.size === 1) {
+    const [rest] = [...pointers.values()];
+    dragStart = { x: rest.x, y: rest.y, offset: { ...offset.value } };
+  }
+  if (pointers.size === 0) dragStart = null;
+};
+
+const onWheel = (event) => {
   if (!imageLoaded.value) return;
-  // Swap width/height
-  const temp = imageSize.value.width;
-  imageSize.value.width = imageSize.value.height;
-  imageSize.value.height = temp;
-  centerImage();
+  event.preventDefault();
+  zoomAround(zoom.value * Math.exp(-event.deltaY * 0.002), fromCentre(event.clientX, event.clientY));
 };
 
-// Crop and convert to base64
+// A double tap or click goes back to the whole photo filling the circle.
+const onDoubleClick = () => resetFraming();
+
+/* ------------------------------------------------------------------ rotate */
+// The photo itself is turned - drawn into a canvas a quarter-turn round - so
+// the framing, the bounds and the saved crop all work on what is on screen.
+// The old button only swapped the width and height it had on record, which
+// left the picture unturned and the framing wrong.
+const rotate = (direction = 1) => {
+  const img = image.value;
+  if (!img) return;
+  const turned = document.createElement('canvas');
+  turned.width = img.naturalHeight;
+  turned.height = img.naturalWidth;
+  const ctx = turned.getContext('2d');
+  ctx.translate(turned.width / 2, turned.height / 2);
+  ctx.rotate((direction * Math.PI) / 2);
+  ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
+  loadImage(turned.toDataURL('image/png'));
+};
+
+/* -------------------------------------------------------------------- save */
+// Exactly the square on screen, turned back into the photo's own pixels.
 const cropImage = () => {
-  if (!canvas.value || !originalImageSrc.value || !imageLoaded.value) return;
-  
+  const img = image.value;
+  if (!canvas.value || !img || !frameSize.value) return;
+
+  const scale = baseScale.value * zoom.value;
+  const side = frameSize.value / scale;
+  const sourceX = (displaySize.value.width / 2 - frameSize.value / 2 - offset.value.x) / scale;
+  const sourceY = (displaySize.value.height / 2 - frameSize.value / 2 - offset.value.y) / scale;
+
+  canvas.value.width = OUTPUT_SIZE;
+  canvas.value.height = OUTPUT_SIZE;
   const ctx = canvas.value.getContext('2d');
-  const img = new Image();
-  
-  // Always use the original image for cropping
-  img.onload = () => {
-    // The image is positioned with transform: translate(x, y) scale(scale)
-    // The container is centered, so the image origin is at (width/2, height/2) before transform
-    
-    // Calculate the scale factor from container to image
-    const scaleToImage = 1 / scale.value;
-    
-    // The container center in container coordinates
-    const containerCenterX = containerSize.value.width / 2;
-    const containerCenterY = containerSize.value.height / 2;
-    
-    // The visible crop area center in container coordinates (accounting for position offset)
-    const cropCenterX = containerCenterX - position.value.x;
-    const cropCenterY = containerCenterY - position.value.y;
-    
-    // Convert to image coordinates
-    const imageCenterX = img.width / 2;
-    const imageCenterY = img.height / 2;
-    
-    // Calculate the crop area size in image coordinates
-    const cropSizeInImage = containerSize.value.width * scaleToImage;
-    
-    // Calculate source coordinates (top-left corner of crop area)
-    const sourceX = imageCenterX - cropSizeInImage / 2 - (position.value.x * scaleToImage);
-    const sourceY = imageCenterY - cropSizeInImage / 2 - (position.value.y * scaleToImage);
-    
-    // Ensure we don't go outside image bounds
-    const finalSourceX = Math.max(0, Math.min(img.width - cropSizeInImage, sourceX));
-    const finalSourceY = Math.max(0, Math.min(img.height - cropSizeInImage, sourceY));
-    const finalCropSize = Math.min(
-      cropSizeInImage,
-      img.width - finalSourceX,
-      img.height - finalSourceY
-    );
-    
-    // Draw cropped image to canvas
-    canvas.value.width = outputSize;
-    canvas.value.height = outputSize;
-    
-    // Clear canvas with white background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, outputSize, outputSize);
-    
-    // Draw the cropped portion from ORIGINAL image, scaled to output size
-    ctx.drawImage(
-      img,
-      finalSourceX, finalSourceY, finalCropSize, finalCropSize,
-      0, 0, outputSize, outputSize
-    );
-    
-    // Create circular mask
-    ctx.globalCompositeOperation = 'destination-in';
-    ctx.beginPath();
-    ctx.arc(outputSize / 2, outputSize / 2, outputSize / 2, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Convert to base64
-    const base64 = canvas.value.toDataURL('image/png', 1.0);
-    emit('update:modelValue', base64);
+  ctx.clearRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+  ctx.imageSmoothingQuality = 'high';
+
+  // Cut to the circle first and draw into it, so the edge is antialiased.
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(OUTPUT_SIZE / 2, OUTPUT_SIZE / 2, OUTPUT_SIZE / 2, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.drawImage(img, sourceX, sourceY, side, side, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+  ctx.restore();
+
+  try {
+    emit('update:modelValue', canvas.value.toDataURL('image/png'));
     emit('update:show', false);
-  };
-  
-  // Always use original image for cropping
-  img.src = originalImageSrc.value;
+  } catch (error) {
+    // A stored photo from a host that does not allow cross-origin reads
+    // cannot be exported once drawn. Choosing it again from the device can.
+    console.error('Error exporting the cropped photo:', error);
+    loadError.value = 'This photo cannot be re-cropped here. Choose it again from this device.';
+  }
 };
 
 // Reset
 const reset = () => {
   stopCamera();
   cameraError.value = '';
-  originalImageSrc.value = null;
-  previewImageSrc.value = null;
-  imageLoaded.value = false;
-  scale.value = 1;
-  position.value = { x: 0, y: 0 };
+  loadError.value = '';
+  image.value = null;
+  resetFraming();
+  pointers.clear();
+  dragStart = null;
+  pinchStart = null;
   if (fileInput.value) {
     fileInput.value.value = '';
   }
@@ -341,15 +396,13 @@ useFocusTrap(dialogRef, () => props.show, close);
 </script>
 
 <template>
-  <!-- Teleported and above the z-80 mobile drawers, for the same reason
-       ConfirmationModal is: this opens FROM the member drawer, so rendered in
-       place it landed underneath the sheet that asked for it. z-90 matches
-       ImageCropModal, its opposite number, and stays below a confirmation. -->
+  <!-- Teleported, and above the sheets (z-100) it is opened from - the add and
+       edit steppers - while staying below a confirmation (z-120). -->
   <Teleport to="body">
     <Transition name="modal">
       <div
         v-if="show"
-        class="fixed inset-0 z-90 flex items-center justify-center bg-black/50 p-4"
+        class="fixed inset-0 z-110 flex items-center justify-center bg-black/50 p-4"
         @click.self="close"
       >
         <div
@@ -358,22 +411,22 @@ useFocusTrap(dialogRef, () => props.show, close);
           aria-modal="true"
           aria-labelledby="image-cropper-title"
           tabindex="-1"
-          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col"
+          class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full max-h-[90dvh] flex flex-col overflow-hidden"
         >
           <!-- Header -->
-          <div class="shrink-0 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <div class="shrink-0 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <h3 id="image-cropper-title" class="text-lg font-semibold text-gray-900 dark:text-white">Profile photo</h3>
             <button
               @click="close"
               aria-label="Close"
-              class="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
             >
               <X class="h-5 w-5" />
             </button>
           </div>
 
           <!-- Content -->
-          <div class="flex-1 overflow-y-auto p-6">
+          <div class="flex-1 overflow-y-auto p-4">
             <div class="space-y-4">
               <!-- Where the picture comes from -->
               <div v-if="!cameraOn">
@@ -400,7 +453,7 @@ useFocusTrap(dialogRef, () => props.show, close);
                     class="px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary dark:hover:border-primary transition-colors flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400"
                   >
                     <Upload class="h-5 w-5 shrink-0" />
-                    <span class="text-sm">Choose file</span>
+                    <span class="text-sm">{{ imageLoaded ? 'Another photo' : 'Choose photo' }}</span>
                   </button>
                   <button
                     @click="startCamera"
@@ -441,126 +494,100 @@ useFocusTrap(dialogRef, () => props.show, close);
                 </div>
               </div>
 
-              <!-- Crop Area -->
-              <div v-if="imageLoaded && !cameraOn" class="space-y-4">
-                <div class="text-sm text-gray-600 dark:text-gray-400">
-                  Drag to move, use controls to zoom and rotate
-                </div>
-              
+              <p v-if="loadError" class="text-xs text-red-600 dark:text-red-400">{{ loadError }}</p>
+
+              <!-- Framing. The square is the crop; the circle inside it is the
+                   part that shows as the avatar. touch-none hands every finger
+                   to the handlers here, so a pinch zooms the photo and not the
+                   page, and a drag moves the photo and not the sheet. -->
+              <div v-if="imageLoaded && !cameraOn" class="space-y-3">
                 <div
-                  ref="container"
-                  class="relative mx-auto"
-                  :style="{ 
-                    width: containerSize.width + 'px', 
-                    height: containerSize.width + 'px',
-                    maxWidth: '100%',
-                    borderRadius: '50%',
-                    overflow: 'hidden',
-                    backgroundColor: '#f3f4f6'
-                  }"
-                  @mousedown="startDrag"
-                  @mousemove="drag"
-                  @mouseup="endDrag"
-                  @mouseleave="endDrag"
-                  @touchstart="startDrag"
-                  @touchmove="drag"
-                  @touchend="endDrag"
+                  ref="frameRef"
+                  class="relative mx-auto aspect-square w-full max-w-[320px] overflow-hidden rounded-2xl bg-gray-900 touch-none select-none cursor-grab active:cursor-grabbing"
+                  @pointerdown="onPointerDown"
+                  @pointermove="onPointerMove"
+                  @pointerup="endPointer"
+                  @pointercancel="endPointer"
+                  @wheel="onWheel"
+                  @dblclick="onDoubleClick"
                 >
                   <img
-                    v-if="previewImageSrc"
-                    :src="previewImageSrc"
-                    :style="{
-                      ...imageStyle,
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transformOrigin: 'center center',
-                      maxWidth: 'none',
-                    }"
-                    class="select-none pointer-events-none"
+                    :src="image.src"
+                    alt=""
                     draggable="false"
+                    class="pointer-events-none absolute left-1/2 top-1/2 max-w-none"
+                    :style="imageStyle"
                   />
-                
-                  <!-- Circular Crop overlay -->
-                  <div class="absolute inset-0 pointer-events-none">
-                    <!-- Dark overlay outside circle using SVG -->
-                    <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                      <defs>
-                        <mask id="circleMask">
-                          <rect width="100" height="100" fill="white"/>
-                          <circle cx="50" cy="50" r="50" fill="black"/>
-                        </mask>
-                      </defs>
-                      <rect width="100" height="100" fill="rgba(0,0,0,0.6)" mask="url(#circleMask)"/>
-                    </svg>
-                    <!-- Perfect circle border -->
-                    <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                      <circle 
-                        cx="50" 
-                        cy="50" 
-                        r="50" 
-                        fill="none" 
-                        class="stroke-primary"
-                        stroke-width="0.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <circle 
-                        cx="50" 
-                        cy="50" 
-                        r="49.2" 
-                        fill="none" 
-                        stroke="rgba(255,255,255,0.9)" 
-                        stroke-width="0.4"
-                        vector-effect="non-scaling-stroke"
-                      />
-                    </svg>
-                  </div>
+
+                  <!-- Everything outside the circle dimmed, and the circle
+                       outlined, so it reads as "this is the face". -->
+                  <svg
+                    class="pointer-events-none absolute inset-0 h-full w-full"
+                    viewBox="0 0 100 100"
+                    preserveAspectRatio="none"
+                    aria-hidden="true"
+                  >
+                    <defs>
+                      <mask id="cropper-circle-mask">
+                        <rect width="100" height="100" fill="white" />
+                        <circle cx="50" cy="50" r="50" fill="black" />
+                      </mask>
+                    </defs>
+                    <rect width="100" height="100" fill="rgba(0,0,0,0.55)" mask="url(#cropper-circle-mask)" />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="49.6"
+                      fill="none"
+                      stroke="rgba(255,255,255,0.9)"
+                      stroke-width="1.5"
+                      vector-effect="non-scaling-stroke"
+                    />
+                  </svg>
                 </div>
 
-                <!-- Controls -->
-                <div class="flex items-center justify-center gap-2 flex-wrap">
+                <p class="text-center text-xs text-gray-500 dark:text-gray-400">
+                  Drag to move · pinch or scroll to zoom · double-tap to fit
+                </p>
+
+                <!-- Zoom, and the quarter-turns a sideways phone photo needs. -->
+                <div class="flex items-center gap-2">
                   <button
-                    @click="zoom(-0.1)"
-                    class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                    title="Zoom Out"
+                    type="button"
+                    @click="rotate(-1)"
+                    aria-label="Turn left"
+                    title="Turn left"
+                    class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
                   >
-                    <ZoomOut class="h-5 w-5" />
+                    <RotateCcw class="h-5 w-5" />
                   </button>
+                  <ZoomOut class="h-4 w-4 shrink-0 text-gray-400" />
+                  <input
+                    v-model.number="zoomModel"
+                    type="range"
+                    min="1"
+                    :max="MAX_ZOOM"
+                    step="0.01"
+                    class="min-w-0 flex-1 accent-primary"
+                    aria-label="Zoom"
+                  />
+                  <ZoomIn class="h-4 w-4 shrink-0 text-gray-400" />
                   <button
-                    @click="zoom(0.1)"
-                    class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                    title="Zoom In"
-                  >
-                    <ZoomIn class="h-5 w-5" />
-                  </button>
-                  <button
-                    @click="rotate"
-                    class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                    title="Rotate 90°"
+                    type="button"
+                    @click="rotate(1)"
+                    aria-label="Turn right"
+                    title="Turn right"
+                    class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
                   >
                     <RotateCw class="h-5 w-5" />
                   </button>
-                  <button
-                    @click="centerImage"
-                    class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                    title="Reset Position"
-                  >
-                    <Move class="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-
-              <!-- Preview -->
-              <div v-if="imageLoaded && !cameraOn" class="flex items-center justify-center">
-                <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  Preview (circular crop)
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Footer -->
-          <div class="shrink-0 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+          <div class="shrink-0 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
             <button
               @click="close"
               class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
@@ -570,10 +597,10 @@ useFocusTrap(dialogRef, () => props.show, close);
             <button
               v-if="imageLoaded && !cameraOn"
               @click="cropImage"
-              class="px-4 py-2 text-sm font-medium text-white bg-primary dark:bg-primary rounded-lg hover:bg-primary-hover dark:hover:bg-primary-hover transition-colors flex items-center gap-2"
+              class="px-4 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-hover transition-colors flex items-center gap-2"
             >
               <Check class="h-4 w-4" />
-              Apply Crop
+              Use photo
             </button>
           </div>
         </div>
@@ -597,4 +624,3 @@ useFocusTrap(dialogRef, () => props.show, close);
   opacity: 0;
 }
 </style>
-

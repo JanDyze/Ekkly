@@ -122,7 +122,7 @@ const countLabel = computed(() => {
     >
       <button
         @click="$emit('addEvent')"
-        class="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-colors hover:bg-primary-hover"
+        class="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
       >
         <Plus class="h-5 w-5" />
         Add event

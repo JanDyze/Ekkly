@@ -11,6 +11,75 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.29.2] — 2026-09-23
+
+A pass over the screens a church spends its week in: People, taking
+attendance, and Settings. Phones get most of it — a hold that behaves like a
+phone's own, a grid of faces, and forms that stop standing open waiting to be
+typed in.
+
+### Added
+
+- **People can be read as a grid of faces.** The plus button offers "Show as
+  grid"; each phone remembers which it was last shown. A desktop keeps the
+  grid it had.
+- **Sorting moved to the plus button**, and it names the sort that is on, so
+  the strip above the list is gone.
+- **The roll's size is on the top bar** — "People 142" — and the foot of the
+  list says how it splits between members and attendees.
+- **Adding and editing a person is four short steps** — name, personal,
+  contact, church — swipeable, tappable in any order, saved in one write. The
+  photo is picked on the first step, so a new person can arrive with a face.
+  Clearing a field now sticks, which it did not before.
+- **Attendance has the same grid, sort and plus button**, and each gathering's
+  turnout reads as a small ring rather than a wash of colour across the row.
+- **Taking attendance sits behind one button too**: swipe, search, sort, grid
+  or list, clear the count, delete the gathering.
+- **A settings section is a page of its own on a phone**, with the section's
+  name and icon in a bar that stays put as it scrolls.
+- **Opening a person slides in from the list** and their photo travels with
+  it, where the browser supports it.
+
+### Changed
+
+- **A held row behaves like a phone's:** it sinks under the finger, the screen
+  dims, the row lifts above it and the menu opens beneath it. The menu is down
+  to what a hold is for — select, edit, delete.
+- **Every button and row answers a press**, not just a mouse hover, and the
+  browser's own grey flash is gone.
+- **Nobody is marked absent any more.** A register records who came; swiping
+  left passes over somebody and they come round again next round.
+- **Church settings reads rather than asks.** The names sit as plain lines
+  until Edit is pressed, the category lists show their pills until Edit brings
+  out the crosses, and nothing waits behind a Save button. Explanations moved
+  into an (i) beside each label. A missing built-in category can be restored.
+- **The profile photo editor is usable on a phone:** pinch to zoom, the photo
+  can no longer be dragged out of its frame, and what you see in the circle is
+  what gets saved.
+- **Long lists let go of what is off screen**, People stays in memory while a
+  record is open, and the bars stay built rather than being rebuilt on the way
+  back — pressing back is quick again.
+- Text and images no longer select or pop a menu on a long press.
+- The accent-coloured glow under buttons, sheets and drawers is gone.
+
+### Fixed
+
+- Dark mode no longer inverts the whole app when the add-person sheet is open.
+- The hold menu closes when the list scrolls, instead of pointing at whoever
+  is now under it.
+- Rotate in the photo editor turns the photo, which it never did.
+- A new person's email address is saved.
+- Deleting a person from the People list no longer offers itself to someone
+  who cannot change the roll.
+- The Upload button on the light-mode logo is readable in dark mode.
+
+### Removed
+
+- The amber backlog banner on Attendance. "Record next" on the plus button
+  does its job, and says how many are waiting.
+- The Done bar under the attendance recorder: marks were already saving
+  themselves.
+
 ## [0.29.1] — 2026-09-19
 
 ### Fixed

@@ -1,5 +1,6 @@
 import { watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
+import { installViewTransitions } from './viewTransitions'
 import AdminLayout from '../layouts/AdminLayout.vue'
 import { initAuth, useAuth } from '../composables/useAuth'
 import { initPermissions, usePermissions } from '../composables/usePermissions'
@@ -385,7 +386,10 @@ const platformRoutes = [
 // Going back to a list must land where you left it. Every list opens a record
 // as a full page now, so "check three people in a row" is back-scroll-tap —
 // and without this, each back lands at the top of the roll.
-const scrollBehavior = (to, from, savedPosition) => savedPosition || { top: 0 }
+// A change of query alone is not a new page - the app drawer opens as ?apps
+// over the page you are on - so it leaves the scroll where it was.
+const scrollBehavior = (to, from, savedPosition) =>
+  savedPosition || (to.path === from.path ? false : { top: 0 })
 
 const createPlatformRouter = () => {
   // A link to one of the home page's sections ("/#features", from Pricing) is
@@ -496,6 +500,10 @@ const createChurchRouter = () => {
 
     return true
   })
+
+  // Installed after the guards, so only a navigation they let through is
+  // animated.
+  installViewTransitions(router)
 
   return router
 }

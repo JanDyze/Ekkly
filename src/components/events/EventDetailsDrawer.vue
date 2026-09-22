@@ -244,7 +244,7 @@ const facts = computed(() => {
       </button>
       <button
         @click="$emit('edit')"
-        class="inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-colors hover:bg-primary-hover"
+        class="inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
         :title="event.isVirtual ? 'Edit this date only' : 'Edit'"
       >
         <Edit2 class="h-4 w-4 shrink-0" />

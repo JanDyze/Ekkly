@@ -1,4 +1,4 @@
-import { onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { onMounted, onBeforeUnmount, onActivated, onDeactivated, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 
 /**
@@ -32,7 +32,7 @@ export function useListScrollMemory(scroller, options = {}) {
 
   const forget = () => positions.delete(key)
 
-  onMounted(async () => {
+  const restoreSaved = async () => {
     const top = positions.get(key)
     if (!top) return
     await nextTick()
@@ -53,9 +53,17 @@ export function useListScrollMemory(scroller, options = {}) {
       if (left-- > 0) requestAnimationFrame(restore)
     }
     requestAnimationFrame(restore)
-  })
+  }
 
+  onMounted(restoreSaved)
   onBeforeUnmount(remember)
+
+  // A list kept alive (AdminLayout's KEPT_ALIVE) is hidden rather than
+  // unmounted when a record opens. Its rows survive, but a box taken out of
+  // the page loses its scroll offset, so it is saved on the way out and put
+  // back on the way in - at once, since the rows are already there.
+  onDeactivated(remember)
+  onActivated(restoreSaved)
 
   return { remember, forget }
 }

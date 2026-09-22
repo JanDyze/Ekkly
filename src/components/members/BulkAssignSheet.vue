@@ -142,7 +142,7 @@ const applyNew = () => {
             <div class="flex items-center gap-3 min-w-0">
               <div
                 v-if="icon"
-                class="p-2.5 rounded-xl bg-primary shadow-lg shadow-primary/30 shrink-0"
+                class="p-2.5 rounded-xl bg-primary shrink-0"
               >
                 <component :is="icon" class="h-5 w-5 text-white" />
               </div>

@@ -7,16 +7,22 @@ import { useMembers } from '../composables/useMembers'
 import { usePermissions } from '../composables/usePermissions'
 import { useEventStatus } from '../composables/useEventStatus'
 import { useToast } from '../composables/useToast'
-import AttendanceWarnings from '../components/attendance/AttendanceWarnings.vue'
+import { useMediaQuery } from '../composables/useMediaQuery'
 import AttendanceListItem from '../components/attendance/AttendanceListItem.vue'
+import AttendanceFab from '../components/attendance/AttendanceFab.vue'
+import MemberBandHeader from '../components/members/MemberBandHeader.vue'
+import AttendanceContextMenu from '../components/attendance/AttendanceContextMenu.vue'
 import EventStatusSheet from '../components/events/EventStatusSheet.vue'
 import ConfirmationModal from '../components/common/ConfirmationModal.vue'
 
-// No toolbar, and no add button either. Attendance follows the calendar rather
-// than the other way round: a gathering is created on Events or in Settings,
-// and this page is where its turnout gets written down. Everything past and
+// No toolbar, and nothing to add. Attendance follows the calendar rather than
+// the other way round: a gathering is created on Events or in Settings, and
+// this page is where its turnout gets written down. Everything past and
 // unrecorded is already sitting in the list, so there is nothing here to
-// invent — the amber warning is the way in to the oldest of them.
+// invent. The plus button takes the oldest of them, and switches the layout.
+//
+// Laid out like People: a list or a grid of cards on a phone, the grid on a
+// desktop, under the same sticky month headings.
 
 const router = useRouter()
 const toast = useToast()
@@ -28,6 +34,39 @@ const { members } = useMembers()
 const { setStatus } = useEventStatus()
 
 const { stats } = useAttendanceStats(aggregatedAttendance, members)
+
+// The one line of the old warnings banner that asked for something: the
+// oldest gathering still to record. It lives on the plus button now.
+const awaiting = computed(() =>
+  !loading.value && canManage('attendance') ? stats.value.awaiting : null
+)
+
+// List or grid, as on People, remembered on this device only. Blocked or
+// private-mode storage just falls back to the list.
+const isMobile = useMediaQuery('(max-width: 1023px)')
+const VIEW_KEY = 'ekkly:attendance-view'
+const readView = () => {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'grid' ? 'grid' : 'list'
+  } catch {
+    return 'list'
+  }
+}
+const mobileView = ref(readView())
+const toggleMobileView = () => {
+  mobileView.value = mobileView.value === 'grid' ? 'list' : 'grid'
+  try {
+    localStorage.setItem(VIEW_KEY, mobileView.value)
+  } catch {
+    // Not remembered this time; the switch itself still happened.
+  }
+}
+const showGrid = computed(() => !isMobile.value || mobileView.value === 'grid')
+// Two cards across a phone - a gathering has a title to fit, where a person
+// is mostly a face - and three or four on a desktop.
+const gridClass = computed(() =>
+  isMobile.value ? 'grid grid-cols-2 gap-2 p-2' : 'grid grid-cols-3 gap-3 p-3 xl:grid-cols-4'
+)
 
 // Grouped on the raw 'YYYY-MM' prefix rather than a parsed Date, for the same
 // reason the warnings are: `new Date('2026-08-01')` is UTC midnight and would
@@ -66,6 +105,20 @@ const handleRecordAttendance = (record) => openRecorder({ key: record?.occurrenc
 
 const handleEditAttendance = (record) => openRecorder({ id: record?.firestoreId || record?.id })
 
+// The menu a right-click or a long press on a row opens: calling the gathering
+// off, or deleting its count. The row decides which of the two it can offer.
+const contextMenu = ref({ show: false, x: 0, y: 0, record: null, canMark: false, canDelete: false })
+
+// `el` comes only with a long press: the held row is lifted above a dimmed
+// screen while its menu is open (HoldFocus.vue).
+const openContextMenu = ({ record, x, y, canMark, canDelete, el = null }) => {
+  contextMenu.value = { show: true, x, y, record, canMark, canDelete, el }
+}
+
+const closeContextMenu = () => {
+  contextMenu.value.show = false
+}
+
 // Calling a gathering off, or deciding not to count it, from the list itself —
 // the same sheet the Events page opens, so the answer means the same thing on
 // both. A row is marked far more often from here, where the unrecorded ones
@@ -81,7 +134,7 @@ const statusAllowed = computed(() => {
   return row?.rowType === 'event' || row?.rowType === 'recurring'
 })
 
-// A write is in flight. Marking is one tap on a small button and the sheet
+// A write is in flight. Marking is one tap on the sheet's button and the sheet
 // stays put while Firestore answers, so without this a double tap writes twice.
 const marking = ref(false)
 
@@ -192,30 +245,40 @@ const unskipRow = async () => {
 
 <template>
   <div class="relative flex h-full flex-col">
-    <!-- A column, so the warnings sit above the scroller rather than inside
-         it: a warning that scrolls away is only a warning for the first
-         screenful. -->
+    <!-- Square-cornered and edge to edge, like People: the list is the page,
+         not a card set on it. -->
     <div
-      class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+      class="flex min-h-0 flex-1 flex-col overflow-hidden border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
     >
-      <AttendanceWarnings
-        v-if="!loading"
-        :stats="stats"
-        :can-record="canManage('attendance')"
-        @record="(key) => openRecorder({ key })"
-      />
-
-      <div class="min-h-0 flex-1 overflow-y-auto pb-20">
-        <div v-if="loading" class="divide-y divide-gray-200 dark:divide-gray-700">
-          <div v-for="i in 10" :key="`skeleton-${i}`" class="flex items-center gap-3 px-4 py-3">
-            <div class="h-9 w-12 shrink-0 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
-            <div class="flex-1 space-y-2">
-              <div class="h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
-              <div class="h-3 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+      <!-- Room at the foot for the plus button and the bottom bar it floats
+           over, so the last gathering scrolls clear of both. -->
+      <div class="min-h-0 flex-1 overflow-y-auto pb-28 max-lg:pb-[calc(10rem+env(safe-area-inset-bottom))]">
+        <template v-if="loading">
+          <div v-if="showGrid" :class="gridClass">
+            <div
+              v-for="i in 8"
+              :key="`skeleton-${i}`"
+              class="space-y-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-700/50"
+            >
+              <div class="flex justify-between">
+                <div class="h-8 w-8 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+                <div class="h-12 w-12 animate-pulse rounded-full bg-gray-200 dark:bg-gray-600"></div>
+              </div>
+              <div class="h-4 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+              <div class="h-3 w-1/2 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
             </div>
-            <div class="h-6 w-12 shrink-0 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
           </div>
-        </div>
+          <div v-else>
+            <div v-for="i in 10" :key="`skeleton-${i}`" class="flex items-center gap-3 py-2 pl-4 pr-3">
+              <div class="h-9 w-10 shrink-0 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+              <div class="flex-1 space-y-2">
+                <div class="h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+                <div class="h-3 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+              </div>
+              <div class="h-10 w-10 shrink-0 animate-pulse rounded-full bg-gray-200 dark:bg-gray-600"></div>
+            </div>
+          </div>
+        </template>
 
         <p
           v-else-if="attendanceByMonth.length === 0"
@@ -225,32 +288,53 @@ const unskipRow = async () => {
           to record.
         </p>
 
-        <div v-else class="divide-y divide-gray-200 dark:divide-gray-700">
-          <template v-for="monthGroup in attendanceByMonth" :key="monthGroup.key">
-            <div
-              class="sticky top-0 z-10 border-b border-gray-200 bg-gray-100 px-4 py-2 dark:border-gray-600 dark:bg-gray-700"
-            >
-              <h3
-                class="text-sm font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-300"
-              >
-                {{ monthGroup.label }}
-              </h3>
-            </div>
+        <!-- A month to a section, under the same sticky heading People uses.
+             A month well off screen is skipped when the page is laid out. -->
+        <section
+          v-else
+          v-for="monthGroup in attendanceByMonth"
+          :key="monthGroup.key"
+          class="[content-visibility:auto] [contain-intrinsic-size:auto_600px]"
+        >
+          <MemberBandHeader :band="monthGroup" :count="monthGroup.records.length" />
+          <div :class="showGrid ? gridClass : ''">
             <AttendanceListItem
               v-for="record in monthGroup.records"
               :key="record.id"
               :record="record"
               :members="members"
               :can-manage="canManage('attendance')"
+              :stacked="showGrid"
               @record-attendance="handleRecordAttendance(record)"
               @edit-attendance="handleEditAttendance(record)"
               @mark="openStatusSheet(record)"
               @delete="askDelete(record)"
+              @contextmenu="openContextMenu"
             />
-          </template>
-        </div>
+          </div>
+        </section>
       </div>
     </div>
+
+    <AttendanceFab
+      :awaiting="awaiting"
+      :view="isMobile ? mobileView : null"
+      @record="openRecorder({ key: awaiting.key })"
+      @toggle-view="toggleMobileView"
+    />
+
+    <AttendanceContextMenu
+      :show="contextMenu.show"
+      :x="contextMenu.x"
+      :y="contextMenu.y"
+      :record="contextMenu.record"
+      :anchor="contextMenu.el"
+      :can-mark="contextMenu.canMark"
+      :can-delete="contextMenu.canDelete"
+      @close="closeContextMenu"
+      @mark="openStatusSheet"
+      @delete="askDelete"
+    />
 
     <!-- Cancelled, postponed, or simply not being counted. The same sheet the
          calendar opens, plus the one option only this page has. -->

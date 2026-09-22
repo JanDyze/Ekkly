@@ -33,7 +33,7 @@ const { logoUrl, hasCustomLogo } = useAppSettings()
 // curtaining that is the app making a ceremony of something instant — which is
 // what this number exists to stop. Only a page that is genuinely keeping
 // somebody waiting gets a curtain.
-const SHOW_AFTER = 2000
+const SHOW_AFTER = 1500
 
 // How long the mark holds once it has been shown. Long enough that a logo
 // reads as a logo rather than a flash, so a curtain that did appear is never a

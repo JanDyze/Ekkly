@@ -5,31 +5,21 @@ import { getFullName } from '../../utils/memberUtils'
 import { memberKey } from '../../utils/sgUtils'
 import MemberAvatar from '../members/MemberAvatar.vue'
 
-// Swipe-to-record: one member at a time, right for present, left for absent.
+// Swipe-to-record: one member at a time, right for present, left to pass over.
 //
-// Built around how attendance is actually taken during a service rather than
-// after it. People arrive late, so a single pass is never the whole picture —
-// once the deck is empty the absent pile can be dealt again as a fresh round,
-// as many times as the service runs. Nobody has to hunt back through a list of
-// a hundred names to correct one person.
-//
-// Anyone the user skips stays undecided rather than being assumed absent:
-// "not marked" and "not here" are different facts, and quietly conflating them
-// would understate attendance.
+// Nobody is marked absent here. A record says who came; everyone else is
+// simply not on it, and a register is never a claim that a named person stayed
+// away. So the deck has one verdict and one way of saying "not now" — and
+// whoever was passed over comes round again in the next round, because people
+// arrive late and a single pass is never the whole picture.
 
 const props = defineProps({
   members: { type: Array, default: () => [] },
   /** Member ids already marked present — the saved `attendees` array. */
   presentIds: { type: Array, default: () => [] },
-  /**
-   * Marked absent. Session-only and shared with the list rather than kept in
-   * here: an explicit "not here" is worth seeing in both views, and it is what
-   * makes another round possible. Never saved — the record stores who came.
-   */
-  absentIds: { type: Array, default: () => [] },
 })
 
-const emit = defineEmits(['update:presentIds', 'update:absentIds', 'done'])
+const emit = defineEmits(['update:presentIds', 'done'])
 
 /* ------------------------------------------------------------------ state */
 
@@ -41,7 +31,9 @@ const emit = defineEmits(['update:presentIds', 'update:absentIds', 'done'])
 const idOf = memberKey
 
 const present = ref(new Set(props.presentIds.map(String)))
-const absent = ref(new Set(props.absentIds.map(String)))
+// Passed over in this round: not a mark on anybody, only the pile to deal
+// again. Never saved, and gone the moment somebody is marked present.
+const passed = ref(new Set())
 const round = ref(1)
 // Deck order for this round, as member ids
 const deck = ref([])
@@ -61,10 +53,8 @@ const buildDeck = (ids) => {
 /** First round deals everyone not already recorded present. */
 const startFirstRound = () => {
   round.value = 1
-  // Anyone already decided either way — in the list, or on a previous visit to
-  // this deck — is not dealt again.
-  const decided = new Set([...present.value, ...absent.value])
-  buildDeck(props.members.map((m) => String(idOf(m))).filter((id) => !decided.has(id)))
+  passed.value = new Set()
+  buildDeck(props.members.map((m) => String(idOf(m))).filter((id) => !present.value.has(id)))
 }
 
 onMounted(startFirstRound)
@@ -81,14 +71,13 @@ const current = computed(() => memberById.value.get(deck.value[0]) || null)
 const upNext = computed(() => memberById.value.get(deck.value[1]) || null)
 const remaining = computed(() => deck.value.length)
 
-const undecided = computed(() => {
-  const decided = new Set([...present.value, ...absent.value])
-  return props.members.filter((m) => !decided.has(String(idOf(m)))).length - remaining.value
-})
+/** Still unmarked once this round runs out — the pile to deal again. */
+const unmarked = computed(
+  () => props.members.filter((m) => !present.value.has(String(idOf(m)))).length - remaining.value
+)
 
 const publish = () => {
   emit('update:presentIds', [...present.value])
-  emit('update:absentIds', [...absent.value])
 }
 
 /* ------------------------------------------------------------- decisions */
@@ -98,7 +87,7 @@ const publish = () => {
 // one appear, which read as a glitch rather than a choice.
 const EXIT_MS = 260
 
-// 'present' | 'absent' | 'skip' while a card is flying out
+// 'present' | 'skip' while a card is flying out
 const exiting = ref(null)
 // The direction an undone card returns from, and whether it has started moving
 const enterFrom = ref(null)
@@ -117,16 +106,15 @@ const commit = (verdict) => {
   history.value.push({ id, verdict, round: round.value })
   if (verdict === 'present') {
     present.value.add(id)
-    absent.value.delete(id)
-  } else if (verdict === 'absent') {
-    absent.value.add(id)
-    present.value.delete(id)
+    passed.value.delete(id)
+  } else {
+    // Passed over: nothing is recorded about them, they are dealt again later.
+    passed.value.add(id)
   }
-  // 'skip' records nothing, leaving the member undecided
 
   deck.value = deck.value.slice(1)
   present.value = new Set(present.value)
-  absent.value = new Set(absent.value)
+  passed.value = new Set(passed.value)
   publish()
   resetDrag()
 }
@@ -148,9 +136,9 @@ const undo = () => {
   const last = history.value.pop()
   if (!last) return
   if (last.verdict === 'present') present.value.delete(last.id)
-  if (last.verdict === 'absent') absent.value.delete(last.id)
+  else passed.value.delete(last.id)
   present.value = new Set(present.value)
-  absent.value = new Set(absent.value)
+  passed.value = new Set(passed.value)
   deck.value = [last.id, ...deck.value]
   publish()
   resetDrag()
@@ -176,30 +164,18 @@ const undo = () => {
   })
 }
 
-/** Deal the absent pile again — the late arrivals. */
+/** Deal everyone still unmarked again — the late arrivals. */
 const nextRound = () => {
-  const pile = [...absent.value]
+  const pile = props.members.map((m) => String(idOf(m))).filter((id) => !present.value.has(id))
   if (!pile.length) return
   round.value += 1
-  absent.value = new Set()
-  publish()
-  buildDeck(pile)
-}
-
-/** Deal only the people never marked either way. */
-const reviewUndecided = () => {
-  const decided = new Set([...present.value, ...absent.value])
-  const pile = props.members.map((m) => String(idOf(m))).filter((id) => !decided.has(id))
-  if (!pile.length) return
+  passed.value = new Set()
   buildDeck(pile)
 }
 
 /* ----------------------------------------------------------------- drag */
 
 const THRESHOLD = 96
-// Down needs a longer pull than left or right. Skipping is the rarer, less
-// committal choice, and a hand travelling sideways drifts downward on the way.
-const THRESHOLD_DOWN = 128
 const dragX = ref(0)
 const dragY = ref(0)
 const dragging = ref(false)
@@ -215,12 +191,9 @@ const resetDrag = () => {
 }
 
 /** Which way this drag is currently leaning, if far enough to read. */
-const dragVerdict = (dx, dy, minX = THRESHOLD, minDown = THRESHOLD_DOWN) => {
-  // Down only counts when it clearly beats the sideways travel, so a sloppy
-  // right-swipe is never mistaken for a skip.
-  if (dy > minDown && dy > Math.abs(dx)) return 'skip'
+const dragVerdict = (dx, minX = THRESHOLD) => {
   if (dx > minX) return 'present'
-  if (dx < -minX) return 'absent'
+  if (dx < -minX) return 'skip'
   return null
 }
 
@@ -236,16 +209,15 @@ const onPointerDown = (event) => {
 const onPointerMove = (event) => {
   if (!dragging.value || event.pointerId !== pointerId) return
   dragX.value = event.clientX - startX
-  const dy = event.clientY - startY
-  // Upward leads nowhere, so it drags heavy rather than being pinned — the
-  // card still answers the finger, it just will not pretend to offer anything.
-  dragY.value = dy < 0 ? dy / 4 : dy
+  // Neither up nor down decides anything now, so the card gives a little and
+  // no more: it answers the finger without pretending to offer a third choice.
+  dragY.value = (event.clientY - startY) / 4
 }
 
 const onPointerUp = (event) => {
   if (!dragging.value || event.pointerId !== pointerId) return
   dragging.value = false
-  const verdict = dragVerdict(dragX.value, dragY.value)
+  const verdict = dragVerdict(dragX.value)
   if (verdict) decide(verdict)
   else {
     dragX.value = 0
@@ -259,8 +231,8 @@ const FLY = 640
 const cardStyle = computed(() => {
   // Leaving, by swipe or by button — both animate identically on purpose.
   if (exiting.value) {
-    const x = exiting.value === 'present' ? FLY : exiting.value === 'absent' ? -FLY : 0
-    const y = exiting.value === 'skip' ? FLY : 0
+    const x = exiting.value === 'present' ? FLY : -FLY
+    const y = 0
     return {
       transform: `translate(${x}px, ${y}px) rotate(${x / 22}deg)`,
       opacity: 0,
@@ -271,8 +243,8 @@ const cardStyle = computed(() => {
   // Coming back from an undo: placed where it left with no transition, then
   // released on the next frame so it travels home.
   if (enterFrom.value) {
-    const x = enterFrom.value === 'present' ? FLY : enterFrom.value === 'absent' ? -FLY : 0
-    const y = enterFrom.value === 'skip' ? FLY : 0
+    const x = enterFrom.value === 'present' ? FLY : -FLY
+    const y = 0
     return entering.value
       ? {
           transform: 'translate(0, 0) rotate(0deg)',
@@ -292,10 +264,7 @@ const cardStyle = computed(() => {
 // How far the top card has committed, 0 to 1.
 const departure = computed(() => {
   if (exiting.value) return 1
-  return Math.min(
-    1,
-    Math.max(Math.abs(dragX.value) / THRESHOLD, Math.max(0, dragY.value) / THRESHOLD_DOWN)
-  )
+  return Math.min(1, Math.abs(dragX.value) / THRESHOLD)
 })
 
 // The card behind only scales. No sliding, and it never reaches full size or
@@ -349,18 +318,14 @@ const nextCardStyle = computed(() => {
 // The verdict overlay, so the decision is legible before the finger lifts
 // rather than being a guess. Reads at a much shorter distance than the commit
 // threshold — it is a hint, not the decision.
-const intent = computed(() => dragVerdict(dragX.value, dragY.value, 24, 32))
+const intent = computed(() => dragVerdict(dragX.value, 24))
 
-const intentOpacity = computed(() => {
-  if (intent.value === 'skip') return Math.min(1, dragY.value / THRESHOLD_DOWN)
-  return Math.min(1, Math.abs(dragX.value) / THRESHOLD)
-})
+const intentOpacity = computed(() => Math.min(1, Math.abs(dragX.value) / THRESHOLD))
 
-const INTENT_LABELS = { present: 'Present', absent: 'Absent', skip: 'Skip' }
+const INTENT_LABELS = { present: 'Present', skip: 'Not yet' }
 const INTENT_CLASSES = {
   present: 'border-emerald-500 text-emerald-500 bg-emerald-50/80 dark:bg-emerald-500/10 rotate-[-12deg]',
-  absent: 'border-red-500 text-red-500 bg-red-50/80 dark:bg-red-500/10 rotate-[-12deg]',
-  // Upright and grey: skipping is not a verdict about the person.
+  // Upright and grey: passing over is not a verdict about the person.
   skip: 'border-gray-400 text-gray-500 bg-gray-50/80 dark:bg-gray-700/40',
 }
 
@@ -369,8 +334,7 @@ const INTENT_CLASSES = {
 const onKeydown = (event) => {
   if (!current.value) return
   if (event.key === 'ArrowRight') { event.preventDefault(); decide('present') }
-  else if (event.key === 'ArrowLeft') { event.preventDefault(); decide('absent') }
-  else if (event.key === 'ArrowDown') { event.preventDefault(); decide('skip') }
+  else if (event.key === 'ArrowLeft') { event.preventDefault(); decide('skip') }
   else if ((event.key === 'z' || event.key === 'Z') && (event.metaKey || event.ctrlKey)) {
     event.preventDefault()
     undo()
@@ -406,8 +370,8 @@ const displayName = (member) => getFullName(member) || member.firstName || 'Memb
       </span>
       <span class="text-xs text-gray-500 dark:text-gray-400">
         <span class="font-bold text-gray-900 dark:text-white tabular-nums">{{ remaining }}</span> to go
-        <span v-if="absent.size" class="text-gray-400 dark:text-gray-500">
-          &middot; {{ absent.size }} marked absent
+        <span v-if="passed.size" class="text-gray-400 dark:text-gray-500">
+          &middot; {{ passed.size }} to come back to
         </span>
       </span>
     </div>
@@ -501,25 +465,17 @@ const displayName = (member) => getFullName(member) || member.firstName || 'Memb
           {{ round === 1 ? 'Everyone checked' : `Round ${round} done` }}
         </p>
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          {{ present.size }} present, {{ absent.size }} absent<span v-if="undecided > 0">, {{ undecided }} not marked</span>.
+          {{ present.size }} marked present<span v-if="unmarked > 0">, {{ unmarked }} not yet</span>.
         </p>
 
         <div class="mt-6 space-y-2">
           <button
-            v-if="absent.size > 0"
+            v-if="unmarked > 0"
             @click="nextRound"
             class="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-primary text-white text-sm font-semibold shadow-sm transition-transform active:scale-95"
           >
             <Users class="h-4 w-4" />
-            Check the {{ absent.size }} absent again
-          </button>
-          <button
-            v-if="undecided > 0"
-            @click="reviewUndecided"
-            class="w-full h-12 flex items-center justify-center gap-2 rounded-xl border border-amber-300 dark:border-amber-500/40 text-amber-700 dark:text-amber-400 text-sm font-semibold transition-colors hover:bg-amber-50 dark:hover:bg-amber-500/10"
-          >
-            <RotateCcw class="h-4 w-4" />
-            Go through the {{ undecided }} not marked
+            Go through the {{ unmarked }} again
           </button>
           <button
             @click="emit('done')"
@@ -529,8 +485,8 @@ const displayName = (member) => getFullName(member) || member.firstName || 'Memb
           </button>
         </div>
 
-        <p v-if="absent.size > 0" class="mt-4 text-xs text-gray-400 dark:text-gray-500">
-          People arrive late &mdash; run another round any time before you save.
+        <p v-if="unmarked > 0" class="mt-4 text-xs text-gray-400 dark:text-gray-500">
+          People arrive late &mdash; go round again any time before you leave.
         </p>
       </div>
     </div>
@@ -540,9 +496,9 @@ const displayName = (member) => getFullName(member) || member.firstName || 'Memb
     <div v-if="current" class="shrink-0 px-4 pb-4 pt-1">
       <div class="flex items-center justify-center gap-3">
         <button
-          @click="decide('absent')"
-          class="h-16 w-16 rounded-full border-2 border-red-200 dark:border-red-500/30 text-red-500 flex items-center justify-center transition-transform active:scale-90 hover:bg-red-50 dark:hover:bg-red-500/10"
-          aria-label="Mark absent"
+          @click="decide('skip')"
+          class="h-16 w-16 rounded-full border-2 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 flex items-center justify-center transition-transform active:scale-90 hover:bg-gray-50 dark:hover:bg-gray-700"
+          aria-label="Not yet — come back to them"
         >
           <X class="h-7 w-7" />
         </button>
@@ -557,13 +513,6 @@ const displayName = (member) => getFullName(member) || member.firstName || 'Memb
         </button>
 
         <button
-          @click="decide('skip')"
-          class="h-12 px-4 rounded-full border border-gray-200 dark:border-gray-600 text-xs font-semibold text-gray-500 dark:text-gray-400 transition-transform active:scale-90"
-        >
-          Skip
-        </button>
-
-        <button
           @click="decide('present')"
           class="h-16 w-16 rounded-full border-2 border-emerald-200 dark:border-emerald-500/30 text-emerald-500 flex items-center justify-center transition-transform active:scale-90 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
           aria-label="Mark present"
@@ -573,8 +522,7 @@ const displayName = (member) => getFullName(member) || member.firstName || 'Memb
       </div>
 
       <p class="mt-3 flex items-center justify-center gap-4 text-[11px] text-gray-400 dark:text-gray-500">
-        <span class="flex items-center gap-1"><ArrowLeft class="h-3 w-3" /> Absent</span>
-        <span>Swipe down to skip</span>
+        <span class="flex items-center gap-1"><ArrowLeft class="h-3 w-3" /> Not yet</span>
         <span class="flex items-center gap-1">Present <ArrowRight class="h-3 w-3" /></span>
       </p>
     </div>

@@ -97,7 +97,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('cancel'))
          different app from the calendar it was adding to. -->
     <div class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-linear-to-r from-primary/10 to-transparent px-4 py-3.5 dark:border-gray-700 dark:from-primary-light/10">
       <div class="flex min-w-0 items-center gap-3">
-        <div class="shrink-0 rounded-xl bg-primary p-2.5 shadow-lg shadow-primary/30">
+        <div class="shrink-0 rounded-xl bg-primary p-2.5">
           <component :is="isEdit ? Edit2 : CalendarPlus" class="h-5 w-5 text-white" />
         </div>
         <div class="min-w-0">
@@ -228,7 +228,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('cancel'))
         :class="[
           'inline-flex h-11 flex-1 items-center justify-center rounded-lg px-4 text-sm font-semibold transition-colors',
           isFormValid
-            ? 'bg-primary text-white shadow-lg shadow-primary/25 hover:bg-primary-hover'
+            ? 'bg-primary text-white hover:bg-primary-hover'
             : 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-700'
         ]"
       >

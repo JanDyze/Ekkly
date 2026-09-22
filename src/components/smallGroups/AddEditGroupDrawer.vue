@@ -94,7 +94,7 @@ useFocusTrap(dialogRef, computed(() => props.show), close)
         :class="[
           isMobile
             ? 'fixed inset-0 z-80 flex flex-col justify-end'
-            : 'sg-drawer border-l-4 border-primary bg-white dark:bg-gray-800 w-1/2 h-full flex flex-col shrink-0 shadow-2xl shadow-primary/20',
+            : 'sg-drawer border-l-4 border-primary bg-white dark:bg-gray-800 w-1/2 h-full flex flex-col shrink-0 shadow-2xl',
         ]"
       >
         <div v-if="isMobile" class="absolute inset-0 bg-black/50" @click="close" />

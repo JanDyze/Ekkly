@@ -1,7 +1,8 @@
 <script setup>
-// The heading over one age band on the People list. Same bands, same colours
-// as the summary bar above it and the attendance recorder — utils/ageBands.js
-// is the one place they are defined.
+// The heading over one group on the People list: an age band, a letter, a
+// month or a ministry, depending on the sort. It carries no colour dot of its
+// own — the grey band already marks it as a heading, and a dot that meant
+// something only when sorting by age read as noise under every other sort.
 
 defineProps({
   band: {
@@ -27,11 +28,14 @@ defineEmits(['toggle'])
 </script>
 
 <template>
+  <!-- A solid grey band, one step darker than the rows: enough to read as a
+       divider without competing with the primary, which belongs to actions.
+       Solid rather than see-through because the heading is sticky, and the
+       names would otherwise show through it as they scroll underneath. -->
   <div
-    class="sticky top-0 z-20 flex items-center gap-2 border-b border-gray-100 bg-white/95 px-3 py-2 backdrop-blur dark:border-gray-700 dark:bg-gray-800/95"
+    class="sticky top-0 z-20 flex items-center gap-2 border-y border-gray-200 bg-gray-100 px-3 py-1.5 dark:border-gray-700 dark:bg-gray-900"
   >
-    <span :class="['h-2 w-2 shrink-0 rounded-full', band.dotClass]"></span>
-    <span class="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+    <span class="text-xs font-bold uppercase tracking-wide text-gray-600 dark:text-gray-300">
       {{ band.label }}
     </span>
     <span class="text-xs tabular-nums text-gray-400 dark:text-gray-500">{{ count }}</span>

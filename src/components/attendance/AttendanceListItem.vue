@@ -1,9 +1,10 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { getEventTypeBar, getEventTypeColor, eventTypeLabel } from '../../utils/eventColors'
 import { isCalledOff, eventStatusLabel, readEventStatus } from '../../../lib/eventStatus'
 import { isRecorded } from '../../../lib/attendance'
-import { CalendarClock, Trash2 } from '../../icons'
+import { useLongPress } from '../../composables/useLongPress'
+import TurnoutRing from './TurnoutRing.vue'
 
 const props = defineProps({
   record: {
@@ -23,12 +24,28 @@ const props = defineProps({
   canManage: {
     type: Boolean,
     default: false
+  },
+  // The grid's card rather than the list's row: date and gauge along the
+  // top, the title free to wrap to two lines under them.
+  stacked: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['delete', 'record-attendance', 'edit-attendance', 'mark', 'click'])
+const emit = defineEmits([
+  'delete',
+  'record-attendance',
+  'edit-attendance',
+  'mark',
+  'click',
+  'contextmenu',
+])
 
 const handleClick = () => {
+  // The tap the browser makes up after a long press would otherwise open the
+  // recorder straight behind the menu that press just opened.
+  if (longPress.consumeClick()) return
   // A gathering that is off, or one nobody is counting, has nothing to record:
   // opening the marker is the only useful thing a tap can do, and it is also
   // the way back — reinstating it, or asking to be prompted again.
@@ -101,6 +118,55 @@ const canDelete = computed(
   () => props.canManage && !isPlaceholder.value && !skipped.value
 )
 
+// Marking is offered on the menu only where a tap does not already do it: a
+// gathering that is off or skipped opens the marker on a plain tap.
+const menuMark = computed(() => props.canManage && canMark.value && !isQuiet.value)
+
+// Whether a hold or a right-click opens anything. The two actions that used
+// to sit on the row as small grey icons now live on a menu, as they do on
+// People: a row is a record, and the row stays clear to read. Someone who
+// cannot change attendance, or a row with nothing to offer, gets no menu -
+// and no sinking under the thumb as though one were coming.
+const holdable = computed(() => menuMark.value || canDelete.value)
+
+const openMenu = (x, y, el = null) => {
+  emit('contextmenu', {
+    record: props.record,
+    x,
+    y,
+    // Only from a long press: the row is lifted above the dimmed screen while
+    // its menu is open (HoldFocus.vue). A right-click keeps the plain menu.
+    el,
+    canMark: menuMark.value,
+    canDelete: canDelete.value,
+  })
+}
+
+const handleContextMenu = (event) => {
+  if (!holdable.value) return
+  event.preventDefault()
+  openMenu(event.clientX, event.clientY)
+}
+
+// Touch has no right-click, so a long press opens the same menu.
+const rootEl = ref(null)
+const longPress = useLongPress(({ x, y }) => {
+  if (holdable.value) openMenu(x, y, rootEl.value)
+})
+
+// While a finger rests on the row it sinks, slowly, over the whole hold - the
+// squeeze is itself the countdown to the menu - and eases back quickly when
+// let go. The same give as a row on People.
+const pressStyle = computed(() => {
+  const held = longPress.pressing.value && holdable.value
+  return {
+    transform: held ? 'scale(0.97)' : 'scale(1)',
+    transition: held
+      ? `transform ${longPress.delay}ms cubic-bezier(0.2, 0, 0, 1), background-color 120ms ease`
+      : 'transform 240ms cubic-bezier(0.16, 1, 0.3, 1), background-color 150ms ease',
+  }
+})
+
 const roster = computed(() => props.members.length)
 
 const present = computed(() => props.record.totalAttendees ?? props.record.attendees?.length ?? 0)
@@ -122,51 +188,62 @@ const share = computed(() => {
 
 <template>
   <div
+    ref="rootEl"
     @click="handleClick"
+    @contextmenu="handleContextMenu"
+    @touchstart="longPress.onTouchStart"
+    @touchmove="longPress.onTouchMove"
+    @touchend="longPress.onTouchEnd"
+    @touchcancel="longPress.onTouchEnd"
+    :style="pressStyle"
     :class="[
-      'relative flex cursor-pointer select-none items-center gap-3 overflow-hidden px-4 py-3 transition-colors',
+      'touch-callout-none relative cursor-pointer select-none overflow-hidden',
+      stacked
+        ? 'flex flex-col gap-2 rounded-lg p-3'
+        : 'flex items-center gap-3 py-2 pl-4 pr-3',
       selected
         ? 'bg-primary/10 dark:bg-primary/20'
-        : 'hover:bg-gray-50 dark:hover:bg-gray-700/50',
+        : longPress.pressing.value && holdable
+          ? 'bg-gray-100 dark:bg-gray-700/50'
+          : stacked
+            ? 'bg-gray-50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-700'
+            : 'hover:bg-gray-100 dark:hover:bg-gray-700/50',
       // Still there, still readable, plainly not part of the count.
       isQuiet ? 'opacity-60' : '',
     ]"
   >
-    <!-- The row itself is the gauge: it fills from the left in proportion to
-         turnout, so a full house and a thin one are told apart down the list
-         without reading a single number. Always the primary colour — a month
-         of rows each filling in its own hue was a rainbow, and the kind of
-         gathering is already carried by the stripe and the badge. -->
-    <div
-      v-if="share !== null"
-      class="pointer-events-none absolute inset-y-0 left-0 bg-primary opacity-10 transition-[width] duration-700 ease-out dark:bg-primary-light dark:opacity-20"
-      :style="{ width: `${share}%` }"
-    ></div>
-
-    <!-- The stripe carries the colour even on a row with nothing recorded, so
-         a month of services still reads as a month of services. -->
+    <!-- The kind of gathering, as a stripe down the edge, so a month of
+         services still reads as a month of services. Faint while nothing is
+         recorded. -->
     <div
       :class="[
-        'pointer-events-none absolute inset-y-0 left-0 w-1',
+        'pointer-events-none absolute left-0 w-1',
+        stacked ? 'inset-y-3 rounded-r' : 'inset-y-0',
         getEventTypeBar(type),
         isPlaceholder ? 'opacity-30' : '',
       ]"
     ></div>
 
-    <!-- Big Day Display -->
-    <div class="relative w-12 shrink-0 text-center">
-      <div class="text-2xl font-bold leading-none text-gray-900 dark:text-white">
-        {{ getDay(record.date) }}
+    <!-- Date and gauge: side by side at the ends of a row; along the top of a
+         card. -->
+    <div :class="stacked ? 'flex items-start justify-between gap-2 pl-1' : 'contents'">
+      <div :class="['shrink-0 text-center', stacked ? 'text-left' : 'w-10']">
+        <div class="text-xl font-bold leading-none tabular-nums text-gray-900 dark:text-white">
+          {{ getDay(record.date) }}
+        </div>
+        <div class="mt-0.5 text-[11px] uppercase text-gray-400 dark:text-gray-500">
+          {{ getDayName(record.date) }}
+        </div>
       </div>
-      <div class="mt-0.5 text-xs uppercase text-gray-400 dark:text-gray-500">
-        {{ getDayName(record.date) }}
-      </div>
+
+      <TurnoutRing v-if="stacked && share !== null" :share="share" size="h-12 w-12" text-class="text-[11px]" />
     </div>
 
-    <div class="relative min-w-0 flex-1">
+    <div :class="['min-w-0 flex-1', stacked ? 'pl-1' : '']">
       <p
         :class="[
-          'truncate text-sm font-medium',
+          'text-sm font-medium',
+          stacked ? 'line-clamp-2 leading-snug' : 'truncate',
           calledOff
             ? 'text-gray-500 line-through dark:text-gray-400'
             : 'text-gray-900 dark:text-white',
@@ -174,10 +251,10 @@ const share = computed(() => {
       >
         {{ record.eventTitle || 'Untitled' }}
       </p>
-      <div class="mt-0.5 flex items-center gap-2">
+      <div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
         <span
           :class="[
-            'rounded px-1.5 py-0.5 text-xs',
+            'rounded px-1.5 py-0.5 text-[11px]',
             getEventTypeColor(type),
             isPlaceholder ? 'opacity-60' : '',
           ]"
@@ -189,23 +266,23 @@ const share = computed(() => {
              different words rather than one grey badge for all of them. -->
         <span
           v-if="calledOff"
-          class="rounded bg-red-100 px-1.5 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-500/15 dark:text-red-300"
+          class="rounded bg-red-100 px-1.5 py-0.5 text-[11px] font-semibold text-red-700 dark:bg-red-500/15 dark:text-red-300"
         >
           {{ statusLabel }}
         </span>
         <span
           v-else-if="skipped"
-          class="rounded border border-dashed border-gray-300 px-1.5 py-0.5 text-xs text-gray-400 dark:border-gray-600 dark:text-gray-500"
+          class="rounded border border-dashed border-gray-300 px-1.5 py-0.5 text-[11px] text-gray-400 dark:border-gray-600 dark:text-gray-500"
         >
           Not counted
         </span>
         <span v-else-if="!isPlaceholder" class="text-xs text-gray-500 dark:text-gray-400">
-          <span class="tabular-nums">{{ present }}</span>
+          <span class="font-semibold tabular-nums text-gray-700 dark:text-gray-200">{{ present }}</span>
           <span v-if="expected"> of <span class="tabular-nums">{{ expected }}</span></span>
         </span>
         <span
           v-else
-          class="rounded border border-dashed border-gray-300 px-1.5 py-0.5 text-xs text-gray-400 dark:border-gray-600 dark:text-gray-500"
+          class="rounded border border-dashed border-gray-300 px-1.5 py-0.5 text-[11px] text-gray-400 dark:border-gray-600 dark:text-gray-500"
         >
           Not recorded
         </span>
@@ -221,36 +298,9 @@ const share = computed(() => {
       </p>
     </div>
 
-    <!-- The way to say "this one is not happening" without leaving the list.
-         A tap target of its own, because the row itself already means
-         "record this". -->
-    <!-- The count was wrong, or was never this gathering's to begin with. The
-         row stays tappable for editing it; this is the way to be rid of it. -->
-    <button
-      v-if="canDelete"
-      @click.stop="emit('delete', record)"
-      aria-label="Delete this record"
-      title="Delete this record"
-      class="relative shrink-0 rounded-lg p-2 text-gray-300 transition-colors hover:bg-red-50 hover:text-red-500 dark:text-gray-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
-    >
-      <Trash2 class="h-4 w-4" />
-    </button>
-
-    <button
-      v-if="canMark && !isQuiet"
-      @click.stop="emit('mark', record)"
-      aria-label="Cancel, postpone or skip"
-      title="Cancel, postpone or skip"
-      class="relative shrink-0 rounded-lg p-2 text-gray-300 transition-colors hover:bg-gray-100 hover:text-gray-500 dark:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-    >
-      <CalendarClock class="h-4 w-4" />
-    </button>
-
-    <p
-      v-if="share !== null"
-      class="relative shrink-0 text-xl font-bold tabular-nums text-primary dark:text-primary-light"
-    >
-      {{ share }}<span class="text-sm font-semibold">%</span>
-    </p>
+    <!-- The row's gauge sits at its end, where a thumb scrolling down the
+         list lines them all up. No buttons: calling a gathering off and
+         deleting its count are on the hold menu (see holdable). -->
+    <TurnoutRing v-if="!stacked && share !== null" :share="share" />
   </div>
 </template>

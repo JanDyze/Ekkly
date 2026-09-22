@@ -7,7 +7,6 @@ import {
   Briefcase,
   Camera,
   ChatCircleText,
-  Check,
   Church,
   Edit2,
   Gift,
@@ -15,7 +14,6 @@ import {
   MapPin,
   Phone,
   Tag,
-  Trash2,
   User,
   Users,
 } from '../icons'
@@ -30,14 +28,13 @@ import {
   calculateAgeFromDate,
   mergeTagSources,
   missingMemberFields,
-  CIVIL_STATUS_OPTIONS as civilStatusOptions,
 } from '../utils/memberUtils'
 import { subscribeToCustomTags } from '../api/tagsService'
 import MemberAvatar from '../components/members/MemberAvatar.vue'
 import YouBadge from '../components/members/YouBadge.vue'
 import ConfirmationModal from '../components/common/ConfirmationModal.vue'
 import ImageCropper from '../components/members/ImageCropper.vue'
-import InlineEditField from '../components/common/InlineEditField.vue'
+import MemberEditSheet from '../components/members/MemberEditSheet.vue'
 import LabelMark from '../components/common/LabelMark.vue'
 import { useLabelMarks } from '../composables/useLabelMarks'
 import { getIconForEvent } from '../utils/eventIcons'
@@ -57,9 +54,32 @@ const { ministryMark, tagMark } = useLabelMarks()
 const { canManage } = usePermissions()
 const canEdit = computed(() => canManage('members'))
 
-// The record is edited as a record. Per-field pencils asked which field you
-// meant before you had decided you were editing anything.
-const isEditMode = ref(false)
+// The record is edited as a record, in a sheet of short steps over the
+// profile, and written once when Save is pressed. Per-field pencils asked which
+// field you meant before you had decided you were editing anything; a page
+// that turned into ten inputs in place never said where you were in it.
+const showEditor = ref(false)
+const editorStep = ref(0)
+const savingEdit = ref(false)
+
+const openEditor = (step = 0) => {
+  editorStep.value = step
+  showEditor.value = true
+}
+
+const saveEdit = async (changes) => {
+  savingEdit.value = true
+  try {
+    await updateMemberInFirestore(member.value, changes)
+    showEditor.value = false
+    toast.success('Profile saved')
+  } catch (error) {
+    console.error('Error updating member:', error)
+    toast.error('Could not save those changes. Please try again.')
+  } finally {
+    savingEdit.value = false
+  }
+}
 const showImageCropper = ref(false)
 
 // The bar only says the name once the heading carrying it has scrolled past,
@@ -99,7 +119,7 @@ onMounted(() => {
   // once and dropped from the URL: it says how you got here, not what the
   // record is, so a refresh or a back-and-forward should not re-open the form.
   if (route.query.edit === '1' && canEdit.value) {
-    isEditMode.value = true
+    openEditor()
     router.replace({ path: route.path, query: {} })
   }
 })
@@ -209,11 +229,6 @@ const longDay = (iso) => {
 }
 
 /* ----------------------------------------------------------------- record */
-const sexOptions = [
-  { value: 'Male', label: 'Male' },
-  { value: 'Female', label: 'Female' },
-]
-
 const fmtDate = (iso) => {
   if (!iso) return ''
   const d = new Date(iso)
@@ -337,20 +352,6 @@ const about = computed(() => {
   ]
 })
 
-/** The same fields as controls, plus the ones that only make sense to edit. */
-const editFields = computed(() => [
-  { key: 'firstName', label: 'First name', type: 'text' },
-  { key: 'lastName', label: 'Last name', type: 'text' },
-  { key: 'nickname', label: 'Nickname', type: 'text' },
-  { key: 'dateOfBirth', label: 'Date of birth', type: 'date' },
-  { key: 'sex', label: 'Sex', type: 'select', options: sexOptions },
-  { key: 'civilStatus', label: 'Civil status', type: 'select', options: civilStatusOptions },
-  { key: 'occupation', label: 'Occupation', type: 'text' },
-  { key: 'contactNumber', label: 'Phone number', type: 'tel' },
-  { key: 'email', label: 'Email', type: 'email' },
-  { key: 'address', label: 'Address', type: 'textarea' },
-])
-
 const handleFieldSave = async (field, value) => {
   localMember.value[field] = value
 
@@ -397,6 +398,7 @@ const handleConfirmation = () => {
 }
 
 const handleDelete = () => {
+  showEditor.value = false
   showConfirmModal({
     title: 'Delete Member',
     message: `Are you sure you want to delete ${getFullName(member.value)}? This action cannot be undone.`,
@@ -460,18 +462,11 @@ const handleImageUpdate = async (base64Image) => {
 
       <button
         v-if="member && canEdit"
-        @click="isEditMode = !isEditMode"
-        :aria-label="isEditMode ? 'Done editing' : 'Edit this profile'"
-        :title="isEditMode ? 'Done' : 'Edit'"
-        :class="[
-          'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors',
-          isEditMode
-            ? 'bg-primary text-white hover:bg-primary-hover'
-            : 'border border-gray-200 text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700',
-        ]"
+        @click="openEditor()"
+        class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
       >
-        <Check v-if="isEditMode" class="h-4.5 w-4.5" />
-        <Edit2 v-else class="h-4.5 w-4.5" />
+        <Edit2 class="h-4 w-4" />
+        Edit
       </button>
     </header>
 
@@ -498,7 +493,7 @@ const handleImageUpdate = async (base64Image) => {
     <div
       v-else
       @scroll.passive="onScroll"
-      class="flex-1 overflow-y-auto pb-[calc(2rem+env(safe-area-inset-bottom))]"
+      class="flex-1 overflow-y-auto pb-bar! pb-[calc(2rem+env(safe-area-inset-bottom))]"
     >
       <div class="mx-auto w-full max-w-2xl space-y-3 pb-3 sm:px-4 sm:pt-3">
         <!-- ============ Identity ============ -->
@@ -511,9 +506,12 @@ const handleImageUpdate = async (base64Image) => {
         >
           <div class="flex items-start gap-4">
             <div class="relative shrink-0">
+              <!-- Named for the list-to-profile transition: the photo in the
+                   row that was tapped flies here (router/viewTransitions.js). -->
               <MemberAvatar
                 :member="localMember"
                 size="h-20 w-20"
+                style="view-transition-name: member-avatar"
                 plain-class="border-2 border-white dark:border-gray-700 shadow-md"
               />
               <!-- Always drawn, not revealed on hover: there is no hover on a
@@ -592,6 +590,14 @@ const handleImageUpdate = async (base64Image) => {
                 </span>
               </div>
             </div>
+            <!-- Both details it asks for live on the Personal step. -->
+            <button
+              v-if="canEdit"
+              @click="openEditor(1)"
+              class="shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-500/20"
+            >
+              Fill in
+            </button>
           </div>
 
           <!-- ============ Attendance ============ -->
@@ -695,8 +701,7 @@ const handleImageUpdate = async (base64Image) => {
               About
             </h2>
 
-            <!-- Reading -->
-            <div v-if="!isEditMode" class="space-y-2.5">
+            <div class="space-y-2.5">
               <div v-for="fact in about" :key="fact.key" class="flex items-start gap-3">
                 <component
                   :is="fact.icon"
@@ -715,21 +720,6 @@ const handleImageUpdate = async (base64Image) => {
                 </p>
               </div>
             </div>
-
-            <!-- Editing -->
-            <div v-else class="space-y-4">
-              <InlineEditField
-                v-for="field in editFields"
-                :key="field.key"
-                :forceEdit="true"
-                :modelValue="localMember[field.key]"
-                :label="field.label"
-                :type="field.type"
-                :options="field.options"
-                @update:modelValue="localMember[field.key] = $event"
-                @save="handleFieldSave(field.key, $event)"
-              />
-            </div>
           </section>
 
           <!-- ============ Church ============ -->
@@ -740,31 +730,6 @@ const handleImageUpdate = async (base64Image) => {
             </h2>
 
             <div class="space-y-4">
-              <!-- Standing. Read mode says it in the intro line already, so it
-                   only appears here as a control. -->
-              <div v-if="isEditMode">
-                <p class="mb-1.5 text-xs text-gray-400 dark:text-gray-500">Standing</p>
-                <div class="inline-flex rounded-lg border border-gray-200 p-0.5 dark:border-gray-600">
-                  <button
-                    v-for="opt in [
-                      { on: true, label: 'Member' },
-                      { on: false, label: 'Attendee' },
-                    ]"
-                    :key="opt.label"
-                    @click="handleFieldSave('isMember', opt.on)"
-                    :aria-pressed="!!localMember.isMember === opt.on"
-                    :class="[
-                      'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                      !!localMember.isMember === opt.on
-                        ? 'bg-primary text-white'
-                        : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700',
-                    ]"
-                  >
-                    {{ opt.label }}
-                  </button>
-                </div>
-              </div>
-
               <!-- Ministries come from the controlled list in Settings because
                    they grant access; tags are free text and grant nothing. -->
               <div>
@@ -772,18 +737,7 @@ const handleImageUpdate = async (base64Image) => {
                   <Users class="h-3.5 w-3.5" />
                   Ministries
                 </p>
-                <InlineEditField
-                  v-if="isEditMode"
-                  :forceEdit="true"
-                  :modelValue="localMember.ministries"
-                  label="Ministries"
-                  type="tags"
-                  :allTags="ministryNames"
-                  emptyText="Not serving in any ministry"
-                  @update:modelValue="localMember.ministries = $event"
-                  @save="handleFieldSave('ministries', $event)"
-                />
-                <div v-else-if="(localMember.ministries || []).length" class="flex flex-wrap gap-1.5">
+                <div v-if="(localMember.ministries || []).length" class="flex flex-wrap gap-1.5">
                   <span
                     v-for="name in localMember.ministries"
                     :key="name"
@@ -803,18 +757,7 @@ const handleImageUpdate = async (base64Image) => {
                   <Tag class="h-3.5 w-3.5" />
                   Tags
                 </p>
-                <InlineEditField
-                  v-if="isEditMode"
-                  :forceEdit="true"
-                  :modelValue="localMember.tags"
-                  label="Tags"
-                  type="tags"
-                  :allTags="allTags"
-                  emptyText="No tags"
-                  @update:modelValue="localMember.tags = $event"
-                  @save="handleFieldSave('tags', $event)"
-                />
-                <div v-else-if="(localMember.tags || []).length" class="flex flex-wrap gap-1.5">
+                <div v-if="(localMember.tags || []).length" class="flex flex-wrap gap-1.5">
                   <span
                     v-for="tag in localMember.tags"
                     :key="tag"
@@ -828,23 +771,22 @@ const handleImageUpdate = async (base64Image) => {
               </div>
             </div>
           </section>
-
-          <!-- Destructive last, and only while editing. -->
-          <div v-if="isEditMode && canEdit">
-            <button
-              @click="handleDelete"
-              class="flex w-full items-center justify-center gap-2 rounded-2xl border border-red-200 px-4 py-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
-            >
-              <Trash2 class="h-4 w-4" />
-              Delete this person
-            </button>
-            <p class="mt-2 text-center text-xs text-gray-400 dark:text-gray-500">
-              Changes save as you make them.
-            </p>
-          </div>
         </div>
       </div>
     </div>
+
+    <MemberEditSheet
+      :show="showEditor"
+      :member="member"
+      :start-step="editorStep"
+      :ministry-names="ministryNames"
+      :all-tags="allTags"
+      :busy="savingEdit"
+      :can-delete="canEdit"
+      @close="showEditor = false"
+      @save="saveEdit"
+      @delete="handleDelete"
+    />
 
     <ConfirmationModal
       :show="showConfirmation"

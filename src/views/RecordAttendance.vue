@@ -380,7 +380,6 @@ const leave = () => {
       :details-locked="detailsLocked"
       :placeholder-kind="placeholderKind"
       :can-clear="canClear"
-      :save-state="saveState"
       @update:attendance-data="handleChange"
       @clear="showConfirmClear = true"
       @delete-source="showConfirmDelete = true"

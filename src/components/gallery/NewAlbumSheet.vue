@@ -89,7 +89,7 @@ const onFiles = (event) => {
             class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-linear-to-r from-primary/10 to-transparent px-4 py-3.5 dark:border-gray-700 dark:from-primary-light/10"
           >
             <div class="flex min-w-0 items-center gap-3">
-              <div class="shrink-0 rounded-xl bg-primary p-2.5 shadow-lg shadow-primary/30">
+              <div class="shrink-0 rounded-xl bg-primary p-2.5">
                 <ImagePlus class="h-5 w-5 text-white" />
               </div>
               <div class="min-w-0">
@@ -152,7 +152,7 @@ const onFiles = (event) => {
             <button
               type="submit"
               :disabled="!canCreate"
-              class="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none dark:disabled:bg-gray-700"
+              class="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700"
             >
               <ImagePlus class="h-4 w-4" />
               Choose photos

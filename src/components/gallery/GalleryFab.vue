@@ -83,7 +83,7 @@ onBeforeUnmount(() => {
   <div
     ref="fabRef"
     tabindex="-1"
-    class="absolute bottom-4 right-4 z-50 flex flex-col items-end gap-2.5 focus:outline-none"
+    class="absolute bottom-4 bottom-bar! right-4 z-50 flex flex-col items-end gap-2.5 focus:outline-none"
   >
     <Transition name="fab-actions">
       <div v-if="open" role="menu" class="flex flex-col items-end gap-2.5">
@@ -112,7 +112,7 @@ onBeforeUnmount(() => {
       :aria-expanded="isSingleAction ? undefined : open"
       :aria-haspopup="isSingleAction ? undefined : 'menu'"
       :aria-label="isSingleAction ? actions[0].label : open ? 'Close actions' : 'Gallery actions'"
-      class="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 transition-transform active:scale-95 hover:bg-primary-hover disabled:opacity-80"
+      class="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform active:scale-95 hover:bg-primary-hover disabled:opacity-80"
     >
       <component
         :is="fabIcon"

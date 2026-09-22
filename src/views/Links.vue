@@ -297,7 +297,7 @@ const copyLink = async (link) => {
     <div class="flex-1 flex overflow-hidden min-h-0">
 
       <!-- List Area -->
-      <div class="flex-1 h-full overflow-y-auto px-2 pb-4 sm:px-4 custom-scrollbar bg-transparent">
+      <div class="flex-1 h-full overflow-y-auto pb-bar! px-2 pb-4 sm:px-4 custom-scrollbar bg-transparent">
         <div class="max-w-4xl mx-auto">
 
           <!-- Loading: shaped like the rows it is standing in for -->
@@ -412,7 +412,7 @@ const copyLink = async (link) => {
           :class="[
             isMobile
               ? 'fixed inset-0 z-80 flex flex-col justify-end'
-              : 'link-form-panel m-3 rounded-2xl border-2 border-primary/30 dark:border-primary-light/30 bg-white dark:bg-gray-800 w-[calc(40%-1rem)] h-[calc(100%-1.5rem)] flex flex-col shrink-0 shadow-xl shadow-primary/25 dark:shadow-primary-light/20 relative overflow-hidden z-60'
+              : 'link-form-panel m-3 rounded-2xl border-2 border-primary/30 dark:border-primary-light/30 bg-white dark:bg-gray-800 w-[calc(40%-1rem)] h-[calc(100%-1.5rem)] flex flex-col shrink-0 shadow-xl relative overflow-hidden z-60'
           ]"
         >
           <div

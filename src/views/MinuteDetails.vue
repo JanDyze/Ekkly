@@ -1282,7 +1282,7 @@ watch(() => minute.value, (newMinute, oldMinute) => {
               <Plus class="h-4 w-4" />
             </button>
           </div>
-          <div class="flex-1 overflow-y-auto">
+          <div class="flex-1 overflow-y-auto pb-bar!">
             <nav class="p-2 space-y-1">
               <div v-if="currentStructure.agenda && currentStructure.agenda.length > 0">
                 <button
@@ -1438,7 +1438,7 @@ watch(() => minute.value, (newMinute, oldMinute) => {
             <template v-if="!writing.active">
               <div
                 v-if="currentStructure.overallSummary"
-                class="minute-body p-3 sm:p-5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                class="minute-body select-text p-3 sm:p-5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 @click="handleBodyClick"
                 @mouseup="captureSelection"
                 @touchend="captureSelection"
@@ -1507,7 +1507,7 @@ watch(() => minute.value, (newMinute, oldMinute) => {
                 @click="handleBodyClick"
                 @mouseup="captureSelection"
                 @touchend="captureSelection"
-                class="minute-body min-h-50 p-3 sm:p-4 border border-transparent hover:border-gray-300 dark:hover:border-gray-600 rounded-lg cursor-text text-gray-900 dark:text-white"
+                class="minute-body select-text min-h-50 p-3 sm:p-4 border border-transparent hover:border-gray-300 dark:hover:border-gray-600 rounded-lg cursor-text text-gray-900 dark:text-white"
                 :class="{
                   'bg-gray-50 dark:bg-gray-700/50': currentStructure.discussions?.[currentAgendaItem.index],
                   'text-gray-400 dark:text-gray-500 italic': !currentStructure.discussions?.[currentAgendaItem.index]

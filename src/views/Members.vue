@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, onActivated } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useMembers } from "../composables/useMembers";
 import { useMediaQuery } from "../composables/useMediaQuery";
@@ -8,10 +8,11 @@ import { useMemberSorting } from "../composables/useMemberSorting";
 import { useMemberForm } from "../composables/useMemberForm";
 import { useListScrollMemory } from "../composables/useListScrollMemory";
 import { useToast } from "../composables/useToast";
+import { useTitleCount } from "../composables/useTitleCount";
 import MembersToolbar from "../components/members/MembersToolbar.vue";
 import MembersFab from "../components/members/MembersFab.vue";
-import MembersSortSheet from "../components/members/MembersSortSheet.vue";
-import AddMemberDrawer from "../components/members/AddMemberDrawer.vue";
+import SortSheet from "../components/common/SortSheet.vue";
+import MemberEditSheet from "../components/members/MemberEditSheet.vue";
 import MemberContextMenu from "../components/members/MemberContextMenu.vue";
 import ExportDialog from "../components/members/ExportDialog.vue";
 import MemberCard from "../components/members/MemberCard.vue";
@@ -21,11 +22,11 @@ import MemberBandHeader from "../components/members/MemberBandHeader.vue";
 import ConfirmationModal from "../components/common/ConfirmationModal.vue";
 import BulkAssignSheet from "../components/members/BulkAssignSheet.vue";
 import { exportToExcel } from "../utils/exportUtils";
-import { getFullName, mergeTagSources } from "../utils/memberUtils";
+import { mergeTagSources } from "../utils/memberUtils";
 import { usePermissions } from "../composables/usePermissions";
 import { useMinistries } from "../composables/useMinistries";
 import { areaLabel } from "../data/capabilities";
-import { ArrowUpDown, ChevronDown, Church, Tag, X } from "../icons";
+import { Church, Tag, X } from "../icons";
 import {
   subscribeToCustomTags,
   addCustomTag,
@@ -43,6 +44,50 @@ const router = useRouter();
 const route = useRoute();
 const isMobile = useMediaQuery("(max-width: 1023px)");
 
+// On a phone the roll can be a list (names first, quick to scan) or a grid
+// (faces first, for putting names to people you have seen). Remembered on
+// this device only - it is how this person likes to read, not a church
+// setting - and blocked or private-mode storage just falls back to the list.
+// A desktop always shows the grid: it has the width for faces and names both.
+const VIEW_KEY = "ekkly:people-view";
+const readView = () => {
+  try {
+    return localStorage.getItem(VIEW_KEY) === "grid" ? "grid" : "list";
+  } catch {
+    return "list";
+  }
+};
+const mobileView = ref(readView());
+const toggleMobileView = () => {
+  mobileView.value = mobileView.value === "grid" ? "list" : "grid";
+  try {
+    localStorage.setItem(VIEW_KEY, mobileView.value);
+  } catch {
+    // Not remembered this time; the switch itself still happened.
+  }
+};
+const showGrid = computed(() => !isMobile.value || mobileView.value === "grid");
+
+// Shown again after a record (the page is kept alive while one is open), the
+// list slides in a short way rather than simply appearing. The way in to the
+// record is a full view transition; the way back is not, because snapshotting
+// a long roll froze the screen for as long as it took to paint every row
+// (router/viewTransitions.js). This animates the live page instead.
+const returning = ref(false);
+let shownBefore = false;
+let returnTimer = null;
+onActivated(() => {
+  if (!shownBefore) {
+    shownBefore = true;
+    return;
+  }
+  clearTimeout(returnTimer);
+  returning.value = true;
+  returnTimer = setTimeout(() => {
+    returning.value = false;
+  }, 300);
+});
+
 const searchQuery = ref("");
 
 // Member data management
@@ -51,6 +96,24 @@ const { members, loading, addMemberToFirestore, removeMember } = useMembers();
 // Search is the only way the list is narrowed - it matches tags, sex, civil
 // status, occupation and address as well as names.
 const { allTags, filteredMembers: searchedMembers } = useMemberSearch(members, searchQuery);
+
+// The whole roll, beside the title - never the searched count, which the
+// search bar already says as "8 of 142". Nothing while loading, so a zero
+// never flashes up for a church that has people.
+useTitleCount(() => (loading.value ? null : members.value.length));
+
+// The split under the last row: the one breakdown the title has no room for.
+const rollSummary = computed(() => {
+  const total = members.value.length;
+  const memberCount = members.value.filter((m) => m.isMember).length;
+  const attendeeCount = total - memberCount;
+  const plural = (n, one, many) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
+  return [
+    plural(total, "person", "people"),
+    plural(memberCount, "member", "members"),
+    plural(attendeeCount, "attendee", "attendees"),
+  ];
+});
 
 // Custom tags created from the toolbar's "Add tag" control, registered as
 // selectable options without being applied to any member yet.
@@ -322,7 +385,7 @@ const applyBulk = async ({ value, mode, register }) => {
 const showExport = ref(false);
 
 // Member form
-const { showAddMember, newMember, canAddMember, addMemberTooltip, calculateAge, addMember } = useMemberForm(
+const { showAddMember, addMemberFrom } = useMemberForm(
   members,
   addMemberToFirestore,
   allTags
@@ -344,9 +407,12 @@ const updateQueryParams = (params) => {
   router.replace({ query });
 };
 
-// Computed property for showAddMember to work with v-model and URL params
+// Computed property for showAddMember to work with v-model and URL params.
+// Only while People is the page on screen: it stays alive, hidden, while a
+// profile is open (AdminLayout's KEPT_ALIVE), and its sheet is teleported to
+// the body, so another page's ?add=true must not open it over that page.
 const showAddMemberComputed = computed({
-  get: () => route.query.add === 'true',
+  get: () => route.name === 'Members' && route.query.add === 'true',
   set: (value) => {
     if (value) {
       showAddMember.value = true;
@@ -363,12 +429,17 @@ watch(() => route.query, (query) => {
   showAddMember.value = query.add === 'true';
 }, { immediate: true });
 
-// Add member handler - the drawer is driven by the `add` query param, so a
-// successful save has to close it there (not via the form's own ref).
-const handleAddMember = async () => {
-  const added = await addMember();
-  if (added) {
-    showAddMemberComputed.value = false;
+// Adding is the same stepper as editing (MemberEditSheet.vue), opened from the
+// plus button. It is driven by the `add` query param, so a successful save has
+// to close it there (not via the form's own ref).
+const addingPerson = ref(false);
+const handleAddMember = async (record) => {
+  addingPerson.value = true;
+  try {
+    const added = await addMemberFrom(record);
+    if (added) showAddMemberComputed.value = false;
+  } finally {
+    addingPerson.value = false;
   }
 };
 
@@ -409,8 +480,13 @@ const contextMenu = ref({
   member: null,
 });
 
-const handleContextMenu = ({ member, x, y }) => {
-  contextMenu.value = { show: true, x, y, member };
+// Everything on the menu changes the roll - select, edit, delete - so someone
+// who can only read it gets no menu rather than one that refuses them.
+// `el` comes only with a long press: the held row is lifted above a dimmed
+// screen while its menu is open (HoldFocus.vue).
+const handleContextMenu = ({ member, x, y, el = null }) => {
+  if (!canTag.value) return;
+  contextMenu.value = { show: true, x, y, member, el };
 };
 
 const closeContextMenu = () => {
@@ -418,28 +494,9 @@ const closeContextMenu = () => {
 };
 
 // Context menu action handlers
-const handleContextView = (member) => openMember(member);
-
 // `?edit=1` puts the page straight into edit mode. It used to be a timed
 // querySelector against the drawer's DOM; the record now owns that state.
 const handleContextEdit = (member) => openMember(member, { edit: true });
-
-const handleContextCall = (member) => {
-  if (member?.contactNumber) {
-    window.location.href = `tel:${member.contactNumber}`;
-  }
-};
-
-const handleContextEmail = (member) => {
-  if (member?.email) {
-    window.location.href = `mailto:${member.email}`;
-  }
-};
-
-const handleContextCopy = (member) => {
-  const name = getFullName(member);
-  navigator.clipboard.writeText(name);
-};
 
 // Confirmation modal state
 const showConfirmation = ref(false);
@@ -487,8 +544,11 @@ const handleMemberDelete = async (member) => {
   });
 };
 
-// Check if any side drawer is open
-const isDrawerOpen = computed(() => showAddMemberComputed.value);
+// Three faces across a phone, four on a desktop. Adding opens over the page
+// now rather than as a column beside it, so the grid no longer makes room.
+const gridClass = computed(() =>
+  isMobile.value ? "grid grid-cols-3 gap-2 p-2" : "grid grid-cols-4 gap-3 p-3"
+);
 
 // The button would sit on top of whatever a drawer or the details modal is
 // showing, and both carry their own actions anyway.
@@ -510,7 +570,7 @@ const showFab = computed(
 </script>
 
 <template>
-  <div class="relative flex flex-col h-full">
+  <div :class="['relative flex flex-col h-full', returning ? 'page-return' : '']">
     <!-- Opened from the plus button rather than always sitting there: an
          always-on search bar costs a row of the list on every visit, and most
          visits are a scroll rather than a lookup. -->
@@ -525,43 +585,48 @@ const showFab = computed(
     />
 
     <!-- Members List -->
-    <div class="flex-1 overflow-hidden bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex">
-      <!-- Members Content. A column, so the sort strip sits above the
-           scroller rather than scrolling away with the first screenful. -->
+    <div class="flex-1 overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex">
+      <!-- Members Content. No strip above the list: the sort is opened from
+           the plus button, which names the sort that is on so it can still be
+           checked without opening the sheet. -->
       <div class="flex flex-1 min-w-0 h-full flex-col">
-        <!-- No summary tiles: a head count at the top of the roll was read
-             more than it was used, and the band headings below already carry
-             their own counts. What is left is the sort, which has to say which
-             sort is on, so it cannot live in the actions menu — a setting you
-             cannot see the state of is one you re-open just to check. -->
+        <!-- Room at the foot for the plus button as well as the bottom bar it
+             floats over (bar 4.6rem + button 3.5rem + air), so the last
+             person can be scrolled clear of both rather than stopping
+             under the button. -->
         <div
-          class="flex shrink-0 items-center gap-2 border-b border-gray-200 px-2 py-1.5 dark:border-gray-700"
+          ref="listScroller"
+          class="min-h-0 flex-1 overflow-y-auto pb-28 max-lg:pb-[calc(10rem+env(safe-area-inset-bottom))]"
         >
-          <button
-            @click="showSort = true"
-            aria-haspopup="dialog"
-            class="ml-auto inline-flex min-w-0 items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-semibold text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
-          >
-            <ArrowUpDown class="h-3.5 w-3.5 shrink-0" />
-            <span class="truncate">{{ currentSort.label }}</span>
-            <ChevronDown class="h-3 w-3 shrink-0 opacity-60" />
-          </button>
-        </div>
 
-        <div ref="listScroller" class="min-h-0 flex-1 overflow-y-auto pb-20">
-
-      <!-- Grid on desktop, list on mobile - the viewport decides, not a toggle.
-           Both are divided into age bands, each heading carrying its own count
-           so "we are short on youth" reads without counting rows. -->
-        <template v-if="!isMobile">
-          <div
-            v-if="loading"
-            :class="['grid gap-3 p-3', isDrawerOpen ? 'grid-cols-2' : 'grid-cols-4']"
-          >
-            <MemberCardSkeleton v-for="i in 12" :key="`skeleton-${i}`" />
+      <!-- A grid on a desktop; on a phone, a list or a grid of faces as the
+           reader chose from the plus button. All of them are divided into the
+           sort's groups, each heading carrying its own count so "we are short
+           on youth" reads without counting rows. -->
+        <template v-if="showGrid">
+          <div v-if="loading" :class="gridClass">
+            <template v-if="isMobile">
+              <div
+                v-for="i in 12"
+                :key="`skeleton-${i}`"
+                class="flex flex-col items-center gap-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-700/50"
+              >
+                <div class="h-14 w-14 rounded-full bg-gray-200 dark:bg-gray-600 animate-pulse"></div>
+                <div class="h-3 w-16 rounded bg-gray-200 dark:bg-gray-600 animate-pulse"></div>
+              </div>
+            </template>
+            <MemberCardSkeleton v-else v-for="i in 12" :key="`skeleton-${i}`" />
           </div>
 
-          <section v-else v-for="group in memberGroups" :key="group.band?.key || 'all'">
+          <!-- A group well off screen is skipped when the list is laid out and
+               painted - showing the roll again only draws what can be seen.
+               The intrinsic size keeps the scrollbar honest meanwhile. -->
+          <section
+            v-else
+            v-for="group in memberGroups"
+            :key="group.band?.key || 'all'"
+            class="[content-visibility:auto] [contain-intrinsic-size:auto_600px]"
+          >
             <MemberBandHeader
               v-if="group.band"
               :band="group.band"
@@ -570,15 +635,15 @@ const showFab = computed(
               :checked="isBandPicked(group)"
               @toggle="toggleBand(group)"
             />
-            <div
-              :class="['grid gap-3 p-3', isDrawerOpen ? 'grid-cols-2' : 'grid-cols-4']"
-            >
+            <div :class="gridClass">
               <MemberCard
                 v-for="member in group.members"
                 :key="member.id"
                 :member="member"
+                :stacked="isMobile"
                 :picking="picking"
                 :checked="pickedIds.has(String(member.firestoreId || member.id))"
+                :holdable="canTag"
                 @click="handleMemberClick"
                 @contextmenu="handleContextMenu"
                 @toggle="togglePicked"
@@ -588,13 +653,13 @@ const showFab = computed(
         </template>
 
         <template v-else>
-          <div v-if="loading" class="space-y-1 p-2">
+          <div v-if="loading">
             <div
               v-for="i in 10"
               :key="`skeleton-${i}`"
-              class="p-4 flex items-center gap-4"
+              class="px-4 py-2 flex items-center gap-3"
             >
-              <div class="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-600 animate-pulse"></div>
+              <div class="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-600 animate-pulse"></div>
               <div class="flex-1 space-y-2">
                 <div class="h-4 w-32 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></div>
                 <div class="h-3 w-24 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></div>
@@ -602,7 +667,15 @@ const showFab = computed(
             </div>
           </div>
 
-          <section v-else v-for="group in memberGroups" :key="group.band?.key || 'all'">
+          <!-- A group well off screen is skipped when the list is laid out and
+               painted - showing the roll again only draws what can be seen.
+               The intrinsic size keeps the scrollbar honest meanwhile. -->
+          <section
+            v-else
+            v-for="group in memberGroups"
+            :key="group.band?.key || 'all'"
+            class="[content-visibility:auto] [contain-intrinsic-size:auto_600px]"
+          >
             <MemberBandHeader
               v-if="group.band"
               :band="group.band"
@@ -611,13 +684,17 @@ const showFab = computed(
               :checked="isBandPicked(group)"
               @toggle="toggleBand(group)"
             />
-            <div class="space-y-1 p-2">
+            <!-- No padding or gaps: a row is the full width of the list, so
+                 the press colour fills it edge to edge like a native list
+                 instead of a rounded block floating inside it. -->
+            <div>
               <MemberListItem
                 v-for="member in group.members"
                 :key="member.id"
                 :member="member"
                 :picking="picking"
                 :checked="pickedIds.has(String(member.firestoreId || member.id))"
+                :holdable="canTag"
                 @click="handleMemberClick"
                 @contextmenu="handleContextMenu"
                 @toggle="togglePicked"
@@ -629,19 +706,29 @@ const showFab = computed(
         <div v-if="!loading && filteredMembers.length === 0" class="p-8 text-center text-gray-500 dark:text-gray-400">
           Nobody matches your search.
         </div>
+
+        <!-- Where the roll ends, what it adds up to. Only for the whole roll:
+             under a search it would describe people who are not on screen. -->
+        <p
+          v-else-if="!loading && !searchQuery.trim()"
+          class="px-4 pt-6 pb-2 text-center text-xs tabular-nums text-gray-400 dark:text-gray-500"
+        >
+          <template v-for="(part, i) in rollSummary" :key="i">
+            <span v-if="i" class="px-1.5 text-gray-300 dark:text-gray-600">·</span>{{ part }}
+          </template>
+        </p>
         </div>
       </div>
 
-      <!-- Add Member Drawer -->
-      <AddMemberDrawer
-        v-model:showAddMember="showAddMemberComputed"
-        :newMember="newMember"
-        :allTags="assignableTags"
-        :canAddMember="canAddMember"
-        :addMemberTooltip="addMemberTooltip"
-        @update:newMember="newMember = $event"
-        @addMember="handleAddMember"
-        @calculateAge="calculateAge"
+      <!-- Adding someone: the same four steps as editing them. -->
+      <MemberEditSheet
+        mode="add"
+        :show="showAddMemberComputed"
+        :ministry-names="ministryNames"
+        :all-tags="assignableTags"
+        :busy="addingPerson"
+        @close="showAddMemberComputed = false"
+        @save="handleAddMember"
       />
 
       <!-- Confirmation Modal -->
@@ -663,13 +750,10 @@ const showFab = computed(
         :x="contextMenu.x"
         :y="contextMenu.y"
         :member="contextMenu.member"
+        :anchor="contextMenu.el"
         @close="closeContextMenu"
-        @view="handleContextView"
         @edit="handleContextEdit"
         @delete="handleMemberDelete"
-        @call="handleContextCall"
-        @email="handleContextEmail"
-        @copy="handleContextCopy"
         @select="startPicking"
       />
     </div>
@@ -678,7 +762,7 @@ const showFab = computed(
          would be so the thumb does not have to travel. -->
     <div
       v-if="picking"
-      class="absolute inset-x-0 bottom-0 z-50 border-t border-gray-200 bg-white/95 px-3 py-3 backdrop-blur pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-gray-700 dark:bg-gray-900/95"
+      class="absolute inset-x-0 bottom-0 bottom-bar! z-50 border-t border-gray-200 bg-white/95 px-3 py-3 backdrop-blur pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-gray-700 dark:bg-gray-900/95"
     >
       <div class="flex items-center gap-3">
         <button
@@ -725,7 +809,7 @@ const showFab = computed(
           :class="[
             'inline-flex h-11 shrink-0 items-center gap-1.5 rounded-lg px-4 text-sm font-semibold transition-colors',
             pickedCount
-              ? 'bg-primary text-white shadow-lg shadow-primary/25 hover:bg-primary-hover'
+              ? 'bg-primary text-white hover:bg-primary-hover'
               : 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-700',
           ]"
         >
@@ -736,16 +820,22 @@ const showFab = computed(
     </div>
 
     <!-- Floating actions -->
-    <MembersSortSheet
+    <SortSheet
       :show="showSort"
       :options="sortOptions"
       v-model="sortBy"
+      title="Sort people by"
+      hint="The headings follow the sort"
       @close="showSort = false"
     />
 
     <MembersFab
       v-if="showFab"
+      :sortLabel="currentSort.label"
+      :view="isMobile ? mobileView : null"
       @search="openSearch"
+      @toggle-view="toggleMobileView"
+      @sort="showSort = true"
       @add="showAddMemberComputed = true"
       @export="showExport = true"
     />
@@ -779,17 +869,3 @@ const showFab = computed(
   </div>
 </template>
 
-<style scoped>
-/* Drawer column animations */
-.drawer-enter-active .add-member-drawer,
-.drawer-leave-active .add-member-drawer {
-  transition: max-width 0.3s ease-out, opacity 0.3s ease;
-}
-
-.drawer-enter-from .add-member-drawer,
-.drawer-leave-to .add-member-drawer {
-  max-width: 0;
-  opacity: 0;
-  overflow: hidden;
-}
-</style>

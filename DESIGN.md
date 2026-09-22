@@ -325,7 +325,7 @@ option:    h-9 rounded-md px-2.5 text-xs font-medium sm:text-sm
 Copy [MembersFab.vue](src/components/members/MembersFab.vue).
 
 - **Main button:** `absolute bottom-4 right-4 z-50`, `h-14 w-14 rounded-full
-  bg-primary text-white shadow-lg shadow-primary/30`. The `Plus` icon rotates
+  bg-primary text-white shadow-lg`. The `Plus` icon rotates
   45° while the menu is open.
 - **Action menu:** labelled pills stacked upward. Search comes first, then
   Add, then everything else (Export, and so on). Only offer Add to people who
@@ -381,7 +381,7 @@ Copy [TaskDrawer.vue](src/components/tasks/TaskDrawer.vue).
 - **Phone:** a bottom sheet, `<Teleport to="body">`. Backdrop `fixed inset-0
   z-80 bg-black/50`; panel `max-h-[92dvh] rounded-t-2xl`.
 - **Desktop:** a panel beside the list, `m-3 w-[calc(50%-1.5rem)] rounded-2xl
-  border-2 border-primary/30 shadow-xl shadow-primary/25`.
+  border-2 border-primary/30 shadow-xl`.
 - **Header:** icon plus title (`text-lg font-semibold`), such as "New task" or
   "Edit task", with a close X.
 - **Body:** `flex-1 overflow-y-auto p-4 sm:p-6`, holding a
@@ -405,12 +405,12 @@ popovers that leave the page usable are the only exception.
 
 ### Sheet: picking one thing
 
-Copy [MembersSortSheet.vue](src/components/members/MembersSortSheet.vue).
+Copy [SortSheet.vue](src/components/common/SortSheet.vue), or use it directly — it takes its title and hint from the caller.
 
 - **Layout:** a bottom sheet on phones, a centred card (`sm:max-w-sm`) on
   desktop. Overlay `fixed inset-0 z-100 bg-black/60 backdrop-blur-sm`.
 - **Header:** `bg-linear-to-r from-primary/10 to-transparent`, with an icon
-  tile (`rounded-xl bg-primary p-2.5 shadow-lg shadow-primary/30`), a title
+  tile (`rounded-xl bg-primary p-2.5`, no shadow), a title
   (`text-base font-bold`) and a one-line hint (`text-xs text-gray-500`).
 - **Options:** `rounded-xl px-3 py-3`. The chosen option gets
   `bg-primary/10`, primary-coloured text and a `Check` icon.

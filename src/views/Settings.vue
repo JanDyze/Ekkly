@@ -31,6 +31,7 @@ import { useAppSettings } from '../composables/useAppSettings'
 import { usePlatformConfig } from '../composables/usePlatformConfig'
 import { useVersionCheck } from '../composables/useVersionCheck'
 import { useMediaQuery } from '../composables/useMediaQuery'
+import { useFocusMode } from '../composables/useFocusMode'
 import { useRecurringSchedules } from '../composables/useRecurringSchedules'
 import { useMinistries } from '../composables/useMinistries'
 import { useMemberClaims } from '../composables/useMemberClaims'
@@ -220,6 +221,12 @@ const openSection = (key) => {
   router.push({ query: { ...route.query, section: key } })
 }
 
+// An open section on a phone is a detail view: it takes the screen, chrome
+// and all, the way a person's profile does. The way back is the link at its
+// top, which is why the chrome can go. A desktop keeps everything - the
+// section is a column beside the list there, not a page.
+useFocusMode(() => !isDesktop.value && Boolean(active.value))
+
 const backToList = () => {
   const { section: _drop, ...rest } = route.query
   router.push({ query: rest })
@@ -240,18 +247,19 @@ const { open: openWhatsNew } = useVersionCheck()
     <nav
       v-if="isDesktop || !active"
       aria-label="Settings sections"
-      class="h-full overflow-y-auto lg:w-72 lg:shrink-0"
+      class="h-full overflow-y-auto pt-3 pb-bar! sm:pt-0 lg:w-72 lg:shrink-0"
     >
-      <h1 class="mb-3 text-xl font-bold text-gray-900 dark:text-white">Settings</h1>
-
       <div v-for="group in GROUPS" :key="group.label" class="mb-4">
         <h2
-          class="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500"
+          class="mb-1.5 px-4 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 sm:px-1"
         >
           {{ group.label }}
         </h2>
+        <!-- Edge to edge on a phone, like every other list in the app: a card
+             with rounded corners and a border needs room around it, and a
+             phone has none to spare. From sm up it is a card again. -->
         <ul
-          class="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800"
+          class="divide-y divide-gray-100 border-y border-gray-200 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800 sm:overflow-hidden sm:rounded-xl sm:border"
         >
           <li v-for="item in group.items" :key="item.key">
             <button
@@ -259,7 +267,7 @@ const { open: openWhatsNew } = useVersionCheck()
               @click="openSection(item.key)"
               :aria-current="activeKey === item.key ? 'page' : undefined"
               :class="[
-                'flex w-full items-center gap-3 px-3 py-3 text-left transition-colors',
+                'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors sm:px-3',
                 activeKey === item.key && isDesktop
                   ? 'bg-primary/5 dark:bg-primary-light/10'
                   : 'hover:bg-gray-50 dark:hover:bg-gray-700/50',
@@ -299,7 +307,7 @@ const { open: openWhatsNew } = useVersionCheck()
       <!-- Which build this is. Under the list rather than inside a section,
            because a bug report can come from any of them and the version is
            the first question asked. -->
-      <p class="pb-4 text-center text-xs text-gray-400 dark:text-gray-500">
+      <p class="px-4 pb-4 text-center text-xs text-gray-400 dark:text-gray-500">
         {{ branding.name }} v{{ appVersion }} &middot;
         <button
           @click="openWhatsNew"
@@ -314,18 +322,33 @@ const { open: openWhatsNew } = useVersionCheck()
          column: a flex item shrinks to fit, and the sections are
          overflow-hidden for their rounded corners, so a tall one was clipped
          with nothing to scroll. -->
-    <main v-if="active" class="h-full min-w-0 flex-1 overflow-y-auto pb-4">
+    <main
+      v-if="active"
+      class="settings-detail h-full min-w-0 flex-1 overflow-y-auto px-3 pb-[calc(2rem+env(safe-area-inset-bottom))] sm:px-0 lg:pb-4"
+    >
       <!-- The way back, on a phone only. The section's own card carries its
            name, so this says where back goes rather than repeating it. -->
-      <button
+      <div
         v-if="!isDesktop"
-        type="button"
-        @click="backToList"
-        class="-ml-1 mb-2 flex items-center gap-1 rounded-lg px-1 py-2 text-sm font-medium text-gray-600 dark:text-gray-300"
+        class="sticky top-0 z-20 -mx-3 mb-2 flex items-center gap-2 border-b border-gray-200 bg-white/90 px-3 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top))] backdrop-blur dark:border-gray-700 dark:bg-gray-900/90"
       >
-        <ArrowLeft class="h-5 w-5" />
-        Settings
-      </button>
+        <button
+          type="button"
+          @click="backToList"
+          aria-label="Back to settings"
+          class="-ml-1.5 rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+        >
+          <ArrowLeft class="h-5 w-5" />
+        </button>
+        <span
+          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light"
+        >
+          <component :is="active.icon" class="h-4.5 w-4.5" />
+        </span>
+        <h1 class="min-w-0 truncate text-base font-bold text-gray-900 dark:text-white">
+          {{ active.label }}
+        </h1>
+      </div>
 
       <KeepAlive>
         <component :is="active.component" :key="active.key" />

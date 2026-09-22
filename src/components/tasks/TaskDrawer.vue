@@ -119,7 +119,7 @@ useFocusTrap(dialogRef, () => props.show, handleCancel)
         :class="[
           isMobile
             ? 'fixed inset-0 z-80 flex flex-col justify-end'
-            : 'task-drawer m-3 flex h-[calc(100%-1.5rem)] w-[calc(50%-1.5rem)] shrink-0 flex-col overflow-hidden rounded-2xl border-2 border-primary/30 bg-white shadow-xl shadow-primary/25 dark:border-primary-light/30 dark:bg-gray-800 dark:shadow-primary-light/20'
+            : 'task-drawer m-3 flex h-[calc(100%-1.5rem)] w-[calc(50%-1.5rem)] shrink-0 flex-col overflow-hidden rounded-2xl border-2 border-primary/30 bg-white shadow-xl dark:border-primary-light/30 dark:bg-gray-800'
         ]"
       >
         <div v-if="isMobile" class="absolute inset-0 bg-black/50" @click="handleCancel" />

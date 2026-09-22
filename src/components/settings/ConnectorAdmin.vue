@@ -103,7 +103,7 @@ const copy = async () => {
 
 <template>
   <section class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
-    <div class="flex items-start gap-3 px-4 py-4 border-b border-gray-100 dark:border-gray-700">
+    <div class="section-head flex items-start gap-3 px-4 py-4 border-b border-gray-100 dark:border-gray-700">
       <div class="p-2 rounded-lg bg-primary/10 shrink-0">
         <Sparkles class="h-5 w-5 text-primary dark:text-primary-light" />
       </div>

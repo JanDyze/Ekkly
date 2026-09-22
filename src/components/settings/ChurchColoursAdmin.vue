@@ -47,6 +47,7 @@ const save = async (value) => {
 
 <template>
   <SectionCard
+    head-class="section-head"
     :icon="Palette"
     title="Colours and type"
     :subtitle="hasOwn ? 'Your church’s own look' : `Using ${branding.name}’s look. Choose your own if you like.`"

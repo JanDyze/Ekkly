@@ -6,6 +6,10 @@ import { createAppRouter } from './router'
 import { resolveChurch } from './api/churchService'
 import { loadChurchProfile } from './composables/useChurchAccess'
 import { initPlatformConfig } from './composables/usePlatformConfig'
+import { suppressTouchHoldMenu } from './utils/touchHold'
+
+// A long-press should feel like an installed app's, not a web page's.
+suppressTouchHoldMenu()
 
 // PWA service worker — auto-updates when a new version is deployed.
 //

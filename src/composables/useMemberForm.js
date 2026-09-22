@@ -12,12 +12,13 @@ const blankMember = () => ({
   firstName: '',
   lastName: '',
   nickname: '',
-  sex: 'Male',
+  sex: '',
   dateOfBirth: '',
   age: null,
-  civilStatus: 'Single',
+  civilStatus: '',
   address: '',
   contactNumber: '',
+  email: '',
   occupation: '',
   ministries: [],
   tags: [FIRST_TIMER_TAG],
@@ -31,18 +32,18 @@ export function useMemberForm(members, addMemberToFirestore, allTags) {
 
   const newMember = ref(blankMember());
 
-  // Check if all required fields are filled
+  // A first and last name is all a new record needs. Sex used to be required
+  // too, but the form answered it for you ("Male") so the rule only ever
+  // guarded a guess; the record now says it is missing until someone knows.
   const canAddMember = computed(() => {
-    return newMember.value.firstName.trim() !== '' && 
-           newMember.value.lastName.trim() !== '' &&
-           newMember.value.sex !== '';
+    return String(newMember.value.firstName || '').trim() !== '' &&
+           String(newMember.value.lastName || '').trim() !== '';
   });
 
   const addMemberTooltip = computed(() => {
     const missing = [];
     if (newMember.value.firstName.trim() === '') missing.push('First Name');
     if (newMember.value.lastName.trim() === '') missing.push('Last Name');
-    if (newMember.value.sex === '') missing.push('Gender');
     
     if (missing.length === 0) return '';
     return `Please fill in: ${missing.join(', ')}`;
@@ -74,12 +75,13 @@ export function useMemberForm(members, addMemberToFirestore, allTags) {
       firstName: newMember.value.firstName.trim(),
       lastName: newMember.value.lastName.trim(),
       nickname: (newMember.value.nickname.trim() || newMember.value.firstName.trim()),
-      sex: newMember.value.sex,
+      sex: newMember.value.sex || undefined,
       dateOfBirth: newMember.value.dateOfBirth || undefined,
       age: age,
-      civilStatus: newMember.value.civilStatus || 'Single',
+      civilStatus: newMember.value.civilStatus || undefined,
       address: newMember.value.address.trim() || undefined,
       contactNumber: newMember.value.contactNumber.trim() || undefined,
+      email: (newMember.value.email || '').trim() || undefined,
       occupation: newMember.value.occupation.trim() || undefined,
       relatives: {},
       ministries: Array.isArray(newMember.value.ministries) ? newMember.value.ministries : [],
@@ -113,13 +115,21 @@ export function useMemberForm(members, addMemberToFirestore, allTags) {
       return true;
     } catch (error) {
       console.error('Error adding member:', error);
-      toast.error('Failed to add member. Please try again.');
+      toast.error('Could not add that person. Please try again.');
       return false;
     }
   };
 
+  // The add sheet hands over a finished record rather than filling this
+  // form field by field, so it is laid over a blank one and saved as usual.
+  const addMemberFrom = async (record) => {
+    newMember.value = { ...blankMember(), ...record };
+    return addMember();
+  };
+
   return {
     showAddMember,
+    addMemberFrom,
     newMember,
     canAddMember,
     addMemberTooltip,

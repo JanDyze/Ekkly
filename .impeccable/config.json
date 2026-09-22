@@ -8,6 +8,24 @@
         "value": "var(--art-spring)",
         "createdAt": "2026-09-19T05:43:06.271Z",
         "reason": "AppArt's named motion token for the app-icon artwork. Predates this session; deliberate and documented per part ('something arriving with a little give', a star landing, links joining). Retuning it would restyle the whole front-door icon set, which is outside the current task."
+      },
+      {
+        "rule": "gray-on-color",
+        "value": "*",
+        "files": [
+          "src/components/Topbar.vue"
+        ],
+        "createdAt": "2026-09-22T14:55:38.923Z",
+        "reason": "Claude: sign-out button's hover swaps text to red along with the red-50 ground, so gray never sits on colour; pre-existing code"
+      },
+      {
+        "rule": "gray-on-color",
+        "value": "*",
+        "files": [
+          "src/components/RightSidebar.vue"
+        ],
+        "createdAt": "2026-09-22T15:14:31.401Z",
+        "reason": "Claude: sign-out button's hover swaps text to red along with the red-50 ground, so gray never sits on colour; pre-existing code"
       }
     ]
   }

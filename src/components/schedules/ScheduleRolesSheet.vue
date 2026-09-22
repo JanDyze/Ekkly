@@ -195,7 +195,7 @@ const handleRemove = async () => {
           class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-linear-to-r from-primary/10 to-transparent px-4 py-3.5 dark:border-gray-700 dark:from-primary-light/10"
         >
           <div class="flex min-w-0 items-center gap-3">
-            <div class="shrink-0 rounded-xl bg-primary p-2.5 shadow-lg shadow-primary/30">
+            <div class="shrink-0 rounded-xl bg-primary p-2.5">
               <ListChecks class="h-5 w-5 text-white" />
             </div>
             <div class="min-w-0">

@@ -1,32 +1,38 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { Plus, Download, Search, UserPlus, ArrowUpDown, SquaresFour, List } from "../../icons";
+import { Plus, ClipboardCheck, SquaresFour, List } from "../../icons";
 import { useFocusTrap } from "../../composables/useFocusTrap";
-import { usePermissions } from "../../composables/usePermissions";
 
-const { canManage } = usePermissions();
+// The plus button on Attendance, built like the one on People. There is still
+// nothing to add here - gatherings come from the calendar - so it carries the
+// two things the page does do: take the next count that is owed, and switch
+// how the list is laid out.
 
 const props = defineProps({
-  sortLabel: { type: String, default: "" },
+  /** The oldest gathering still to record, or null: { key, count }. */
+  awaiting: { type: Object, default: null },
   /** "list" or "grid" on a phone; null where there is no choice to make. */
   view: { type: String, default: null },
 });
 
-const emit = defineEmits(["add", "export", "search", "sort", "toggle-view"]);
+const emit = defineEmits(["record", "toggle-view"]);
 
 const open = ref(false);
 
-const canAdd = computed(() => canManage("members"));
-
 const actions = computed(() => {
-  // Search leads: it is the thing people reach for most, and it lives here now
-  // that the list no longer carries a permanent bar for it.
-  const list = [{ key: "search", label: "Search", icon: Search, event: "search" }];
-  // The sort names the one that is on, since nothing above the list shows it
-  // any more and a setting you cannot see is one you open just to check.
-  list.push({ key: "sort", label: "Sort", hint: props.sortLabel, icon: ArrowUpDown, event: "sort" });
-  // Named for where it takes you, with the icon of that view, so the item
-  // says what tapping it does rather than what you are already looking at.
+  const list = [];
+  // The way in to clearing the backlog, which used to be an amber banner over
+  // the list. It names how many are waiting, so the number is not lost.
+  if (props.awaiting) {
+    list.push({
+      key: "record",
+      label: "Record next",
+      hint: `${props.awaiting.count} still to record`,
+      icon: ClipboardCheck,
+      event: "record",
+    });
+  }
+  // Named for where it takes you, with the icon of that view.
   if (props.view) {
     const toGrid = props.view === "list";
     list.push({
@@ -36,27 +42,14 @@ const actions = computed(() => {
       event: "toggle-view",
     });
   }
-  if (canAdd.value) {
-    list.push({ key: "add", label: "Add person", icon: UserPlus, event: "add" });
-  }
-  list.push({ key: "export", label: "Export", icon: Download, event: "export" });
   return list;
 });
-
-// Kept for the degenerate case, though search means the list is never empty.
-const isSingleAction = computed(() => actions.value.length === 1);
-
-const fabIcon = computed(() => (canAdd.value ? Plus : Search));
 
 const close = () => {
   open.value = false;
 };
 
 const toggle = () => {
-  if (isSingleAction.value) {
-    emit(actions.value[0].event);
-    return;
-  }
   open.value = !open.value;
 };
 
@@ -86,7 +79,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <!-- Nothing to offer, no button: a floating plus that opens an empty menu
+       is worse than none. -->
   <div
+    v-if="actions.length"
     ref="fabRef"
     tabindex="-1"
     class="absolute bottom-4 bottom-bar! right-4 z-50 flex flex-col items-end gap-2.5 focus:outline-none"
@@ -122,13 +118,12 @@ onBeforeUnmount(() => {
 
     <button
       @click="toggle"
-      :aria-expanded="isSingleAction ? undefined : open"
-      :aria-haspopup="isSingleAction ? undefined : 'menu'"
-      :aria-label="isSingleAction ? 'Export members' : open ? 'Close actions' : 'Member actions'"
+      :aria-expanded="open"
+      aria-haspopup="menu"
+      :aria-label="open ? 'Close actions' : 'Attendance actions'"
       class="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform active:scale-95 hover:bg-primary-hover"
     >
-      <component
-        :is="fabIcon"
+      <Plus
         class="h-6 w-6 transition-transform duration-300 ease-in-out"
         :class="{ 'rotate-45': open }"
       />

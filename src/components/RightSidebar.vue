@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   ChevronLeft,
   ChevronRight,
@@ -110,6 +110,16 @@ const drawerRef = ref(null)
 useFocusTrap(drawerRef, showPeoplePanel, () => {
   showPeoplePanel.value = false
 })
+
+// The rail is hidden rather than unmounted on a focus route (AdminLayout), so
+// its drawer is closed on the way in instead of by being thrown away.
+const route = useRoute()
+watch(
+  () => route.meta?.focus,
+  (focus) => {
+    if (focus) showPeoplePanel.value = false
+  }
+)
 
 // A drawer left open behind the breakpoint would be invisible but still
 // trapping focus, so close it the moment the permanent rail takes over.

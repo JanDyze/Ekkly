@@ -8,12 +8,20 @@ defineProps({
   icon: { type: [Object, Function], default: null },
   title: { type: String, required: true },
   subtitle: { type: String, default: '' },
+  /** Extra classes for the header row — 'section-head' where the page
+      above already names this card (see style.css). */
+  headClass: { type: String, default: '' },
 })
 </script>
 
 <template>
   <section class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-    <div class="flex items-start gap-3 border-b border-gray-100 px-4 py-4 dark:border-gray-700">
+    <div
+      :class="[
+        'flex items-start gap-3 border-b border-gray-100 px-4 py-4 dark:border-gray-700',
+        headClass,
+      ]"
+    >
       <div v-if="icon" class="shrink-0 rounded-lg bg-primary/10 p-2">
         <component :is="icon" class="h-5 w-5 text-primary dark:text-primary-light" />
       </div>

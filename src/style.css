@@ -3,6 +3,46 @@
 /* Enable class-based dark mode for Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* A press is a phone's hover. Tailwind only applies `hover:` where a device
+   can hover, so on a phone a row or a button gave no sign it had been touched
+   until the next screen arrived. This keeps hover exactly as it was for a
+   mouse and also applies the same style while a finger is pressing, so every
+   `hover:` in the app doubles as press feedback without each one being
+   written twice. "Pressing" is the .is-pressed class, not :active - see
+   utils/touchHold.js for why :active flashed on every scroll. */
+@custom-variant hover {
+  @media (hover: hover) {
+    &:hover {
+      @slot;
+    }
+  }
+  &:is(.is-pressed) {
+    @slot;
+  }
+}
+
+/* Room for the phone's bottom bar. The page runs the full height of the
+   screen and the bar floats over it, so anything that has to be reachable at
+   the foot of a page makes its own room: the bar's 64px (it sits right on
+   the screen's edge), the safe area, and a little air. Phone only - from
+   lg up there is no bar, and whatever the element set for itself stands.
+
+   pb-bar goes on a page's scrolling area, so its last row can scroll clear
+   of the bar. bottom-bar goes on something pinned to a page's foot - a
+   floating button, a selection bar - so it sits above the bar instead of
+   under it. */
+@utility pb-bar {
+  @media (width < 64rem) {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+}
+
+@utility bottom-bar {
+  @media (width < 64rem) {
+    bottom: calc(4.625rem + env(safe-area-inset-bottom));
+  }
+}
+
 /* Theme colors */
 @theme {
   --color-primary: #1d64d8;
@@ -108,6 +148,142 @@
 html,
 body {
   overscroll-behavior-y: none;
+}
+
+/* On a touchscreen, holding a finger on a name or a photo should do what it
+   does in an installed app - nothing, or our own long-press menu - rather than
+   start a text selection or pop the browser's copy and save-image callout.
+   Scoped to devices whose main pointer is a finger, so a mouse can still
+   select text on a desktop - by pointer alone, because some Android phones
+   claim to hover and would slip past a hover test. It sits in the base layer
+   so a `select-text` class can opt a passage back in, and fields are exempt
+   because you must be able to select what you are typing. Android's image
+   menu ignores all of this; utils/touchHold.js deals with that one. */
+@layer base {
+  @media (pointer: coarse) {
+    body {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      /* The browser's own translucent flash on tap. The press styles above
+         (the hover variant) are the feedback now, and both at once looked
+         like a glitch. */
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    img {
+      -webkit-user-drag: none;
+      -webkit-touch-callout: none;
+    }
+
+    /* Whatever is under a finger gives a little, as well as changing colour.
+       The `scale` property rather than `transform`, so it composes with the
+       translate a positioned element already has instead of replacing it.
+       In the base layer, so an element with its own press scale keeps it. */
+    .is-pressed {
+      scale: 0.97;
+    }
+
+    input,
+    textarea,
+    [contenteditable]:not([contenteditable='false']) {
+      -webkit-user-select: text;
+      user-select: text;
+      -webkit-touch-callout: default;
+    }
+  }
+}
+
+/* List to record (router/viewTransitions.js). The attribute on <html> is set
+   only for that navigation; without it these rules are inert, so any other
+   view transition keeps the browser's plain crossfade. */
+@keyframes vt-push-in {
+  from {
+    translate: 100% 0;
+  }
+}
+
+@keyframes vt-push-under {
+  to {
+    translate: -25% 0;
+    opacity: 0.6;
+  }
+}
+
+@keyframes vt-lift-in {
+  from {
+    translate: 0 0.75rem;
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+:root[data-nav]::view-transition-old(root),
+:root[data-nav]::view-transition-new(root),
+:root[data-nav]::view-transition-group(member-avatar) {
+  animation-duration: 0.34s;
+  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* A phone pushes: the record slides in over the list, opaque, while the list
+   eases a little way left and dims beneath it. */
+@media (width < 64rem) {
+  :root[data-nav='forward']::view-transition-new(root) {
+    animation-name: vt-push-in;
+  }
+  :root[data-nav='forward']::view-transition-old(root) {
+    animation-name: vt-push-under;
+  }
+}
+
+/* A desktop keeps its sidebar where it is, so sliding the whole window would
+   be too much: the new screen rises a touch as the old one fades. */
+@media (width >= 64rem) {
+  :root[data-nav]::view-transition-old(root) {
+    animation-name: vt-fade-out;
+    animation-duration: 0.2s;
+  }
+  :root[data-nav]::view-transition-new(root) {
+    animation-name: vt-lift-in;
+  }
+}
+
+/* The way back from a record: the list, already live, slides in a short way
+   from the left, where the push had left it. Transform and opacity only, so it
+   runs on the compositor however long the list is. Members.vue adds the class
+   when the page is shown again after a record. */
+@keyframes page-return {
+  from {
+    translate: -12% 0;
+    opacity: 0.4;
+  }
+}
+
+.page-return {
+  animation: page-return 0.26s cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-return {
+    animation: none;
+  }
+}
+
+/* A settings section's own header — its icon and name — where the screen is
+   too narrow for the list to sit beside it. There the section is a page of its
+   own with a bar at the top carrying exactly that icon and name (Settings.vue),
+   so the card would say it twice. From lg up the bar is gone and the card's
+   header is the only thing naming it. Scoped to that page: the same card is
+   the platform console's, where nothing above it says the name. */
+@media (width < 64rem) {
+  .settings-detail .section-head {
+    display: none;
+  }
 }
 
 body {

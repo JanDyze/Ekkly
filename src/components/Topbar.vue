@@ -1,9 +1,10 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { Bell, Sun, Moon, X, Users, LogOut, UserCheck, UserPlus, Clock3, ChevronRight } from '../icons';
 import { useRouter } from "vue-router";
 import { useTheme } from "../composables/useTheme";
+import { useTitleCountValue } from "../composables/useTitleCount";
 import { useNotifications } from "../composables/useNotifications";
 import { useNotificationFeed, timeAgo } from "../composables/useNotificationFeed";
 import { useFocusTrap } from "../composables/useFocusTrap";
@@ -23,6 +24,8 @@ import { notificationIcon, toneClass } from "../utils/notificationIcons";
 import { getFullName } from "../utils/memberUtils";
 import ClaimMemberSheet from "./auth/ClaimMemberSheet.vue";
 import MemberAvatar from "./members/MemberAvatar.vue";
+import AppArt from "./common/AppArt.vue";
+import { NAV_ITEMS } from "../data/navigation";
 
 const route = useRoute();
 const router = useRouter();
@@ -36,6 +39,29 @@ const { isEnabled: notificationsEnabled, enabling, enable } = useNotifications()
 // The mark doubles as the way out to the church's public page, which every
 // church has at "/" — there is nothing to check before offering it.
 const { church, logoUrl } = useAppSettings();
+
+// The icon beside the title is the app you are in, not the church's logo: the
+// title says the page, and its app's artwork says it at a glance, the same
+// picture the bar and the sidebar use for it. Longest match wins, so a nested
+// page (/members/12) names its own app. Pages that belong to no app — the
+// catalogue, your profile — keep the church's logo.
+const currentApp = computed(() => {
+  const path = route.path;
+  return (
+    NAV_ITEMS.filter((item) => path === item.path || path.startsWith(item.path + '/'))
+      .sort((a, b) => b.path.length - a.path.length)[0] || null
+  );
+});
+
+// Plays the artwork each time the page changes, as the bar's icons do. It
+// starts at 0 so the first load shows the picture finished.
+const playTick = ref(0);
+watch(
+  () => route.path,
+  () => {
+    playTick.value += 1;
+  }
+);
 
 // No digest switch here any more: the digest is simply sent. api/email.js has
 // always treated it as opt-out, so an account that never touches a setting
@@ -52,6 +78,15 @@ const toggleNotifPanel = () => {
   if (isNotifOpen.value) markSeen();
 };
 
+// The bar is hidden rather than unmounted on a focus route (AdminLayout), so
+// its drawer no longer closes by being thrown away; it is closed on the way in.
+watch(
+  () => route.meta?.focus,
+  (focus) => {
+    if (focus) isNotifOpen.value = false;
+  }
+);
+
 const openNotification = (n) => {
   isNotifOpen.value = false;
   const url = n.url || "/";
@@ -64,6 +99,8 @@ const isMenuOpen = ref(false);
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value;
 };
+
+const titleCount = useTitleCountValue();
 
 const pageTitle = computed(() => {
   const routeNames = {
@@ -156,10 +193,33 @@ const openMyProfile = () => {
             :aria-label="`Go to the ${church.shortName} public page`"
             class="-ml-1 flex shrink-0 items-center rounded-lg p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
           >
-            <img :src="logoUrl" :alt="church.shortName" class="h-8 w-auto" />
+            <!-- Keyed by app, so moving between apps swaps one picture for the
+                 next with a small pop, and the new one plays as it arrives. -->
+            <Transition name="topbar-app" mode="out-in">
+              <AppArt
+                v-if="currentApp?.art"
+                :key="currentApp.path"
+                :app-key="currentApp.art"
+                :play="playTick"
+                class="h-8 w-8"
+              />
+              <component
+                v-else-if="currentApp"
+                :key="currentApp.path"
+                :is="currentApp.icon"
+                class="h-7 w-7 m-0.5 text-primary dark:text-primary-light"
+              />
+              <img v-else key="logo" :src="logoUrl" :alt="church.shortName" class="h-8 w-auto" />
+            </Transition>
           </router-link>
           <h1 class="min-w-0 truncate text-sm font-semibold text-gray-900 dark:text-white">
             {{ pageTitle }}
+            <!-- Quiet beside the title: a fact about the page, not part of
+                 its name. Set by the page itself (useTitleCount). -->
+            <span
+              v-if="titleCount !== null"
+              class="ml-1 font-normal tabular-nums text-gray-400 dark:text-gray-500"
+            >{{ titleCount.toLocaleString() }}</span>
           </h1>
         </div>
         <!-- Right: User menu and notifications -->
@@ -390,7 +450,7 @@ const openMyProfile = () => {
                   <button
                     @click="enable"
                     :disabled="enabling"
-                    class="w-full py-2.5 bg-primary text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-primary-hover transition-all shadow-lg shadow-primary/20 active:scale-95 disabled:opacity-50"
+                    class="w-full py-2.5 bg-primary text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-primary-hover transition-all active:scale-95 disabled:opacity-50"
                   >
                     {{ enabling ? "Enabling..." : "Enable on this device" }}
                   </button>
@@ -478,5 +538,36 @@ const openMyProfile = () => {
 .notif-drawer-enter-from .notif-panel,
 .notif-drawer-leave-to .notif-panel {
   transform: translateX(100%);
+}
+
+/* One app's picture giving way to the next: the old one shrinks out quickly,
+   the new one rises into place and settles, then plays its own animation. */
+.topbar-app-enter-active {
+  transition:
+    opacity 0.25s ease,
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.topbar-app-leave-active {
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease;
+}
+
+.topbar-app-enter-from {
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+.topbar-app-leave-to {
+  opacity: 0;
+  transform: scale(0.85);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar-app-enter-active,
+  .topbar-app-leave-active {
+    transition: none;
+  }
 }
 </style>

@@ -8,6 +8,20 @@
 
 export const versionHistory = [
   {
+    version: '0.29.2',
+    date: '2026-09-23',
+    title: 'People, attendance and settings, rebuilt for a phone',
+    summary:
+      'The screens you use every week now behave like a phone app: hold a name for its menu, read the roll as faces, and add someone in four short steps.',
+    highlights: [
+      'Hold a name or a gathering: the screen dims, the row lifts, and the menu opens under it with select, edit and delete.',
+      'People and Attendance can be read as a grid, sorted from the plus button, and searched from it too — your phone remembers how you left it.',
+      'Adding or editing a person is four short steps you can swipe through, with the photo on the first one.',
+      'Taking attendance has no Done bar and nobody is marked absent: swipe right for present, left to come back to them.',
+      'Church settings reads as plain lines until you press Edit, and every explanation is behind an (i).',
+    ],
+  },
+  {
     version: '0.29.0',
     date: '2026-09-19',
     title: 'Your own type, and your own Claude link',
