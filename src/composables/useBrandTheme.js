@@ -70,9 +70,11 @@ const remember = (theme) => {
 //
 // `font-synthesis` is switched back on because :root turns it off. Poppins
 // ships no italic, and the few italics in the app should still lean.
-export const themeCss = ({ primary, primaryDark, font }) => {
-  const face = brandFont(font)
-  const url = fontsUrl([face.key])
+export const themeCss = ({ primary, primaryDark, font, fontFamily }) => {
+  const face = brandFont(font, fontFamily)
+  // The face itself rather than its key: a custom family's key is only 'custom',
+  // which names nothing to fetch.
+  const url = fontsUrl([face])
   return `${url ? `@import url('${url}');
 ` : ''}
 html:root {

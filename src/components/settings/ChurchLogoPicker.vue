@@ -14,6 +14,12 @@ const lightInput = ref(null)
 const darkInput = ref(null)
 const busy = ref(null)
 
+// What the last upload did, so a background that was cut away can be put back.
+// The same offer the setup guide makes: the cut is right for a wordmark
+// exported on white and wrong for a crest that was meant to sit on its cream
+// disc, and only the person looking at it knows which this is.
+const work = ref(null)
+
 const pick = (mode) => {
   if (busy.value) return
   if (mode === 'dark') darkInput.value?.click()
@@ -33,11 +39,10 @@ const handleFile = async (mode, event) => {
     //
     // prepareLogo, the same call the setup guide makes, so a logo uploaded
     // here and a logo uploaded there come out identical: a flat background is
-    // cut away, and anything else is left exactly as it arrived. The accent
-    // colour it also works out is ignored — colours have their own card on
-    // this screen, and quietly changing them from a file picker would be a
-    // surprise. The guide offers that because it is asking both questions at
-    // once, in order.
+    // cut away, and anything else is left exactly as it arrived. The colours it
+    // reads off the artwork are not used here — the colours card offers those,
+    // and it reads them back off the stored logo itself, so the offer does not
+    // depend on having just uploaded one.
     const prepared = await prepareLogo(file)
     const stored = await uploadImage(prepared.dataUrl, 'branding')
     const cut = prepared.removed ? ', background removed' : ''
@@ -48,9 +53,28 @@ const handleFile = async (mode, event) => {
       await saveLogo(stored)
       toast.success(`Light-mode logo updated${cut}`)
     }
+    work.value = { mode, original: prepared.original, removed: prepared.removed }
   } catch (error) {
     console.error(`Error saving the ${mode} logo:`, error)
     toast.error('Could not save that image. Try a smaller PNG or JPG.')
+  } finally {
+    busy.value = null
+  }
+}
+
+// Puts the logo back as it arrived, background and all.
+const keepBackground = async () => {
+  if (!work.value?.removed) return
+  const { mode, original } = work.value
+  busy.value = mode
+  try {
+    const stored = await uploadImage(original, 'branding')
+    if (mode === 'dark') await saveLogoDark(stored)
+    else await saveLogo(stored)
+    work.value = { ...work.value, removed: false }
+  } catch (error) {
+    console.error('Error restoring the logo background:', error)
+    toast.error('Could not change that back. Please try again.')
   } finally {
     busy.value = null
   }
@@ -66,6 +90,8 @@ const revert = async (mode) => {
       await saveLogo('')
       toast.success('Light-mode logo reset to the built-in logo')
     }
+    // Whatever the last upload did is no longer on screen to undo.
+    if (work.value?.mode === mode) work.value = null
   } catch (error) {
     console.error(`Error clearing the ${mode} logo:`, error)
     toast.error('Could not reset the logo.')
@@ -101,16 +127,6 @@ const revert = async (mode) => {
           <ImagePlus v-else class="h-3.5 w-3.5" />
           {{ hasCustomLogo ? 'Replace' : 'Upload' }}
         </button>
-        <button
-          v-if="hasCustomLogo"
-          type="button"
-          @click="revert('light')"
-          :disabled="busy !== null"
-          class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-gray-500 transition-colors hover:text-red-600 disabled:opacity-50"
-        >
-          <RotateCcw class="h-3 w-3" />
-          Reset
-        </button>
       </div>
 
       <!-- And a swatch of the dark theme, on its own fixed ground. -->
@@ -128,18 +144,48 @@ const revert = async (mode) => {
           <ImagePlus v-else class="h-3.5 w-3.5" />
           {{ church.logoDark ? 'Replace' : 'Upload' }}
         </button>
+      </div>
+    </div>
+
+    <!-- Everything that is not "upload one", under both swatches rather than
+         inside them: the undo for a background that was cut, and the way back
+         to the built-in mark. -->
+    <div
+      v-if="work?.removed || hasCustomLogo || church.logoDark"
+      class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1"
+    >
+      <button
+        v-if="work?.removed"
+        type="button"
+        @click="keepBackground"
+        :disabled="busy !== null"
+        class="rounded-lg px-1 py-1 text-xs font-medium text-gray-500 underline underline-offset-2 transition-colors hover:text-gray-700 disabled:opacity-50 dark:text-gray-400 dark:hover:text-gray-200"
+      >
+        Keep background
+      </button>
+
+      <div class="ml-auto flex items-center gap-1">
+        <button
+          v-if="hasCustomLogo"
+          type="button"
+          @click="revert('light')"
+          :disabled="busy !== null"
+          class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-500 transition-colors hover:text-red-600 disabled:opacity-50 dark:text-gray-400 dark:hover:text-red-400"
+        >
+          <RotateCcw class="h-3 w-3" />
+          Reset light
+        </button>
         <button
           v-if="church.logoDark"
           type="button"
           @click="revert('dark')"
           :disabled="busy !== null"
-          class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-gray-400 transition-colors hover:text-red-400 disabled:opacity-50"
+          class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-500 transition-colors hover:text-red-600 disabled:opacity-50 dark:text-gray-400 dark:hover:text-red-400"
         >
           <RotateCcw class="h-3 w-3" />
-          Reset
+          Reset dark
         </button>
       </div>
     </div>
-
   </div>
 </template>

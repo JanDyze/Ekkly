@@ -2,10 +2,12 @@ import { computed, ref } from 'vue'
 import { subscribeToAppSettings, saveAppSettings, replaceAppSettingsField } from '../api/appSettingsService'
 import {
   DEFAULT_CATEGORIES,
+  MOVED_FROM_LANDING,
   withChurchDefaults,
   withLandingDefaults,
 } from '../data/appDefaults'
 import { scheduleRolesFrom } from '../data/scheduleRoles'
+import { setEventTypeHues } from '../utils/eventColors'
 import bundledLogo from '../assets/ekkly-mark.svg'
 import { useTheme } from './useTheme'
 import { getChurchId, getChurchName } from '../api/church'
@@ -39,6 +41,10 @@ export const initAppSettings = () => {
   started = true
   subscribeToAppSettings((data) => {
     stored.value = data
+    // The calendar's colours live in a module of their own, because a hundred
+    // templates ask for them and none of them should have to hold a composable
+    // to do it. Handed over here, as they arrive.
+    setEventTypeHues(data?.eventColours)
     resolveReady()
   })
   return ready
@@ -58,7 +64,10 @@ const publicIdentity = () => {
   const name = getChurchName()
   return name ? { shortName: name, fullName: name, branch: '' } : undefined
 }
-const churchOf = (data) => withChurchDefaults(data?.church ?? publicIdentity())
+// The landing block goes in as well: the church's mission, address and the
+// rest were stored there until v0.29.4, and withChurchDefaults reads the old
+// copy while the new one is empty.
+const churchOf = (data) => withChurchDefaults(data?.church ?? publicIdentity(), data?.landing)
 const categoriesOf = (data) => ({ ...DEFAULT_CATEGORIES, ...(data?.categories || {}) })
 const landingOf = (data) => withLandingDefaults(data?.landing)
 
@@ -103,6 +112,9 @@ export function useAppSettings() {
   const logoUrl = computed(() => (isDark.value ? darkLogoUrl.value : lightLogoUrl.value))
   const hasCustomLogo = computed(() => Boolean(church.value.logo || church.value.logoDark))
   const categories = computed(() => categoriesOf(stored.value))
+  // Which hue each event type wears, as { [type]: hue }. Empty means every type
+  // is still on the colour it was built with.
+  const eventColours = computed(() => stored.value?.eventColours || {})
   const landing = computed(() => landingOf(stored.value))
   // The jobs a Sunday is staffed with. Here with the other lists a different
   // congregation would name differently, and read by the MCP connector from
@@ -120,7 +132,29 @@ export function useAppSettings() {
   const setupPending = computed(() => setupOf(stored.value).done === false)
 
   const saveChurch = (church) => saveAppSettings({ church })
+
+  /**
+   * The church as a record — its names, what it believes, where it is.
+   *
+   * Writes the fields that used to live in the landing block, and blanks the
+   * copy there in the same write. Without that, clearing a mission on purpose
+   * would simply uncover the old one again, because the fallback in
+   * withChurchDefaults cannot tell "never written" from "deliberately empty".
+   */
+  const saveChurchIdentity = (fields) => {
+    const legacy = Object.fromEntries(
+      Object.keys(fields)
+        .filter((key) => MOVED_FROM_LANDING.includes(key))
+        .map((key) => [key, ''])
+    )
+    return saveAppSettings(
+      Object.keys(legacy).length ? { church: fields, landing: legacy } : { church: fields }
+    )
+  }
   const saveCategories = (categories) => saveAppSettings({ categories })
+  // Written whole, like the lists: a type that has gone back to its built-in
+  // colour is a key removed, and a merge cannot say that.
+  const saveEventColours = (map) => replaceAppSettingsField('eventColours', map)
   // Nested maps merge, so writing the logo alone cannot drop the names.
   const saveLogo = (logo) => saveAppSettings({ church: { logo } })
   const saveLogoDark = (logoDark) => saveAppSettings({ church: { logoDark } })
@@ -147,13 +181,16 @@ export function useAppSettings() {
     darkLogoUrl,
     hasCustomLogo,
     categories,
+    eventColours,
     landing,
     scheduleRoles,
     theme,
     isConfigured,
     setupPending,
     saveChurch,
+    saveChurchIdentity,
     saveCategories,
+    saveEventColours,
     saveLogo,
     saveLogoDark,
     saveLanding,

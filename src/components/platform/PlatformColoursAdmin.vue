@@ -61,7 +61,7 @@ const save = async (value) => {
       <ColourEditor v-model="theme" :fallback="DEFAULT_THEME" />
       <div>
         <h3 class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Typeface</h3>
-        <FontPicker v-model="theme.font" :fallback="DEFAULT_THEME.font" />
+        <FontPicker v-model="theme.font" v-model:family="theme.fontFamily" :fallback="DEFAULT_THEME.font" />
       </div>
       <div class="flex flex-wrap items-center justify-end gap-3">
         <button

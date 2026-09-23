@@ -11,6 +11,57 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.29.4] — 2026-09-23
+
+What the church is, kept with the church: its mission, its basis of faith and
+how to find it moved out of the public page's settings and into Church
+details, which is now read as a record and changed in a sheet of short steps.
+The lists follow the same shape, and two things a church could not choose
+before — what colour an event type is, and what face the app is set in — it
+now can.
+
+### Added
+
+- **Church details holds what the church is.** Mission, vision, core values,
+  basis of faith, the year it was founded and what it is affiliated with, and
+  the address, phone, email and Facebook page — read as a record, with one
+  Edit that opens a sheet of three short steps.
+- **A basis of faith**, as articles rather than a paragraph: each one the
+  belief and the scripture it rests on.
+- **Every event type can be given its own colour.** Thirteen to choose from,
+  and the colour is the one the calendar, the attendance figures and the
+  summary bars all use. A type a church invents is no longer stuck grey.
+- **Any typeface from Google Fonts, by name.** The five vetted faces stay;
+  "Your own" takes a family name and shows it in the real face before you
+  save it.
+- **Lists is a section of its own** — gallery albums, link groups, song
+  categories and event types — with the order of each one draggable, since
+  that is the order every picker offers them in.
+- Core values and the basis of faith appear on the public page under "What we
+  hold to", where a church has written them.
+
+### Changed
+
+- **Settings sections that hold a record are read, then edited in a sheet**,
+  the way a person's record already was. Church details and Lists both work
+  this way; nothing saves itself as you type any more, and closing with
+  unsaved changes asks first.
+- **The app drawer opens out of the button that opens it** — a circle widening
+  from the mark, which empties as it goes — instead of four coloured tiles
+  flying to the card's corners.
+- Opening a settings section on a phone carries the row you tapped up into the
+  header rather than swapping one screen for another.
+- The public page keeps what is the page's — the welcome, the verse, the
+  photos, the "who we are" text — and draws the rest from Church details.
+- The logo's Reset moved out from under the two previews, and a logo whose
+  background was cut can be put back as it arrived.
+- A sheet can be dragged downwards to close it.
+
+### Fixed
+
+- Swiping a sheet away with a finger did nothing: the browser claims a
+  downward drag as a scroll and cancels the pointer it was being read from.
+
 ## [0.29.3] — 2026-09-23
 
 The bottom bar, and the room the pages leave for it.

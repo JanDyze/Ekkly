@@ -457,18 +457,25 @@ const restApps = computed(() => dragList.value.slice(BAR_SLOTS))
        everything else is shrink-0, so the header and the Open button never
        collapse.
 
-       The card slides up from the bottom while the mark's four tiles scatter
-       from the centre button to where its corners will be, and each tile
-       carries on into its corner as the card arrives under it, drawn into
-       the card's edge - the mark's four colours in the order its panes sit.
-       The card is shaped like the bar - the same gutters, the same corners -
-       and sits over it. Closing runs it all backwards.
+       The card opens out of the centre button: a circle widening from where
+       the mark sits until it has covered the screen, with the card rising the
+       last few pixels into place behind it. The mark empties as it opens, so
+       what the circle grows out of is the window the apps came from.
+
+       It used to be the mark's four tiles flying to the card's four corners
+       and thinning into its edge. That was a nice thing to describe and a poor
+       thing to watch: four coloured squares crossing a card that was itself
+       still moving read as debris rather than as a drawer, the merge into a
+       2px border was a payoff nobody could see, and the whole thing ran half a
+       second on a button people press twenty times a day. The card is shaped
+       like the bar - the same gutters, the same corners - and sits over it.
+       Closing runs it backwards.
 
        Its foot stands 0.75rem off the screen's edge, the same as its sides,
        where the bar sits right on the edge. A card this tall pressed that close to
        the bottom looked jammed against it; the bar gets away with it because
        it is short. -->
-  <Transition name="more-sheet" :duration="{ enter: 520, leave: 340 }">
+  <Transition name="more-sheet" :duration="{ enter: 360, leave: 260 }">
     <div
       v-if="showMoreMenu"
       class="lg:hidden fixed inset-0 z-110 flex flex-col no-print px-3 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
@@ -619,20 +626,6 @@ const restApps = computed(() => dragList.value.slice(BAR_SLOTS))
         </div>
       </div>
 
-        <!-- The mark's four tiles. They start stacked where the mark sits, as
-             the mark, fly out to the card's four corners as it opens, and
-             merge straight into them - each thinning from the inside out
-             until it is the stretch of edge that is its own colour.
-             Closing brings them back out and home. A sibling of the card
-             rather than inside it, so the card can slide up without carrying
-             them with it: they fly from the real mark to where the corners
-             will be. Decoration only: nothing here takes a tap. -->
-        <div class="more-panes" aria-hidden="true">
-          <span class="pane pane-tl" />
-          <span class="pane pane-tr" />
-          <span class="pane pane-bl" />
-          <span class="pane pane-br" />
-        </div>
       </div>
     </div>
   </Transition>
@@ -796,11 +789,30 @@ const restApps = computed(() => dragList.value.slice(BAR_SLOTS))
         aria-haspopup="dialog"
         :aria-expanded="showMoreMenu"
       >
-        <img
-          src="/ekkly-mark-round.svg"
-          alt=""
-          class="h-17 w-17 rounded-full bg-white object-contain ring-2 ring-primary dark:bg-gray-800 dark:ring-primary-light"
-        />
+        <!-- The window and what is in it, as two things.
+
+             The four tiles that fly to the card's corners are meant to be this
+             mark's own panes leaving it. They were not: they appeared over a
+             mark that still had all four of its panes, so nothing left and
+             something new arrived on top of it. Now the panes go as the tiles
+             lift off, and the window is left empty and slightly recessed until
+             they come back — which is also the only thing on the bar that says
+             the drawer is open, the way the FAB's plus turns while its menu is.
+
+             The ring and the ground belong to the window rather than to the
+             artwork, so emptying it leaves a socket rather than a hole. -->
+        <span
+          :class="[
+            'more-socket grid h-17 w-17 place-items-center rounded-full bg-white ring-2 ring-primary dark:bg-gray-800 dark:ring-primary-light',
+            showMoreMenu ? 'more-socket-open' : '',
+          ]"
+        >
+          <img
+            src="/ekkly-mark-round.svg"
+            alt=""
+            :class="['more-mark h-17 w-17 object-contain', showMoreMenu ? 'more-mark-away' : '']"
+          />
+        </span>
       </button>
 
     </div>
@@ -828,22 +840,11 @@ const restApps = computed(() => dragList.value.slice(BAR_SLOTS))
   --sheet-ground: var(--color-gray-800);
 }
 
-/* The drawer opening out of the centre button. Where the mark sits, measured
-   from the card: 12px below the top of a 64px strip, so 52px above the bar's
-   foot; the bar sits on the screen's edge and the card's foot is 0.75rem off
-   it, so from the card's foot the mark is 40px up (2.5rem), halfway across.
-
-   The mark's four tiles start there, stacked as the mark, and fly out to the
-   card's four corners while the card slides up into place under them. They
-   do not stop when they get there: each thins into the card's edge at its
-   corner (see .more-panes .pane), becoming the border of its own colour
-   rather than landing and then having to be got rid of.
-
-   Positions are written in the tiles' container's units (cqw/cqh), because
-   they are fractions of a card whose height depends on how many apps a church
-   has. The container is the tile layer, which is absolutely placed over the
-   card, so its size comes from the card and measuring it costs the card
-   nothing. */
+/* Where the mark sits, measured from the card, since it is the point the
+   drawer opens out of: 12px below the top of a 64px strip, so 52px above the
+   bar's foot; the bar sits on the screen's edge and the card's foot is 0.75rem
+   off it, so from the card's foot the mark is 40px up — 2.5rem, halfway
+   across. That is the centre of the iris below. */
 /* The panel under the grid, changing with the choice: the old app slips out
    quickly and the new one rises into its place, so a change of mind reads as
    the panel following the finger rather than text being swapped. */
@@ -881,21 +882,43 @@ const restApps = computed(() => dragList.value.slice(BAR_SLOTS))
   }
 }
 
-/* The card slides up from below the screen's edge - its own height, plus the
-   gap under it and the safe area, so it starts wholly out of sight. It takes
-   as long to arrive as the tiles take to reach the corners (0.42s), so they
-   start merging into its edge just as it comes to rest under them. */
+/* The card opening out of the button.
+
+   A circle grown from the mark — halfway across the card, 2.5rem up from its
+   foot, which is where the mark sits once the card covers the bar — out past
+   the far corners. One property, composited, and it is the only thing that
+   ever said where this drawer came from; four flying tiles never quite did.
+
+   The clip stays applied at rest rather than being set back to none: a circle
+   that large clips nothing, and swapping the property off at the end is a
+   repaint that can show on the card's rounded corners.
+
+   The card also rises 10px into place. Not a slide from off-screen any more —
+   the iris does that work — just enough that the card arrives rather than
+   appears. */
+.more-sheet-panel {
+  clip-path: circle(150% at 50% calc(100% - 2.5rem));
+}
+
 .more-sheet-enter-active .more-sheet-panel {
-  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    clip-path 0.36s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.36s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.16s ease;
 }
 
 .more-sheet-leave-active .more-sheet-panel {
-  transition: transform 0.3s cubic-bezier(0.55, 0, 0.75, 0.2) 0.04s;
+  transition:
+    clip-path 0.26s cubic-bezier(0.55, 0, 0.75, 0.2),
+    transform 0.26s cubic-bezier(0.55, 0, 0.75, 0.2),
+    opacity 0.2s ease 0.06s;
 }
 
 .more-sheet-enter-from .more-sheet-panel,
 .more-sheet-leave-to .more-sheet-panel {
-  transform: translateY(calc(100% + 0.75rem + env(safe-area-inset-bottom)));
+  clip-path: circle(2.25rem at 50% calc(100% - 2.5rem));
+  transform: translateY(10px);
+  opacity: 0;
 }
 
 /* The backdrop is the fixed wrapper's first child. Only it fades: fading the
@@ -931,155 +954,67 @@ const restApps = computed(() => dragList.value.slice(BAR_SLOTS))
   initial-value: 2px;
 }
 
-.more-panes {
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  pointer-events: none;
-  container-type: size;
-}
-
-.pane {
-  position: absolute;
-  box-sizing: border-box;
-  width: 32px;
-  height: 32px;
-  border: 0 solid var(--c);
-  opacity: 0;
-}
-
-/* --home is where each tile's quarter of the mark is, measured from the
-   corner it is anchored in, with a 2px half-cross between tiles. */
-.pane-tl {
-  --c: #fdc24b;
-  --home: translate(calc(50cqw - 34px), calc(100cqh - 2.5rem - 34px));
-  top: 0;
-  left: 0;
-  border-top-width: var(--w);
-  border-left-width: var(--w);
-  border-radius: 1.75rem 6px 6px 6px;
-}
-
-.pane-tr {
-  --c: #f19140;
-  --home: translate(calc(34px - 50cqw), calc(100cqh - 2.5rem - 34px));
-  top: 0;
-  right: 0;
-  border-top-width: var(--w);
-  border-right-width: var(--w);
-  border-radius: 6px 1.75rem 6px 6px;
-}
-
-.pane-bl {
-  --c: #0270dc;
-  --home: translate(calc(50cqw - 34px), calc(34px - 2.5rem));
-  bottom: 0;
-  left: 0;
-  border-bottom-width: var(--w);
-  border-left-width: var(--w);
-  border-radius: 6px 6px 6px 1.75rem;
-}
-
-.pane-br {
-  --c: #09a4c6;
-  --home: translate(calc(34px - 50cqw), calc(34px - 2.5rem));
-  bottom: 0;
-  right: 0;
-  border-bottom-width: var(--w);
-  border-right-width: var(--w);
-  border-radius: 6px 6px 1.75rem 6px;
-}
-
-/* Two moves that overlap, so there is no beat between them. The flight
-   decelerates into the corner - a thing with weight lands rather than
-   bouncing - but gently (ease-out-cubic): a harder ease-out covered the
-   distance so early that the tiles sat in their corners looking finished
-   while the clock ran down to the merge. The merge is its own animation and
-   starts before the flight ends, while the tile is covering its last tenth,
-   so it is already thinning as it arrives. The last of it is a 2px line in
-   the border's own colour on top of the border, so its going is not
-   something the eye can find. */
-@keyframes pane-fly {
-  from {
-    transform: var(--home);
-  }
-  to {
-    transform: translate(0, 0);
-  }
-}
-
-@keyframes pane-merge {
-  0% {
-    --w: 32px;
-    opacity: 1;
-  }
-  82% {
-    --w: 2px;
-    opacity: 1;
-  }
-  100% {
-    --w: 2px;
-    opacity: 0;
-  }
-}
-
-/* Closing is the same path backwards: each tile thickens up out of the
-   border into its corner, then flies home into the mark. */
-@keyframes pane-gather {
-  0% {
-    transform: translate(0, 0);
-    --w: 2px;
-    opacity: 0;
-  }
-  8% {
-    transform: translate(0, 0);
-    --w: 2px;
-    opacity: 1;
-    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  36% {
-    transform: translate(0, 0);
-    --w: 32px;
-    opacity: 1;
-    animation-timing-function: cubic-bezier(0.55, 0, 0.75, 0.2);
-  }
-  100% {
-    transform: var(--home);
-    --w: 32px;
-    opacity: 1;
-  }
-}
-
-/* The flight takes the same 0.42s as the card's slide. The merge starts at
-   0.22s - by then the flight has covered about 89% of the way - and takes
-   0.28s, so the whole thing is done by 0.5s. `both` holds the merge's first
-   frame (solid, visible) through its delay. */
-.more-sheet-enter-active .pane {
-  animation:
-    pane-fly 0.42s cubic-bezier(0.33, 1, 0.68, 1) both,
-    pane-merge 0.28s cubic-bezier(0.4, 0, 0.2, 1) 0.22s both;
-}
-
-.more-sheet-leave-active .pane {
-  animation: pane-gather 0.34s both;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .more-sheet-enter-active .more-sheet-panel,
   .more-sheet-leave-active .more-sheet-panel {
     transition: opacity 0.15s ease;
   }
 
+  /* No iris either: a circle sweeping the screen is exactly the kind of motion
+     this setting is asking us not to make. The card simply fades. */
   .more-sheet-enter-from .more-sheet-panel,
   .more-sheet-leave-to .more-sheet-panel {
     opacity: 0;
     transform: none;
+    clip-path: circle(150% at 50% calc(100% - 2.5rem));
+  }
+}
+
+/* The mark leaving its window, and coming back to it.
+
+   Going is immediate, so the window is already empty as the iris widens out
+   of it. Coming back waits for the card to be most of the way shut — the close
+   runs 0.26s — so the panes are not back in the window while the drawer is
+   still standing over it.
+
+   Scaled as it fades rather than only faded, so it reads as the mark being
+   emptied rather than switched off. */
+.more-mark {
+  transition:
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1) 0.16s,
+    opacity 0.2s ease 0.16s;
+}
+
+.more-mark-away {
+  transform: scale(0.55);
+  opacity: 0;
+  transition-delay: 0s;
+  transition-duration: 0.16s;
+}
+
+/* An empty window is a recess, not a blank disc. */
+.more-socket {
+  transition: box-shadow 0.2s ease;
+}
+
+.more-socket-open {
+  box-shadow: inset 0 1px 6px rgba(15, 23, 42, 0.14);
+}
+
+.dark .more-socket-open {
+  box-shadow: inset 0 1px 6px rgba(0, 0, 0, 0.45);
+}
+
+/* Nothing flies for anyone who asked their system to stop animating things, so
+   there is nothing for the window to be emptied in aid of. */
+@media (prefers-reduced-motion: reduce) {
+  .more-mark-away {
+    transform: none;
+    opacity: 1;
   }
 
-  /* No tiles at all: the card simply fades in with its edge. */
-  .more-sheet-enter-active .pane,
-  .more-sheet-leave-active .pane {
-    animation: none;
+  .more-socket-open {
+    box-shadow: none;
   }
 }
 

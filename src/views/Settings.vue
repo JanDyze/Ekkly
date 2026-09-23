@@ -1,5 +1,5 @@
 <script setup>
-import { computed, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowLeft,
@@ -8,6 +8,7 @@ import {
   Globe,
   HandHeart,
   KeyRound,
+  ListChecks,
   Mail,
   Palette,
   Receipt,
@@ -23,6 +24,7 @@ import RolePermissionsAdmin from '../components/settings/RolePermissionsAdmin.vu
 import MinistriesAdmin from '../components/settings/MinistriesAdmin.vue'
 import MemberTagsAdmin from '../components/settings/MemberTagsAdmin.vue'
 import ChurchSettings from '../components/settings/ChurchSettings.vue'
+import ChurchListsAdmin from '../components/settings/ChurchListsAdmin.vue'
 import EmailDigestAdmin from '../components/settings/EmailDigestAdmin.vue'
 import LandingPageAdmin from '../components/settings/LandingPageAdmin.vue'
 import ChurchColoursAdmin from '../components/settings/ChurchColoursAdmin.vue'
@@ -56,7 +58,7 @@ const route = useRoute()
 const router = useRouter()
 const isDesktop = useMediaQuery('(min-width: 1024px)')
 
-const { church, theme: churchTheme } = useAppSettings()
+const { church, categories, theme: churchTheme } = useAppSettings()
 const { branding } = usePlatformConfig()
 const { schedules } = useRecurringSchedules()
 const { ministries } = useMinistries()
@@ -65,6 +67,14 @@ const { tagRecords } = useLabelMarks()
 const { members } = useMembers()
 
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
+
+// The four category lists, counted for the row that holds them: "4 lists" on
+// its own says nothing a church could act on, and the entries are the thing
+// that gets long.
+const LIST_KEYS = ['gallery', 'links', 'songs', 'eventTypes']
+const listEntryCount = computed(() =>
+  LIST_KEYS.reduce((total, key) => total + (categories.value[key] || []).length, 0)
+)
 
 const tagCount = computed(() => {
   const names = new Set(tagRecords.value.map((t) => String(t.name || '').toLowerCase()))
@@ -81,8 +91,23 @@ const GROUPS = computed(() => [
         key: 'church',
         label: 'Church details',
         icon: Building2,
-        status: church.value?.shortName || church.value?.name || 'Name, contacts and categories',
+        // Not the church's name: the sidebar above this is already showing it.
+        // What is worth saying here is whether the church has said what it is
+        // for, because that is what a visitor reads on the public page.
+        status:
+          church.value?.mission || church.value?.vision
+            ? 'Names, mission and how to find you'
+            : 'Mission not set',
+        attention: !(church.value?.mission || church.value?.vision),
         component: ChurchSettings,
+      },
+      {
+        // Next to Church details, which is where these lists used to live.
+        key: 'lists',
+        label: 'Lists',
+        icon: ListChecks,
+        status: `${LIST_KEYS.length} lists · ${plural(listEntryCount.value, 'entry', 'entries')}`,
+        component: ChurchListsAdmin,
       },
       {
         key: 'landing',
@@ -214,12 +239,90 @@ watch(
   { immediate: true }
 )
 
+/* --------------------------------------------------- opening a section
+
+   The row you tapped becomes the bar at the top of the section: its icon and
+   its name travel up into the header rather than one screen simply replacing
+   another, so what you are now inside of is the thing you just pressed.
+
+   A FLIP, measured rather than choreographed. The row's icon and label are
+   measured on the way out, the same two things in the header are measured once
+   they exist, and the difference between them is applied as a transform that is
+   then animated away. Nothing is cloned and nothing is positioned by hand, so a
+   longer name, a wider phone or a bigger system font needs no second set of
+   numbers.
+
+   Only on a phone, where the section really is another screen, and only for a
+   tap: arriving by link or refresh has no row to have come from, and the header
+   is simply there. */
+
+const MOVE_MS = 260
+
+// A plain Map, not a ref: it holds DOM nodes that change on every render, and
+// nothing renders from it.
+const rowEls = new Map()
+const setRowEl = (key, part, el) => {
+  const row = rowEls.get(key) || {}
+  if (el) row[part] = el
+  else delete row[part]
+  rowEls.set(key, row)
+}
+
+const barIcon = ref(null)
+const barTitle = ref(null)
+
+// Where the tapped row was, held only until the header has been drawn in its
+// place. Not a ref, for the same reason as above.
+let cameFrom = null
+
+const heldStill = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+/** Moves one element from where its counterpart was to where it now is. */
+const glide = (el, start) => {
+  if (!el || !start?.height) return
+  const end = el.getBoundingClientRect()
+  if (!end.height) return
+  // Corner to corner: with the origin at the top left, scaling leaves that
+  // corner where it is, so the offset measured from it stays true.
+  const shift = `translate(${start.left - end.left}px, ${start.top - end.top}px)`
+  el.style.transformOrigin = 'top left'
+  el.style.transition = 'none'
+  el.style.transform = `${shift} scale(${start.height / end.height})`
+  requestAnimationFrame(() => {
+    el.style.transition = `transform ${MOVE_MS}ms cubic-bezier(0.32, 0.72, 0, 1)`
+    el.style.transform = ''
+    const settle = () => {
+      el.style.transition = ''
+      el.style.transformOrigin = ''
+      el.removeEventListener('transitionend', settle)
+    }
+    el.addEventListener('transitionend', settle)
+  })
+}
+
 // Opening a section pushes rather than replaces, so a phone's back gesture
 // returns to the list — which is where "back" means on a phone.
 const openSection = (key) => {
   if (key === activeKey.value) return
+  const row = rowEls.get(key)
+  cameFrom =
+    !isDesktop.value && row?.icon && !heldStill()
+      ? { icon: row.icon.getBoundingClientRect(), label: row.label?.getBoundingClientRect() }
+      : null
   router.push({ query: { ...route.query, section: key } })
 }
+
+// The header does not exist until the section has rendered, so the measuring
+// waits for it. Anything that changes `active` without a tap — a status line
+// counting up, a link opened cold — leaves cameFrom empty and animates nothing.
+watch(active, async (section) => {
+  const start = cameFrom
+  cameFrom = null
+  if (!section || !start) return
+  await nextTick()
+  glide(barIcon.value, start.icon)
+  glide(barTitle.value, start.label)
+})
 
 // An open section on a phone is a detail view: it takes the screen, chrome
 // and all, the way a person's profile does. The way back is the link at its
@@ -241,7 +344,7 @@ const { open: openWhatsNew } = useVersionCheck()
 </script>
 
 <template>
-  <div class="h-full lg:flex lg:gap-4">
+  <div class="relative h-full lg:flex lg:gap-4">
     <!-- The list. The whole page on a phone until a section is opened; a
          column of its own on a desktop. -->
     <nav
@@ -274,6 +377,7 @@ const { open: openWhatsNew } = useVersionCheck()
               ]"
             >
               <span
+                :ref="(el) => setRowEl(item.key, 'icon', el)"
                 :class="[
                   'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
                   activeKey === item.key && isDesktop
@@ -284,7 +388,10 @@ const { open: openWhatsNew } = useVersionCheck()
                 <component :is="item.icon" class="h-4.5 w-4.5" />
               </span>
               <span class="min-w-0 flex-1">
-                <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">
+                <span
+                  :ref="(el) => setRowEl(item.key, 'label', el)"
+                  class="block truncate text-sm font-medium text-gray-900 dark:text-white"
+                >
                   {{ item.label }}
                 </span>
                 <span
@@ -322,37 +429,92 @@ const { open: openWhatsNew } = useVersionCheck()
          column: a flex item shrinks to fit, and the sections are
          overflow-hidden for their rounded corners, so a tall one was clipped
          with nothing to scroll. -->
-    <main
-      v-if="active"
-      class="settings-detail h-full min-w-0 flex-1 overflow-y-auto px-3 pb-[calc(2rem+env(safe-area-inset-bottom))] sm:px-0 lg:pb-4"
-    >
-      <!-- The way back, on a phone only. The section's own card carries its
-           name, so this says where back goes rather than repeating it. -->
-      <div
-        v-if="!isDesktop"
-        class="sticky top-0 z-20 -mx-3 mb-2 flex items-center gap-2 border-b border-gray-200 bg-white/90 px-3 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top))] backdrop-blur dark:border-gray-700 dark:bg-gray-900/90"
+    <Transition name="section">
+      <main
+        v-if="active"
+        class="settings-detail h-full min-w-0 flex-1 overflow-y-auto bg-white px-3 pb-[calc(2rem+env(safe-area-inset-bottom))] sm:px-0 lg:pb-4 dark:bg-gray-900"
       >
-        <button
-          type="button"
-          @click="backToList"
-          aria-label="Back to settings"
-          class="-ml-1.5 rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+        <!-- The way back, on a phone only. The section's own card carries its
+             name, so this says where back goes rather than repeating it. -->
+        <div
+          v-if="!isDesktop"
+          class="sticky top-0 z-20 -mx-3 mb-2 flex items-center gap-2 border-b border-gray-200 bg-white/90 px-3 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top))] backdrop-blur dark:border-gray-700 dark:bg-gray-900/90"
         >
-          <ArrowLeft class="h-5 w-5" />
-        </button>
-        <span
-          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light"
-        >
-          <component :is="active.icon" class="h-4.5 w-4.5" />
-        </span>
-        <h1 class="min-w-0 truncate text-base font-bold text-gray-900 dark:text-white">
-          {{ active.label }}
-        </h1>
-      </div>
+          <button
+            type="button"
+            @click="backToList"
+            aria-label="Back to settings"
+            class="-ml-1.5 rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+          >
+            <ArrowLeft class="h-5 w-5" />
+          </button>
+          <span
+            ref="barIcon"
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light"
+          >
+            <component :is="active.icon" class="h-4.5 w-4.5" />
+          </span>
+          <h1 ref="barTitle" class="min-w-0 truncate text-base font-bold text-gray-900 dark:text-white">
+            {{ active.label }}
+          </h1>
+        </div>
 
-      <KeepAlive>
-        <component :is="active.component" :key="active.key" />
-      </KeepAlive>
-    </main>
+        <KeepAlive>
+          <component :is="active.component" :key="active.key" />
+        </KeepAlive>
+      </main>
+    </Transition>
   </div>
 </template>
+
+<style scoped>
+/* Opening a section is a move, not a redraw.
+   On a phone the section is the whole screen — chrome and all, see
+   useFocusMode above — so it arrives over the list from the right and leaves
+   back the way it came, which is what says where the back arrow goes. It is
+   positioned absolutely only while it moves, so the list underneath keeps its
+   place instead of being shoved about by the animation.
+   Nothing on a desktop: there the section is a column beside the list, and
+   nothing has travelled. */
+@media (width < 64rem) {
+  .section-enter-active,
+  .section-leave-active {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+  }
+
+  /* Quicker than the move above it: the header has to be there to be arrived
+     at. */
+  .section-enter-active {
+    transition: opacity 0.16s ease-out;
+  }
+
+  .section-leave-active {
+    transition: transform 0.24s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.18s ease;
+  }
+
+  .section-enter-from {
+    opacity: 0;
+  }
+
+  .section-leave-to {
+    transform: translateX(8%);
+    opacity: 0;
+  }
+}
+
+/* Anyone who has asked their system to stop animating things gets the swap
+   plain, the same bargain the sheets and PullToRefresh strike. */
+@media (prefers-reduced-motion: reduce) {
+  .section-enter-active,
+  .section-leave-active {
+    transition: opacity 0.14s ease;
+  }
+
+  .section-enter-from,
+  .section-leave-to {
+    transform: none;
+  }
+}
+</style>

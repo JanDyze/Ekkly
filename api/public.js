@@ -130,10 +130,35 @@ const publicImage = (value, kind, stamp, churchId) => {
   return `/api/public?image=${kind}&v=${stamp}&church=${encodeURIComponent(churchId)}`;
 };
 
+/**
+ * The church as it describes itself. An allowlist rather than a spread: the
+ * stored block also carries whatever base64 a logo was uploaded as before the
+ * blob store existed, and the fields below are the ones a visitor is meant to
+ * read.
+ *
+ * Everything from `founded` down was stored in the landing block until
+ * v0.29.4 and is still published there as well, which is what lets an old
+ * church's words keep appearing — see withChurchDefaults.
+ */
 const publicChurch = (church = {}, stamp, churchId) => ({
   shortName: church.shortName || "",
   fullName: church.fullName || "",
   branch: church.branch || "",
+  founded: church.founded || "",
+  affiliation: church.affiliation || "",
+  mission: church.mission || "",
+  vision: church.vision || "",
+  values: (Array.isArray(church.values) ? church.values : [])
+    .filter((entry) => String(entry?.value || "").trim())
+    .map((entry) => ({
+      value: String(entry.value).trim(),
+      note: String(entry.note || "").trim(),
+    })),
+  address: church.address || "",
+  mapUrl: church.mapUrl || "",
+  phone: church.phone || "",
+  email: church.email || "",
+  facebook: church.facebook || "",
   // Always a URL. A logo uploaded now is already one and is passed through;
   // anything still held as base64 from before gets a link to the route that
   // decodes it, where `v` busts the cache the moment a new one is saved.

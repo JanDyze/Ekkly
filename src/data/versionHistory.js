@@ -8,6 +8,19 @@
 
 export const versionHistory = [
   {
+    version: '0.29.4',
+    date: '2026-09-23',
+    title: 'Your church, in its own words',
+    summary:
+      'Church details now holds what your church is — its mission, what it believes, where to find it — and you can choose your own colours for the calendar and your own typeface for the app.',
+    highlights: [
+      'Mission, vision, core values and your basis of faith live in Church details, and appear on your public page from there.',
+      'Church details and Lists are read as a record and changed in a sheet of short steps, with nothing saved until you press Save.',
+      'Every event type can be given its own colour, used by the calendar, the attendance figures and the summary.',
+      'Set the app in any typeface from Google Fonts, or keep one of the five it offers.',
+    ],
+  },
+  {
     version: '0.29.3',
     date: '2026-09-23',
     title: 'A steadier bottom bar',
@@ -31,7 +44,6 @@ export const versionHistory = [
       'People and Attendance can be read as a grid, sorted from the plus button, and searched from it too — your phone remembers how you left it.',
       'Adding or editing a person is four short steps you can swipe through, with the photo on the first one.',
       'Taking attendance has no Done bar and nobody is marked absent: swipe right for present, left to come back to them.',
-      'Church settings reads as plain lines until you press Edit, and every explanation is behind an (i).',
     ],
   },
   {

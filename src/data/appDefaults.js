@@ -19,6 +19,41 @@ export const DEFAULT_CHURCH = {
   logo: '',
   // Optional dark-mode version. When empty, the main logo is reused.
   logoDark: '',
+
+  // Everything from here down is the church describing itself, and all of it
+  // used to live in the landing block below, because the public page was the
+  // only thing that drew it. That was the wrong home: a church's mission is a
+  // fact about the church that the page happens to publish, not a property of
+  // the page — which is why it was editable under Settings > Public page and
+  // nowhere under Settings > Church details. It is read from here now, and
+  // withChurchDefaults falls back to the landing copy for a church that has
+  // not opened the new editor yet, so nothing had to be migrated.
+  //
+  // The year the congregation began, and who it belongs to. Both only ever
+  // appear where somebody asked for them, so both start empty.
+  founded: '',
+  affiliation: '',
+  // Why the church is here. Starting values live in DEFAULT_LANDING, where
+  // they always have, and reach these through the fallback.
+  mission: '',
+  vision: '',
+  // What the church holds to be true, as [{ belief, reference }] — an article
+  // and the scripture it rests on. A list rather than a paragraph because that
+  // is how a church writes it: a dozen numbered articles, each standing on its
+  // own. Nothing invented as a starting value; a church's doctrine is its own
+  // words or it is nobody's.
+  basisOfFaith: [],
+  // What the church holds to, as [{ value, note }] — a short phrase and a
+  // sentence saying what it means, the same shape as the discipleship path.
+  // Nothing invented as a starting value: a core value a church did not write
+  // is one it does not hold.
+  values: [],
+  // Where the church is and how to reach it.
+  address: '',
+  mapUrl: '',
+  phone: '',
+  email: '',
+  facebook: '',
 }
 
 // The public page at "/" — what a visitor who is not signed in sees. Like the
@@ -144,8 +179,6 @@ export const DEFAULT_LANDING = {
  * `services` is a list, so it is replaced wholesale rather than merged — an
  * admin who removes the last one means the section to disappear.
  */
-export const withChurchDefaults = (church) => ({ ...DEFAULT_CHURCH, ...(church || {}) })
-
 export const withLandingDefaults = (landing) => ({
   ...DEFAULT_LANDING,
   ...(landing || {}),
@@ -159,6 +192,41 @@ export const withLandingDefaults = (landing) => ({
     : DEFAULT_LANDING.welcomeTerms,
   path: Array.isArray(landing?.path) ? landing.path : DEFAULT_LANDING.path,
 })
+
+/**
+ * The identity fields that were stored in the landing block until v0.29.4.
+ *
+ * Read from `church` first and from `landing` only while the church has
+ * nothing of its own to say, so a congregation that wrote its mission last
+ * March still sees it without anything having to be migrated. The church
+ * editor blanks the landing copy as it writes (saveChurchIdentity in
+ * useAppSettings), so the fallback applies until somebody edits and then stops
+ * — otherwise clearing a mission on purpose would put the old one back.
+ */
+export const MOVED_FROM_LANDING = [
+  'mission',
+  'vision',
+  'address',
+  'mapUrl',
+  'phone',
+  'email',
+  'facebook',
+]
+
+export const withChurchDefaults = (church, landing) => {
+  const merged = { ...DEFAULT_CHURCH, ...(church || {}) }
+  // The defaulted landing block, so a church with no settings at all still
+  // gets the starting mission the public page has always published, and a
+  // church that deliberately emptied one keeps it empty.
+  const previously = withLandingDefaults(landing)
+  MOVED_FROM_LANDING.forEach((key) => {
+    if (!String(merged[key] ?? '').trim()) merged[key] = previously[key] || ''
+  })
+  // Written whole, like the landing lists: an order is not something a merge
+  // can express.
+  merged.values = Array.isArray(church?.values) ? church.values : DEFAULT_CHURCH.values
+  return merged
+}
 
 export const DEFAULT_CATEGORIES = {
   gallery: ['Worship', 'Outreach', 'Fellowship', 'Special Events', 'Minutes Photos'],

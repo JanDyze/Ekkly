@@ -297,6 +297,13 @@ Church Settings and the platform console share one layout. Copy
 - **Cards:** each section is built from
   [SectionCard](src/components/common/SectionCard.vue): an icon tile, a title
   and a one-line subtitle, with optional actions on the right.
+- **A section that edits a record** — Church details — is read as a profile and
+  changed in a sheet of short steps, the way a person's record is
+  ([ChurchEditSheet.vue](src/components/settings/ChurchEditSheet.vue),
+  [MemberEditSheet.vue](src/components/members/MemberEditSheet.vue)). Not a
+  page of live inputs behind an Edit toggle: nothing then says what you are in
+  the middle of, or gives you a way back out of it. A single setting with
+  nothing to type beside it — a logo, a switch — still saves on the spot.
 - **Switches:** on/off settings use
   [ToggleSwitch](src/components/common/ToggleSwitch.vue).
 

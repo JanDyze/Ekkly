@@ -18,6 +18,16 @@ import { onBeforeUnmount, ref } from 'vue'
  * the move listener has to be non-passive rather than simply blocking touch
  * with `touch-action: none`. Blocking outright is what made the earlier
  * version header-only.
+ *
+ * A finger is read through touch events rather than pointer events, even though
+ * it arrives as both. The browser cancels the pointer stream the moment it
+ * decides a touch is a pan — which is the very gesture being read here — and a
+ * cancelled pointer takes the drag with it. That never showed while the only
+ * two callers were drawers coming in from the right, because a sideways drag
+ * inside a vertically scrolling panel is not a pan the browser wants; a sheet
+ * dragged downwards is, and it was claimed before it had moved a pixel. Touch
+ * events keep arriving through all of that, so the drag survives long enough to
+ * call preventDefault and take the gesture over.
  */
 const AXIS_SLOP = 8
 
@@ -52,6 +62,9 @@ export function useSwipeDismiss(options = {}) {
     window.removeEventListener('pointermove', onMove)
     window.removeEventListener('pointerup', onUp)
     window.removeEventListener('pointercancel', onUp)
+    window.removeEventListener('touchmove', onTouchmove)
+    window.removeEventListener('touchend', onUp)
+    window.removeEventListener('touchcancel', onUp)
   }
 
   const release = () => {
@@ -61,11 +74,16 @@ export function useSwipeDismiss(options = {}) {
     offset.value = 0
   }
 
-  function onMove(event) {
+  /**
+   * One move, whichever kind of event carried it. `claim` is how the gesture is
+   * taken over once it is ours, and it has to be called from the listener
+   * itself — which is why this takes it rather than the event.
+   */
+  const advance = (x, y, claim) => {
     if (!start) return
 
-    const dx = event.clientX - start.x
-    const dy = event.clientY - start.y
+    const dx = x - start.x
+    const dy = y - start.y
     const along = direction === 'down' ? dy : dx
     const across = direction === 'down' ? Math.abs(dx) : Math.abs(dy)
 
@@ -80,7 +98,18 @@ export function useSwipeDismiss(options = {}) {
 
     offset.value = Math.max(0, along)
     // Only now, once the swipe owns the gesture.
-    event.preventDefault()
+    claim()
+  }
+
+  function onMove(event) {
+    advance(event.clientX, event.clientY, () => event.preventDefault())
+  }
+
+  function onTouchmove(event) {
+    // A second finger is a pinch, not a dismiss.
+    if (event.touches.length !== 1) return release()
+    const touch = event.touches[0]
+    advance(touch.clientX, touch.clientY, () => event.preventDefault())
   }
 
   function onUp() {
@@ -93,6 +122,8 @@ export function useSwipeDismiss(options = {}) {
   }
 
   const onPointerdown = (event) => {
+    // A finger is read below instead, for the reason at the top of this file.
+    if (event.pointerType === 'touch') return
     if (event.button !== undefined && event.button !== 0) return
     if (enabled && !enabled(event)) return
     start = { x: event.clientX, y: event.clientY, target: event.target }
@@ -101,11 +132,22 @@ export function useSwipeDismiss(options = {}) {
     window.addEventListener('pointercancel', onUp)
   }
 
+  const onTouchstart = (event) => {
+    if (event.touches.length !== 1) return
+    if (enabled && !enabled(event)) return
+    const touch = event.touches[0]
+    start = { x: touch.clientX, y: touch.clientY, target: event.target }
+    window.addEventListener('touchmove', onTouchmove, { passive: false })
+    window.addEventListener('touchend', onUp)
+    window.addEventListener('touchcancel', onUp)
+  }
+
   onBeforeUnmount(release)
 
   /** Spread onto the panel. */
   const swipeTarget = {
     onPointerdown,
+    onTouchstart,
   }
 
   /** The panel's inline style while a swipe is in flight. */

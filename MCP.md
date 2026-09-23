@@ -16,7 +16,7 @@ Fifteen read tools, always available:
 
 | Tool | What it gives you |
 | --- | --- |
-| `church_profile` | Name, vision, service times, contacts, the size of the roll, and every ministry and tag in use |
+| `church_profile` | Name, mission, vision and core values, service times, contacts, the size of the roll, and every ministry and tag in use |
 | `search_members` | People, filtered by name, ministry, tag, sex, civil status, age or birthday month |
 | `get_member` | One person in full, plus their small groups and open tasks |
 | `list_events` | The calendar between two dates — events, recurring services and birthdays |

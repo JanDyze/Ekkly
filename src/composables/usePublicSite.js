@@ -49,8 +49,13 @@ export function usePublicSite() {
     isConfigured,
   } = useAppSettings()
 
+  // The landing block is passed alongside for the sake of a church whose
+  // mission, address and about text are still stored there — see
+  // withChurchDefaults. Signed in, useAppSettings has already done the same.
   const church = computed(() =>
-    isConfigured.value ? storedChurch.value : withChurchDefaults(site.value?.church)
+    isConfigured.value
+      ? storedChurch.value
+      : withChurchDefaults(site.value?.church, site.value?.landing)
   )
 
   const landing = computed(() =>

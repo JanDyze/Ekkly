@@ -341,8 +341,21 @@ const path = computed(() =>
 )
 // Same reason: both lines have a starting value, so the section stays away
 // until the church's own answer is in.
+//
+// These two and the contact details are read from `church` rather than
+// `landing`: they are what the church is, not what this page is, and
+// Settings > Church details is where somebody writes them. The About section
+// below stays the page's own — a heading and a few paragraphs written for
+// whoever is reading this — and is edited with the rest of the page.
 const hasPurpose = computed(
-  () => ready.value && Boolean(landing.value.vision || landing.value.mission)
+  () => ready.value && Boolean(church.value.vision || church.value.mission)
+)
+
+// What the church holds to. No starting value to wait on, unlike the two
+// above — a core value nobody wrote is not one the church holds — so the
+// section is simply absent until somebody names one.
+const values = computed(() =>
+  (church.value.values || []).filter((entry) => entry.value?.trim())
 )
 
 /* --------------------------------------------------- the discipleship stages
@@ -401,17 +414,17 @@ const stageProgress = computed(() => {
   return (activeStage.value / last) * 100
 })
 const hasContact = computed(() =>
-  Boolean(landing.value.phone || landing.value.email || landing.value.facebook)
+  Boolean(church.value.phone || church.value.email || church.value.facebook)
 )
-const hasVisit = computed(() => Boolean(landing.value.address) || hasContact.value)
+const hasVisit = computed(() => Boolean(church.value.address) || hasContact.value)
 const visitAnchor = computed(() => (services.value.length ? 'gather' : 'visit'))
 
 // The address doubles as a map search when no explicit link is set, so filling
 // in one field is enough to get a working "Get directions".
 const mapHref = computed(() => {
-  if (landing.value.mapUrl) return landing.value.mapUrl
-  if (!landing.value.address) return ''
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(landing.value.address)}`
+  if (church.value.mapUrl) return church.value.mapUrl
+  if (!church.value.address) return ''
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(church.value.address)}`
 })
 
 // The hero button, and the closing band, both aim at whatever the page can
@@ -635,6 +648,7 @@ const sectionNumbers = computed(() => {
     about: landing.value.about ? next() : '',
     life: gallery.value.length ? next() : '',
     purpose: hasPurpose.value ? next() : '',
+    values: values.value.length ? next() : '',
     visit: hasVisit.value ? next() : '',
   }
 })
@@ -659,7 +673,7 @@ const needsSetup = computed(
     // A page still loading looks exactly like a page nobody filled in.
     ready.value &&
     !landing.value.about &&
-    !landing.value.address &&
+    !church.value.address &&
     !services.value.length
 )
 
@@ -1215,21 +1229,55 @@ const year = new Date().getFullYear()
       <div
         class="mt-8 grid gap-px overflow-hidden border border-stone-200 bg-stone-200 dark:border-gray-800 dark:bg-gray-800 sm:grid-cols-2"
       >
-        <div v-if="landing.vision" class="bg-[#faf8f4] p-6 dark:bg-gray-900 sm:p-8">
+        <div v-if="church.vision" class="bg-[#faf8f4] p-6 dark:bg-gray-900 sm:p-8">
           <p
             class="text-[10px] font-bold uppercase tracking-[0.28em] text-primary dark:text-primary-light"
           >
             Vision
           </p>
-          <p class="mt-3 font-serif text-xl leading-snug sm:text-2xl">{{ landing.vision }}</p>
+          <p class="mt-3 font-serif text-xl leading-snug sm:text-2xl">{{ church.vision }}</p>
         </div>
-        <div v-if="landing.mission" class="bg-[#faf8f4] p-6 dark:bg-gray-900 sm:p-8">
+        <div v-if="church.mission" class="bg-[#faf8f4] p-6 dark:bg-gray-900 sm:p-8">
           <p
             class="text-[10px] font-bold uppercase tracking-[0.28em] text-primary dark:text-primary-light"
           >
             Mission
           </p>
-          <p class="mt-3 font-serif text-xl leading-snug sm:text-2xl">{{ landing.mission }}</p>
+          <p class="mt-3 font-serif text-xl leading-snug sm:text-2xl">{{ church.mission }}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- What the church holds to. The same hairline grid as the pair above,
+         because it is the same kind of thing said at more length: a phrase a
+         congregation would recognise, and a sentence saying what it means
+         here. Two columns from sm, however many the church named. -->
+    <section v-if="values.length" class="mx-auto max-w-5xl px-4 py-14 sm:px-6 sm:py-20">
+      <div class="flex items-baseline gap-4">
+        <span class="shrink-0 font-serif text-sm tabular-nums text-primary dark:text-primary-light">
+          {{ sectionNumbers.values }}
+        </span>
+        <h2 class="min-w-0 font-serif text-xl font-semibold tracking-tight sm:text-2xl">
+          What we hold to
+        </h2>
+        <span class="hidden h-px min-w-8 flex-1 bg-stone-300 sm:block dark:bg-gray-800"></span>
+      </div>
+
+      <div
+        class="mt-8 grid gap-px overflow-hidden border border-stone-200 bg-stone-200 dark:border-gray-800 dark:bg-gray-800 sm:grid-cols-2"
+      >
+        <div
+          v-for="(entry, index) in values"
+          :key="`value-${index}`"
+          class="bg-[#faf8f4] p-6 dark:bg-gray-900 sm:p-8"
+        >
+          <p class="font-serif text-lg font-semibold leading-snug sm:text-xl">{{ entry.value }}</p>
+          <p
+            v-if="entry.note"
+            class="mt-2 text-sm leading-relaxed text-stone-600 dark:text-gray-400"
+          >
+            {{ entry.note }}
+          </p>
         </div>
       </div>
     </section>
@@ -1253,12 +1301,12 @@ const year = new Date().getFullYear()
       <div
         class="mt-8 grid gap-px overflow-hidden border border-stone-200 bg-stone-200 dark:border-gray-800 dark:bg-gray-800 sm:grid-cols-2"
       >
-        <div v-if="landing.address" class="bg-[#faf8f4] p-5 dark:bg-gray-900 sm:col-span-2 sm:p-6">
+        <div v-if="church.address" class="bg-[#faf8f4] p-5 dark:bg-gray-900 sm:col-span-2 sm:p-6">
           <div class="flex items-start gap-3">
             <MapPin class="mt-0.5 h-5 w-5 shrink-0 text-primary dark:text-primary-light" />
             <div class="min-w-0">
               <p class="whitespace-pre-line font-serif text-lg font-semibold leading-snug">
-                {{ landing.address }}
+                {{ church.address }}
               </p>
               <a
                 v-if="mapHref"
@@ -1275,26 +1323,26 @@ const year = new Date().getFullYear()
         </div>
 
         <a
-          v-if="landing.phone"
-          :href="`tel:${landing.phone}`"
+          v-if="church.phone"
+          :href="`tel:${church.phone}`"
           class="flex items-center gap-3 bg-[#faf8f4] p-5 transition-colors hover:bg-white dark:bg-gray-900 dark:hover:bg-gray-800/60 sm:p-6"
         >
           <Phone class="h-5 w-5 shrink-0 text-primary dark:text-primary-light" />
-          <span class="min-w-0 truncate text-sm font-semibold">{{ landing.phone }}</span>
+          <span class="min-w-0 truncate text-sm font-semibold">{{ church.phone }}</span>
         </a>
 
         <a
-          v-if="landing.email"
-          :href="`mailto:${landing.email}`"
+          v-if="church.email"
+          :href="`mailto:${church.email}`"
           class="flex items-center gap-3 bg-[#faf8f4] p-5 transition-colors hover:bg-white dark:bg-gray-900 dark:hover:bg-gray-800/60 sm:p-6"
         >
           <Mail class="h-5 w-5 shrink-0 text-primary dark:text-primary-light" />
-          <span class="min-w-0 truncate text-sm font-semibold">{{ landing.email }}</span>
+          <span class="min-w-0 truncate text-sm font-semibold">{{ church.email }}</span>
         </a>
 
         <a
-          v-if="landing.facebook"
-          :href="landing.facebook"
+          v-if="church.facebook"
+          :href="church.facebook"
           target="_blank"
           rel="noopener noreferrer"
           class="flex items-center gap-3 bg-[#faf8f4] p-5 transition-colors hover:bg-white dark:bg-gray-900 dark:hover:bg-gray-800/60 sm:p-6"
@@ -1339,8 +1387,8 @@ const year = new Date().getFullYear()
               Get directions
             </a>
             <a
-              v-if="landing.email"
-              :href="`mailto:${landing.email}`"
+              v-if="church.email"
+              :href="`mailto:${church.email}`"
               class="inline-flex h-12 items-center gap-2 border border-white/30 px-5 text-sm font-bold text-white transition-colors hover:bg-white/10"
             >
               <Mail class="h-4 w-4" />

@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onUnmounted, ref, watch } from 'vue'
 import {
+  Building2,
   Globe,
   Plus,
   Trash2,
@@ -26,6 +27,7 @@ import {
 } from '../../composables/useRecurringSchedules'
 import { subscribeToAlbums } from '../../api/galleryService'
 import { formatTime } from '../../../lib/occurrences'
+import { MOVED_FROM_LANDING } from '../../data/appDefaults'
 import { compressImageToBase64, HERO_OPTIONS } from '../../utils/imageUtils'
 import { uploadImage } from '../../api/blobService'
 import bundledHero from '../../assets/hero-cover.webp'
@@ -39,15 +41,25 @@ const blankService = () => ({ name: '', when: '', note: '' })
 
 const blankStage = () => ({ stage: '', note: '' })
 
-const cloneLanding = (source) => ({
-  ...source,
-  services: (source.services || []).map((service) => ({ ...service })),
-  path: (source.path || []).map((step) => ({ ...step })),
-  // Copied, not shared: the picker below replaces this array, and holding the
-  // stored one would make every edit look already-saved.
-  hiddenAlbums: [...(source.hiddenAlbums || [])],
-  welcomeTerms: [...(source.welcomeTerms || [])],
-})
+const cloneLanding = (source) => {
+  const copy = {
+    ...source,
+    services: (source.services || []).map((service) => ({ ...service })),
+    path: (source.path || []).map((step) => ({ ...step })),
+    // Copied, not shared: the picker below replaces this array, and holding the
+    // stored one would make every edit look already-saved.
+    hiddenAlbums: [...(source.hiddenAlbums || [])],
+    welcomeTerms: [...(source.welcomeTerms || [])],
+  }
+  // The church's own words — its mission, what it is about, where it is — are
+  // stored on the church now (Settings > Church details) and this page only
+  // draws them. Left in the form, they would be written back from a screen with
+  // no field for them, and an old value could outlive the edit that replaced
+  // it. Dropped here rather than at the save, so that what the form holds and
+  // what it is compared against are the same shape and Save can settle.
+  MOVED_FROM_LANDING.forEach((key) => delete copy[key])
+  return copy
+}
 
 const form = ref(cloneLanding(landing.value))
 const saving = ref(false)
@@ -263,8 +275,8 @@ const handleSave = async () => {
       welcomeLineMember: trimmed(form.value.welcomeLineMember),
       verse: trimmed(form.value.verse),
       verseReference: trimmed(form.value.verseReference),
-      vision: trimmed(form.value.vision),
-      mission: trimmed(form.value.mission),
+      aboutTitle: trimmed(form.value.aboutTitle),
+      about: trimmed(form.value.about),
       closingTitle: trimmed(form.value.closingTitle),
       closingBody: trimmed(form.value.closingBody),
       // A stage with no name draws nothing on the page, so it is dropped
@@ -272,13 +284,6 @@ const handleSave = async () => {
       path: form.value.path
         .filter((step) => trimmed(step.stage))
         .map((step) => ({ stage: trimmed(step.stage), note: trimmed(step.note) })),
-      aboutTitle: trimmed(form.value.aboutTitle),
-      about: trimmed(form.value.about),
-      address: trimmed(form.value.address),
-      mapUrl: trimmed(form.value.mapUrl),
-      phone: trimmed(form.value.phone),
-      email: trimmed(form.value.email),
-      facebook: trimmed(form.value.facebook),
       // A row with no name renders nothing on the page, so it is dropped rather
       // than stored as an empty card.
       services: form.value.services
@@ -658,19 +663,19 @@ const labelClass = 'block text-xs font-medium text-gray-500 dark:text-gray-400 m
           />
         </div>
 
-        <!-- Why the church is here -->
-        <div>
-          <label :class="labelClass">Pananaw / Vision</label>
-          <textarea v-model="form.vision" rows="2" :class="areaClass"></textarea>
-        </div>
-
-        <div>
-          <label :class="labelClass">Misyon / Mission</label>
-          <textarea v-model="form.mission" rows="2" :class="areaClass"></textarea>
-          <p class="mt-1 text-[11px] text-gray-400">
-            With both of these empty the whole section goes
-          </p>
-        </div>
+<!-- What the church is, rather than what this page is, is edited with
+             the church and drawn here. One pointer rather than a second set of
+             fields: two screens editing one mission is how they drift. -->
+        <RouterLink
+          :to="{ query: { section: 'church' } }"
+          class="flex items-center gap-3 rounded-lg border border-dashed border-gray-300 px-3 py-3 transition-colors hover:border-primary dark:border-gray-600"
+        >
+          <Building2 class="h-5 w-5 shrink-0 text-primary dark:text-primary-light" />
+          <span class="min-w-0 flex-1 text-xs font-semibold text-gray-700 dark:text-gray-200">
+            Mission, vision, core values and contacts
+          </span>
+          <ExternalLink class="h-4 w-4 shrink-0 text-gray-400" />
+        </RouterLink>
 
         <!-- Discipleship process -->
         <div>
@@ -805,7 +810,7 @@ const labelClass = 'block text-xs font-medium text-gray-500 dark:text-gray-400 m
           <p v-else class="text-xs italic text-gray-400">No service times added yet.</p>
         </div>
 
-        <!-- About -->
+        <!-- Who we are: this page's own section, heading and words together. -->
         <div>
           <label :class="labelClass">About heading</label>
           <input v-model="form.aboutTitle" type="text" placeholder="Who we are" :class="inputClass" />
@@ -819,49 +824,6 @@ const labelClass = 'block text-xs font-medium text-gray-500 dark:text-gray-400 m
             placeholder="A few sentences a visitor would want to read"
             :class="areaClass"
           ></textarea>
-        </div>
-
-        <!-- Finding and contacting us -->
-        <div>
-          <label :class="labelClass">Address</label>
-          <textarea v-model="form.address" rows="2" :class="areaClass"></textarea>
-          <p class="mt-1 text-[11px] text-gray-400">
-            Shown with a "Get directions" link that searches this address on the map
-          </p>
-        </div>
-
-        <div>
-          <label :class="labelClass">Map link (optional)</label>
-          <input
-            v-model="form.mapUrl"
-            type="url"
-            placeholder="https://maps.app.goo.gl/..."
-            :class="inputClass"
-          />
-          <p class="mt-1 text-[11px] text-gray-400">
-            Use this when the address alone does not find the right pin
-          </p>
-        </div>
-
-        <div class="grid gap-3 sm:grid-cols-2">
-          <div>
-            <label :class="labelClass">Phone</label>
-            <input v-model="form.phone" type="tel" :class="inputClass" />
-          </div>
-          <div>
-            <label :class="labelClass">Email</label>
-            <input v-model="form.email" type="email" :class="inputClass" />
-          </div>
-        </div>
-
-        <div>
-          <label :class="labelClass">Facebook page</label>
-          <input
-            v-model="form.facebook"
-            type="url"
-            placeholder="https://facebook.com/..."
-            :class="inputClass"
-          />
         </div>
 
         <button

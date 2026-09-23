@@ -33,8 +33,8 @@ import bundledHero from '../assets/hero-cover.webp'
 //
 // Deliberately thin. It is not a second Settings screen — it asks for the few
 // things a page looks wrong without, and leaves the rest (full legal name,
-// vision and mission, which albums are public) to Settings, where somebody has
-// gone looking for them. Anything asked here is one field with a plain label
+// mission and vision, core values, which albums are public) to Settings, where
+// somebody has gone looking for them. Anything asked here is one field with a plain label
 // and no paragraph under it.
 //
 // It ends by writing `setup.done`, which is what stops the router sending an
@@ -49,6 +49,7 @@ const {
   theme: savedTheme,
   isConfigured,
   saveChurch,
+  saveChurchIdentity,
   saveLogo,
   saveLanding,
   saveTheme,
@@ -83,10 +84,14 @@ watch(
     form.heroImage = landing.value.heroImage
     form.intro = landing.value.intro
     form.services = (landing.value.services || []).map((service) => ({ ...service }))
+    // From the church rather than the landing block: this is what the church
+    // is, and it moved onto the church itself in v0.29.4. The fallback in
+    // withChurchDefaults means a church part-way through the old guide still
+    // reads back whatever it answered.
     form.about = landing.value.about
-    form.address = landing.value.address
-    form.phone = landing.value.phone
-    form.facebook = landing.value.facebook
+    form.address = church.value.address
+    form.phone = church.value.phone
+    form.facebook = church.value.facebook
   },
   { immediate: true }
 )
@@ -159,7 +164,7 @@ const SAVE_STEP = [
     }),
   () => saveLanding({ about: trimmed(form.about) }),
   () =>
-    saveLanding({
+    saveChurchIdentity({
       address: trimmed(form.address),
       phone: trimmed(form.phone),
       facebook: trimmed(form.facebook),

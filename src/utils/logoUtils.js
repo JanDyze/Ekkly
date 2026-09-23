@@ -410,6 +410,41 @@ export const removeFlatBackground = (canvas) => {
   return result
 }
 
+const loadImage = (src) =>
+  new Promise((resolve, reject) => {
+    const img = new Image()
+    // Only matters for a file on the CDN; a data URL ignores it. Without it the
+    // canvas would be tainted and the pixels unreadable.
+    img.crossOrigin = 'anonymous'
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = src
+  })
+
+/**
+ * The colours of a logo that is already stored, read back from its URL.
+ *
+ * The colours card offers these long after the upload that produced them, so it
+ * reads the artwork itself rather than waiting to be handed the result of a
+ * pick — which means a church that uploaded its logo months ago is still
+ * offered its own colours.
+ *
+ * Nothing to offer is a normal answer, and so is a refusal: a stored logo is
+ * either a data URL from before the blob store or a file on the CDN, and where
+ * the CDN will not allow a cross-origin read the canvas is tainted and
+ * getImageData throws. Both come back as an empty list, and the card simply
+ * shows no swatches.
+ */
+export const brandColoursFromUrl = async (url, options = LOGO_OPTIONS) => {
+  if (!url) return []
+  try {
+    return brandColoursFrom(imageToCanvas(await loadImage(url), options.maxDim))
+  } catch (error) {
+    console.error('Could not read the colours off that logo:', error)
+    return []
+  }
+}
+
 /** brandColoursFromData, on a canvas. */
 export const brandColoursFrom = (canvas, options) => {
   const ctx = canvas.getContext('2d', { willReadFrequently: true })

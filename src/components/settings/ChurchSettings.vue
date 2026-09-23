@@ -1,289 +1,198 @@
 <script setup>
-import { nextTick, ref } from 'vue'
-import { Building2, Check, Loader2, Pencil } from '../../icons'
+// The church as a record, read the way a person's profile is read.
+//
+// It used to be a form: three name boxes behind an Edit toggle, and the four
+// category lists behind another one. Two of the three things it held were not
+// the church at all — the lists are the app's vocabulary, and they now have a
+// section of their own (ChurchListsAdmin.vue) — and what a church would
+// actually come here to check, what it is for and where to find it, was not
+// here. Those lived under Settings > Public page, as though a mission
+// statement were a property of a web page.
+//
+// So: what the church is, in plain type, grouped the way somebody would say it
+// out loud. One Edit, opening the stepped sheet — the shape the app already
+// uses for a record (see MemberDetails.vue). The logo keeps saving on pick,
+// because there is nothing to type alongside it.
+import { computed, ref } from 'vue'
+import { Building2, Pencil } from '../../icons'
 import { usePermissions } from '../../composables/usePermissions'
 import { useAppSettings } from '../../composables/useAppSettings'
 import { useToast } from '../../composables/useToast'
 import ChurchLogoPicker from './ChurchLogoPicker.vue'
-import CategoryListEditor from './CategoryListEditor.vue'
-import InfoHint from '../common/InfoHint.vue'
-import { DEFAULT_CATEGORIES } from '../../data/appDefaults'
-import { eventTypeLabel } from '../../utils/eventColors'
+import ChurchEditSheet from './ChurchEditSheet.vue'
+import SectionCard from '../common/SectionCard.vue'
 
 const toast = useToast()
 const { isAdmin } = usePermissions()
-const { church, categories, saveChurch, saveCategories } = useAppSettings()
+const { church, saveChurchIdentity } = useAppSettings()
 
-/* ----------------------------------------------------------------- names */
-// Three lines that read as what the church is called, not as a form to fill
-// in: they were three boxes and a Save button, standing open on a screen
-// nobody came to type on.
-//
-// So: Edit turns the lines into fields and Done turns them back. One switch
-// for the three of them, because whoever came to rename the branch did not
-// come to hunt for the one line that is tappable. There is still no Save —
-// each line writes itself as you leave it, the way the logo and the lists on
-// this page already do.
-const FIELDS = [
-  {
-    key: 'shortName',
-    label: 'Short name',
-    required: true,
-    placeholder: 'Grace Community',
-    hint: 'What the church is called day to day. It appears in the sidebar, on the sign-in screen and in the filenames of spreadsheets you export.',
-  },
-  {
-    key: 'fullName',
-    label: 'Full legal name',
-    placeholder: 'Grace Community Church Inc.',
-    hint: 'The name as it is registered. With the branch below, it forms the letterhead on printed forms and exports.',
-  },
-  {
-    key: 'branch',
-    label: 'Branch or outreach',
-    placeholder: 'Bacolod',
-    hint: 'Which congregation this is, where a church has more than one. It sits under the full name on printed forms and exports.',
-  },
-]
-
-const editing = ref(false)
-const drafts = ref({})
-const savingField = ref('')
-const fieldInput = ref(null)
-
-const startEditing = async () => {
-  drafts.value = Object.fromEntries(FIELDS.map((field) => [field.key, church.value[field.key] || '']))
-  editing.value = true
-  await nextTick()
-  fieldInput.value?.[0]?.focus()
-  fieldInput.value?.[0]?.select()
-}
-
-/** Written as each line is left, so Done has nothing left to do but close. */
-const commitField = async (field) => {
-  const value = String(drafts.value[field.key] || '').trim()
-  const current = church.value[field.key] || ''
-
-  // The short name is on every screen and in every export filename, so it is
-  // the one that cannot be blank. Emptying it puts the old one back.
-  if (field.required && !value) {
-    drafts.value = { ...drafts.value, [field.key]: current }
-    toast.error('The short name cannot be empty.')
-    return
-  }
-  if (value === current) return
-
-  savingField.value = field.key
-  try {
-    await saveChurch({ [field.key]: value })
-  } catch (e) {
-    console.error('Error saving church details:', e)
-    toast.error('Could not save. Please try again.')
-    drafts.value = { ...drafts.value, [field.key]: current }
-  } finally {
-    savingField.value = ''
-  }
-}
-
-const stopEditing = async () => {
-  // Whatever is under the cursor has not been left yet, so it is written now.
-  for (const field of FIELDS) await commitField(field)
-  editing.value = false
-}
-
-/* ------------------------------------------------------------- categories */
-// An event type is stored as a key the calendar colours by ('worship'), not as
-// the words it shows, so it is written down and read back differently from the
-// other three.
-const LISTS = [
-  { key: 'gallery', label: 'Gallery albums', hint: 'What an album in the photo gallery can be filed under.' },
-  { key: 'links', label: 'Links', hint: 'How saved links are grouped on the Links page.' },
-  { key: 'songs', label: 'Song list', hint: 'What a song can be filed under on the Song list.' },
-  {
-    key: 'eventTypes',
-    label: 'Event types',
-    hint: 'What an event can be. The calendar colours an event by its type, and attendance reports on it.',
-    format: eventTypeLabel,
-    store: (value) => value.trim().toLowerCase().replace(/\s+/g, '-'),
-  },
-]
-
-const savingList = ref(null)
-const editingLists = ref(false)
-
-const persist = async (key, values) => {
-  savingList.value = key
-  try {
-    await saveCategories({ ...categories.value, [key]: values })
-  } catch (e) {
-    console.error('Error saving categories:', e)
-    toast.error('Could not save that change.')
-  } finally {
-    savingList.value = null
-  }
-}
-
-const addEntry = (list, raw) => {
-  const value = (list.store ? list.store(raw) : raw.trim())
-  if (!value) return
-  const current = categories.value[list.key] || []
-  if (current.some((v) => String(v).toLowerCase() === value.toLowerCase())) {
-    toast.info('That one is already on the list')
-    return
-  }
-  persist(list.key, [...current, value])
-}
-
-const removeEntry = (key, value) => {
-  persist(
-    key,
-    (categories.value[key] || []).filter((v) => v !== value)
+/** One of the church's pair lists, with the entries that say nothing left out. */
+const pairs = (key, first) =>
+  (Array.isArray(church.value[key]) ? church.value[key] : []).filter((entry) =>
+    String(entry?.[first] || '').trim()
   )
+
+/**
+ * What the page shows, in the order it reads.
+ *
+ * `step` is which step of the editor a group belongs to, so tapping a group's
+ * heading opens the sheet where that group is rather than at the beginning.
+ */
+const GROUPS = computed(() => [
+  {
+    key: 'names',
+    label: 'Names',
+    step: 0,
+    rows: [
+      { label: 'Short name', value: church.value.shortName },
+      { label: 'Full legal name', value: church.value.fullName },
+      { label: 'Branch or outreach', value: church.value.branch },
+      { label: 'Year founded', value: church.value.founded },
+      { label: 'Affiliation', value: church.value.affiliation },
+    ],
+  },
+  {
+    key: 'words',
+    label: 'Mission and values',
+    step: 1,
+    rows: [
+      { label: 'Mission', value: church.value.mission, wrap: true },
+      { label: 'Vision', value: church.value.vision, wrap: true },
+    ],
+    // The two that are lists of their own, under the statements above them.
+    lists: [
+      { label: 'Basis of faith', items: pairs('basisOfFaith', 'belief'), first: 'belief', second: 'reference' },
+      { label: 'Core values', items: pairs('values', 'value'), first: 'value', second: 'note' },
+    ],
+  },
+  {
+    key: 'place',
+    label: 'Finding us',
+    step: 2,
+    rows: [
+      { label: 'Address', value: church.value.address, wrap: true },
+      { label: 'Phone', value: church.value.phone },
+      { label: 'Email', value: church.value.email },
+      { label: 'Facebook', value: church.value.facebook },
+      { label: 'Map link', value: church.value.mapUrl },
+    ],
+  },
+])
+
+/* ------------------------------------------------------------------ editing */
+
+const sheet = ref(null)
+const showEditor = ref(false)
+const editorStep = ref(0)
+const saving = ref(false)
+
+const openEditor = (step = 0) => {
+  if (!isAdmin.value) return
+  editorStep.value = step
+  // Seeded before it is shown, and told which step it is opening on: the prop
+  // set on the line above has not reached the sheet yet.
+  sheet.value?.reset(step)
+  showEditor.value = true
 }
 
-// Puts back whichever of the built-in entries have been taken off, keeping
-// everything the church added and the order it is in.
-const restoreDefaults = (key) => {
-  const current = categories.value[key] || []
-  const present = new Set(current.map((value) => String(value).toLowerCase()))
-  const missing = (DEFAULT_CATEGORIES[key] || []).filter(
-    (value) => !present.has(String(value).toLowerCase())
-  )
-  if (!missing.length) return
-  persist(key, [...current, ...missing])
+const saveEdit = async (changes) => {
+  saving.value = true
+  try {
+    await saveChurchIdentity(changes)
+    showEditor.value = false
+    toast.success('Church details saved')
+  } catch (error) {
+    console.error('Error saving church details:', error)
+    toast.error('Could not save that. Please try again.')
+  } finally {
+    saving.value = false
+  }
 }
 </script>
 
 <template>
-  <section
-    class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden"
+  <SectionCard
+    :icon="Building2"
+    title="Church details"
+    subtitle="What the church is called, what it is here for, and where to find it"
+    head-class="section-head"
   >
-    <div class="section-head flex items-start gap-3 px-4 py-4 border-b border-gray-100 dark:border-gray-700">
-      <div class="p-2 rounded-lg bg-primary/10 shrink-0">
-        <Building2 class="h-5 w-5 text-primary dark:text-primary-light" />
-      </div>
-      <div class="min-w-0">
-        <h2 class="flex items-center gap-1 text-sm font-semibold text-gray-900 dark:text-white">
-          Church
-          <InfoHint
-            label="church settings"
-            text="The name on every screen and printed report, the logo, and the lists the rest of the app chooses from."
-          />
-        </h2>
-      </div>
-    </div>
-
-    <p v-if="!isAdmin" class="px-4 py-6 text-sm text-center text-gray-500 dark:text-gray-400">
+    <p v-if="!isAdmin" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
       Only administrators can change church details.
     </p>
 
     <template v-else>
-      <div class="p-4 space-y-3 border-b border-gray-100 dark:border-gray-700">
-        <!-- Saves on pick, like the category lists: there is nothing to type
-             alongside it, so it does not belong behind the Save button. -->
+      <!-- Saves on pick: there is nothing to type alongside a logo, so it does
+           not belong behind an editor you have to finish. -->
+      <div class="border-b border-gray-100 p-4 dark:border-gray-700">
         <ChurchLogoPicker />
-
-        <!-- Reading, until Edit says otherwise. -->
-        <div class="flex items-center justify-between gap-2">
-          <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-            Names
-          </p>
-          <button
-            type="button"
-            @click="editing ? stopEditing() : startEditing()"
-            class="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 dark:text-primary-light dark:hover:bg-primary-light/15"
-          >
-            <template v-if="editing">
-              <Check class="h-3.5 w-3.5" />
-              Done
-            </template>
-            <template v-else>
-              <Pencil class="h-3.5 w-3.5" />
-              Edit
-            </template>
-          </button>
-        </div>
-
-        <div v-for="field in FIELDS" :key="field.key">
-          <p class="mb-1 flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400">
-            {{ field.label }}
-            <InfoHint :label="field.label.toLowerCase()" :text="field.hint" />
-          </p>
-
-          <!-- Each line writes itself as you leave it, so Done is a way out
-               rather than a Save button in disguise. -->
-          <div v-if="editing" class="relative">
-            <input
-              ref="fieldInput"
-              :value="drafts[field.key]"
-              @input="drafts = { ...drafts, [field.key]: $event.target.value }"
-              type="text"
-              :placeholder="field.placeholder"
-              :aria-label="field.label"
-              enterkeyhint="done"
-              @keydown.enter.prevent="$event.target.blur()"
-              @blur="commitField(field)"
-              class="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 pr-9 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-900 dark:text-white"
-            />
-            <Loader2
-              v-if="savingField === field.key"
-              class="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-gray-400"
-            />
-          </div>
-
-          <p
-            v-else
-            :class="[
-              'truncate px-3 py-2 text-sm',
-              church[field.key] ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500',
-            ]"
-          >
-            {{ church[field.key] || 'Not set' }}
-          </p>
-        </div>
       </div>
 
-      <!-- Category vocabularies -->
-      <div class="p-4 space-y-5">
-        <div class="flex items-center justify-between gap-2">
-          <h3 class="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-            Lists
-            <InfoHint
-              label="the lists"
-              text="What the rest of the app offers when something has to be filed under a category. Removing one does not change records already filed under it — they keep the old label until you edit them."
-            />
+      <div
+        v-for="group in GROUPS"
+        :key="group.key"
+        class="border-b border-gray-100 p-4 last:border-b-0 dark:border-gray-700"
+      >
+        <div class="mb-2 flex items-baseline justify-between gap-2">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            {{ group.label }}
           </h3>
           <button
             type="button"
-            @click="editingLists = !editingLists"
-            class="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 dark:text-primary-light dark:hover:bg-primary-light/15"
+            @click="openEditor(group.step)"
+            :aria-label="`Edit ${group.label.toLowerCase()}`"
+            class="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 dark:text-primary-light dark:hover:bg-primary-light/15"
           >
-            <template v-if="editingLists">
-              <Check class="h-3.5 w-3.5" />
-              Done
-            </template>
-            <template v-else>
-              <Pencil class="h-3.5 w-3.5" />
-              Edit
-            </template>
+            <Pencil class="h-3.5 w-3.5" />
+            Edit
           </button>
         </div>
 
-        <CategoryListEditor
-          v-for="list in LISTS"
-          :key="list.key"
-          :label="list.label"
-          :hint="list.hint"
-          :values="categories[list.key] || []"
-          :defaults="DEFAULT_CATEGORIES[list.key] || []"
-          :format="list.format || ((value) => value)"
-          :busy="savingList === list.key"
-          :editing="editingLists"
-          @add="(value) => addEntry(list, value)"
-          @remove="(value) => removeEntry(list.key, value)"
-          @restore="restoreDefaults(list.key)"
-        />
+        <dl class="space-y-3">
+          <div v-for="row in group.rows" :key="row.label">
+            <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ row.label }}</dt>
+            <dd
+              :class="[
+                'mt-0.5 text-sm',
+                row.wrap ? 'whitespace-pre-line' : 'truncate',
+                row.value ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500',
+              ]"
+            >
+              {{ row.value || 'Not set' }}
+            </dd>
+          </div>
+
+          <!-- The lists belong to the group they are part of rather than a
+               section of their own: the articles and the values are the same
+               answer as the mission, said at more length. -->
+          <div v-for="list in group.lists || []" :key="list.label">
+            <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ list.label }}</dt>
+            <dd v-if="list.items.length" class="mt-1.5 space-y-1.5">
+              <div
+                v-for="(entry, index) in list.items"
+                :key="index"
+                class="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-700/40"
+              >
+                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ entry[list.first] }}</p>
+                <p v-if="entry[list.second]" class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ entry[list.second] }}
+                </p>
+              </div>
+            </dd>
+            <dd v-else class="mt-0.5 text-sm text-gray-400 dark:text-gray-500">Not set</dd>
+          </div>
+        </dl>
       </div>
     </template>
-  </section>
+
+    <ChurchEditSheet
+      ref="sheet"
+      :show="showEditor"
+      :church="church"
+      :start-step="editorStep"
+      :busy="saving"
+      @close="showEditor = false"
+      @save="saveEdit"
+    />
+  </SectionCard>
 </template>
