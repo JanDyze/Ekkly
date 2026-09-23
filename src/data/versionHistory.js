@@ -8,6 +8,19 @@
 
 export const versionHistory = [
   {
+    version: '0.29.5',
+    date: '2026-09-23',
+    title: 'Your public page, a few questions at a time',
+    summary:
+      'The public page and your colours and typeface are now read at a glance and changed in a sheet of short steps, with nothing saved until you press Save.',
+    highlights: [
+      'What your page says is grouped the way the page reads — the welcome, what your church is about, visiting — with an Edit on each.',
+      'Trying a colour or a typeface no longer repaints the screen you are standing on; nothing changes until you save it.',
+      'Choosing which photo albums visitors may see now saves as you tap, so an album can no longer be left public by mistake.',
+      'The setup guide has left Settings: everything it asks for already has a home there.',
+    ],
+  },
+  {
     version: '0.29.4',
     date: '2026-09-23',
     title: 'Your church, in its own words',

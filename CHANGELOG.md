@@ -11,6 +11,39 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.29.5] — 2026-09-23
+
+The public page and the church's look are now read as records and changed in a
+sheet of short steps, the way Church details already was. The fields of the
+public page stopped being markup and became data, shared with the page-builder
+experiment so the two cannot drift apart.
+
+### Changed
+
+- **The public page is read, not filled in.** What the page says is shown in
+  plain type, grouped the way the page itself reads — the welcome, what the
+  church is about, and visiting — with one Edit per group that opens a sheet at
+  that group. Nothing is written until you press Save, and closing with unsaved
+  changes asks first.
+- **Colours and type work the same way.** The card says what the church is
+  wearing and whether each half is its own or the platform's; trying a colour
+  happens in the sheet rather than repainting the page you are standing on.
+- **Album choices save as you make them.** Which albums a visitor may see used
+  to wait for a Save button at the foot of the screen, so an album could be
+  unticked and left public. Each tap is now written on its own.
+
+### Removed
+
+- **The setup guide is no longer a row in Settings.** It is a church's first
+  hour — the router still sends a new administrator there, and the public page
+  still offers it while the page is a shell — but everything it asks for has a
+  home in Settings, which is where somebody changing one of those answers goes.
+
+### Fixed
+
+- A sheet opened at a particular step now starts there even before its contents
+  are seeded, rather than always starting at the first step.
+
 ## [0.29.4] — 2026-09-23
 
 What the church is, kept with the church: its mission, its basis of faith and

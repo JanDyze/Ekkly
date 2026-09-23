@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
-import { FONTS, PAPERS, SECTION_TYPES, STOCK, MOCK_EVENTS } from '../../data/landingLabMock'
+import { FONTS, PAPERS, STOCK, MOCK_EVENTS } from '../../data/landingLabMock'
+import { SECTION_TYPES } from '../../data/landingSchema'
 import uecLogo from '../../assets/churches/uec.webp'
 
 // The prototype's page, drawn from the model. Part of the /landing-lab

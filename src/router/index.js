@@ -56,8 +56,9 @@ const churchRoutes = [
     // administrator who has not filled anything in yet has no use for a
     // sidebar of empty pages, and the guide is something you finish rather
     // than somewhere you browse from. The guard below sends them here until
-    // the guide has been through once; after that it is reachable from
-    // Settings, which is why it is not gated on `setup` itself.
+    // the guide has been through once, and nothing links to it after that:
+    // it is a church's first hour, not a page in Settings. Left ungated on
+    // `setup` itself so the guard has somewhere to send them.
     path: '/setup',
     name: 'Setup',
     component: () => import('../views/ChurchSetup.vue'),

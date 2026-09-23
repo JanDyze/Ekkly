@@ -158,8 +158,10 @@ export function useAppSettings() {
   // Nested maps merge, so writing the logo alone cannot drop the names.
   const saveLogo = (logo) => saveAppSettings({ church: { logo } })
   const saveLogoDark = (logoDark) => saveAppSettings({ church: { logoDark } })
-  // setDoc's merge does not replace arrays element-wise, so the whole landing
-  // block is written at once and the services list stays exactly as edited.
+  // Takes whole or part: the settings write merges, and nested maps merge with
+  // it, so a caller changing one line of the public page sends that line alone.
+  // An array in it is still replaced rather than merged element-wise, which is
+  // what the services and the stages want — a removed row really goes.
   const saveLanding = (landing) => saveAppSettings({ landing })
   // The whole list every time, for the same reason: its order is the order a
   // service is shown in, and a merge cannot express a reorder.
@@ -170,8 +172,9 @@ export function useAppSettings() {
 
   // The guide is over. Written whether every step was filled in or every one
   // was skipped: it records that the administrator has been shown the screen,
-  // not that the church is finished. Settings links straight to /setup for
-  // anyone who wants to walk it again, so there is nothing to un-write.
+  // not that the church is finished. Nothing links back to it: everything the
+  // guide asks for has a home in Settings, which is where somebody who wants
+  // to change one of those answers goes.
   const finishSetup = () => replaceAppSettingsField('setup', { done: true, at: new Date().toISOString() })
 
   return {

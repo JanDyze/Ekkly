@@ -1,110 +1,126 @@
 <script setup>
-import { computed, onUnmounted, ref, watch } from 'vue'
+// The public page as a record, read the way the church's own record is read.
+//
+// It used to be the whole page as a form: six blocks of live inputs under one
+// Save, with a link to the setup guide at the top for anyone who would rather
+// be asked one thing at a time. That link was the tell — a screen that needs an
+// escape hatch to a gentler version of itself is too much screen. The guide is
+// for a church's first hour and the router already sends a new administrator
+// there; it is not a row in Settings.
+//
+// So: what the page says, in plain type, grouped the way the page itself
+// reads. One Edit per group, opening the stepped sheet at that group — the
+// shape ChurchSettings.vue already uses for the church.
+//
+// Neither this nor the sheet lists the fields. Both read them from
+// src/data/landingSchema.js, so what is shown here and what can be edited
+// there cannot fall out of step, and the vocabulary they are written in is the
+// one the /landing-lab prototype describes its section types in.
+//
+// What stays out here rather than in the sheet: the hero photo, the three
+// switches and the album picker. Each is one tap with nothing to type
+// alongside it, so each saves where it stands, the way the logo does.
+import { computed, onUnmounted, ref } from 'vue'
 import {
-  Building2,
-  Globe,
-  Plus,
-  Trash2,
-  Loader2,
-  Info,
-  ImagePlus,
-  RotateCcw,
-  ExternalLink,
   Check,
+  ExternalLink,
   EyeOff,
+  Globe,
   Image as ImageIcon,
+  ImagePlus,
+  Info,
+  Loader2,
+  Pencil,
+  RotateCcw,
   ShieldAlert,
-  Sparkles,
 } from '../../icons'
 import { usePermissions } from '../../composables/usePermissions'
 import { useAppSettings } from '../../composables/useAppSettings'
 import { useToast } from '../../composables/useToast'
-import {
-  useRecurringSchedules,
-  WEEKDAYS,
-  OCCURRENCES,
-  sortOccurrences,
-} from '../../composables/useRecurringSchedules'
 import { subscribeToAlbums } from '../../api/galleryService'
-import { formatTime } from '../../../lib/occurrences'
-import { MOVED_FROM_LANDING } from '../../data/appDefaults'
 import { compressImageToBase64, HERO_OPTIONS } from '../../utils/imageUtils'
 import { uploadImage } from '../../api/blobService'
+import { SETTINGS_STEPS } from '../../data/landingSchema'
 import bundledHero from '../../assets/hero-cover.webp'
-
+import LandingEditSheet from './LandingEditSheet.vue'
+import SectionCard from '../common/SectionCard.vue'
 
 const toast = useToast()
 const { isAdmin } = usePermissions()
 const { landing, saveLanding } = useAppSettings()
 
-const blankService = () => ({ name: '', when: '', note: '' })
-
-const blankStage = () => ({ stage: '', note: '' })
-
-const cloneLanding = (source) => {
-  const copy = {
-    ...source,
-    services: (source.services || []).map((service) => ({ ...service })),
-    path: (source.path || []).map((step) => ({ ...step })),
-    // Copied, not shared: the picker below replaces this array, and holding the
-    // stored one would make every edit look already-saved.
-    hiddenAlbums: [...(source.hiddenAlbums || [])],
-    welcomeTerms: [...(source.welcomeTerms || [])],
-  }
-  // The church's own words — its mission, what it is about, where it is — are
-  // stored on the church now (Settings > Church details) and this page only
-  // draws them. Left in the form, they would be written back from a screen with
-  // no field for them, and an old value could outlive the edit that replaced
-  // it. Dropped here rather than at the save, so that what the form holds and
-  // what it is compared against are the same shape and Save can settle.
-  MOVED_FROM_LANDING.forEach((key) => delete copy[key])
-  return copy
-}
-
-const form = ref(cloneLanding(landing.value))
-const saving = ref(false)
-const uploading = ref(false)
-
-const dirty = computed(
-  () => JSON.stringify(form.value) !== JSON.stringify(cloneLanding(landing.value))
+/**
+ * What the card shows: every step of the editor, read rather than filled in.
+ *
+ * Derived from the same descriptors the sheet edits (src/data/landingSchema.js)
+ * so the two cannot drift — a field added there appears here without anyone
+ * remembering to add it. `step` is which step of the editor a group belongs to,
+ * so tapping a group's Edit opens the sheet where that group is rather than at
+ * the beginning.
+ *
+ * The order is the schema's, which is the order the page itself reads: the rail
+ * of stages before "Who we are", the service times before the closing words.
+ */
+const GROUPS = computed(() =>
+  SETTINGS_STEPS.map((step, index) => ({
+    key: step.key,
+    label: step.label,
+    step: index,
+    fields: step.fields.map((field) => {
+      const value = landing.value[field.key]
+      if (field.type === 'list') {
+        // A row whose first line is blank draws nothing on the page, so it is
+        // not worth a line here either.
+        const first = field.item[0].key
+        return {
+          ...field,
+          items: (Array.isArray(value) ? value : []).filter((row) =>
+            String(row?.[first] || '').trim()
+          ),
+        }
+      }
+      return {
+        ...field,
+        display: field.type === 'words' ? (value || []).join(', ') : value,
+        wrap: field.type === 'textarea',
+      }
+    }),
+  }))
 )
 
-// The document arrives after first render and may change from another device —
-// resync unless the admin is mid-edit.
-watch(landing, (next) => {
-  if (!dirty.value) form.value = cloneLanding(next)
-})
+/* ------------------------------------------------------------------ editing */
 
-/**
- * The welcome names, as one editable line.
- *
- * Thirty-odd one-word values want a text field, not thirty rows. Split on
- * commas and newlines so a list pasted from anywhere still parses, and joined
- * back with ", " so the field reads as a sentence.
- */
-const termsText = computed({
-  get: () => (form.value.welcomeTerms || []).join(', '),
-  set: (value) => {
-    form.value.welcomeTerms = String(value)
-      .split(/[\n,]/)
-      .map((name) => name.trim())
-      .filter(Boolean)
-  },
-})
+const sheet = ref(null)
+const showEditor = ref(false)
+const editorStep = ref(0)
+const saving = ref(false)
 
-const addStage = () => {
-  form.value.path = [...form.value.path, blankStage()]
+const openEditor = (step = 0) => {
+  if (!isAdmin.value) return
+  editorStep.value = step
+  // Seeded before it is shown, and told which step it is opening on: the prop
+  // set on the line above has not reached the sheet yet.
+  sheet.value?.reset(step)
+  showEditor.value = true
 }
 
-const removeStage = (index) => {
-  form.value.path = form.value.path.filter((_, i) => i !== index)
+const saveEdit = async (changes) => {
+  saving.value = true
+  try {
+    await saveLanding(changes)
+    showEditor.value = false
+    toast.success('Public page saved')
+  } catch (error) {
+    console.error('Error saving landing settings:', error)
+    toast.error('Could not save that. Please try again.')
+  } finally {
+    saving.value = false
+  }
 }
 
-const heroPreview = computed(() => form.value.heroImage || bundledHero)
-const heroInput = ref(null)
+/* ------------------------------------------------- what saves on the spot */
 
-/** The toggle and the hero are single values with nothing to type alongside
- *  them, so they save on the spot; the text fields wait for Save. */
+/** The hero, the switches and the albums: one tap each, so one write each. */
 const persist = async (partial, message) => {
   try {
     await saveLanding(partial)
@@ -115,9 +131,33 @@ const persist = async (partial, message) => {
   }
 }
 
+const uploading = ref(false)
+const heroInput = ref(null)
+const heroPreview = computed(() => landing.value.heroImage || bundledHero)
+
+const handleHeroFile = async (event) => {
+  const file = event.target.files?.[0]
+  event.target.value = ''
+  if (!file) return
+  uploading.value = true
+  try {
+    const heroImage = await uploadImage(
+      await compressImageToBase64(file, HERO_OPTIONS),
+      'branding'
+    )
+    await persist({ heroImage }, 'Hero photo updated')
+  } catch (error) {
+    console.error('Error saving the hero photo:', error)
+    toast.error('Could not save that image. Try a smaller JPG.')
+  } finally {
+    uploading.value = false
+  }
+}
+
+const resetHero = () => persist({ heroImage: '' }, 'Hero photo reset to the built-in one')
+
 const toggleEvents = () => {
-  const showEvents = form.value.showEvents === false
-  form.value.showEvents = showEvents
+  const showEvents = landing.value.showEvents === false
   persist(
     { showEvents },
     showEvents ? 'Upcoming gatherings are shown' : 'Upcoming gatherings are hidden'
@@ -127,8 +167,7 @@ const toggleEvents = () => {
 // Opted into rather than out of, unlike every other switch here: this one
 // publishes something about other people.
 const toggleBirthdays = () => {
-  const showBirthdays = form.value.showBirthdays !== true
-  form.value.showBirthdays = showBirthdays
+  const showBirthdays = landing.value.showBirthdays !== true
   persist(
     { showBirthdays },
     showBirthdays
@@ -137,7 +176,15 @@ const toggleBirthdays = () => {
   )
 }
 
-/* ------------------------------------------------------------- gallery */
+const togglePhotos = () => {
+  const showPhotos = landing.value.showPhotos === false
+  persist(
+    { showPhotos },
+    showPhotos ? 'Gallery photos are shown' : 'No gallery photo is public now'
+  )
+}
+
+/* ------------------------------------------------------------------ gallery */
 // Which albums a visitor may see. Opted into one at a time on purpose: the
 // people in the photographs did not put them on the internet, and "the whole
 // gallery" is not a decision anyone should be able to make with one switch.
@@ -165,676 +212,373 @@ onUnmounted(() => unsubscribeAlbums?.())
 // Stored as the exception: what is held back, not what is shared. An album
 // added next month is on the page the moment it exists, which is the point —
 // nobody has to come back here to keep the public page alive.
-const hiddenAlbums = computed(() => form.value.hiddenAlbums || [])
-const isShared = (albumId) => !hiddenAlbums.value.includes(albumId)
-const sharedCount = computed(
-  () => albums.value.filter((album) => isShared(album.id)).length
+const hiddenAlbums = computed(() =>
+  Array.isArray(landing.value.hiddenAlbums) ? landing.value.hiddenAlbums : []
 )
+const isShared = (albumId) => !hiddenAlbums.value.includes(albumId)
+const sharedCount = computed(() => albums.value.filter((album) => isShared(album.id)).length)
 
-const toggleAlbum = (albumId) => {
-  form.value.hiddenAlbums = isShared(albumId)
-    ? [...hiddenAlbums.value, albumId]
-    : hiddenAlbums.value.filter((id) => id !== albumId)
-}
+// Written as it is tapped rather than gathered up for a Save at the bottom:
+// holding an unsaved list of who is visible to the open internet is the one
+// thing on this card worth never getting wrong.
+const toggleAlbum = (albumId) =>
+  persist({
+    hiddenAlbums: isShared(albumId)
+      ? [...hiddenAlbums.value, albumId]
+      : hiddenAlbums.value.filter((id) => id !== albumId),
+  })
 
-const shareAllAlbums = () => {
-  form.value.hiddenAlbums = []
-}
-const shareNoAlbums = () => {
-  form.value.hiddenAlbums = albums.value.map((album) => album.id)
-}
+const shareAllAlbums = () => persist({ hiddenAlbums: [] }, 'Every album is on the public page')
+const shareNoAlbums = () =>
+  persist({ hiddenAlbums: albums.value.map((album) => album.id) }, 'Every album is held back')
 
-const togglePhotos = () => {
-  const showPhotos = form.value.showPhotos === false
-  form.value.showPhotos = showPhotos
-  persist(
-    { showPhotos },
-    showPhotos ? 'Gallery photos are shown' : 'No gallery photo is public now'
-  )
-}
-
-/* ------------------------------------------------- service suggestions */
-// The weekly schedule already knows when the church meets. Retyping it here
-// is how the two drift apart, so each one is offered as a chip that fills in a
-// service row the admin can then word however they like.
-const { schedules } = useRecurringSchedules()
-
-const scheduleWhen = (schedule) => {
-  const weekday = WEEKDAYS.find((w) => w.value === schedule.weekday)?.label || ''
-  const weeks = sortOccurrences(schedule.occurrences || [])
-  const which = weeks.length
-    ? `${weeks.map((v) => OCCURRENCES.find((o) => o.value === v)?.label || v).join(' & ')} ${weekday}`
-    : `Every ${weekday}`
-  return [which.trim(), formatTime(schedule.time)].filter(Boolean).join(', ')
-}
-
-/** Only what is not already on the list, and only what runs. */
-const suggestions = computed(() => {
-  const listed = new Set(
-    form.value.services.map((service) => (service.name || '').trim().toLowerCase())
-  )
-  return schedules.value
-    .filter((schedule) => schedule.enabled !== false && schedule.title)
-    .filter((schedule) => !listed.has(schedule.title.trim().toLowerCase()))
-    .map((schedule) => ({
-      id: schedule.id,
-      name: schedule.title,
-      when: scheduleWhen(schedule),
-    }))
-})
-
-const addSuggestion = (suggestion) => {
-  form.value.services = [
-    ...form.value.services,
-    { name: suggestion.name, when: suggestion.when, note: '' },
-  ]
-}
-
-const handleHeroFile = async (event) => {
-  const file = event.target.files?.[0]
-  event.target.value = ''
-  if (!file) return
-  uploading.value = true
-  try {
-    const heroImage = await uploadImage(
-      await compressImageToBase64(file, HERO_OPTIONS),
-      'branding'
-    )
-    form.value.heroImage = heroImage
-    await persist({ heroImage }, 'Hero photo updated')
-  } catch (error) {
-    console.error('Error saving the hero photo:', error)
-    toast.error('Could not save that image. Try a smaller JPG.')
-  } finally {
-    uploading.value = false
-  }
-}
-
-const resetHero = async () => {
-  form.value.heroImage = ''
-  await persist({ heroImage: '' }, 'Hero photo reset to the built-in one')
-}
-
-const addService = () => {
-  form.value.services = [...form.value.services, blankService()]
-}
-
-const removeService = (index) => {
-  form.value.services = form.value.services.filter((_, i) => i !== index)
-}
-
-const handleSave = async () => {
-  if (saving.value) return
-  saving.value = true
-  try {
-    const trimmed = (value) => (value || '').trim()
-    const payload = {
-      ...form.value,
-      intro: trimmed(form.value.intro),
-      welcomeLine: trimmed(form.value.welcomeLine),
-      welcomeLineMember: trimmed(form.value.welcomeLineMember),
-      verse: trimmed(form.value.verse),
-      verseReference: trimmed(form.value.verseReference),
-      aboutTitle: trimmed(form.value.aboutTitle),
-      about: trimmed(form.value.about),
-      closingTitle: trimmed(form.value.closingTitle),
-      closingBody: trimmed(form.value.closingBody),
-      // A stage with no name draws nothing on the page, so it is dropped
-      // rather than stored as an empty step.
-      path: form.value.path
-        .filter((step) => trimmed(step.stage))
-        .map((step) => ({ stage: trimmed(step.stage), note: trimmed(step.note) })),
-      // A row with no name renders nothing on the page, so it is dropped rather
-      // than stored as an empty card.
-      services: form.value.services
-        .filter((service) => trimmed(service.name))
-        .map((service) => ({
-          name: trimmed(service.name),
-          when: trimmed(service.when),
-          note: trimmed(service.note),
-        })),
-    }
-    await saveLanding(payload)
-    // Adopt what was actually stored, so trimming does not leave the form
-    // looking unsaved.
-    form.value = cloneLanding(payload)
-    toast.success('Public page saved')
-  } catch (error) {
-    console.error('Error saving landing settings:', error)
-    toast.error('Could not save. Please try again.')
-  } finally {
-    saving.value = false
-  }
-}
-
-const inputClass =
-  'w-full h-11 px-3 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary'
-const areaClass =
-  'w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary'
-const labelClass = 'block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1'
+const switchTrack = (on) => [
+  'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-40',
+  on ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600',
+]
+const switchKnob = (on) => [
+  'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
+  on ? 'translate-x-6' : 'translate-x-1',
+]
 </script>
 
 <template>
-  <section
-    class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden"
+  <SectionCard
+    :icon="Globe"
+    title="Public page"
+    subtitle="What a visitor sees at the site address, before signing in"
+    head-class="section-head"
   >
-    <div class="section-head flex items-start gap-3 px-4 py-4 border-b border-gray-100 dark:border-gray-700">
-      <div class="p-2 rounded-lg bg-primary/10 shrink-0">
-        <Globe class="h-5 w-5 text-primary dark:text-primary-light" />
-      </div>
-      <div class="min-w-0 flex-1">
-        <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Public page</h2>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-          What a visitor sees at the site address, before signing in
-        </p>
-      </div>
+    <template #actions>
       <a
         href="/"
         target="_blank"
         rel="noopener noreferrer"
-        class="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-600 px-3 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        class="inline-flex h-9 items-center gap-1.5 rounded-lg border border-gray-200 px-3 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
       >
         <ExternalLink class="h-3.5 w-3.5" />
         Preview
       </a>
-    </div>
+    </template>
 
-    <p v-if="!isAdmin" class="px-4 py-6 text-sm text-center text-gray-500 dark:text-gray-400">
+    <p v-if="!isAdmin" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
       Only administrators can change the public page.
     </p>
 
     <template v-else>
-      <!-- The guide, for anyone who skipped it or would rather be asked one
-           thing at a time than face this whole screen. It walks the same
-           fields and writes to the same place. -->
-      <div class="flex items-center gap-3 px-4 py-4 border-b border-gray-100 dark:border-gray-700">
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">Setup guide</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            The basics, one question at a time.
-          </p>
-        </div>
-        <RouterLink
-          to="/setup"
-          class="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary/10 px-3 text-xs font-semibold text-primary hover:bg-primary/20 dark:bg-primary-light/15 dark:text-primary-light transition-colors"
-        >
-          <Sparkles class="h-3.5 w-3.5" />
-          Start
-        </RouterLink>
-      </div>
-
-      <!-- What's coming up -->
-      <div class="flex items-center gap-3 px-4 py-4 border-b border-gray-100 dark:border-gray-700">
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">Show what's coming up</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            The next few gatherings from your calendar. Titles and times only — never where
-            they meet, and never one aimed at particular members.
-          </p>
-        </div>
-        <button
-          @click="toggleEvents"
-          :class="[
-            'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors',
-            form.showEvents !== false ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600',
-          ]"
-          role="switch"
-          :aria-checked="form.showEvents !== false"
-          aria-label="Show what's coming up"
-        >
-          <span
-            :class="[
-              'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
-              form.showEvents !== false ? 'translate-x-6' : 'translate-x-1',
-            ]"
-          ></span>
-        </button>
-      </div>
-
-      <!-- Birthdays. Its own switch, under the one it depends on, and worded
-           so nobody turns it on without knowing what leaves the building. -->
-      <div class="flex items-center gap-3 px-4 py-4 border-b border-gray-100 dark:border-gray-700">
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">Include birthdays</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            Adds members' birthdays to that list. Only the name they are called by and the
-            day — never a surname, never the year, so never an age. It is still personal
-            information on a public page, so it is off unless you turn it on.
-          </p>
-        </div>
-        <button
-          @click="toggleBirthdays"
-          :disabled="form.showEvents === false"
-          :class="[
-            'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-40',
-            form.showBirthdays === true ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600',
-          ]"
-          role="switch"
-          :aria-checked="form.showBirthdays === true"
-          aria-label="Include birthdays"
-        >
-          <span
-            :class="[
-              'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
-              form.showBirthdays === true ? 'translate-x-6' : 'translate-x-1',
-            ]"
-          ></span>
-        </button>
-      </div>
-
-      <div class="p-4 space-y-5">
+      <div class="border-b border-gray-100 p-4 dark:border-gray-700">
         <div
-          class="flex items-start gap-2 rounded-lg bg-gray-50 dark:bg-gray-900/40 p-3 text-xs text-gray-600 dark:text-gray-300"
+          class="flex items-start gap-2 rounded-lg bg-gray-50 p-3 text-xs text-gray-600 dark:bg-gray-900/40 dark:text-gray-300"
         >
-          <Info class="h-4 w-4 shrink-0 text-gray-400 mt-0.5" />
+          <Info class="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
           <p>
             Anything left empty is hidden on the page rather than shown blank — so a
-            section only appears once you have something to put in it. The church name,
-            branch and logo come from the Church tab.
+            section only appears once you have something to put in it. The church's name,
+            logo, mission and address come from Church details.
           </p>
         </div>
+      </div>
 
-        <!-- Hero -->
-        <div>
-          <label :class="labelClass">Hero photo</label>
-          <div
-            class="relative overflow-hidden rounded-lg border border-gray-200 dark:border-gray-600"
-          >
-            <img :src="heroPreview" alt="" class="h-32 w-full object-cover" />
-            <div class="absolute inset-0 bg-gray-900/35"></div>
-            <div class="absolute inset-0 flex items-center justify-center gap-2">
-              <input
-                ref="heroInput"
-                type="file"
-                accept="image/*"
-                class="hidden"
-                @change="handleHeroFile"
-              />
-              <button
-                @click="heroInput?.click()"
-                :disabled="uploading"
-                class="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white/95 px-3 text-xs font-semibold text-gray-900 disabled:opacity-60"
-              >
-                <Loader2 v-if="uploading" class="h-3.5 w-3.5 animate-spin" />
-                <ImagePlus v-else class="h-3.5 w-3.5" />
-                Change
-              </button>
-              <button
-                v-if="form.heroImage"
-                @click="resetHero"
-                :disabled="uploading"
-                class="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white/95 px-3 text-xs font-semibold text-gray-900 disabled:opacity-60"
-              >
-                <RotateCcw class="h-3.5 w-3.5" />
-                Reset
-              </button>
-            </div>
-          </div>
-          <p class="mt-1 text-[11px] text-gray-400">
-            Saved as soon as you pick it. Drawn as the arched window beside the
-            welcome text — a tall, upright photo suits it best.
-          </p>
-        </div>
-
-        <!-- Gallery albums -->
-        <div>
-          <div class="flex items-center gap-3 mb-2">
-            <div class="min-w-0 flex-1">
-              <p class="text-xs font-semibold text-gray-700 dark:text-gray-200">
-                Photos from the gallery
-              </p>
-              <p class="text-[11px] text-gray-400">
-                They fill the "Life together" strip near the foot of the page
-              </p>
-            </div>
-            <button
-              @click="togglePhotos"
-              :class="[
-                'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors',
-                form.showPhotos !== false ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600',
-              ]"
-              role="switch"
-              :aria-checked="form.showPhotos !== false"
-              aria-label="Show photos from the gallery"
-            >
-              <span
-                :class="[
-                  'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
-                  form.showPhotos !== false ? 'translate-x-6' : 'translate-x-1',
-                ]"
-              ></span>
-            </button>
-          </div>
-
-          <template v-if="form.showPhotos !== false">
-            <div
-              class="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 p-3 text-xs text-amber-800 dark:text-amber-200 mb-3"
-            >
-              <ShieldAlert class="h-4 w-4 shrink-0 mt-0.5" />
-              <p>
-                Every album is on the open internet, faces included, and a new one goes up
-                as soon as it is created. Untick any that should stay behind the sign-in.
-              </p>
-            </div>
-
-            <div v-if="picking && albums.length" class="flex items-center gap-1 mb-2">
-              <button
-                @click="shareAllAlbums"
-                class="h-9 rounded-lg px-2.5 text-xs font-semibold text-primary dark:text-primary-light hover:bg-primary/10 transition-colors"
-              >
-                Share all
-              </button>
-              <button
-                @click="shareNoAlbums"
-                class="h-9 rounded-lg px-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                Hide all
-              </button>
-            </div>
-
-            <!-- Album covers are base64 inside the documents, so the list is only
-                 fetched once somebody actually wants to pick from it. -->
-            <button
-              v-if="!picking"
-              @click="openPicker"
-              class="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:border-primary hover:text-primary dark:hover:text-primary-light transition-colors"
-            >
-              <ImageIcon class="h-4 w-4" />
-              {{
-                hiddenAlbums.length
-                  ? `Choose albums (${hiddenAlbums.length} held back)`
-                  : 'Choose albums'
-              }}
-            </button>
-
-            <p v-else-if="loadingAlbums" class="flex items-center gap-2 text-xs text-gray-400">
-              <Loader2 class="h-3.5 w-3.5 animate-spin" />
-              Loading albums…
-            </p>
-
-            <div v-else-if="albums.length" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <button
-                v-for="album in albums"
-                :key="album.id"
-                @click="toggleAlbum(album.id)"
-                :class="[
-                  'relative overflow-hidden rounded-lg border text-left transition-colors',
-                  isShared(album.id)
-                    ? 'border-primary ring-1 ring-primary'
-                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500',
-                ]"
-                :aria-pressed="isShared(album.id)"
-              >
-                <div class="aspect-4/3 w-full bg-gray-100 dark:bg-gray-900">
-                  <img
-                    v-if="album.coverUrl"
-                    :src="album.coverUrl"
-                    alt=""
-                    :class="[
-                      'h-full w-full object-cover transition-opacity',
-                      isShared(album.id) ? '' : 'opacity-40 grayscale',
-                    ]"
-                  />
-                  <div v-else class="flex h-full w-full items-center justify-center">
-                    <ImageIcon class="h-6 w-6 text-gray-300 dark:text-gray-600" />
-                  </div>
-                </div>
-                <div class="p-2">
-                  <p class="truncate text-xs font-semibold text-gray-900 dark:text-white">
-                    {{ album.title || 'Untitled' }}
-                  </p>
-                  <p class="truncate text-[11px] text-gray-400">
-                    {{ [album.category, album.date].filter(Boolean).join(' · ') }}
-                  </p>
-                </div>
-                <div
-                  v-if="isShared(album.id)"
-                  class="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow"
-                >
-                  <Check class="h-3.5 w-3.5" />
-                </div>
-                <div
-                  v-else
-                  class="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-gray-900/70 text-white shadow"
-                >
-                  <EyeOff class="h-3.5 w-3.5" />
-                </div>
-              </button>
-            </div>
-            <p v-else class="text-xs italic text-gray-400">No albums in the gallery yet.</p>
-
-            <p v-if="picking && albums.length" class="mt-2 text-[11px] text-gray-400">
-              {{ sharedCount }} of {{ albums.length }} on the public page · saved with the
-              button at the bottom
-            </p>
-          </template>
-        </div>
-
-        <!-- Welcome. The headline itself is not editable: it greets the
-             reader by name — ate, kuya, nanay, or their own once they are
-             signed in — and rolls through the rest while they read. -->
-        <div>
-          <label :class="labelClass">Welcome paragraph</label>
-          <textarea v-model="form.intro" rows="3" :class="areaClass"></textarea>
-          <p class="mt-1 text-[11px] text-gray-400">
-            The line under the greeting, at the top of the public page
-          </p>
-        </div>
-
-        <div class="grid gap-3 sm:grid-cols-2">
-          <div>
-            <label :class="labelClass">After the name</label>
-            <input v-model="form.welcomeLine" type="text" :class="inputClass" />
-            <p class="mt-1 text-[11px] text-gray-400">Shown to a visitor</p>
-          </div>
-          <div>
-            <label :class="labelClass">After a member's name</label>
-            <input v-model="form.welcomeLineMember" type="text" :class="inputClass" />
-            <p class="mt-1 text-[11px] text-gray-400">Shown once they have signed in</p>
-          </div>
-        </div>
-
-        <div>
-          <label :class="labelClass">Names the greeting rolls through</label>
-          <textarea v-model="termsText" rows="4" :class="areaClass"></textarea>
-          <p class="mt-1 text-[11px] text-gray-400">
-            Separated by commas. Shuffled on every visit, and replaced by a member's
-            own name once they sign in — so leave out anything you would not say to
-            a stranger at the door. Empty means no name at all.
-          </p>
-        </div>
-
-        <!-- Verse -->
-        <div>
-          <label :class="labelClass">Verse</label>
-          <textarea v-model="form.verse" rows="3" :class="areaClass"></textarea>
-          <p class="mt-1 text-[11px] text-gray-400">
-            The band under the welcome. Leave empty to drop it
-          </p>
-        </div>
-
-        <div>
-          <label :class="labelClass">Verse reference</label>
-          <input
-            v-model="form.verseReference"
-            type="text"
-            placeholder="Matthew 18:20"
-            :class="inputClass"
-          />
-        </div>
-
-<!-- What the church is, rather than what this page is, is edited with
-             the church and drawn here. One pointer rather than a second set of
-             fields: two screens editing one mission is how they drift. -->
-        <RouterLink
-          :to="{ query: { section: 'church' } }"
-          class="flex items-center gap-3 rounded-lg border border-dashed border-gray-300 px-3 py-3 transition-colors hover:border-primary dark:border-gray-600"
-        >
-          <Building2 class="h-5 w-5 shrink-0 text-primary dark:text-primary-light" />
-          <span class="min-w-0 flex-1 text-xs font-semibold text-gray-700 dark:text-gray-200">
-            Mission, vision, core values and contacts
-          </span>
-          <ExternalLink class="h-4 w-4 shrink-0 text-gray-400" />
-        </RouterLink>
-
-        <!-- Discipleship process -->
-        <div>
-          <div class="mb-2 flex items-center justify-between gap-2">
-            <div class="min-w-0">
-              <p class="text-xs font-semibold text-gray-700 dark:text-gray-200">
-                Discipleship process
-              </p>
-              <p class="text-[11px] text-gray-400">
-                Punla, Puno, Prutas — the stages, in order
-              </p>
-            </div>
-            <button
-              @click="addStage"
-              class="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg bg-primary/10 px-2.5 text-xs font-semibold text-primary dark:text-primary-light"
-            >
-              <Plus class="h-3.5 w-3.5" />
-              Add
-            </button>
-          </div>
-
-          <div v-if="!form.path.length" class="text-[11px] text-gray-400">
-            No stages — the section is hidden.
-          </div>
-
-          <div
-            v-for="(step, index) in form.path"
-            :key="'stage-' + index"
-            class="mb-2 rounded-lg border border-gray-200 p-3 dark:border-gray-700"
-          >
-            <div class="flex items-center gap-2">
-              <input
-                v-model="step.stage"
-                type="text"
-                placeholder="Punla"
-                :class="inputClass"
-              />
-              <button
-                @click="removeStage(index)"
-                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                aria-label="Remove stage"
-              >
-                <Trash2 class="h-4 w-4" />
-              </button>
-            </div>
+      <!-- Saves on pick: there is nothing to type alongside a photograph, so it
+           does not belong behind an editor you have to finish. -->
+      <div class="border-b border-gray-100 p-4 dark:border-gray-700">
+        <h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+          Hero photo
+        </h3>
+        <div class="relative overflow-hidden rounded-lg border border-gray-200 dark:border-gray-600">
+          <img :src="heroPreview" alt="" class="h-32 w-full object-cover" />
+          <div class="absolute inset-0 bg-gray-900/35"></div>
+          <div class="absolute inset-0 flex items-center justify-center gap-2">
             <input
-              v-model="step.note"
-              type="text"
-              placeholder="Pagsisimula kay Kristo."
-              :class="[inputClass, 'mt-2']"
+              ref="heroInput"
+              type="file"
+              accept="image/*"
+              class="hidden"
+              @change="handleHeroFile"
             />
+            <button
+              type="button"
+              @click="heroInput?.click()"
+              :disabled="uploading"
+              class="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white/95 px-3 text-xs font-semibold text-gray-900 disabled:opacity-60"
+            >
+              <Loader2 v-if="uploading" class="h-3.5 w-3.5 animate-spin" />
+              <ImagePlus v-else class="h-3.5 w-3.5" />
+              Change
+            </button>
+            <button
+              v-if="landing.heroImage"
+              type="button"
+              @click="resetHero"
+              :disabled="uploading"
+              class="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white/95 px-3 text-xs font-semibold text-gray-900 disabled:opacity-60"
+            >
+              <RotateCcw class="h-3.5 w-3.5" />
+              Reset
+            </button>
           </div>
         </div>
+        <p class="mt-1 text-[11px] text-gray-400">
+          Saved as soon as you pick it. Drawn as the arched window beside the welcome
+          text — a tall, upright photo suits it best.
+        </p>
+      </div>
 
-        <!-- The last word on the page -->
-        <div>
-          <label :class="labelClass">Closing invitation</label>
-          <input v-model="form.closingTitle" type="text" :class="inputClass" />
-          <textarea
-            v-model="form.closingBody"
-            rows="2"
-            :class="[areaClass, 'mt-2']"
-          ></textarea>
+      <!-- What the page says, group by group. -->
+      <div
+        v-for="group in GROUPS"
+        :key="group.key"
+        class="border-b border-gray-100 p-4 dark:border-gray-700"
+      >
+        <div class="mb-2 flex items-baseline justify-between gap-2">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            {{ group.label }}
+          </h3>
+          <button
+            type="button"
+            @click="openEditor(group.step)"
+            :aria-label="`Edit ${group.label.toLowerCase()}`"
+            class="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 dark:text-primary-light dark:hover:bg-primary-light/15"
+          >
+            <Pencil class="h-3.5 w-3.5" />
+            Edit
+          </button>
         </div>
 
-        <!-- Services -->
-        <div>
-          <div class="flex items-center justify-between gap-2 mb-2">
-            <div class="min-w-0">
-              <p class="text-xs font-semibold text-gray-700 dark:text-gray-200">Service times</p>
-              <p class="text-[11px] text-gray-400">
-                Listed in this order. With none added, the section is hidden.
+        <dl class="space-y-3">
+          <div v-for="field in group.fields" :key="field.key">
+            <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ field.label }}</dt>
+
+            <!-- A list field: its rows, first line loudest. -->
+            <template v-if="field.type === 'list'">
+              <dd v-if="field.items.length" class="mt-1.5 space-y-1.5">
+                <div
+                  v-for="(entry, index) in field.items"
+                  :key="index"
+                  class="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-700/40"
+                >
+                  <p
+                    v-for="(sub, subIndex) in field.item"
+                    :key="sub.key"
+                    v-show="entry[sub.key]"
+                    :class="
+                      subIndex === 0
+                        ? 'text-sm font-medium text-gray-900 dark:text-white'
+                        : 'text-xs text-gray-500 dark:text-gray-400'
+                    "
+                  >
+                    {{ entry[sub.key] }}
+                  </p>
+                </div>
+              </dd>
+              <dd v-else class="mt-0.5 text-sm text-gray-400 dark:text-gray-500">Not set</dd>
+            </template>
+
+            <dd
+              v-else
+              :class="[
+                'mt-0.5 text-sm',
+                field.wrap ? 'whitespace-pre-line' : 'truncate',
+                field.display ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500',
+              ]"
+            >
+              {{ field.display || 'Not set' }}
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      <!-- What the page draws for itself, from elsewhere in the app. Nothing
+           here is typed, so nothing here waits for a Save. -->
+      <div class="p-4">
+        <h3 class="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+          Drawn from the app
+        </h3>
+
+        <div class="space-y-4">
+          <div class="flex items-center gap-3">
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium text-gray-900 dark:text-white">Show what's coming up</p>
+              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                The next few gatherings from your calendar. Titles and times only — never
+                where they meet, and never one aimed at particular members.
               </p>
             </div>
             <button
-              @click="addService"
-              class="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-white transition-transform active:scale-95"
+              type="button"
+              @click="toggleEvents"
+              :class="switchTrack(landing.showEvents !== false)"
+              role="switch"
+              :aria-checked="landing.showEvents !== false"
+              aria-label="Show what's coming up"
             >
-              <Plus class="h-4 w-4" />
-              Add
+              <span :class="switchKnob(landing.showEvents !== false)"></span>
             </button>
           </div>
 
-          <div v-if="suggestions.length" class="mb-2 flex flex-wrap gap-1.5">
+          <!-- Its own switch, under the one it depends on. -->
+          <div class="flex items-center gap-3">
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium text-gray-900 dark:text-white">Include birthdays</p>
+              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                The name a member is called by and the day — never a surname, never a
+                year. Off unless you turn it on.
+              </p>
+            </div>
             <button
-              v-for="suggestion in suggestions"
-              :key="suggestion.id"
-              @click="addSuggestion(suggestion)"
-              class="inline-flex items-center gap-1.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600 px-3 py-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300 hover:border-primary hover:text-primary dark:hover:text-primary-light transition-colors"
+              type="button"
+              @click="toggleBirthdays"
+              :disabled="landing.showEvents === false"
+              :class="switchTrack(landing.showBirthdays === true)"
+              role="switch"
+              :aria-checked="landing.showBirthdays === true"
+              aria-label="Include birthdays"
             >
-              <Plus class="h-3 w-3" />
-              {{ suggestion.name }}
-              <span class="font-normal text-gray-400">{{ suggestion.when }}</span>
+              <span :class="switchKnob(landing.showBirthdays === true)"></span>
             </button>
           </div>
 
-          <div v-if="form.services.length" class="space-y-2">
-            <div
-              v-for="(service, index) in form.services"
-              :key="`service-${index}`"
-              class="rounded-lg border border-gray-200 dark:border-gray-600 p-3 space-y-2"
-            >
-              <div class="flex items-center gap-2">
-                <input
-                  v-model="service.name"
-                  type="text"
-                  placeholder="Sunday Worship"
-                  :class="[inputClass, 'flex-1 min-w-0']"
-                />
+          <div>
+            <div class="mb-2 flex items-center gap-3">
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-medium text-gray-900 dark:text-white">
+                  Photos from the gallery
+                </p>
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  They fill the "Life together" strip near the foot of the page
+                </p>
+              </div>
+              <button
+                type="button"
+                @click="togglePhotos"
+                :class="switchTrack(landing.showPhotos !== false)"
+                role="switch"
+                :aria-checked="landing.showPhotos !== false"
+                aria-label="Show photos from the gallery"
+              >
+                <span :class="switchKnob(landing.showPhotos !== false)"></span>
+              </button>
+            </div>
+
+            <template v-if="landing.showPhotos !== false">
+              <div
+                class="mb-3 flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-200"
+              >
+                <ShieldAlert class="mt-0.5 h-4 w-4 shrink-0" />
+                <p>
+                  Every album is on the open internet, faces included, and a new one goes
+                  up as soon as it is created. Untick any that should stay behind the
+                  sign-in.
+                </p>
+              </div>
+
+              <div v-if="picking && albums.length" class="mb-2 flex items-center gap-1">
                 <button
-                  @click="removeService(index)"
-                  class="shrink-0 flex h-10 w-10 items-center justify-center rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                  :aria-label="`Remove service ${index + 1}`"
+                  type="button"
+                  @click="shareAllAlbums"
+                  class="h-9 rounded-lg px-2.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 dark:text-primary-light"
                 >
-                  <Trash2 class="h-4 w-4" />
+                  Share all
+                </button>
+                <button
+                  type="button"
+                  @click="shareNoAlbums"
+                  class="h-9 rounded-lg px-2.5 text-xs font-semibold text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                >
+                  Hide all
                 </button>
               </div>
-              <input
-                v-model="service.when"
-                type="text"
-                placeholder="Every Sunday, 9:00 AM"
-                :class="inputClass"
-              />
-              <input
-                v-model="service.note"
-                type="text"
-                placeholder="Optional note — e.g. Children's church runs alongside"
-                :class="inputClass"
-              />
-            </div>
+
+              <!-- Album covers are base64 inside the documents, so the list is
+                   only fetched once somebody actually wants to pick from it. -->
+              <button
+                v-if="!picking"
+                type="button"
+                @click="openPicker"
+                class="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 py-3 text-xs font-semibold text-gray-600 transition-colors hover:border-primary hover:text-primary dark:border-gray-600 dark:text-gray-300 dark:hover:text-primary-light"
+              >
+                <ImageIcon class="h-4 w-4" />
+                {{
+                  hiddenAlbums.length
+                    ? `Choose albums (${hiddenAlbums.length} held back)`
+                    : 'Choose albums'
+                }}
+              </button>
+
+              <p v-else-if="loadingAlbums" class="flex items-center gap-2 text-xs text-gray-400">
+                <Loader2 class="h-3.5 w-3.5 animate-spin" />
+                Loading albums…
+              </p>
+
+              <div v-else-if="albums.length" class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <button
+                  v-for="album in albums"
+                  :key="album.id"
+                  type="button"
+                  @click="toggleAlbum(album.id)"
+                  :class="[
+                    'relative overflow-hidden rounded-lg border text-left transition-colors',
+                    isShared(album.id)
+                      ? 'border-primary ring-1 ring-primary'
+                      : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500',
+                  ]"
+                  :aria-pressed="isShared(album.id)"
+                >
+                  <div class="aspect-4/3 w-full bg-gray-100 dark:bg-gray-900">
+                    <img
+                      v-if="album.coverUrl"
+                      :src="album.coverUrl"
+                      alt=""
+                      :class="[
+                        'h-full w-full object-cover transition-opacity',
+                        isShared(album.id) ? '' : 'opacity-40 grayscale',
+                      ]"
+                    />
+                    <div v-else class="flex h-full w-full items-center justify-center">
+                      <ImageIcon class="h-6 w-6 text-gray-300 dark:text-gray-600" />
+                    </div>
+                  </div>
+                  <div class="p-2">
+                    <p class="truncate text-xs font-semibold text-gray-900 dark:text-white">
+                      {{ album.title || 'Untitled' }}
+                    </p>
+                    <p class="truncate text-[11px] text-gray-400">
+                      {{ [album.category, album.date].filter(Boolean).join(' · ') }}
+                    </p>
+                  </div>
+                  <div
+                    v-if="isShared(album.id)"
+                    class="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow"
+                  >
+                    <Check class="h-3.5 w-3.5" />
+                  </div>
+                  <div
+                    v-else
+                    class="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-gray-900/70 text-white shadow"
+                  >
+                    <EyeOff class="h-3.5 w-3.5" />
+                  </div>
+                </button>
+              </div>
+              <p v-else class="text-xs italic text-gray-400">No albums in the gallery yet.</p>
+
+              <p v-if="picking && albums.length" class="mt-2 text-[11px] text-gray-400">
+                {{ sharedCount }} of {{ albums.length }} on the public page
+              </p>
+            </template>
           </div>
-          <p v-else class="text-xs italic text-gray-400">No service times added yet.</p>
         </div>
-
-        <!-- Who we are: this page's own section, heading and words together. -->
-        <div>
-          <label :class="labelClass">About heading</label>
-          <input v-model="form.aboutTitle" type="text" placeholder="Who we are" :class="inputClass" />
-        </div>
-
-        <div>
-          <label :class="labelClass">About the church</label>
-          <textarea
-            v-model="form.about"
-            rows="5"
-            placeholder="A few sentences a visitor would want to read"
-            :class="areaClass"
-          ></textarea>
-        </div>
-
-        <button
-          @click="handleSave"
-          :disabled="!dirty || saving"
-          class="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-white text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50"
-        >
-          <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
-          Save
-        </button>
       </div>
     </template>
-  </section>
+
+    <LandingEditSheet
+      ref="sheet"
+      :show="showEditor"
+      :landing="landing"
+      :start-step="editorStep"
+      :busy="saving"
+      @close="showEditor = false"
+      @save="saveEdit"
+    />
+  </SectionCard>
 </template>

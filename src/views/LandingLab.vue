@@ -17,7 +17,8 @@ import {
   X,
 } from '../icons'
 import LabPreview from '../components/landinglab/LabPreview.vue'
-import { FONTS, HERO_STYLES, PALETTE, PAPERS, SECTION_TYPES, STOCK } from '../data/landingLabMock'
+import { FONTS, HERO_STYLES, PALETTE, PAPERS, STOCK } from '../data/landingLabMock'
+import { SECTION_TYPES } from '../data/landingSchema'
 import { addSection, model, moveSection, removeSection, resetModel } from '../composables/useLandingLab'
 
 // PROTOTYPE — /landing-lab. The page builder.
