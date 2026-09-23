@@ -12,7 +12,7 @@ import {
   X,
 } from '../icons'
 import { BIBLE_BOOKS } from '../data/bibleBooks'
-import { fold, foldText, getBook, searchBooks } from '../api/bibleService'
+import { fold, foldText, getBook, loadRemoteChapter, searchBooks } from '../api/bibleService'
 import { parseReference, formatReference, bookName } from '../utils/bibleRef'
 import { useBiblePlace } from '../composables/useBiblePlace'
 import { useBibleVersion } from '../composables/useBibleVersion'
@@ -35,7 +35,7 @@ import { useScrollLock } from '../composables/useScrollLock'
 const route = useRoute()
 const router = useRouter()
 const { place, remember } = useBiblePlace()
-const { version, versionMeta, versions, setVersion } = useBibleVersion()
+const { version, versionMeta, isRemote, versions, setVersion } = useBibleVersion()
 
 const bookBySlug = new Map(BIBLE_BOOKS.map((b) => [b.slug, b]))
 
@@ -98,9 +98,16 @@ const goTo = (slug, chapter, { jump = false } = {}) => {
 
 /* ---------- the text ---------- */
 
-const chapters = ref([])
+// The verses on screen, filled by whichever of the two loaders below applies.
+// A translation in the app arrives a book at a time and a licensed one a
+// chapter at a time, so neither shape can be the one the reader renders.
+const pageVerses = ref([])
 const loading = ref(true)
 const error = ref('')
+
+// The publisher's notice, shown under the chapter. Only a licensed translation
+// carries one, and showing it is a condition of being allowed to show the text.
+const notice = ref(null)
 
 // Which verse to light up on arrival, when we got here from a reference or a
 // result rather than by turning a page.
@@ -109,28 +116,43 @@ const readerRef = ref(null)
 
 let loadToken = 0
 
-const loadCurrentBook = async () => {
-  const slug = current.value.slug
+const loadCurrentChapter = async () => {
+  const { slug, chapter } = current.value
   const token = ++loadToken
   loading.value = true
   error.value = ''
 
   try {
-    const book = await getBook(slug, version.value)
-    if (token !== loadToken) return // A faster tap overtook this one.
-    chapters.value = book.chapters
-  } catch {
+    if (isRemote.value) {
+      // Licensed text is fetched a chapter at a time and never stored, so
+      // turning a page here is a request where the app's own translations
+      // would already have the whole book in hand.
+      const page = await loadRemoteChapter(slug, chapter, version.value)
+      if (token !== loadToken) return // A faster tap overtook this one.
+      pageVerses.value = page.verses
+      notice.value = { copyright: page.copyright, link: page.link }
+    } else {
+      const book = await getBook(slug, version.value)
+      if (token !== loadToken) return
+      pageVerses.value = book.chapters.find((c) => c.chapter === chapter)?.verses || []
+      notice.value = null
+    }
+  } catch (problem) {
     if (token !== loadToken) return
-    chapters.value = []
-    error.value = 'Could not load ' + (nameOf(slug) || slug) + '. Check your connection.'
+    pageVerses.value = []
+    notice.value = null
+    // A licensed translation has real reasons to refuse — a rejected key, a
+    // quota spent — and saying "check your connection" over the top of one
+    // sends the operator to look at the wifi instead of at the message.
+    error.value = isRemote.value
+      ? problem?.message || 'Could not load that chapter.'
+      : 'Could not load ' + (nameOf(slug) || slug) + '. Check your connection.'
   } finally {
     if (token === loadToken) loading.value = false
   }
 }
 
-const verses = computed(
-  () => chapters.value.find((c) => c.chapter === current.value.chapter)?.verses || []
-)
+const verses = computed(() => pageVerses.value)
 
 let fadeTimer = null
 
@@ -160,7 +182,11 @@ const settle = async () => {
 // The chapter is fetched again when the translation changes: same place,
 // different words. Keeping the place translation-independent is what lets
 // somebody compare a verse by switching and switching back.
-watch([() => current.value.slug, version], loadCurrentBook, { immediate: true })
+watch(
+  [() => current.value.slug, () => current.value.chapter, version],
+  loadCurrentChapter,
+  { immediate: true }
+)
 
 watch(
   () => [current.value.slug, current.value.chapter].join(':'),
@@ -218,7 +244,7 @@ const chooseVersion = (id) => {
  */
 const languages = computed(() => {
   const groups = new Map()
-  versions.forEach((entry) => {
+  versions.value.forEach((entry) => {
     if (!groups.has(entry.language)) groups.set(entry.language, [])
     groups.get(entry.language).push(entry)
   })
@@ -309,13 +335,18 @@ const searchWholeBible = () =>
 // A change of translation re-runs it rather than clearing it: the words are
 // different, so the hits are different, and leaving the old ones up would
 // attribute Tagalog verses to the King James.
+//
+// A licensed translation cannot be searched by phrase at all: finding one means
+// reading every book, and what its licence withholds is precisely the right to
+// hold them. The box still takes a reference, which is answered from the table
+// in the bundle and so needs no network either way.
 watch([typed, () => current.value.slug, version], () => {
   clearTimeout(debounce)
   searchToken += 1
   searching.value = false
   progress.value = null
 
-  if (!searchable.value) {
+  if (!searchable.value || isRemote.value) {
     results.value = []
     truncated.value = false
     return
@@ -434,6 +465,25 @@ const showingResults = computed(() => searchable.value)
         <ChevronRight class="h-4 w-4 shrink-0 text-gray-400" />
       </button>
 
+      <!-- A licensed translation is read over the network and never held, so
+           there is nothing here to search through. Said plainly, with the way
+           to get an answer anyway, rather than leaving an empty list to look
+           like no matches. -->
+      <div
+        v-if="isRemote"
+        class="rounded-lg border border-dashed border-gray-300 px-4 py-6 text-center dark:border-gray-600"
+      >
+        <SearchX class="mx-auto h-5 w-5 text-gray-400" />
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          The {{ versionMeta.short }} cannot be searched by phrase — it is read
+          over the network rather than kept in the app.
+        </p>
+        <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+          A reference still works, and so does searching another translation.
+        </p>
+      </div>
+
+      <template v-else>
       <div class="mb-2 flex items-center justify-between gap-2">
         <p class="min-w-0 truncate text-[11px] font-medium text-gray-500 dark:text-gray-400">
           <template v-if="searching && progress">
@@ -496,6 +546,7 @@ const showingResults = computed(() => searchable.value)
           </button>
         </li>
       </ul>
+      </template>
     </div>
 
     <!-- The reader -->
@@ -515,7 +566,7 @@ const showingResults = computed(() => searchable.value)
       >
         <p class="text-sm text-gray-500 dark:text-gray-400">{{ error }}</p>
         <button
-          @click="loadCurrentBook"
+          @click="loadCurrentChapter"
           class="mt-2 text-xs font-semibold text-primary hover:underline dark:text-primary-light"
         >
           Try again
@@ -546,6 +597,24 @@ const showingResults = computed(() => searchable.value)
           </span>
           {{ verse.text }}
         </p>
+
+        <!-- The publisher's notice. Not a courtesy: both licences require it
+             wherever their text appears, and the link with it. -->
+        <footer
+          v-if="notice"
+          class="mt-6 border-t border-gray-200 pt-3 text-[10px] leading-relaxed text-gray-400 dark:border-gray-700 dark:text-gray-500"
+        >
+          {{ notice.copyright }}
+          <a
+            v-if="notice.link"
+            :href="notice.link"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="underline hover:text-gray-600 dark:hover:text-gray-300"
+          >
+            {{ notice.link.replace(/^https?:\/\//, '') }}
+          </a>
+        </footer>
       </article>
     </div>
 
@@ -744,11 +813,13 @@ const showingResults = computed(() => searchable.value)
               </button>
             </div>
 
-            <!-- Said once, quietly, where somebody choosing a Bible can see it:
-                 every translation here is free to reproduce, which is why they
-                 can be read with the wifi off and at no cost to the church. -->
+            <!-- Said once, quietly, where somebody choosing a Bible can see it.
+                 The difference between the two kinds is the one that will bite
+                 on a Sunday, so it is named before the choice rather than
+                 discovered when the hall wifi goes. -->
             <p class="px-3 pt-1 text-[10px] leading-relaxed text-gray-400 dark:text-gray-500">
-              Each one is stored in the app, so it reads with no connection.
+              A translation stored in the app reads with no connection. One read
+              over the network needs one, and cannot be searched by phrase.
             </p>
           </div>
         </div>

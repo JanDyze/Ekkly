@@ -11,6 +11,40 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.29.6] — 2026-09-23
+
+Groundwork for the two Bible translations that cannot ship inside the app. The
+ESV and the NIV are licensed per use and may not be stored, so they are fetched
+a chapter at a time from the publisher's own API and never written down.
+
+**Nothing changes for any church yet.** Neither translation appears unless a
+publisher key is set, and neither key may be set without a commercial licence
+Ekkly does not hold — see `.env.example` before enabling either.
+
+### Added
+
+- **`lib/bibleRemote.js`**, which knows the two licensed translations, what
+  environment each needs before it exists at all, and the copyright notice each
+  publisher requires under its text.
+- **A `scripture` action on `/api/song-lookup`**, sharing that route because
+  `api/` is at Vercel Hobby's twelve-function limit. The publisher key stays on
+  the server; `op: "available"` is how the app learns whether to offer these
+  translations at all, and answers with an empty list when no key is set.
+- **A per-chapter reader path.** A licensed passage is capped at four chapters
+  a request, because each chapter spends from a quota the whole deployment
+  shares.
+
+### Changed
+
+- **A translation's language is now declared, not inherited.**
+  `scripts/sync-bible.mjs` stops with a message rather than labelling the next
+  Bible through it with the last one's language — which would file an English
+  translation under a Tagalog heading with nothing to show for it.
+- **A saved translation preference is kept as written and checked when read.**
+  The licensed ones are announced by the server a moment after the saved choice
+  returns from Firestore, so validating on arrival discarded an "ESV" that was
+  about to become valid and silently handed the reader a different Bible.
+
 ## [0.29.5] — 2026-09-23
 
 The public page and the church's look are now read as records and changed in a

@@ -1,15 +1,24 @@
-// Looks a worship song up on the web and returns the details that surround it:
-// who wrote it, the CCLI number, the key it is usually played in, an official
-// video, and where the lyrics can be copied from under the church's licence.
+// Looking up the words a service needs from outside the church's own records.
 //
-// It deliberately never returns lyrics. Song texts are licensed material, and
-// the church already has the right way to get them — SongSelect for anything
-// current, Hymnary for the old hymns — so this fills in everything else and
-// hands the worship leader a link for the one field it will not touch.
+// Two actions, which share a route only because api/ is full at Vercel Hobby's
+// twelve functions (see CLAUDE.md) and a thirteenth file would fail the deploy:
+//
+//   (default)   a worship song: who wrote it, the CCLI number, the key it is
+//               usually played in, an official video, and where the lyrics can
+//               be copied from under the church's licence.
+//   scripture   a chapter of a licensed Bible translation, from the publisher's
+//               own API. See lib/bibleRemote.js — the key lives here rather
+//               than in the browser, and nothing is stored.
+//
+// The song lookup deliberately never returns lyrics. Song texts are licensed
+// material, and the church already has the right way to get them — SongSelect
+// for anything current, Hymnary for the old hymns — so this fills in everything
+// else and hands the worship leader a link for the one field it will not touch.
 
 import Anthropic from "@anthropic-ai/sdk";
 import { requireChurchUser } from "../lib/tenant.js";
 import { aiAccess, recordAiUse } from "../lib/platform/ai.js";
+import { configuredRemotes, fetchRemoteChapter } from "../lib/bibleRemote.js";
 
 // The model is the platform's choice (Console → AI), defaulting to Claude Opus
 // 5. Only models that take this web search tool version are offered for it.
@@ -54,6 +63,38 @@ function parseResult(text) {
   return JSON.parse(candidate);
 }
 
+/**
+ * A chapter of a licensed translation, or the list of which ones this
+ * deployment can serve at all.
+ *
+ * `op: "available"` is how the app learns whether to offer the ESV and the NIV
+ * in the first place: with no key set, the list is empty, the picker shows the
+ * three translations that ship in the app, and nothing here is ever reached.
+ */
+async function handleScripture(req, res) {
+  if (req.body?.op === "available") {
+    return res.status(200).json({ bibles: configuredRemotes() });
+  }
+
+  const version = String(req.body?.version || "").trim().toUpperCase();
+  const slug = String(req.body?.slug || "").trim();
+  const chapter = Number(req.body?.chapter);
+
+  if (!version || !slug) return res.status(400).json({ error: "No passage asked for" });
+
+  try {
+    const passage = await fetchRemoteChapter(version, { slug, chapter });
+    // Licensed text must not be kept: no store, no shared CDN copy, and the
+    // service worker is told the same by leaving this out of its patterns.
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).json(passage);
+  } catch (error) {
+    const status = error.status || 500;
+    if (status >= 500) console.error("scripture lookup failed", error);
+    return res.status(status).json({ error: error.message || "Could not load that chapter." });
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -66,6 +107,10 @@ export default async function handler(req, res) {
   // button is a `songs.manage` question, answered in the client.
   const caller = await requireChurchUser(req);
   if (caller.error) return res.status(caller.status).json({ error: caller.error });
+
+  // Scripture is not an AI call and is not billed as one, so it answers before
+  // the AI gate below rather than being made to pass through it.
+  if (req.body?.action === "scripture") return await handleScripture(req, res);
 
   const ai = await aiAccess(caller.church, "songLookup");
   if (!ai.allowed) return res.status(403).json({ error: ai.reason });

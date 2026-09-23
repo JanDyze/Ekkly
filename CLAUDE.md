@@ -63,14 +63,17 @@ installable PWA.
   never name a face outside `BRAND_FONTS` (`lib/platformDefaults.js`). The
   platform and each church can change what the tokens are (`useBrandTheme`),
   so a hard-coded value is one that won't follow.
-- **Bible translations ship as files, not calls.** Each one is a folder of 66
-  JSON files under `public/bible/<id>/`, and `src/data/bibleBooks.js` is
-  generated from whatever is installed — neither is edited by hand. Add a
-  public-domain English one with `node scripts/fetch-bible.mjs <id>`; the
-  Tagalog comes from a scrape through `scripts/sync-bible.mjs`. Only
-  out-of-copyright translations can live here; a licensed one (NIV, ESV)
-  would have to be fetched from a paid API at runtime and would lose the
-  offline guarantee the projector depends on.
+- **Bible translations ship as files where they can.** Each out-of-copyright
+  one is a folder of 66 JSON files under `public/bible/<id>/`, and
+  `src/data/bibleBooks.js` is generated from whatever is installed — neither
+  is edited by hand. Add one with `node scripts/fetch-bible.mjs <id>`; the
+  Tagalog comes from a scrape through `scripts/sync-bible.mjs`.
+- **A licensed translation is a different thing** (`lib/bibleRemote.js`). The
+  ESV and NIV may not be stored, so they are fetched a chapter at a time
+  through the `scripture` action on `/api/song-lookup`, appear only where
+  their key is set, and give up offline reading and phrase search. Their
+  copyright notice must stay under the text. Check the licence before
+  enabling either — see `.env.example`.
 
 ## Adding a page
 

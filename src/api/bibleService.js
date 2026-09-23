@@ -1,5 +1,7 @@
 import { DEFAULT_BIBLE_VERSION } from '../data/bibleBooks'
 import { parseReference, formatReference } from '../utils/bibleRef'
+import { auth } from './firebase'
+import { churchHeaders } from './church'
 
 /**
  * Reading verses out of the translations shipped in public/bible/.
@@ -109,17 +111,161 @@ export const lookupReference = async (input, version = DEFAULT_BIBLE_VERSION) =>
   if (parsed.error) return { error: parsed.error }
 
   try {
-    const passage = await lookupPassage(parsed.ref, version)
+    const passage = isRemoteVersion(version)
+      ? await lookupRemotePassage(parsed.ref, version)
+      : await lookupPassage(parsed.ref, version)
     return { ...passage, ref: parsed.ref }
   } catch (error) {
     return { error: error.message || 'Could not load that passage' }
   }
 }
 
+/**
+ * The same passage out of a licensed translation, a chapter per request.
+ *
+ * The span is capped because each chapter is a call against a quota the whole
+ * deployment shares, and because a reading nobody will finish is not worth
+ * spending it on. A run sheet wanting more than this can hold two items.
+ */
+const REMOTE_CHAPTER_SPAN = 4
+
+const lookupRemotePassage = async (ref, version) => {
+  const span = ref.endChapter - ref.startChapter + 1
+  if (span > REMOTE_CHAPTER_SPAN) {
+    throw new Error(`That is ${span} chapters. Ask for ${REMOTE_CHAPTER_SPAN} or fewer here.`)
+  }
+
+  const verses = []
+  let notice = null
+
+  for (let number = ref.startChapter; number <= ref.endChapter; number += 1) {
+    const page = await loadRemoteChapter(ref.slug, number, version)
+    notice = notice || { copyright: page.copyright, link: page.link }
+
+    // Only the ends of the range are bounded, the same as a translation on
+    // disk; a chapter in the middle of a reading comes whole.
+    const from = number === ref.startChapter && ref.startVerse != null ? ref.startVerse : 1
+    const to = number === ref.endChapter && ref.endVerse != null ? ref.endVerse : Infinity
+
+    page.verses.forEach((verse) => {
+      if (verse.verse >= from && verse.verse <= to) {
+        verses.push({ chapter: number, verse: verse.verse, text: verse.text })
+      }
+    })
+  }
+
+  if (!verses.length) throw new Error('That reference has no verses in it')
+
+  return { reference: formatReference(ref), version, verses, ...notice }
+}
+
 /** Drops every cached book, in every translation. Nothing needs this in normal
  *  use — switching translation keeps its cache — but a stale build served a
  *  revised file has nowhere else to be corrected from. */
-export const clearBibleCache = () => books.clear()
+export const clearBibleCache = () => {
+  books.clear()
+  chapters.clear()
+}
+
+/* ---------- translations that are not in the app ---------- */
+
+/**
+ * The ESV and the NIV cannot ship inside the app: both are licensed per use and
+ * neither may be stored. They are fetched a chapter at a time through
+ * /api/song-lookup, which holds the publisher's key server-side.
+ *
+ * Everything about them is worse than a translation on disk — no offline, no
+ * whole-Bible search, a quota shared by every church on the deployment — so
+ * they are offered only where a key has actually been set, and the reader says
+ * plainly which kind it is showing.
+ */
+const remoteIndex = { pending: null, list: [] }
+
+/**
+ * The route is church-scoped and refuses a caller who is not signed in to one,
+ * so both the account's token and the church go with every request — the same
+ * pair songLookupService sends to the same route.
+ */
+const authHeaders = async () => {
+  const token = await auth.currentUser?.getIdToken()
+  if (!token) throw new Error('Sign in required')
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`,
+    ...churchHeaders(),
+  }
+}
+
+/**
+ * Which licensed translations this deployment can serve, asked once.
+ *
+ * An empty list is the normal answer and the quiet one: with no key set the
+ * picker shows the three translations that ship in the app and nothing here is
+ * ever reached again.
+ */
+export const listRemoteBibles = async () => {
+  if (remoteIndex.pending) return remoteIndex.pending
+
+  remoteIndex.pending = authHeaders()
+    .then((headers) =>
+      fetch('/api/song-lookup', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action: 'scripture', op: 'available' }),
+      })
+    )
+    .then((response) => (response.ok ? response.json() : { bibles: [] }))
+    .then((data) => {
+      remoteIndex.list = Array.isArray(data.bibles) ? data.bibles : []
+      return remoteIndex.list
+    })
+    .catch(() => {
+      // Not being able to ask is the same as there being none: the app still
+      // has three Bibles and no reason to say anything about it.
+      remoteIndex.pending = null
+      return []
+    })
+
+  return remoteIndex.pending
+}
+
+/** Whether an id names a licensed translation rather than one on disk. */
+export const isRemoteVersion = (version) => remoteIndex.list.some((b) => b.id === version)
+
+/** The licensed translation's row, for its name and its copyright notice. */
+export const remoteBible = (version) => remoteIndex.list.find((b) => b.id === version) || null
+
+/** "<version>:<slug>:<chapter>" -> Promise<{verses, copyright}>, for this tab
+ *  and this sitting only. Held in memory so that paging back to the chapter you
+ *  just read does not spend another request against the quota — never written
+ *  to storage or to the service worker's cache, which both licences forbid. */
+const chapters = new Map()
+
+export const loadRemoteChapter = (slug, chapter, version) => {
+  const key = `${version}:${slug}:${chapter}`
+  if (chapters.has(key)) return chapters.get(key)
+
+  const pending = authHeaders()
+    .then((headers) =>
+      fetch('/api/song-lookup', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action: 'scripture', version, slug, chapter }),
+      })
+    )
+    .then(async (response) => {
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error || 'Could not load that chapter.')
+      return data
+    })
+    .catch((error) => {
+      chapters.delete(key)
+      throw error
+    })
+
+  chapters.set(key, pending)
+  return pending
+}
 
 /**
  * One book, whole, off the same cache the reference lookup fills.

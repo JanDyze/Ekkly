@@ -77,11 +77,31 @@ const books = index.books.map(({ book, testament, chapters, verses }) => {
 /**
  * How a translation names itself in the picker. The scrape carries its code
  * and nothing else, so the readable part lives here.
+ *
+ * The language is part of it because the picker groups by language, and this
+ * script is the one that scrapes — the next translation through it may well
+ * not be Tagalog. An unknown code stops here rather than being labelled with
+ * the last one's language, which would put an English Bible under a Tagalog
+ * heading and give no sign anything was wrong.
  */
 const LABELS = {
-  MBBTAG: { name: 'Magandang Balita Biblia', short: 'MBBTAG', note: 'Tagalog, 2005 edition' },
+  MBBTAG: {
+    name: 'Magandang Balita Biblia',
+    short: 'MBBTAG',
+    note: 'Tagalog, 2005 edition',
+    language: 'Tagalog',
+    languageCode: 'tl',
+  },
 }
-const label = LABELS[VERSION] || { name: VERSION, short: VERSION, note: '' }
+
+const label = LABELS[VERSION]
+if (!label) {
+  console.error(
+    `No label for ${VERSION}. Add one to LABELS in scripts/sync-bible.mjs — the picker ` +
+      `needs a readable name and a language, and the scrape carries neither.`
+  )
+  process.exit(1)
+}
 
 // A per-version manifest, so the app can tell which translations are installed
 // without probing for files.
@@ -92,8 +112,8 @@ writeFileSync(
     name: label.name,
     short: label.short,
     note: label.note,
-    language: 'Tagalog',
-    languageCode: 'tl',
+    language: label.language,
+    languageCode: label.languageCode,
     book_count: books.length,
     verse_count: index.verse_count,
     books,
