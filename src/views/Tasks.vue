@@ -238,7 +238,7 @@ const confirmDelete = async () => {
     <TaskQuickAdd v-if="canEdit" @add="handleQuickAdd" />
 
     <div class="relative flex flex-1 overflow-hidden">
-      <div class="flex-1 overflow-y-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <div class="flex-1 overflow-y-auto pb-bar! rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
         <div v-if="loading" class="p-8 text-center text-gray-500 dark:text-gray-400">
           Loading tasks...
         </div>

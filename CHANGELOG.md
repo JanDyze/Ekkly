@@ -11,6 +11,38 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.29.3] — 2026-09-23
+
+The bottom bar, and the room the pages leave for it.
+
+### Added
+
+- **The app drawer is a place you can link to.** It opens as `?apps` over
+  whatever page you were on, so reloading lands back in it and the phone's
+  Back button closes it instead of leaving the page.
+- **Tapping an app in the drawer chooses it rather than jumping to it.** A
+  panel under the grid says what you picked and takes you there; tapping the
+  same app again goes straight away. A drawer that full was easy to mis-tap.
+- The bar carries Ekkly's round window rather than the arch, and the chosen
+  app's artwork replays as the choice moves.
+- `scripts/seed-attendance.mjs`: a year of mock Sunday counts for trying
+  Attendance and the dashboard against real history. Prints what it would
+  write unless `--write`, never covers a real count, marks everything
+  `mock: true` and can take it all back out again.
+
+### Changed
+
+- **Tapping a tab answers at once** — lit, playing, with the pill on its way —
+  rather than waiting for the page's code to arrive over a slow connection.
+- Every page that scrolls now leaves room for the bar, so the last row clears
+  it instead of sitting behind it.
+- The sidebar's app tiles and the drawer's share one piece of artwork.
+
+### Removed
+
+- The "test · church · front door" badge that sat in the corner of every test
+  address.
+
 ## [0.29.2] — 2026-09-23
 
 A pass over the screens a church spends its week in: People, taking

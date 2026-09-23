@@ -340,7 +340,7 @@ const handleCancelMinute = () => {
            padding the page on mobile, and a rounded border against the screen
            edge reads as a mistake. -->
       <div
-        class="flex-1 overflow-y-auto bg-white dark:bg-gray-800 sm:rounded-lg sm:border sm:border-gray-200 sm:dark:border-gray-700"
+        class="flex-1 overflow-y-auto pb-bar! bg-white dark:bg-gray-800 sm:rounded-lg sm:border sm:border-gray-200 sm:dark:border-gray-700"
       >
         <div v-if="loading" class="divide-y divide-gray-100 dark:divide-gray-700/60">
           <div v-for="i in 8" :key="`skeleton-${i}`" class="flex items-center gap-4 p-3 sm:p-4">

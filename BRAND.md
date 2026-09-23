@@ -193,6 +193,7 @@ A call to action is the flat accent at the radius above. A heading is ink.
 | | |
 |---|---|
 | [public/ekkly-mark.svg](public/ekkly-mark.svg) | The mark |
+| [public/ekkly-mark-round.svg](public/ekkly-mark-round.svg) | The mark as a round window, for the app's bottom bar only. Keep its panes in step with the arch |
 | [brand/ekkly-logo.png](brand/ekkly-logo.png) | What it was traced from |
 | [brand/ekkly/make-app-icons.mjs](brand/ekkly/make-app-icons.mjs) | Draws the app artwork |
 | [brand/ekkly/build-qr.mjs](brand/ekkly/build-qr.mjs) | The branded QR card in [public/brand-qr/](public/brand-qr/) |

@@ -310,7 +310,7 @@ const reachDelta = computed(() => {
 </script>
 
 <template>
-  <div class="h-full overflow-y-auto">
+  <div class="h-full overflow-y-auto pb-bar!">
     <div class="flex flex-col gap-4 pb-10">
       <!-- Headline metrics. Each is a rate or a window, never an all-time total. -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">

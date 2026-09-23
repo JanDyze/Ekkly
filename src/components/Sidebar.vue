@@ -1,7 +1,7 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft, ChevronRight } from '../icons'
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { usePermissions } from '../composables/usePermissions'
 import { allowedGroups } from '../data/navigation'
 import { useAppSettings } from '../composables/useAppSettings'
@@ -50,6 +50,67 @@ const isActive = (path) => {
 const navigate = (path) => {
   router.push(path)
 }
+
+// The chosen row's colour is one block that slides between rows rather than a
+// background per row switching on and off, as the bottom bar's pill does: the
+// travel is what tells you which way you just moved. Only its top and height
+// are measured - its sides are the nav's own padding, so it follows the
+// sidebar minimising without being told.
+const navRef = ref(null)
+const rowEls = new Map()
+const setRowRef = (path, el) => {
+  if (el) rowEls.set(path, el)
+  else rowEls.delete(path)
+}
+
+// The row that is current, by the same longest-match rule as everywhere else,
+// so /members/12 lights People rather than nothing.
+const activePath = computed(() => {
+  const paths = navGroups.value.flatMap((group) => group.items.map((item) => item.path))
+  return paths.filter((path) => isActive(path)).sort((a, b) => b.length - a.length)[0] || null
+})
+
+const highlightY = ref(0)
+const highlightH = ref(0)
+const highlightShown = ref(false)
+// The first placement snaps: a block sliding down from the top on every load
+// would read as something still arriving.
+const highlightAnimates = ref(false)
+
+const placeHighlight = () => {
+  const el = activePath.value ? rowEls.get(activePath.value) : null
+  if (!el) {
+    // A page with no row here - the catalogue, a profile - so the block fades
+    // where it stands rather than sliding off to nowhere.
+    highlightShown.value = false
+    return
+  }
+  // offsetTop is measured against the nav, the nearest positioned ancestor.
+  highlightY.value = el.offsetTop
+  highlightH.value = el.offsetHeight
+  highlightShown.value = true
+}
+
+let resizeObserver = null
+
+onMounted(() => {
+  placeHighlight()
+  requestAnimationFrame(() => {
+    highlightAnimates.value = true
+  })
+  // The rows move when the group headings reflow or a church's apps change
+  // under it; whatever moves them changes the nav's size too.
+  if (typeof ResizeObserver !== 'undefined' && navRef.value) {
+    resizeObserver = new ResizeObserver(placeHighlight)
+    resizeObserver.observe(navRef.value)
+  }
+})
+
+onBeforeUnmount(() => resizeObserver?.disconnect())
+
+// navGroups is watched alongside the page because capabilities arrive after
+// the first render: a row appearing above shifts every row below it.
+watch([activePath, navGroups], () => nextTick(placeHighlight))
 </script>
 
 <template>
@@ -113,8 +174,25 @@ const navigate = (path) => {
       </button>
 
       <!-- Navigation -->
-      <nav class="flex-1 px-3 space-y-4">
-        <div v-for="group in navGroups" :key="group.key" class="space-y-1">
+      <nav ref="navRef" class="relative flex-1 px-3 space-y-4">
+        <!-- The sliding block behind the chosen row. One element for the whole
+             list, moved by transform so the slide runs on the compositor; its
+             sides are the nav's padding (inset-x-3), so only the vertical is
+             measured. -->
+        <span
+          class="side-highlight"
+          :class="{
+            'side-highlight-on': highlightShown,
+            'side-highlight-instant': !highlightAnimates,
+          }"
+          :style="{
+            transform: `translate3d(0, ${highlightY}px, 0)`,
+            height: `${highlightH}px`,
+          }"
+          aria-hidden="true"
+        />
+
+        <div v-for="group in navGroups" :key="group.key" class="space-y-0.5">
           <!-- Minimized: a hairline stands in for the heading, so the groups
                stay legible when the labels are gone. The two share one slot and
                cross-fade rather than swapping via v-if/v-else, so collapsing
@@ -142,11 +220,12 @@ const navigate = (path) => {
           <button
             v-for="item in group.items"
             :key="item.name"
+            :ref="(el) => setRowRef(item.path, el)"
             @click="navigate(item.path)"
             :class="[
-              'group flex items-center justify-center p-2.5 text-sm font-semibold rounded-xl w-full transition-all relative',
+              'group relative z-10 flex items-center justify-center px-2.5 py-1.5 text-sm font-semibold rounded-xl w-full transition-colors duration-300',
               isActive(item.path)
-                ? 'active text-white shadow-lg shadow-primary/20'
+                ? 'active text-white'
                 : 'text-gray-500 dark:text-slate-400 hover:text-primary dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5'
             ]"
             :title="isMinimized ? item.name : ''"
@@ -161,14 +240,25 @@ const navigate = (path) => {
                  bargain a phone home screen strikes: every icon keeps its own
                  plate and they sit happily on any wallpaper.
 
-                 Selected, the plate goes white and grows. White reads on any
-                 accent at all, so no church can pick a colour this breaks. -->
+                 The tile is one size in both states, 32px, and only the
+                 artwork inside it grows: a tile that grew made the chosen row
+                 taller than the rest and pushed everything under it down each
+                 time the page changed. The pop (app-tile-on) still says which
+                 one was just chosen.
+
+                 Selected, the plate turns to frosted glass - white
+                 at a fifth, with a paler rim. A solid white tile was a second
+                 shape fighting the row it sat on: a bright block on a coloured
+                 bar, with the artwork a third thing inside it. Held back to a
+                 wash, the accent still shows through, the tile reads as part
+                 of the row, and the artwork keeps a ground light enough to sit
+                 on whatever colour a church picked. -->
             <span
               :class="[
                 'app-tile grid shrink-0 place-items-center rounded-xl transition-all duration-300 ease-out',
                 isActive(item.path)
-                  ? 'app-tile-on h-11 w-11 bg-white shadow-sm'
-                  : 'h-9 w-9 bg-gray-100 dark:bg-white/10',
+                  ? 'app-tile-on h-8 w-8 bg-white/20 ring-1 ring-inset ring-white/30'
+                  : 'h-8 w-8 bg-gray-100 dark:bg-white/10',
                 isMinimized ? 'mr-0' : 'mr-3',
               ]"
             >
@@ -183,18 +273,20 @@ const navigate = (path) => {
                 :play="isActive(item.path) ? playTick : 0"
                 :class="[
                   'shrink-0 transition-all duration-300 ease-out',
-                  isActive(item.path) ? 'h-7 w-7' : 'h-5 w-5',
+                  isActive(item.path) ? 'h-6 w-6' : 'h-5 w-5',
                 ]"
               />
-              <!-- A line icon inherits the row's colour, and the row's colour
-                   is white when selected — which on a white plate would be
-                   nothing at all. It gets its own, from the accent token. -->
+              <!-- A line icon takes the row's own colour: white on the chosen
+                   row, which is what reads on the accent showing through the
+                   frosted tile. It used to be the accent itself, for a white
+                   tile that is no longer there - on this one it would be the
+                   accent drawn on the accent. -->
               <component
                 v-else
                 :is="item.icon"
                 :class="[
                   'shrink-0 transition-all duration-300 ease-out',
-                  isActive(item.path) ? 'h-6 w-6 text-primary' : 'h-5 w-5 text-gray-500',
+                  isActive(item.path) ? 'h-5 w-5 text-white' : 'h-5 w-5 text-gray-500',
                 ]"
               />
             </span>
@@ -216,14 +308,42 @@ nav button {
   background-color: transparent !important;
 }
 
-/* The accent tokens, not their values: a church's own colours (useBrandTheme)
-   have to reach the highlighted page in the sidebar like everywhere else. */
-nav button.active {
-  background-color: var(--color-primary) !important;
+/* The chosen row's colour, on the block that slides behind it rather than on
+   the row. The accent tokens, not their values: a church's own colours
+   (useBrandTheme) have to reach the highlighted page like everywhere else.
+
+   The same easing as the bottom bar's pill, overshooting a hair on the way in
+   so it lands rather than being dragged there. Its colour eases too, so
+   hovering the chosen row still darkens it the way it used to. */
+.side-highlight {
+  position: absolute;
+  top: 0;
+  left: 0.75rem;
+  right: 0.75rem;
+  border-radius: 0.75rem;
+  background-color: var(--color-primary);
+  box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--color-primary) 20%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.42s cubic-bezier(0.22, 1.1, 0.36, 1),
+    height 0.42s cubic-bezier(0.22, 1.1, 0.36, 1),
+    opacity 0.25s ease,
+    background-color 0.2s ease;
 }
 
-nav button.active:hover {
-  background-color: var(--color-primary-hover) !important;
+.side-highlight-on {
+  opacity: 1;
+}
+
+nav:has(button.active:hover) .side-highlight {
+  background-color: var(--color-primary-hover);
+}
+
+/* First paint, and any re-measure before the first frame: land on the row
+   rather than sliding to it from the top of the list. */
+.side-highlight-instant {
+  transition: none;
 }
 
 nav button:hover:not(.active) {
@@ -263,6 +383,10 @@ nav button:hover:not(.active) .app-tile {
 /* The same bargain the rest of the app strikes: anyone who has asked their
    system to stop animating gets the states without the movement. */
 @media (prefers-reduced-motion: reduce) {
+  .side-highlight {
+    transition: opacity 0.15s ease;
+  }
+
   .app-tile,
   .app-tile-on {
     animation: none;

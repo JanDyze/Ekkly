@@ -406,7 +406,7 @@ const copySundayLyrics = async (sunday) => {
       </div>
 
       <!-- pb-20 keeps the last row clear of the floating button. -->
-      <div class="custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto pb-20">
+      <div class="custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto pb-bar! pb-20">
         <!-- ============ Search results, across every month ============ -->
         <template v-if="searching">
           <div v-if="!resultCount" class="px-6 py-16 text-center">

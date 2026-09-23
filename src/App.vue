@@ -12,9 +12,7 @@ import WhatsNewModal from './components/common/WhatsNewModal.vue'
 import InstallPrompt from './components/common/InstallPrompt.vue'
 import RouteTransition from './components/common/RouteTransition.vue'
 import { getChurchId } from './api/church'
-import { canSwitchChurchHere, devChurchLink } from './api/churchService'
 
-const onTestAddress = canSwitchChurchHere()
 const devChurchId = getChurchId()
 
 const { isTransitioning, isDark, transitionOrigin } = useTheme()
@@ -114,19 +112,6 @@ onUnmounted(() => {
          greet someone who has never used it with "the app you have been using". -->
     <WhatsNewModal v-if="devChurchId" />
 
-    <!-- Test addresses only (localhost, *.vercel.app): which church this tab is
-         serving, and the way back to the front door. Every church shares the
-         one address there, so without this nothing on screen says which one
-         you are in. Never shown on a church's real address. -->
-    <a
-      v-if="onTestAddress && devChurchId"
-      :href="devChurchLink('')"
-      class="fixed bottom-2 left-2 z-200 rounded-full bg-gray-900/80 px-2.5 py-1 font-mono text-[10px] text-white shadow hover:bg-gray-900"
-      title="Test address: open the platform front door in this tab"
-    >
-      test · {{ devChurchId }} · front door ↩
-    </a>
-    
     <!-- Theme transition overlay - circular reveal -->
     <div 
       v-if="isTransitioning" 

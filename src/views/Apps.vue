@@ -29,7 +29,7 @@ const name = computed(() => getDisplayName(myMember.value) || displayName.value)
 </script>
 
 <template>
-  <div class="flex h-full flex-col gap-2 overflow-y-auto">
+  <div class="flex h-full flex-col gap-2 overflow-y-auto pb-bar!">
     <div class="flex shrink-0 items-baseline gap-2">
       <h1 class="truncate text-base font-bold text-gray-900 dark:text-white">
         {{ greeting }}<template v-if="name">, {{ name }}</template>

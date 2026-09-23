@@ -216,7 +216,7 @@ const handleDeleteConcern = (concern) => {
     <!-- Main Content -->
     <div class="flex-1 overflow-hidden flex relative">
       <!-- Concerns List -->
-      <div class="flex-1 overflow-y-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div class="flex-1 overflow-y-auto pb-bar! bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
         <div v-if="loading" class="p-8 text-center text-gray-500 dark:text-gray-400">
           Loading prayer concerns...
         </div>

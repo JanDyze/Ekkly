@@ -8,6 +8,19 @@
 
 export const versionHistory = [
   {
+    version: '0.29.3',
+    date: '2026-09-23',
+    title: 'A steadier bottom bar',
+    summary:
+      'The bar at the foot of the screen answers the moment you tap it, and the app drawer is somewhere you can go back from.',
+    highlights: [
+      'Tap a tab and it lights up straight away, even when the page itself takes a moment to arrive.',
+      'The apps drawer opens over the page you are on: reloading keeps it open, and Back closes it rather than leaving the page.',
+      'Tapping an app in the drawer picks it and says so, so a mis-tap no longer throws you onto the wrong page.',
+      'Every page now ends clear of the bar instead of behind it.',
+    ],
+  },
+  {
     version: '0.29.2',
     date: '2026-09-23',
     title: 'People, attendance and settings, rebuilt for a phone',

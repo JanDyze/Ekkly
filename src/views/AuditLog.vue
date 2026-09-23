@@ -188,7 +188,7 @@ const ACTION_DOT = {
     </div>
 
     <div
-      class="flex-1 overflow-y-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+      class="flex-1 overflow-y-auto pb-bar! rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
     >
       <div v-if="loading" class="divide-y divide-gray-100 dark:divide-gray-700">
         <div v-for="i in 8" :key="i" class="space-y-2 px-4 py-3">

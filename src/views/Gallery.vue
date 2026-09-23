@@ -498,7 +498,7 @@ const confirmDeleteAlbum = () => {
       <div
         v-if="!routeAlbumId"
         ref="listScroller"
-        class="flex-1 overflow-y-auto bg-white pb-20 sm:rounded-lg sm:border sm:border-gray-200 dark:bg-gray-800 sm:dark:border-gray-700"
+        class="flex-1 overflow-y-auto pb-bar! bg-white pb-20 sm:rounded-lg sm:border sm:border-gray-200 dark:bg-gray-800 sm:dark:border-gray-700"
       >
         <div v-if="loading">
           <div class="px-3 py-2 sm:px-4">
@@ -633,7 +633,7 @@ const confirmDeleteAlbum = () => {
           </div>
         </div>
 
-        <div class="min-h-0 flex-1 overflow-y-auto pb-20">
+        <div class="min-h-0 flex-1 overflow-y-auto pb-bar! pb-20">
           <div
             v-if="loading || photosLoading || (uploading && !currentAlbum)"
             class="grid grid-cols-3 gap-0.5 p-0.5 sm:grid-cols-4 sm:gap-1 sm:p-1 lg:grid-cols-6"

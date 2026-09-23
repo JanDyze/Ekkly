@@ -207,7 +207,7 @@ const removeFromChurch = async (account) => {
 </script>
 
 <template>
-  <div class="h-full overflow-y-auto">
+  <div class="h-full overflow-y-auto pb-bar!">
     <!-- Header -->
     <div class="mb-4 flex items-start justify-between gap-3">
       <div class="min-w-0">

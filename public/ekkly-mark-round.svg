@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="15.5 14 80 80" role="img" aria-label="Ekkly">
+  <title>Ekkly</title>
+  <!-- The mark as a round window, for the app's bottom bar. Same four panes,
+       same colours and the same curved cross as ekkly-mark.svg; only the
+       outline changes. Each pane is drawn past the circle on its outer sides
+       and keeps its inner edges exactly, then the whole window is cut to the
+       circle, so the cross meets the rim wherever it falls. -->
+  <defs>
+    <clipPath id="round"><circle cx="55.5" cy="54" r="40" /></clipPath>
+    <clipPath id="tl"><path d="M0 55.9V0H52V41C52 46.5 41 49.5 20 52.8Z" /></clipPath>
+    <clipPath id="tr"><path d="M111 55.9V0H59V41C59 46.5 70 49.5 91 52.8Z" /></clipPath>
+    <clipPath id="bl"><path d="M0 58L22 56.3C30 53.5 40 53 45 54.5Q51 56 51 61V110H0Z" /></clipPath>
+    <clipPath id="br"><path d="M111 58L88 56C80 53.8 70 53.5 65 54.8Q59.5 56 59.5 61V110H111Z" /></clipPath>
+  </defs>
+
+  <g clip-path="url(#round)">
+    <!-- top left: yellow -->
+    <g clip-path="url(#tl)">
+      <rect x="10" y="8" width="45" height="50" fill="#fdc24b" />
+      <path d="M10 31H36L35 46L31 56H10Z" fill="#fdcf5c" />
+      <path d="M50 10H56V48L33 54L35 46L36 31Z" fill="#f7b63b" />
+    </g>
+
+    <!-- top right: orange -->
+    <g clip-path="url(#tr)">
+      <rect x="56" y="8" width="45" height="50" fill="#f19140" />
+      <path d="M82 17L96 34.5H73Z" fill="#dc5a31" />
+      <path d="M72 34.5H96V58L57 48Z" fill="#cc6d3d" />
+    </g>
+
+    <!-- bottom left: blue -->
+    <g clip-path="url(#bl)">
+      <rect x="10" y="50" width="45" height="50" fill="#0270dc" />
+      <path d="M35 50H56V100H46L35 75Z" fill="#0b6fe3" />
+      <path d="M10 50H35V75L10 76Z" fill="#48bcf0" />
+    </g>
+
+    <!-- bottom right: teal -->
+    <g clip-path="url(#br)">
+      <rect x="56" y="50" width="45" height="50" fill="#09a4c6" />
+      <path d="M73 50H101V71L84 73L77 74L73 62Z" fill="#027595" />
+      <path d="M101 69L86 73L60 99H101Z" fill="#14aaae" />
+    </g>
+  </g>
+</svg>

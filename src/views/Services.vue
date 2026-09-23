@@ -100,7 +100,7 @@ const statusOf = (service) => {
       </p>
     </div>
 
-    <div class="custom-scrollbar min-h-0 flex-1 overflow-y-auto pb-4">
+    <div class="custom-scrollbar min-h-0 flex-1 overflow-y-auto pb-bar! pb-4">
       <!-- Waiting on the lineups. Two rows rather than a spinner: it settles
            into the shape that is coming instead of jumping. -->
       <div v-if="loading" class="space-y-2">

@@ -525,7 +525,7 @@ onUnmounted(() => {
           </label>
         </div>
 
-        <div class="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-4">
+        <div class="custom-scrollbar min-h-0 flex-1 overflow-y-auto pb-bar! p-4">
           <p v-if="!slides.length" class="py-8 text-center text-sm text-gray-400">
             Nothing to show yet — the lyrics are empty.
           </p>

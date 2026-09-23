@@ -314,7 +314,7 @@ const sessionsByMonth = computed(() => {
 
     <!-- Body -->
     <div class="flex-1 overflow-hidden flex relative no-print">
-      <div class="flex-1 overflow-y-auto space-y-4 pb-4">
+      <div class="flex-1 overflow-y-auto pb-bar! space-y-4 pb-4">
         <!-- Identity card. The cover is deliberately a small thumbnail rather
              than a full-bleed banner: at page width a 16:9 hero ran to roughly
              430px on desktop and pushed the roster and sessions below the fold.

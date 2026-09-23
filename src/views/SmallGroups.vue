@@ -106,7 +106,7 @@ const handleSave = async (groupData) => {
 
     <!-- List -->
     <div class="flex-1 overflow-hidden flex relative">
-      <div class="flex-1 overflow-y-auto">
+      <div class="flex-1 overflow-y-auto pb-bar!">
         <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pb-4">
           <div
             v-for="i in 4"
@@ -204,7 +204,7 @@ const handleSave = async (groupData) => {
             </div>
 
             <ul
-              class="flex-1 min-h-0 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+              class="flex-1 min-h-0 overflow-y-auto pb-bar! divide-y divide-gray-100 dark:divide-gray-800 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
             >
               <li v-for="group in groups" :key="group.firestoreId">
                 <button

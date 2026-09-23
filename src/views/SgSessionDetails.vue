@@ -152,7 +152,7 @@ const handleConfirmation = async () => {
     </div>
 
     <!-- The form itself -->
-    <div class="flex-1 overflow-y-auto flex relative">
+    <div class="flex-1 overflow-y-auto pb-bar! flex relative">
       <div class="flex-1 min-w-0 print-area">
         <div
           v-if="loading && !session"

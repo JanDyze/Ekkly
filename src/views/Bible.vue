@@ -419,7 +419,7 @@ const showingResults = computed(() => searchable.value)
     </div>
 
     <!-- Results, in the reader's place rather than floating over it. -->
-    <div v-if="showingResults" class="min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-0">
+    <div v-if="showingResults" class="min-h-0 flex-1 overflow-y-auto pb-bar! px-3 py-3 sm:px-0">
       <!-- A typed reference is the fastest thing the box can hold, so it sits
            above whatever the same words happen to match. -->
       <button
@@ -499,7 +499,7 @@ const showingResults = computed(() => searchable.value)
     </div>
 
     <!-- The reader -->
-    <div v-else ref="readerRef" class="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-0">
+    <div v-else ref="readerRef" class="min-h-0 flex-1 overflow-y-auto pb-bar! px-3 py-4 sm:px-0">
       <div v-if="loading" class="mx-auto max-w-prose space-y-3">
         <div
           v-for="n in 8"
