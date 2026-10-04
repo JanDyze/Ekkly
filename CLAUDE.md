@@ -91,6 +91,30 @@ installable PWA.
 7. Check it at phone width, in dark mode, and as someone without manage
    rights. Then run `npm run build`.
 
+## Adding an app
+
+An app can be an app of its own inside Ekkly: under Ekkly's top bar (which
+names it and leads back out), with the sidebar, bottom bar and people rail
+stepped aside, it navigates itself. Schedules (`src/apps/schedules/`) is the
+first one and the pattern to copy; Presentation (`src/apps/presentation/`) is
+the second, and Videos (`src/apps/videos/`, announcement videos drawn on a
+canvas from the calendar, engine in `src/utils/video/`) the third.
+
+1. Put its screens in `src/apps/<app>/`, with a `routes.js` that the router
+   spreads in under `AdminLayout`. The parent route sets
+   `meta: { capability, app, frame: 'app' }`, and each screen sets
+   `meta.depth`: 0 for the app's home, 1 for a section, 2 for a step further.
+2. The home is a launcher, not a page with tabs: `AppHero` (what is true
+   today), a grid of `AppTile`s into its sections, one main
+   action, then the thing for today. Every screen sits in `AppScreen`, which
+   gives a section its back arrow and hide-on-scroll header. They live in
+   `src/components/appframe/`.
+3. Data still flows view → composable → service. An app's summary of its own
+   data goes in one composable (`useScheduleOverview.js`), so its hero and
+   tiles cannot disagree.
+4. It keeps one entry in `src/data/navigation.js`. Its sections are its own
+   tiles, not navigation entries.
+
 ## How code is written here
 
 - Comments explain *why*, in full sentences, above the code they're about.

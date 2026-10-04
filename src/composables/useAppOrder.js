@@ -66,7 +66,7 @@ const uid = ref(null)
  * but not a rename of the path itself — so without this, whoever had Lineups
  * on their bar would find Schedules dropped to the back of the list.
  */
-const RENAMED_PATHS = { '/lineups': '/schedules' }
+const RENAMED_PATHS = { '/lineups': '/schedules', '/present': '/presentation' }
 
 /** How many of them the bar shows. */
 export const BAR_SLOTS = 4

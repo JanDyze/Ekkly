@@ -225,7 +225,8 @@ body {
 
 :root[data-nav]::view-transition-old(root),
 :root[data-nav]::view-transition-new(root),
-:root[data-nav]::view-transition-group(member-avatar) {
+:root[data-nav]::view-transition-group(member-avatar),
+:root[data-nav]::view-transition-group(public-page) {
   animation-duration: 0.34s;
   animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
 }
@@ -584,4 +585,110 @@ body {
    pointer cursor over your own sentence is wrong. */
 .minute-body[contenteditable] .uec-mark {
   cursor: text;
+}
+
+/* ------------------------------------------------------------------------
+   Apps inside Ekkly (src/components/appframe/). An app takes the screen: a
+   home that is a launcher — a hero card, tiles into its sections, one main
+   action, one thing for today — and sections one step off it, each with a
+   back arrow. These are the motions that make it feel like one.
+   ------------------------------------------------------------------------ */
+
+/* A press, on its own: the shrink a card gives under a finger. `hover:` here
+   already carries .is-pressed (above), but a shrink on mouse hover would be
+   wrong, so it gets a variant of its own. */
+@custom-variant pressed {
+  &:is(.is-pressed) {
+    @slot;
+  }
+}
+
+/* A card being engaged — hovered by a mouse, held by a finger, or focused
+   from the keyboard — so the small motions inside it (an icon tilting, a
+   chevron nudging) play for touch and keyboard as well as for a pointer. */
+@custom-variant group-engaged {
+  @media (hover: hover) {
+    &:is(:where(.group):hover *) {
+      @slot;
+    }
+  }
+  &:is(:where(.group.is-pressed) *) {
+    @slot;
+  }
+  &:is(:where(.group):focus-visible *) {
+    @slot;
+  }
+}
+
+/* Each block of an app's home rises into place, a beat after the one above
+   it (animation-delay is set where it is used), so the screen arrives as a
+   sequence rather than all at once. */
+@keyframes app-rise {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.animate-rise {
+  animation: app-rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Moving between an app's screens: forward slides the new one in from the
+   right, back from the left, each with a short fade. The whole screen moves,
+   because the screens share no chrome to hold still. */
+@keyframes app-fade {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+  }
+}
+
+@keyframes app-slide {
+  from {
+    translate: var(--app-slide) 0;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+
+:root[data-nav='app-forward']::view-transition-old(root),
+:root[data-nav='app-back']::view-transition-old(root) {
+  animation:
+    140ms ease-in both reverse app-fade,
+    360ms cubic-bezier(0.4, 0, 0.2, 1) both reverse app-slide;
+}
+
+:root[data-nav='app-forward']::view-transition-new(root),
+:root[data-nav='app-back']::view-transition-new(root) {
+  animation:
+    200ms ease-out 120ms both app-fade,
+    360ms cubic-bezier(0.4, 0, 0.2, 1) both app-slide;
+}
+
+:root[data-nav='app-forward']::view-transition-old(root) {
+  --app-slide: -48px;
+}
+
+:root[data-nav='app-forward']::view-transition-new(root) {
+  --app-slide: 48px;
+}
+
+:root[data-nav='app-back']::view-transition-old(root) {
+  --app-slide: 48px;
+}
+
+:root[data-nav='app-back']::view-transition-new(root) {
+  --app-slide: -48px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise {
+    animation: none;
+  }
 }

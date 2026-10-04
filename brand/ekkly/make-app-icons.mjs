@@ -381,6 +381,21 @@ const ICONS = {
     <circle cx="32" cy="32" r="4.4" fill="url(#o)"/>
   </g>`),
 
+  // Announcement videos, part of Events: the clapper comes down on a frame,
+  // the play mark lands and the month's lines are written beside it.
+  videos: svg(`
+  <g class="a-drop" style="--i:0">
+    <g transform="rotate(-9 6 20)">
+      <rect x="5" y="9" width="54" height="10" rx="3" fill="${NAVY}"/>
+      <path d="M14 9h7l-5.5 10h-7zM28 9h7l-5.5 10h-7zM42 9h7l-5.5 10h-7z" fill="#fff"/>
+    </g>
+  </g>
+  ${splitTile(4, 21, 56, 37, 8, 'c')}
+  <rect x="9" y="26" width="46" height="27" rx="4" fill="#fff"/>
+  <path class="a-pop" style="--i:1" d="M16.5 32.2c0-1.5 1.6-2.4 2.9-1.6l9.6 5.9c1.2.7 1.2 2.5 0 3.2l-9.6 5.9c-1.3.8-2.9-.1-2.9-1.6z" fill="url(#o)"/>
+  <rect class="a-line" style="--i:2" x="34" y="32" width="15" height="4.2" rx="2.1" fill="${LINE}"/>
+  <rect class="a-line" style="--i:3" x="34" y="40.5" width="10" height="4.2" rx="2.1" fill="${LINE}"/>`),
+
 }
 
 for (const [key, text] of Object.entries(ICONS)) writeFileSync(join(outDir, `${key}.svg`), text)

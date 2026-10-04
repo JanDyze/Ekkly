@@ -21,6 +21,7 @@ export const blankSunday = (date) => ({
   theme: '',
   songs: [],
   assignments: {},
+  instruments: {},
 })
 
 /** True once anything has actually been filled in for a service — ushers on

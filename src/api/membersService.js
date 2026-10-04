@@ -34,6 +34,9 @@ const normalizeMember = (data, docId) => {
     // What this member does in the church. The only field that grants access
     // (see rolePermissions), and a controlled vocabulary — Settings > Ministries.
     ministries: Array.isArray(data.ministries) ? data.ministries : [],
+    // What they play, if they are in the band — ids from src/data/instruments.js,
+    // in the order they would usually be asked to. Grants nothing.
+    instruments: Array.isArray(data.instruments) ? data.instruments : [],
     // Free-text labels for describing and filtering. Grant nothing.
     tags: Array.isArray(data.tags) ? data.tags : [],
     isMember: data.isMember !== undefined ? data.isMember : true,

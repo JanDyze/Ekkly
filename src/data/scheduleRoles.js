@@ -34,15 +34,27 @@ export const isWorshipRole = (id) => WORSHIP_ROLE_IDS.includes(id)
  * whole roll until the role is pointed at the new name.
  *
  * The band keeps the rule the lineup had: song leaders are offered alongside
- * instrumentalists, because backup singers come from the same people.
+ * instrumentalists, because a song leader who plays is still in the band.
+ * Singing backup is a role of its own, the backup song leader: the person
+ * beside the lead, who takes over if the lead cannot, and who the band and
+ * the tech team need to find by name rather than among the instruments.
+ *
+ * The preacher heads the list: of everyone on a Sunday, the one the
+ * congregation asks about first is who is preaching.
+ *
+ * Only the jobs nearly every church has. A role one congregation has and the
+ * next does not — UEC's WLA coaches were one, until Ekkly was sold beyond UEC
+ * — is the church's to add under Schedules > Team > Roles. A church that had
+ * people on such a role keeps them: assignments to a role no longer listed
+ * stay stored, and adding the role back by the same name brings them back.
  */
 export const DEFAULT_SCHEDULE_ROLES = [
-  { id: SONG_LEADER_ROLE, name: 'Song leader', ministries: ['Song Leader'] },
-  { id: BAND_ROLE, name: 'Band', ministries: ['Song Leader', 'Instrumentalist'] },
   { id: 'preacher', name: 'Preacher', ministries: ['Preacher'] },
+  { id: SONG_LEADER_ROLE, name: 'Song leader', ministries: ['Song Leader'] },
+  { id: 'backup-song-leader', name: 'Backup song leader', ministries: ['Song Leader'] },
+  { id: BAND_ROLE, name: 'Band', ministries: ['Song Leader', 'Instrumentalist'] },
   { id: 'ushers', name: 'Ushers', ministries: ['Usher'] },
   { id: 'sunday-school', name: 'Sunday school teacher', ministries: [] },
-  { id: 'wla-coach', name: 'WLA coach', ministries: [] },
 ]
 
 const normalizeRole = (role) => ({

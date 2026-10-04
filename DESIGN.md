@@ -50,6 +50,7 @@ Route `meta` options that change the shell:
 |---|---|---|
 | `focus: true` | No top bar, bottom bar or people rail. The page handles its own padding and safe areas, and **must have its own back button.** | Something you finish: one person's record, taking attendance, a minute |
 | `hideTopbar: true` | Top bar hidden, bottom bar kept | A page with its own header that you still browse from (Bible) |
+| `frame: 'app'` | Top bar kept (named for the app, its mark a back arrow to all apps); no sidebar, bottom bar or people rail. The app's home is a launcher (`AppHero`, `AppTile`s) and every screen sits in `AppScreen`, from `src/components/appframe/` | An app of its own inside Ekkly (Schedules). One centred column on every screen; sections are a step off the home, with a back arrow, not tabs |
 
 ## Anatomy of a list page
 

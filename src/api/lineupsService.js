@@ -8,6 +8,7 @@ import {
   assignmentsOf,
   isWorshipRole,
 } from '../data/scheduleRoles'
+import { cleanInstruments } from '../data/instruments'
 
 // One document per month, keyed by 'YYYY-MM' so a month can never be planned
 // twice. A month holds a handful of Sundays and a handful of songs each, well
@@ -45,6 +46,9 @@ const normalizeSunday = (data = {}) => ({
   // off leaderId and teamIds, so a lineup saved before roles existed arrives
   // here already looking like a schedule.
   assignments: assignmentsOf(data),
+  // What each of the band is playing this Sunday, by person. See
+  // src/data/instruments.js.
+  instruments: data.instruments && typeof data.instruments === 'object' ? { ...data.instruments } : {},
 })
 
 /**
@@ -67,13 +71,17 @@ export const toStoredSunday = (sunday = {}) => {
     const clean = [...new Set((ids || []).map(String).filter(Boolean))]
     if (clean.length) rest[roleId] = clean
   })
+  const teamIds = [...new Set((all[BAND_ROLE] || []).map(String).filter(Boolean))]
   return {
     date: sunday.date || '',
     leaderId: all[SONG_LEADER_ROLE]?.[0] ?? null,
-    teamIds: [...new Set((all[BAND_ROLE] || []).map(String).filter(Boolean))],
+    teamIds,
     theme: sunday.theme || '',
     songs: (sunday.songs || []).map(normalizeSong),
     assignments: rest,
+    // Only for whoever is still on the band: somebody taken off it does not
+    // keep an instrument for a Sunday they are no longer playing.
+    instruments: cleanInstruments(sunday.instruments, teamIds),
   }
 }
 

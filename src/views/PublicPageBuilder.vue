@@ -1,8 +1,8 @@
 <script setup>
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowLeft,
-  Check,
   ChevronRight,
   DeviceMobile,
   DotsSixVertical,
@@ -10,18 +10,21 @@ import {
   Eye,
   EyeOff,
   Monitor,
+  Minus,
   Palette,
   Plus,
   RotateCcw,
   Trash2,
-  X,
 } from '../icons'
 import LabPreview from '../components/landinglab/LabPreview.vue'
-import { FONTS, HERO_STYLES, PALETTE, PAPERS, STOCK } from '../data/landingLabMock'
+import PartFields from '../components/landinglab/PartFields.vue'
+import ChurchSheetHost from '../components/landinglab/ChurchSheetHost.vue'
+import { useAppSettings } from '../composables/useAppSettings'
+import { HERO_STYLES } from '../data/landingLabMock'
 import { SECTION_TYPES } from '../data/landingSchema'
 import { addSection, model, moveSection, removeSection, resetModel } from '../composables/useLandingLab'
 
-// PROTOTYPE — /landing-lab. The page builder.
+// PROTOTYPE — /public-page. The page builder.
 //
 // Two levels, the way Settings works: a list of the parts of the page, and you
 // go into one. Not an accordion — a page with nine sections in an accordion is
@@ -36,14 +39,39 @@ import { addSection, model, moveSection, removeSection, resetModel } from '../co
 // says phone first because that is where a church actually uses Ekkly, but
 // building a website is a sit-down job done once, on whatever screen the office
 // has. On a phone the pane takes the screen and the page is a tap away at
-// /landing-lab/preview.
+// /public-page/preview.
 //
 // Nothing is saved to a church. Mock content, sessionStorage, and a Publish
 // button that does not work.
 
 // Which part is open: null for the list, 'look' for the whole-page settings,
 // 'hero' for the header, or a section's id. One at a time, always.
-const entered = ref(null)
+//
+// The full preview hands the open part back in ?part= on the way back, so the
+// builder opens where it was left rather than on the list — and the floating
+// window it shrinks into is showing the same part it grew out of.
+const route = useRoute()
+const router = useRouter()
+const partFrom = (id) =>
+  id === 'look' || id === 'hero' || model.sections.some((one) => one.id === id) ? id : null
+const entered = ref(partFrom(route.query.part))
+if (route.query.part) router.replace({ query: {} })
+
+// Where the preview opens, and on which part, from either way into it.
+const previewLink = computed(() => ({
+  path: '/public-page/preview',
+  query: entered.value ? { part: entered.value } : {},
+}))
+
+/* ------------------------------------------------------ the church itself */
+
+// The church's name, branch, logo and how to find it are not the page's to
+// keep: they are the church's record, read from Church details and changed
+// through its own sheet (ChurchSheetHost.vue). Unlike the rest of the builder,
+// that sheet really saves.
+const { church, logoUrl } = useAppSettings()
+const churchHost = ref(null)
+const openChurch = (step = 0) => churchHost.value?.open(step)
 
 const previewWide = ref(true)
 const previewPane = ref(null)
@@ -91,6 +119,244 @@ const enter = async (id, { fromPreview = false } = {}) => {
 const leave = () => {
   entered.value = null
 }
+
+/* ------------------------------------------------- the phone's small window */
+
+// On a phone the pane is the whole screen, so the page being built is out of
+// sight — every change was typed blind, and checking it meant leaving for the
+// full preview and walking back. So a small window floats in the corner: the
+// part being edited when one is open, the top of the page when none is.
+//
+// It is the real page at a phone's width, scaled down, rather than a
+// thumbnail drawn separately — a separate drawing would be one more thing that
+// could disagree with the page. It is moved so the open part sits at its top:
+// offsetTop is measured on the unscaled page, which a transform does not
+// affect, and the translate is applied before the scale, in the page's own
+// pixels.
+const MINI_PAGE_WIDTH = 360
+const MINI_WIDTH = 132
+const MINI_SCALE = MINI_WIDTH / MINI_PAGE_WIDTH
+
+const MINI_KEY = 'public-page.miniHidden'
+const readMiniHidden = () => {
+  try {
+    return localStorage.getItem(MINI_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+// Put away by somebody who would rather have the room, and kept put away.
+const miniHidden = ref(readMiniHidden())
+const setMiniHidden = (value) => {
+  miniHidden.value = value
+  try {
+    localStorage.setItem(MINI_KEY, value ? '1' : '0')
+  } catch {
+    // Private window: it stays put away for this visit only.
+  }
+}
+
+const miniPage = ref(null)
+const miniTop = ref(0)
+
+// Off until the window has been drawn once in its place. Measuring on mount
+// moves it there, and with its transitions on that move would play as a
+// glide — across the screen, and through the page — every time the builder
+// opens.
+const miniSettled = ref(false)
+
+// Look is the whole page, so it shows the top like the list does. A hidden
+// section is not drawn at all, so there is nothing of it to find.
+const miniTarget = computed(() =>
+  entered.value && entered.value !== 'look' && (!section.value || section.value.on) ? entered.value : ''
+)
+
+const miniLabel = computed(() => {
+  if (!entered.value || entered.value === 'look') return 'Whole page'
+  if (section.value && !section.value.on) return `${title.value} · hidden`
+  return title.value
+})
+
+const measureMini = () => {
+  const page = miniPage.value
+  if (!page || !miniTarget.value) {
+    miniTop.value = 0
+    return
+  }
+  const part = page.querySelector(`[data-lab-id="${miniTarget.value}"]:not(header)`)
+  miniTop.value = part ? part.offsetTop : 0
+}
+
+const miniStyle = computed(() => ({
+  width: `${MINI_PAGE_WIDTH}px`,
+  transform: `scale(${MINI_SCALE}) translateY(${-miniTop.value}px)`,
+}))
+
+// Measured again whenever the open part changes, and whenever the page changes
+// height under it — a photo loading, a paragraph growing as it is typed —
+// because either moves where the part starts.
+watch(miniTarget, () => nextTick(measureMini))
+let miniObserver = null
+onMounted(() => {
+  if (typeof ResizeObserver === 'undefined') return
+  miniObserver = new ResizeObserver(measureMini)
+  watch(
+    miniPage,
+    (el, old) => {
+      if (old) miniObserver.unobserve(old)
+      if (el) miniObserver.observe(el)
+      measureMini()
+    },
+    { immediate: true }
+  )
+})
+onBeforeUnmount(() => miniObserver?.disconnect())
+
+/* Moving it. It sits on whatever is underneath, so wherever it starts is the
+   wrong place for somebody — it can be dragged anywhere, and on letting go it
+   settles against the nearer side, at the height it was dropped. A window
+   left floating mid-screen would sit on the very fields it is there to
+   preview.
+
+   Placed by left/top and a translate in screen pixels rather than by
+   bottom/right: switching an anchor from right to left cannot be animated, so
+   the snap would jump instead of glide. Where it rests is kept as a side and a
+   lift from the bottom, not as pixels, so it lands in the same place after the
+   phone is turned. */
+const PLACE_KEY = 'public-page.miniPlace'
+// Clear of the builder's own bar at the top.
+const TOP_CLEAR = 56
+
+const readPlace = () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PLACE_KEY) || 'null')
+    if (saved && ['left', 'right'].includes(saved.side) && Number.isFinite(saved.lift)) return saved
+  } catch {
+    // Unreadable or blocked: the corner it always started in.
+  }
+  return { side: 'right', lift: 0 }
+}
+
+const miniPlace = ref(readPlace())
+const miniDock = ref(null)
+const dockSize = ref({ w: 0, h: 0 })
+const viewport = ref({ w: 0, h: 0 })
+// { dx, dy } from where it was picked up, while a drag is live.
+const miniDrag = ref(null)
+
+const restingXY = () => {
+  const { w, h } = viewport.value
+  const size = dockSize.value
+  const x = miniPlace.value.side === 'left' ? 0 : w - size.w
+  const lowest = h - size.h
+  const y = Math.min(Math.max(lowest - miniPlace.value.lift, TOP_CLEAR), lowest)
+  return { x, y }
+}
+
+const dockStyle = computed(() => {
+  const { x, y } = restingXY()
+  const live = miniDrag.value
+  return {
+    transform: `translate3d(${x + (live?.dx || 0)}px, ${y + (live?.dy || 0)}px, 0)`,
+    // Hidden until it has been measured once, so it does not glide in from
+    // off the edge of the screen on the first frame.
+    visibility: dockSize.value.w ? 'visible' : 'hidden',
+  }
+})
+
+let pickUp = null
+// Whether the pointer travelled far enough to be a drag rather than a tap.
+// Read by the click that follows a drag, so letting go does not also open the
+// full preview.
+let moved = false
+
+const onMiniMove = (event) => {
+  const dx = event.clientX - pickUp.x
+  const dy = event.clientY - pickUp.y
+  if (!moved && Math.hypot(dx, dy) < 6) return
+  moved = true
+  miniDrag.value = { dx, dy }
+}
+
+const endMiniDrag = () => {
+  window.removeEventListener('pointermove', onMiniMove)
+  window.removeEventListener('pointerup', endMiniDrag)
+  window.removeEventListener('pointercancel', endMiniDrag)
+  const live = miniDrag.value
+  miniDrag.value = null
+  if (!live) return
+
+  const { x, y } = restingXY()
+  const size = dockSize.value
+  const { w, h } = viewport.value
+  const side = x + live.dx + size.w / 2 < w / 2 ? 'left' : 'right'
+  const lift = Math.min(Math.max(h - size.h - (y + live.dy), 0), Math.max(h - size.h - TOP_CLEAR, 0))
+  miniPlace.value = { side, lift }
+  try {
+    localStorage.setItem(PLACE_KEY, JSON.stringify(miniPlace.value))
+  } catch {
+    // Kept for this visit only.
+  }
+}
+
+const startMiniDrag = (event) => {
+  // Left button only, and never from its own buttons: the "put away" button
+  // and the Show preview pill are taps.
+  if (event.button || event.target.closest('button')) return
+  pickUp = { x: event.clientX, y: event.clientY }
+  moved = false
+  window.addEventListener('pointermove', onMiniMove)
+  window.addEventListener('pointerup', endMiniDrag)
+  window.addEventListener('pointercancel', endMiniDrag)
+}
+
+// Caught on the way down, before the link's own handler: vue-router does not
+// navigate for a click that has already been prevented.
+const swallowDragClick = (event) => {
+  if (!moved) return
+  event.preventDefault()
+  moved = false
+}
+
+const measureViewport = () => {
+  viewport.value = { w: window.innerWidth, h: window.innerHeight }
+}
+
+let dockObserver = null
+onMounted(() => {
+  measureViewport()
+  window.addEventListener('resize', measureViewport)
+  // Measured now rather than when the observer first reports, which is after a
+  // frame: coming back from the full preview, the window has to be in place for
+  // the snapshot it shrinks into.
+  const box = miniDock.value?.getBoundingClientRect()
+  if (box?.width) dockSize.value = { w: box.width, h: box.height }
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      miniSettled.value = true
+    })
+  )
+  if (typeof ResizeObserver === 'undefined') return
+  // The window and the pill are different sizes, and putting one away swaps
+  // them, so the size is watched rather than read once.
+  dockObserver = new ResizeObserver(([entry]) => {
+    const box = entry.target.getBoundingClientRect()
+    dockSize.value = { w: box.width, h: box.height }
+  })
+  watch(
+    miniDock,
+    (el, old) => {
+      if (old) dockObserver.unobserve(old)
+      if (el) dockObserver.observe(el)
+    },
+    { immediate: true }
+  )
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', measureViewport)
+  dockObserver?.disconnect()
+  endMiniDrag()
+})
 
 const onAdd = (type) => enter(addSection(type))
 
@@ -204,29 +470,6 @@ const startDrag = (event, index) => {
   window.addEventListener('pointercancel', endDrag)
 }
 
-const addRow = (owner, field) => {
-  const row = {}
-  for (const sub of field.item) row[sub.key] = sub.type === 'image' ? STOCK[0].id : ''
-  owner[field.key] = [...owner[field.key], row]
-}
-
-const removeRow = (owner, field, index) => {
-  owner[field.key] = owner[field.key].filter((_, i) => i !== index)
-}
-
-const togglePick = (owner, id) => {
-  owner.picks = owner.picks.includes(id)
-    ? owner.picks.filter((p) => p !== id)
-    : [...owner.picks, id]
-}
-
-const label = 'mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400'
-const field =
-  'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-transparent focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white'
-const chip = 'rounded-full px-3 py-1.5 text-xs font-semibold transition-colors'
-const chipOn = 'bg-primary text-white'
-const chipOff =
-  'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
 const row =
   'flex w-full items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-3 text-left transition-colors hover:border-primary dark:border-gray-700 dark:bg-gray-800'
 const iconBtn = 'rounded-lg p-2 text-gray-400 hover:bg-gray-100 disabled:opacity-30 dark:hover:bg-gray-700'
@@ -252,7 +495,7 @@ const iconBtn = 'rounded-lg p-2 text-gray-400 hover:bg-gray-100 disabled:opacity
         <RotateCcw class="h-4 w-4" />
       </button>
       <RouterLink
-        to="/landing-lab/preview"
+        :to="previewLink"
         class="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-white hover:bg-primary-hover"
       >
         <ExternalLink class="hidden h-4 w-4 lg:block" />
@@ -268,7 +511,7 @@ const iconBtn = 'rounded-lg p-2 text-gray-400 hover:bg-gray-100 disabled:opacity
         class="flex w-full flex-col overflow-hidden lg:w-[27rem] lg:shrink-0 lg:border-r lg:border-gray-200 lg:dark:border-gray-700"
       >
         <!-- ─────────────────────────── the list ─────────────────────────── -->
-        <div v-if="!entered" class="min-h-0 flex-1 overflow-y-auto p-4">
+        <div v-if="!entered" :class="['min-h-0 flex-1 overflow-y-auto p-4', miniHidden ? '' : 'pb-64 lg:pb-4']">
           <button :class="row" @click="enter('look')">
             <span class="rounded-lg bg-primary/10 p-2 dark:bg-primary-light/15">
               <Palette class="h-4 w-4 text-primary dark:text-primary-light" />
@@ -421,7 +664,7 @@ const iconBtn = 'rounded-lg p-2 text-gray-400 hover:bg-gray-100 disabled:opacity
             </template>
           </div>
 
-          <div class="min-h-0 flex-1 overflow-y-auto p-4">
+          <div :class="['min-h-0 flex-1 overflow-y-auto p-4', miniHidden ? '' : 'pb-64 lg:pb-4']">
             <p
               v-if="section && !section.on"
               class="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-200"
@@ -429,243 +672,7 @@ const iconBtn = 'rounded-lg p-2 text-gray-400 hover:bg-gray-100 disabled:opacity
               Hidden, so none of this is on the page yet.
             </p>
 
-            <!-- Look: the three things that change the whole page. -->
-            <div v-if="entered === 'look'" class="space-y-4">
-              <div>
-                <p :class="label">Colour</p>
-                <div class="flex flex-wrap gap-2">
-                  <button
-                    v-for="colour in PALETTE"
-                    :key="colour.hex"
-                    :title="colour.name"
-                    :aria-label="colour.name"
-                    :aria-pressed="model.theme.accent === colour.hex"
-                    :class="[
-                      'h-10 w-10 rounded-full border transition-transform hover:scale-110',
-                      model.theme.accent === colour.hex
-                        ? 'border-transparent ring-2 ring-primary ring-offset-2 dark:ring-offset-gray-900'
-                        : 'border-black/10 dark:border-white/20',
-                    ]"
-                    :style="{ backgroundColor: colour.hex }"
-                    @click="model.theme.accent = colour.hex"
-                  >
-                    <Check
-                      v-if="model.theme.accent === colour.hex"
-                      class="mx-auto h-4 w-4 text-white drop-shadow"
-                    />
-                  </button>
-                </div>
-              </div>
-              <div>
-                <p :class="label">Background</p>
-                <div class="flex flex-wrap gap-2">
-                  <button
-                    v-for="p in PAPERS"
-                    :key="p.id"
-                    :class="[chip, model.theme.paper === p.id ? chipOn : chipOff]"
-                    @click="model.theme.paper = p.id"
-                  >
-                    {{ p.name }}
-                  </button>
-                </div>
-              </div>
-              <div>
-                <p :class="label">Lettering</p>
-                <div class="flex flex-wrap gap-2">
-                  <button
-                    v-for="f in FONTS"
-                    :key="f.id"
-                    :class="[chip, model.theme.font === f.id ? chipOn : chipOff]"
-                    :style="{ fontFamily: f.stack }"
-                    @click="model.theme.font = f.id"
-                  >
-                    {{ f.name }}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- The header -->
-            <div v-else-if="entered === 'hero'" class="space-y-3">
-              <div>
-                <p :class="label">Style</p>
-                <div class="flex flex-wrap gap-2">
-                  <button
-                    v-for="style in HERO_STYLES"
-                    :key="style.id"
-                    :class="[chip, model.hero.style === style.id ? chipOn : chipOff]"
-                    @click="model.hero.style = style.id"
-                  >
-                    {{ style.name }}
-                  </button>
-                </div>
-              </div>
-              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label :class="label">Church name</label>
-                  <input v-model="model.name" type="text" :class="field" />
-                </div>
-                <div>
-                  <label :class="label">Branch</label>
-                  <input v-model="model.branch" type="text" :class="field" />
-                </div>
-                <div>
-                  <label :class="label">Greeting</label>
-                  <input v-model="model.hero.greeting" type="text" :class="field" />
-                </div>
-                <div>
-                  <label :class="label">Headline</label>
-                  <input v-model="model.hero.headline" type="text" :class="field" />
-                </div>
-              </div>
-              <div>
-                <label :class="label">Under it</label>
-                <textarea v-model="model.hero.sub" rows="2" :class="field"></textarea>
-              </div>
-              <div>
-                <label :class="label">Button</label>
-                <input v-model="model.hero.cta" type="text" :class="field" />
-              </div>
-              <div v-if="model.hero.style !== 'plain'">
-                <p :class="label">Photo</p>
-                <div class="flex flex-wrap gap-2">
-                  <button
-                    v-for="photo in STOCK"
-                    :key="photo.id"
-                    :class="[
-                      'h-14 w-14 overflow-hidden rounded-lg border-2',
-                      model.hero.image === photo.id ? 'border-primary' : 'border-transparent opacity-60',
-                    ]"
-                    :aria-label="photo.label"
-                    @click="model.hero.image = photo.id"
-                  >
-                    <img :src="photo.src" alt="" class="h-full w-full object-cover" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- A section, built from its type's own field list. -->
-            <div v-else-if="section" class="space-y-3">
-              <div v-for="f in SECTION_TYPES[section.type].fields" :key="f.key">
-                <template v-if="f.type === 'text'">
-                  <label :class="label">{{ f.label }}</label>
-                  <input v-model="section[f.key]" type="text" :class="field" />
-                </template>
-
-                <template v-else-if="f.type === 'textarea'">
-                  <label :class="label">{{ f.label }}</label>
-                  <textarea v-model="section[f.key]" rows="4" :class="field"></textarea>
-                </template>
-
-                <template v-else-if="f.type === 'choice'">
-                  <p :class="label">{{ f.label }}</p>
-                  <div class="flex flex-wrap gap-2">
-                    <button
-                      v-for="option in f.options"
-                      :key="option"
-                      :class="[chip, section[f.key] === option ? chipOn : chipOff]"
-                      @click="section[f.key] = option"
-                    >
-                      {{ option }}
-                    </button>
-                  </div>
-                </template>
-
-                <template v-else-if="f.type === 'image'">
-                  <p :class="label">{{ f.label }}</p>
-                  <div class="flex flex-wrap gap-2">
-                    <button
-                      v-for="photo in STOCK"
-                      :key="photo.id"
-                      :class="[
-                        'h-14 w-14 overflow-hidden rounded-lg border-2',
-                        section[f.key] === photo.id ? 'border-primary' : 'border-transparent opacity-60',
-                      ]"
-                      :aria-label="photo.label"
-                      @click="section[f.key] = photo.id"
-                    >
-                      <img :src="photo.src" alt="" class="h-full w-full object-cover" />
-                    </button>
-                  </div>
-                </template>
-
-                <template v-else-if="f.type === 'gallery'">
-                  <p :class="label">{{ f.label }}</p>
-                  <div class="flex flex-wrap gap-2">
-                    <button
-                      v-for="photo in STOCK"
-                      :key="photo.id"
-                      :class="[
-                        'h-14 w-14 overflow-hidden rounded-lg border-2',
-                        section.picks.includes(photo.id)
-                          ? 'border-primary'
-                          : 'border-transparent opacity-40',
-                      ]"
-                      :aria-label="photo.label"
-                      :aria-pressed="section.picks.includes(photo.id)"
-                      @click="togglePick(section, photo.id)"
-                    >
-                      <img :src="photo.src" alt="" class="h-full w-full object-cover" />
-                    </button>
-                  </div>
-                </template>
-
-                <template v-else-if="f.type === 'list'">
-                  <p :class="label">{{ f.label }}</p>
-                  <div class="space-y-2">
-                    <div
-                      v-for="(line, lineIndex) in section[f.key]"
-                      :key="lineIndex"
-                      class="flex items-start gap-2 rounded-lg bg-gray-50 p-2 dark:bg-gray-700/50"
-                    >
-                      <div class="min-w-0 flex-1 space-y-2">
-                        <template v-for="sub in f.item" :key="sub.key">
-                          <input
-                            v-if="sub.type === 'text'"
-                            v-model="line[sub.key]"
-                            type="text"
-                            :placeholder="sub.label"
-                            :aria-label="sub.label"
-                            :class="field"
-                          />
-                          <div v-else-if="sub.type === 'image'" class="flex flex-wrap gap-1.5">
-                            <button
-                              v-for="photo in STOCK"
-                              :key="photo.id"
-                              :class="[
-                                'h-9 w-9 overflow-hidden rounded border-2',
-                                line[sub.key] === photo.id
-                                  ? 'border-primary'
-                                  : 'border-transparent opacity-50',
-                              ]"
-                              :aria-label="photo.label"
-                              @click="line[sub.key] = photo.id"
-                            >
-                              <img :src="photo.src" alt="" class="h-full w-full object-cover" />
-                            </button>
-                          </div>
-                        </template>
-                      </div>
-                      <button
-                        class="rounded-lg p-2 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
-                        :aria-label="`Remove ${f.label} ${lineIndex + 1}`"
-                        @click="removeRow(section, f, lineIndex)"
-                      >
-                        <X class="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <button
-                    class="mt-2 inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary/10 px-3 text-xs font-semibold text-primary hover:bg-primary/20 dark:bg-primary-light/15 dark:text-primary-light"
-                    @click="addRow(section, f)"
-                  >
-                    <Plus class="h-3.5 w-3.5" />
-                    {{ f.addLabel || 'Add' }}
-                  </button>
-                </template>
-              </div>
-            </div>
+            <PartFields :part="entered" @edit-church="openChurch" />
           </div>
         </template>
       </div>
@@ -722,6 +729,8 @@ const iconBtn = 'rounded-lg p-2 text-gray-400 hover:bg-gray-100 disabled:opacity
           >
             <LabPreview
               :model="model"
+              :church="church"
+              :logo="logoUrl"
               selectable
               :active-id="highlighted"
               @pick="enter($event, { fromPreview: true })"
@@ -730,6 +739,57 @@ const iconBtn = 'rounded-lg p-2 text-gray-400 hover:bg-gray-100 disabled:opacity
         </div>
       </div>
     </div>
+
+    <!-- The phone's small window onto the page. Phone only: from lg up the
+         page is already beside the pane. Tapping it opens the full preview. -->
+    <div
+      ref="miniDock"
+      :class="[
+        'pp-mini-dock pointer-events-none fixed left-0 top-0 z-30 p-3 lg:hidden',
+        miniDrag ? 'pp-mini-dragging' : '',
+        miniSettled ? '' : 'pp-mini-instant',
+      ]"
+      :style="dockStyle"
+      @pointerdown="startMiniDrag"
+      @click.capture="swallowDragClick"
+    >
+      <div v-if="!miniHidden" class="pointer-events-auto relative touch-none select-none">
+        <RouterLink
+          :to="previewLink"
+          class="block overflow-hidden rounded-xl border border-gray-300 bg-white shadow-xl ring-1 ring-black/5 dark:border-gray-600 dark:bg-gray-800"
+          :style="{ width: `${MINI_WIDTH}px`, viewTransitionName: 'public-page' }"
+          :aria-label="`Preview: ${miniLabel}. Opens the full page.`"
+        >
+          <div class="relative h-48 overflow-hidden">
+            <div ref="miniPage" class="pp-mini-page pointer-events-none origin-top-left" :style="miniStyle" aria-hidden="true">
+              <LabPreview :model="model" :church="church" :logo="logoUrl" />
+            </div>
+          </div>
+          <p
+            class="truncate border-t border-gray-200 px-2 py-1 text-[10px] font-semibold text-gray-600 dark:border-gray-700 dark:text-gray-300"
+          >
+            {{ miniLabel }}
+          </p>
+        </RouterLink>
+        <button
+          class="absolute -left-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+          aria-label="Put the preview away"
+          @click="setMiniHidden(true)"
+        >
+          <Minus class="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <button
+        v-else
+        class="pointer-events-auto flex h-11 items-center gap-1.5 rounded-full bg-primary px-4 text-xs font-bold text-white shadow-lg hover:bg-primary-hover"
+        @click="setMiniHidden(false)"
+      >
+        <Eye class="h-4 w-4" />
+        Show preview
+      </button>
+    </div>
+
+    <ChurchSheetHost ref="churchHost" />
   </div>
 </template>
 
@@ -758,8 +818,33 @@ const iconBtn = 'rounded-lg p-2 text-gray-400 hover:bg-gray-100 disabled:opacity
   will-change: transform;
 }
 
+/* Clear of the home indicator. Settles against its side with a glide when let
+   go; follows the finger exactly while held, because any easing then is lag. */
+.pp-mini-dock {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+}
+
+.pp-mini-dock.pp-mini-dragging {
+  transition: none;
+  cursor: grabbing;
+}
+
+.pp-mini-instant,
+.pp-mini-instant .pp-mini-page {
+  transition: none;
+}
+
+/* Glides to the part that was just opened, rather than jumping. */
+.pp-mini-page {
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .lab-sliding {
+  .lab-sliding,
+  .pp-mini-page,
+  .pp-mini-dock {
     transition: none;
   }
 }

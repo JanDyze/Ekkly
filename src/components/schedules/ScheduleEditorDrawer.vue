@@ -8,6 +8,10 @@
  * one that behaves differently — one person, and choosing her re-keys the
  * songs — because the keys on the song list are recorded per leader.
  *
+ * The band also says what each of them is playing that Sunday, because the
+ * same people swap instruments week to week. Their People record says what
+ * they can play, and offers that first.
+ *
  * Songs sit below the people. Most of the roles on a schedule have nothing to
  * do with them, and the person staffing the door should not have to scroll past
  * a set list to reach it; the song leader planning hers knows to look further
@@ -25,7 +29,9 @@ import {
   rosterName,
 } from '../../utils/lineupUtils'
 import { BAND_ROLE, SONG_LEADER_ROLE, assignmentsOf } from '../../data/scheduleRoles'
+import { INSTRUMENTS, cleanInstruments, instrumentOn, instrumentsOf } from '../../data/instruments'
 import MemberAvatar from '../members/MemberAvatar.vue'
+import InstrumentIcon from './InstrumentIcon.vue'
 import SongPickerSheet from './SongPickerSheet.vue'
 import PeoplePickerSheet from './PeoplePickerSheet.vue'
 
@@ -64,6 +70,7 @@ watch(
       assignments: Object.fromEntries(
         Object.entries(assignments).map(([roleId, ids]) => [roleId, [...ids]])
       ),
+      instruments: { ...(props.sunday.instruments || {}) },
     }
     showSongPicker.value = false
     pickingRole.value = null
@@ -127,6 +134,27 @@ const removePerson = (roleId, id) => {
   form.value.assignments[roleId] = peopleOn(roleId).filter((x) => x !== id)
 }
 
+/* -------------------------------------------------------- the band's parts */
+
+/** What someone is down to play: this Sunday's choice, or their usual. */
+const instrumentOf = (id) => instrumentOn(form.value, id, findRosterMember(props.members, id))
+
+/** Every instrument, the ones their record says they play first. */
+const instrumentOptions = (id) => {
+  const theirs = instrumentsOf(findRosterMember(props.members, id))
+  return [
+    ...theirs.map((key) => ({ ...INSTRUMENTS.find((i) => i.id === key), usual: true })),
+    ...INSTRUMENTS.filter((i) => !theirs.includes(i.id)).map((i) => ({ ...i, usual: false })),
+  ]
+}
+
+const setInstrument = (id, value) => {
+  const next = { ...form.value.instruments }
+  if (value) next[id] = value
+  else delete next[id]
+  form.value.instruments = next
+}
+
 const onPickerToggle = (id) => togglePerson(pickingRole.value.id, id)
 const onPickerChoose = (id) => setLeader(id)
 
@@ -165,6 +193,13 @@ const handleSave = () => {
       note: (s.note || '').trim(),
     })),
     assignments,
+    // Settled at saving: what each of the band is playing is written down,
+    // their usual included, so a change to somebody's record later does not
+    // rewrite what they played on a Sunday already planned.
+    instruments: cleanInstruments(
+      Object.fromEntries((assignments[BAND_ROLE] || []).map((id) => [id, instrumentOf(id)])),
+      assignments[BAND_ROLE] || []
+    ),
     // Mirrored so the saved object reads the same through the legacy fields
     // until the snapshot comes back; toStoredSunday derives them again anyway.
     leaderId: assignments[SONG_LEADER_ROLE]?.[0] || null,
@@ -259,7 +294,48 @@ const handleSave = () => {
                     </button>
                   </div>
 
-                  <div v-if="peopleOn(role.id).length" class="mt-1.5 flex flex-wrap gap-1.5">
+                  <!-- The band: a line each, with what they are playing. -->
+                  <ul v-if="role.id === BAND_ROLE && peopleOn(role.id).length" class="mt-1.5 space-y-1.5">
+                    <li
+                      v-for="id in peopleOn(role.id)"
+                      :key="id"
+                      class="flex items-center gap-2 rounded-xl bg-gray-50 py-1 pl-1 pr-1.5 dark:bg-gray-700/50"
+                    >
+                      <MemberAvatar
+                        v-if="findRosterMember(members, id)"
+                        :member="findRosterMember(members, id)"
+                        alt=""
+                        size="h-7 w-7"
+                      />
+                      <span class="min-w-0 flex-1 truncate text-sm font-medium text-gray-800 dark:text-gray-100">
+                        {{ rosterName({ member: findRosterMember(members, id) }) }}
+                      </span>
+                      <span class="flex size-7 shrink-0 items-center justify-center text-primary dark:text-primary-light">
+                        <InstrumentIcon v-if="instrumentOf(id)" :id="instrumentOf(id)" class="size-4.5" />
+                      </span>
+                      <select
+                        :value="instrumentOf(id)"
+                        :aria-label="`What ${rosterName({ member: findRosterMember(members, id) })} is playing`"
+                        class="h-8 shrink-0 rounded-lg border border-gray-300 bg-white py-0 pl-2 pr-7 text-xs text-gray-900 focus:border-transparent focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                        @change="setInstrument(id, $event.target.value)"
+                      >
+                        <option value="">Not set</option>
+                        <option v-for="option in instrumentOptions(id)" :key="option.id" :value="option.id">
+                          {{ option.name }}{{ option.usual ? ' (usual)' : '' }}
+                        </option>
+                      </select>
+                      <button
+                        type="button"
+                        @click="removePerson(role.id, id)"
+                        class="shrink-0 rounded-lg p-1 text-gray-400 hover:text-red-600"
+                        :aria-label="`Remove ${rosterName({ member: findRosterMember(members, id) })} from ${role.name}`"
+                      >
+                        <X class="h-4 w-4" />
+                      </button>
+                    </li>
+                  </ul>
+
+                  <div v-else-if="peopleOn(role.id).length" class="mt-1.5 flex flex-wrap gap-1.5">
                     <span
                       v-for="id in peopleOn(role.id)"
                       :key="id"

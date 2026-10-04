@@ -1,7 +1,7 @@
 import { reactive, watch } from 'vue'
 import { MOCK, blankSection } from '../data/landingLabMock'
 
-// The prototype's shared model, for /landing-lab and /landing-lab/preview.
+// The prototype's shared model, for /public-page and /public-page/preview.
 //
 // PROTOTYPE — see src/data/landingLabMock.js. Nothing here touches Firestore,
 // and no church's real settings can be reached from it.

@@ -14,6 +14,10 @@ import { churchAppsReady, isAppEnabled } from '../composables/useChurchApps'
 // The catalogue rather than the dashboard, and it carries no capability on
 // purpose — every "denied" redirect lands here, so a page that could itself be
 // denied would bounce forever.
+import { schedulesRoutes } from '../apps/schedules/routes'
+import { presentationRoutes } from '../apps/presentation/routes'
+import { videosRoutes } from '../apps/videos/routes'
+
 const HOME = '/home'
 
 // The door for somebody who is signed in but not in this church, and for an
@@ -65,29 +69,24 @@ const churchRoutes = [
     meta: { requiresAuth: true, adminOnly: true }
   },
   {
-    // PROTOTYPE, for looking at rather than using: a page builder for a
-    // church's public page, on mock content that is never saved. Here to
-    // settle whether that page should be a stack of sections a church chooses
-    // and orders, instead of today's one fixed layout. Unlinked from anywhere
-    // on purpose — it is reached by typing the address.
+    // The builder for a church's public page: a stack of sections the church
+    // chooses and orders, instead of one fixed layout. Still on mock content
+    // that is never saved while it is being made real — it is reached by
+    // typing the address until Settings > Public page opens it.
     //
-    // Two screens, because a front door has to be judged the way a visitor
-    // meets it rather than squeezed beside a rail of fields: /landing-lab is
-    // all controls, /landing-lab/preview is all page. The model they share is
+    // Two screens, because a public page has to be judged the way a visitor
+    // meets it rather than squeezed beside a rail of fields: /public-page is
+    // all controls, /public-page/preview is all page. The model they share is
     // in src/composables/useLandingLab.js.
-    //
-    // To remove the experiment: these two routes, LandingLab.vue,
-    // LandingLabPreview.vue, LabPreview.vue, useLandingLab.js and
-    // landingLabMock.js.
-    path: '/landing-lab',
-    name: 'LandingLab',
-    component: () => import('../views/LandingLab.vue'),
+    path: '/public-page',
+    name: 'PublicPageBuilder',
+    component: () => import('../views/PublicPageBuilder.vue'),
     meta: { requiresAuth: true, adminOnly: true }
   },
   {
-    path: '/landing-lab/preview',
-    name: 'LandingLabPreview',
-    component: () => import('../views/LandingLabPreview.vue'),
+    path: '/public-page/preview',
+    name: 'PublicPagePreview',
+    component: () => import('../views/PublicPagePreview.vue'),
     meta: { requiresAuth: true, adminOnly: true }
   },
   {
@@ -181,13 +180,10 @@ const churchRoutes = [
         component: () => import('../views/SongDetails.vue')
       },
       {
-        // What Presentation opens on: every service there is to run. A church
-        // holds one a week, so choosing happens once, here, rather than from a
-        // switcher the presenter had to carry.
+        // Presentation is an app of its own at /presentation, and every old
+        // link to the list of services lands on its home.
         path: 'present',
-        name: 'Services',
-        meta: { capability: 'lineups.view' },
-        component: () => import('../views/Services.vue')
+        redirect: '/presentation'
       },
       {
         // The tech booth, for one service. Keyed by date rather than month,
@@ -198,15 +194,13 @@ const churchRoutes = [
         meta: { capability: 'lineups.view' },
         component: () => import('../views/Present.vue')
       },
-      {
-        // The month is optional: /schedules opens the current one, and the
-        // month-keyed form is what gets shared with whoever is serving. The
-        // capability keeps its lineups name — it is what the grants say.
-        path: 'schedules/:month?',
-        name: 'Schedules',
-        meta: { capability: 'lineups.view' },
-        component: () => import('../views/Schedules.vue')
-      },
+      // Schedules is an app of its own: a home, and its sections a step off
+      // it. Its screens live with it, in src/apps/schedules.
+      ...schedulesRoutes,
+      // Presentation, the booth's own app, beside it (src/apps/presentation).
+      ...presentationRoutes,
+      // Announcement videos, made from the calendar (src/apps/videos).
+      ...videosRoutes,
       {
         // Lineups became Schedules. Old links live on in chats, bookmarks and
         // the notification history, and every one of them should still land.

@@ -11,13 +11,17 @@
  * Ordered around the next service rather than by date, because that is the one
  * being prepared. Past services stay reachable underneath — a run sheet from
  * three weeks ago is the quickest way to find the reading that was used.
+ *
+ * A section of the Presentation app, a step off its home: every service on
+ * file, the next one first, for when the one to run is not this Sunday's.
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Play, ChevronRight, ProjectorScreen } from '../icons'
-import { subscribeToLineups } from '../api/lineupsService'
-import { subscribeToServicePlans } from '../api/servicePlansService'
-import { formatServiceDate, formatShortDate, todayIso } from '../utils/lineupUtils'
+import { Play, ChevronRight, ProjectorScreen } from '../../icons'
+import { subscribeToLineups } from '../../api/lineupsService'
+import { subscribeToServicePlans } from '../../api/servicePlansService'
+import { formatServiceDate, formatShortDate, todayIso } from '../../utils/lineupUtils'
+import AppScreen from '../../components/appframe/AppScreen.vue'
 
 const router = useRouter()
 
@@ -91,16 +95,16 @@ const statusOf = (service) => {
 </script>
 
 <template>
-  <div class="mx-auto flex h-full max-w-3xl flex-col">
-    <div class="shrink-0 pb-4">
-      <h1 class="text-lg font-bold text-gray-900 dark:text-white sm:text-xl">Services</h1>
-      <p class="mt-0.5 text-xs font-medium text-gray-500 dark:text-gray-400">
-        Pick a Sunday to run. Songs come from that Sunday's schedule; readings and
-        notices are added in the presenter.
-      </p>
-    </div>
-
-    <div class="custom-scrollbar min-h-0 flex-1 overflow-y-auto pb-bar! pb-4">
+  <AppScreen
+    title="Services"
+    subtitle="Pick a Sunday to put on the screen"
+    :back="{ name: 'PresentationHome' }"
+    root="/presentation"
+  >
+    <p class="mb-4 px-0.5 text-sm text-gray-500 dark:text-gray-400">
+      Songs come from that Sunday's schedule; readings and notices are added in the presenter.
+    </p>
+    <div>
       <!-- Waiting on the lineups. Two rows rather than a spinner: it settles
            into the shape that is coming instead of jumping. -->
       <div v-if="loading" class="space-y-2">
@@ -117,7 +121,7 @@ const statusOf = (service) => {
           A Sunday appears here once it has been scheduled.
         </p>
         <button
-          @click="router.push('/schedules')"
+          @click="router.push({ name: 'SchedulesHome' })"
           class="mt-4 rounded-lg px-3 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/10"
         >
           Go to schedules
@@ -215,5 +219,5 @@ const statusOf = (service) => {
         </div>
       </template>
     </div>
-  </div>
+  </AppScreen>
 </template>

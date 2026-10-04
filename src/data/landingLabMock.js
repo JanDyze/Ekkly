@@ -1,9 +1,9 @@
-// The model behind the landing-page prototype at /landing-lab.
+// The model behind the landing-page prototype at /public-page.
 //
 // A PROTOTYPE. Nothing here is stored, nothing reads Firestore, and no church's
 // real settings can be touched from it — it exists so the shape of "let a
 // church build its own page" can be looked at and argued with before any of it
-// is built for real. Delete this file, LandingLab.vue and LabPreview.vue and
+// is built for real. Delete this file, PublicPageBuilder.vue and LabPreview.vue and
 // the app is exactly as it was.
 //
 // The idea being tested: a church's page is a stack of sections it chooses,
@@ -78,20 +78,19 @@ export const blankSection = (type) => {
     gallery: { title: 'Life together', picks: ['cover', 'church', 'hero'] },
     leaders: { title: 'Our leaders', items: [{ name: '', role: '' }] },
     events: { title: "What's on", count: '3' },
-    contact: { title: 'Where to find us', address: '', phone: '', facebook: '' },
+    contact: { title: 'Where to find us' },
     invite: { title: '', body: '', cta: 'Join us Sunday' },
   }
   return { id: `${type}-${Math.random().toString(36).slice(2, 8)}`, type, on: true, ...seeds[type] }
 }
 
 /**
- * A believable church, so the prototype can be judged on how it reads rather
- * than on lorem ipsum. Invented: there is no Living Light.
+ * Believable words, so the prototype can be judged on how it reads rather than
+ * on lorem ipsum. The church itself is not here: its name, branch, logo and how
+ * to find it come from Church details, so the page cannot disagree with the
+ * record.
  */
 export const MOCK = () => ({
-  name: 'Living Light',
-  branch: 'Calapan',
-  logo: 'uec',
   theme: { accent: '#0f766e', font: 'serif', paper: 'warm' },
   hero: {
     style: 'arch',
@@ -164,9 +163,6 @@ export const MOCK = () => ({
       type: 'contact',
       on: true,
       title: 'Where to find us',
-      address: '12 Rizal Street, Canubing II, Calapan City, Oriental Mindoro',
-      phone: '0917 123 4567',
-      facebook: 'facebook.com/livinglight',
     },
     {
       id: 'invite-1',

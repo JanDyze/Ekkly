@@ -85,6 +85,7 @@ export function useMemberForm(members, addMemberToFirestore, allTags) {
       occupation: newMember.value.occupation.trim() || undefined,
       relatives: {},
       ministries: Array.isArray(newMember.value.ministries) ? newMember.value.ministries : [],
+      instruments: Array.isArray(newMember.value.instruments) ? newMember.value.instruments : [],
       tags: Array.isArray(newMember.value.tags) ? newMember.value.tags : [],
       isMember: newMember.value.isMember !== undefined ? newMember.value.isMember : true,
       image: newMember.value.image || undefined, // Include image field

@@ -11,6 +11,61 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.30.0] — 2026-10-04
+
+The month's announcements, made into a video on their own: open Videos and
+this month's is already there, built from the calendar and the rest of the
+church's records, ready to play on the projector or post. Schedules and
+Presentation become apps of their own, each with a home that answers the
+question its team opens it with.
+
+### Added
+
+- **Videos.** Each month's announcement video makes itself from what the
+  church already keeps: one-off events, special Sundays such as Communion,
+  anything called off, postponed or moved, the weekly services, the small
+  groups, the published serving schedule, and birthdays if the church switches
+  them on. It plays in the app with music, and "Make the video" records an MP4
+  to save, or on a phone to share straight to Messenger or Facebook. Anyone
+  who can see the calendar can watch and save it.
+- **Shaping a month's video**, for whoever manages events: leave a card out,
+  move it, change its words, add an announcement of your own, choose how long
+  a card stays up, and give any card its own background photo or none.
+  "Start over" puts the month back to what the calendar says.
+- **Look and sound**, chosen once for every month: wide for the projector and
+  YouTube, tall for Reels and Stories, square or 4:5 for the feed; four looks;
+  the church's colour or one of its own; the typeface; how cards move; a set
+  of background photos the cards take in turn; and the words that open and
+  close it.
+- **Music written for the video.** Three tracks — Morning, Uplift and Still —
+  are composed in the app to the video's exact length, so there is nothing to
+  license and nothing cut off mid-phrase. A church's own song can be used
+  instead; it stays on the device it was chosen on.
+- **Faces on the cards.** Birthdays show the person, each Sunday shows who is
+  preaching, and small groups show their cover. Birthdays, Sundays and groups
+  can each be one card or one card each — by default, one each when there are
+  four or fewer — and a month can change that on the card itself.
+- **Schedules is an app of its own.** Its home says who is on this Sunday and
+  whether it is you; My turns lists every Sunday you serve; the Calendar has
+  the whole month as a rota, Sundays across and jobs down; Team shows who
+  serves how often and who has not been asked; and each Sunday opens on a
+  screen of its own.
+- **Presentation is an app of its own**, for the tech team: whether the next
+  service is ready to run, what is in it, and every service on file.
+- **What each musician plays.** A person's record says which instruments they
+  play, and each Sunday says what they are playing that week.
+- **Backup song leader** is a role on every Sunday, and the preacher heads the
+  list.
+
+### Changed
+
+- The WLA coach role is no longer one of the roles every church starts with.
+  A church that used it keeps its assignments, and adding the role back by
+  name in Schedules → Team brings them back.
+- The public page builder, still a preview, can be edited from the page itself
+  on a phone, and changes the church's name and contact details through the
+  same Church details sheet as Settings.
+
 ## [0.29.6] — 2026-09-23
 
 Groundwork for the two Bible translations that cannot ship inside the app. The

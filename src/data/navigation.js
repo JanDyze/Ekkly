@@ -5,6 +5,7 @@ import {
   FileText,
   Heart,
   Home,
+  FilmSlate,
   Image,
   Link2,
   ListChecks,
@@ -42,16 +43,17 @@ import eventsArt from '../assets/app-icons/events.svg'
 import financesArt from '../assets/app-icons/finances.svg'
 import galleryArt from '../assets/app-icons/gallery.svg'
 import lineupsArt from '../assets/app-icons/lineups.svg'
+import presentationArt from '../assets/app-icons/presentation.svg'
 import linksArt from '../assets/app-icons/links.svg'
 import minutesArt from '../assets/app-icons/minutes.svg'
 import peopleArt from '../assets/app-icons/members.svg'
 import prayerArt from '../assets/app-icons/prayer.svg'
-import presentationArt from '../assets/app-icons/presentation.svg'
 import settingsArt from '../assets/app-icons/settings.svg'
 import smallGroupsArt from '../assets/app-icons/smallgroups.svg'
 import songsArt from '../assets/app-icons/songs.svg'
 import tasksArt from '../assets/app-icons/tasks.svg'
 import todosArt from '../assets/app-icons/todos.svg'
+import videosArt from '../assets/app-icons/videos.svg'
 
 /**
  * Every place in the app you can go, in one list.
@@ -164,12 +166,13 @@ export const NAV_GROUPS = [
         capability: 'lineups.view',
         description: 'Who is serving each Sunday — worship, ushers, teachers, preaching — and the songs.',
       },
-      // Its own entry rather than a corner of Schedules: the tech team goes
-      // straight here on a Sunday and should not reach it through the worship
-      // team's page.
+      // Its own app rather than a corner of Schedules: the tech team goes
+      // straight here on a Sunday, and running a service is their job, not the
+      // worship team's. Both are the one lineups app as far as a church's plan
+      // is concerned.
       {
         name: 'Presentation',
-        path: '/present',
+        path: '/presentation',
         short: 'Present',
         image: presentationArt,
         art: 'presentation',
@@ -224,6 +227,17 @@ export const NAV_GROUPS = [
         icon: Image,
         capability: 'gallery.view',
         description: 'Photos from services and events.',
+      },
+      // Part of the Events app (its capability says so): the videos are made
+      // from the calendar, and live beside the photos as the church's media.
+      {
+        name: 'Videos',
+        path: '/videos',
+        image: videosArt,
+        art: 'videos',
+        icon: FilmSlate,
+        capability: 'events.view',
+        description: 'This month’s announcement video, made from the calendar, ready to play or post.',
       },
       {
         name: 'Links',

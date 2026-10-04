@@ -32,6 +32,9 @@
  *
  * `fields` drives the whole editor. Types:
  *   text · textarea · image · choice · list (rows of its own `item` fields)
+ *   church — not the page's at all: a field of the church's own record, shown
+ *            here and changed in Church details. `step` is the step of that
+ *            editor it lives on, so Edit opens where the field is.
  */
 export const SECTION_TYPES = {
   verse: {
@@ -127,9 +130,10 @@ export const SECTION_TYPES = {
     blurb: 'Where you meet and how to reach you.',
     fields: [
       { key: 'title', label: 'Heading', type: 'text' },
-      { key: 'address', label: 'Address', type: 'textarea' },
-      { key: 'phone', label: 'Phone', type: 'text' },
-      { key: 'facebook', label: 'Facebook', type: 'text' },
+      { key: 'address', label: 'Address', type: 'church', step: 2 },
+      { key: 'phone', label: 'Phone', type: 'church', step: 2 },
+      { key: 'email', label: 'Email', type: 'church', step: 2 },
+      { key: 'facebook', label: 'Facebook', type: 'church', step: 2 },
     ],
   },
   invite: {

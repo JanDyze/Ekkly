@@ -8,6 +8,19 @@
 
 export const versionHistory = [
   {
+    version: '0.30.0',
+    date: '2026-10-04',
+    title: 'This month’s video, made for you',
+    summary:
+      'Open Videos and this month’s announcement video is already there, made from your calendar — ready for the projector, Facebook or Reels. Schedules and Presentation are now apps of their own.',
+    highlights: [
+      'Events, special Sundays, changes of plan, small groups, who is serving and birthdays each become a card, with music under them.',
+      'Leave a card out, reword it, add your own, give it a photo — and pick the shape, look, colour and music once for every month.',
+      'Birthdays and Sundays can show one person per card, with their photo large.',
+      'Schedules opens on who is serving this Sunday, with My turns, the month as a rota, and the team.',
+    ],
+  },
+  {
     version: '0.29.5',
     date: '2026-09-23',
     title: 'Your public page, a few questions at a time',

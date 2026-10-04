@@ -16,6 +16,10 @@ import { Camera, Check, ChevronLeft, ChevronRight, Trash2, X } from '../../icons
 import { useFocusTrap } from '../../composables/useFocusTrap'
 import { useSwipePage } from '../../composables/useSwipePage'
 import { useToast } from '../../composables/useToast'
+import { useAppSettings } from '../../composables/useAppSettings'
+import { BAND_ROLE } from '../../data/scheduleRoles'
+import { INSTRUMENTS } from '../../data/instruments'
+import InstrumentIcon from '../schedules/InstrumentIcon.vue'
 import { uploadImage } from '../../api/blobService'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import MemberAvatar from './MemberAvatar.vue'
@@ -49,11 +53,11 @@ const STEPS = [
   { key: 'name', label: 'Name', title: 'What is their name?', fields: ['image', 'firstName', 'lastName', 'nickname'] },
   { key: 'personal', label: 'Personal', title: 'A little about them', fields: ['dateOfBirth', 'sex', 'civilStatus', 'occupation'] },
   { key: 'contact', label: 'Contact', title: 'How to reach them', fields: ['contactNumber', 'email', 'address'] },
-  { key: 'church', label: 'Church', title: 'Their place in the church', fields: ['isMember', 'ministries', 'tags'] },
+  { key: 'church', label: 'Church', title: 'Their place in the church', fields: ['isMember', 'ministries', 'instruments', 'tags'] },
 ]
 
 const FIELDS = STEPS.flatMap((s) => s.fields)
-const LIST_FIELDS = ['ministries', 'tags']
+const LIST_FIELDS = ['ministries', 'instruments', 'tags']
 
 // Somebody being added is nearly always somebody who has just walked in, so a
 // new record starts as an attendee tagged First Timer (useMemberForm.js says
@@ -240,6 +244,20 @@ const tagOptions = computed(() => [...new Set([...props.allTags, ...(draft.value
 const ministryOptions = computed(() => [
   ...new Set([...props.ministryNames, ...(draft.value.ministries || [])]),
 ])
+
+// What they play, asked only of somebody in one of the band's ministries —
+// the ones Schedules offers first for the band (Settings > Schedule roles).
+// Toggled in the order they are tapped, so the first one is their usual, and
+// the one a Sunday's band suggests for them.
+const { scheduleRoles } = useAppSettings()
+const bandMinistries = computed(() =>
+  (scheduleRoles.value.find((role) => role.id === BAND_ROLE)?.ministries || []).map((m) => m.toLowerCase())
+)
+const playsInBand = computed(
+  () =>
+    (draft.value.instruments || []).length > 0 ||
+    (draft.value.ministries || []).some((m) => bandMinistries.value.includes(String(m).toLowerCase()))
+)
 
 const sexOptions = ['Male', 'Female']
 
@@ -610,6 +628,26 @@ const chip = (on) => [
                     <p v-else class="text-sm text-gray-400 dark:text-gray-500">
                       No ministries yet. Add them in Settings.
                     </p>
+                  </fieldset>
+
+                  <fieldset v-if="playsInBand">
+                    <legend :class="label">Plays</legend>
+                    <p class="-mt-0.5 mb-2 text-xs text-gray-500 dark:text-gray-400">
+                      The first one picked is their usual, and the one a Sunday's band suggests for them.
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                      <button
+                        v-for="instrument in INSTRUMENTS"
+                        :key="instrument.id"
+                        type="button"
+                        @click="toggleIn('instruments', instrument.id)"
+                        :aria-pressed="draft.instruments.includes(instrument.id)"
+                        :class="[chip(draft.instruments.includes(instrument.id)), 'inline-flex items-center gap-1.5']"
+                      >
+                        <InstrumentIcon :id="instrument.id" class="h-4 w-4" />
+                        {{ instrument.name }}
+                      </button>
+                    </div>
                   </fieldset>
 
                   <fieldset>

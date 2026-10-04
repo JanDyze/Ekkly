@@ -18,19 +18,72 @@ import { nextTick } from 'vue'
 // that is already live (the page-return rule in style.css, set off by
 // Members.vue when it is shown again).
 //
+// The public page builder is the exception, and goes both ways: on a phone its
+// small floating window grows into the full preview, and the preview shrinks
+// back into the window. Neither screen is a long list, so the way back costs
+// nothing to snapshot, and a window that grew out of the corner but did not go
+// back into it would leave the eye nowhere to follow.
+//
 // Where the browser has no View Transitions (Safari before 18), or the reader
 // has asked for less motion, the navigation is simply instant, as before.
 
-/** Pairs of routes that animate when going from the list to the record. */
-const PAIRS = [{ list: 'Members', record: 'MemberDetails' }]
+/**
+ * The pairs of routes that animate, and how.
+ *
+ * `nav` is what style.css keys the animation of the whole screen on. `tag`,
+ * where there is one, names the element on the screen being left that morphs
+ * into its twin on the screen arriving. Each screen carries a name on at most
+ * one element at a time, or the browser skips the whole transition.
+ *
+ * The public page's two screens name their own elements (the floating window
+ * in PublicPageBuilder.vue, the open part in PublicPagePreview.vue), because
+ * both are there for both directions.
+ */
+const PAIRS = [
+  {
+    from: 'Members',
+    to: 'MemberDetails',
+    nav: 'forward',
+    // The photo leaves from the list row. The profile's own photo carries the
+    // name permanently (MemberDetails.vue).
+    tag: (to) => ({ el: rowAvatar(to.params.id), name: 'member-avatar' }),
+  },
+  { from: 'PublicPageBuilder', to: 'PublicPagePreview', nav: 'grow' },
+  { from: 'PublicPagePreview', to: 'PublicPageBuilder', nav: 'shrink' },
+]
 
-// The one element per screen that morphs between them. Each screen carries
-// the name on at most one element at a time, or the browser skips the whole
-// transition.
-const SHARED = 'member-avatar'
+/**
+ * The app frame a route sits in (meta.frame: 'app'), by the path its routes
+ * hang off — not by meta.app, which is the plan a church buys and is shared:
+ * Schedules and Presentation are one purchase and two apps.
+ */
+const appOf = (route) => route.matched.find((record) => record.meta.frame === 'app')?.path || null
 
-const opensRecord = (to, from) =>
-  PAIRS.some(({ list, record }) => from.name === list && to.name === record)
+/** How far into its app a route is: 0 for the app's home, 1 for a section… */
+const depthOf = (route) => route.matched.reduce((depth, record) => record.meta.depth ?? depth, 0)
+
+/**
+ * Moving inside an app, or into or out of one.
+ *
+ * An app's screens are a stack — its home, a section off it, a Sunday off
+ * that — so going deeper slides forward and coming up slides back, the way an
+ * app on a phone does. Opening an app from Ekkly is going in, and leaving it
+ * is coming out.
+ */
+const appMove = (to, from) => {
+  const into = appOf(to)
+  const outOf = appOf(from)
+  if (!into && !outOf) return null
+  if (into && outOf && into === outOf) {
+    const by = depthOf(to) - depthOf(from)
+    if (!by) return null
+    return { nav: by > 0 ? 'app-forward' : 'app-back' }
+  }
+  return { nav: into ? 'app-forward' : 'app-back' }
+}
+
+const pairFor = (to, from) =>
+  PAIRS.find((pair) => from.name === pair.from && to.name === pair.to) || appMove(to, from)
 
 const wantsMotion = () =>
   typeof document !== 'undefined' &&
@@ -53,14 +106,14 @@ export function installViewTransitions(router) {
   let rendered = null
 
   router.beforeResolve((to, from) => {
-    if (!opensRecord(to, from) || !wantsMotion()) return
+    const pair = pairFor(to, from)
+    if (!pair || !wantsMotion()) return
 
-    document.documentElement.dataset.nav = 'forward'
+    document.documentElement.dataset.nav = pair.nav
 
-    // The photo leaves from the list row. The profile's own photo carries the
-    // name permanently (MemberDetails.vue).
-    const named = rowAvatar(to.params.id)
-    if (named) named.style.viewTransitionName = SHARED
+    const tagged = pair.tag?.(to)
+    const named = tagged?.el || null
+    if (named) named.style.viewTransitionName = tagged.name
 
     let markRendered
     rendered = new Promise((resolve) => {
@@ -73,6 +126,11 @@ export function installViewTransitions(router) {
         // Let the router carry on, then wait for the new screen to be drawn.
         allowNavigation()
         await rendered
+        // Twice: once for the new screen to mount, and once more for what it
+        // measures on mounting to be drawn. The builder's floating window only
+        // knows where it sits after it has measured itself, and a snapshot
+        // taken a tick early would morph into it before it had arrived.
+        await nextTick()
         await nextTick()
       })
 

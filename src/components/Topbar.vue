@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
-import { Bell, Sun, Moon, X, Users, LogOut, UserCheck, UserPlus, Clock3, ChevronRight } from '../icons';
+import { Bell, Sun, Moon, X, Users, LogOut, UserCheck, UserPlus, Clock3, ChevronLeft, ChevronRight } from '../icons';
 import { useRouter } from "vue-router";
 import { useTheme } from "../composables/useTheme";
 import { useTitleCountValue } from "../composables/useTitleCount";
@@ -102,7 +102,14 @@ const toggleMenu = () => {
 
 const titleCount = useTitleCountValue();
 
+// Inside an app of its own (meta.frame: 'app'), this bar is that app's name and
+// the way back out of it: the mark becomes a back arrow to every app, rather
+// than the link to the church's public page it is everywhere else. The app's
+// own sections are named on its screens, so the bar just says which app.
+const inApp = computed(() => route.matched.some((record) => record.meta?.frame === 'app'))
+
 const pageTitle = computed(() => {
+  if (inApp.value && currentApp.value) return currentApp.value.name
   const routeNames = {
     Home: 'Dashboard',
     Members: 'People',
@@ -188,11 +195,12 @@ const openMyProfile = () => {
       <div class="flex items-center justify-between h-12">
         <div class="flex min-w-0 items-center gap-2.5">
           <router-link
-            to="/"
-            :title="`Go to the ${church.shortName} public page`"
-            :aria-label="`Go to the ${church.shortName} public page`"
-            class="-ml-1 flex shrink-0 items-center rounded-lg p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+            :to="inApp ? '/home' : '/'"
+            :title="inApp ? 'Back to all apps' : `Go to the ${church.shortName} public page`"
+            :aria-label="inApp ? 'Back to all apps' : `Go to the ${church.shortName} public page`"
+            class="-ml-1 flex shrink-0 items-center gap-0.5 rounded-lg p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
           >
+            <ChevronLeft v-if="inApp" class="h-5 w-5 shrink-0 text-gray-500 dark:text-gray-400" />
             <!-- Keyed by app, so moving between apps swaps one picture for the
                  next with a small pop, and the new one plays as it arrives. -->
             <Transition name="topbar-app" mode="out-in">

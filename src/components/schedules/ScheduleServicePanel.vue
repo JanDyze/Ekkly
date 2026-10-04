@@ -24,7 +24,9 @@ import { computed } from 'vue'
 import { ListMusic, Pencil } from '../../icons'
 import MemberAvatar from '../members/MemberAvatar.vue'
 import { formatServiceDate, rosterName, serviceRoles } from '../../utils/lineupUtils'
-import { SONG_LEADER_ROLE } from '../../data/scheduleRoles'
+import { BAND_ROLE, SONG_LEADER_ROLE } from '../../data/scheduleRoles'
+import { instrumentName, instrumentOn } from '../../data/instruments'
+import InstrumentIcon from './InstrumentIcon.vue'
 
 const props = defineProps({
   sunday: { type: Object, required: true },
@@ -51,6 +53,10 @@ const openRoles = computed(() =>
 )
 
 const songs = computed(() => props.sunday.songs || [])
+
+// What a band member is playing, so the band reads as a band — who is on keys,
+// who on drums — rather than a list of names.
+const instrumentFor = (person) => instrumentOn(props.sunday, person.id, person.member)
 
 const isMine = computed(() => props.myRoles.length > 0)
 const isLeading = computed(() => props.myRoles.some((role) => role.id === SONG_LEADER_ROLE))
@@ -157,6 +163,14 @@ const songReadiness = computed(() => {
             <MemberAvatar v-if="person.member" :member="person.member" alt="" size="h-6 w-6" />
             <span class="truncate text-sm font-semibold text-gray-900 dark:text-white">
               {{ rosterName(person) }}
+            </span>
+            <span
+              v-if="row.role.id === BAND_ROLE && instrumentFor(person)"
+              class="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary dark:bg-primary-light/15 dark:text-primary-light"
+              :title="instrumentName(instrumentFor(person))"
+            >
+              <InstrumentIcon :id="instrumentFor(person)" class="size-3.5" />
+              {{ instrumentName(instrumentFor(person)) }}
             </span>
           </span>
           <span v-if="!row.people.length" class="text-sm text-gray-300 dark:text-gray-600">

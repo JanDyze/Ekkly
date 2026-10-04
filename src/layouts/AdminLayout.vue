@@ -38,6 +38,14 @@ const isFocus = computed(() => Boolean(route.meta?.focus) || pageWantsFocus.valu
 // the page is still somewhere you browse from rather than a task you finish.
 const hidesTopbar = computed(() => Boolean(route.meta?.hideTopbar))
 
+// An app inside Ekkly (src/components/appframe/) has its own home and its own
+// way between its sections, so Ekkly's sidebar, bottom bar and people rail
+// step aside — around it they would be a second set of everything. The top
+// bar stays: it names the app, and it is the way back out to the rest of
+// Ekkly (Topbar.vue turns its mark into a back arrow inside an app).
+const isApp = computed(() => route.matched.some((record) => record.meta?.frame === 'app'))
+const bare = computed(() => isFocus.value || isApp.value)
+
 // Pages kept in memory after you leave them, by component name (the file's
 // name). Only lists that open a record as its own page belong here - it costs
 // memory to keep one, and a page kept alive must cope with being shown again
@@ -47,8 +55,12 @@ const KEPT_ALIVE = ['Members']
 
 <template>
   <div class="flex h-dvh bg-gray-50 dark:bg-gray-900 print-root">
-    <!-- Sidebar - Desktop only -->
-    <Sidebar />
+    <!-- Sidebar - Desktop only. Not inside an app, which is a screen of its
+         own; hidden rather than removed, for the same reason as the top bar
+         below. -->
+    <div v-show="!isApp" class="contents">
+      <Sidebar />
+    </div>
 
     <!-- Main content area -->
     <div class="flex-1 min-w-0 flex flex-col overflow-hidden lg:ml-0 print-main">
@@ -71,7 +83,7 @@ const KEPT_ALIVE = ['Members']
       <main class="flex-1 overflow-hidden bg-white dark:bg-gray-900 print-main">
         <!-- A focus route gets the raw box and handles its own padding and
              safe areas: the deck should reach the edges of the screen. -->
-        <div :class="['h-full print-main', isFocus ? '' : 'p-0 sm:p-4 lg:px-8 lg:py-3']">
+        <div :class="['h-full print-main', bare ? '' : 'p-0 sm:p-4 lg:px-8 lg:py-3']">
           <!-- The lists you open records from stay built while a record is
                open, so back is a re-show rather than a rebuild: every row,
                every photo, the search, the sort and the scroll are where they
@@ -87,12 +99,12 @@ const KEPT_ALIVE = ['Members']
 
     <!-- People rail - wide screens; a drawer everywhere else. A focus route
          is a task, so the live presence list sits it out too. -->
-    <div v-show="!isFocus" class="contents">
+    <div v-show="!bare" class="contents">
       <RightSidebar />
     </div>
 
     <!-- Bottom Bar - Mobile only -->
-    <div v-show="!isFocus" class="contents">
+    <div v-show="!bare" class="contents">
       <BottomBar />
     </div>
   </div>

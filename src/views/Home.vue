@@ -441,8 +441,8 @@ const reachDelta = computed(() => {
           <router-link
             :to="
               upcomingService
-                ? { path: `/schedules/${upcomingService.month}`, query: { date: upcomingService.date } }
-                : '/schedules'
+                ? { name: 'SchedulesSunday', params: { date: upcomingService.date } }
+                : { name: 'SchedulesHome' }
             "
             class="text-xs font-bold text-gray-400 hover:text-primary transition-colors"
           >
