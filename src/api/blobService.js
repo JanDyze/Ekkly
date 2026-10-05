@@ -1,3 +1,4 @@
+import { put } from '@vercel/blob/client'
 import { auth } from './firebase'
 import { churchHeaders } from './church'
 
@@ -34,6 +35,28 @@ const authed = async (method, body) => {
 export const uploadImage = async (dataUrl, folder) => {
   const { url } = await authed('POST', { dataUrl, folder })
   return url
+}
+
+/**
+ * Stores a song for the announcement videos and resolves its public URL.
+ *
+ * Not through the route like a photograph: a song is too big for one request
+ * to a function. The route hands back a token good for one path in this
+ * church's folder, and the file goes from the browser straight to Blob with
+ * it. `onProgress` is called with how far it has got, 0 to 100.
+ */
+export const uploadAudio = async (file, onProgress, { use, date } = {}) => {
+  // `use: 'sermon'` with a `date` files a Sunday's recording with its slides,
+  // and allows the length a whole message runs to.
+  const { token, pathname } = await authed('POST', { action: 'upload-token', kind: 'audio', name: file.name, use, date })
+  const blob = await put(pathname, file, {
+    access: 'public',
+    token,
+    contentType: file.type || 'audio/mpeg',
+    multipart: file.size > 8 * 1024 * 1024,
+    onUploadProgress: ({ percentage }) => onProgress?.(Math.round(percentage)),
+  })
+  return blob.url
 }
 
 /**

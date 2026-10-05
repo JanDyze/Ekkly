@@ -114,7 +114,9 @@ const isBaseline = (capability) => BASELINE_CAPABILITIES.includes(capability)
           </thead>
           <tbody>
             <template v-for="area in AREAS" :key="area.key">
-              <tr class="border-t border-gray-100 dark:border-gray-700">
+              <!-- A Schedules team has no "view" of its own to grant: seeing
+                   Schedules is seeing it. Only its planning row is drawn. -->
+              <tr v-if="area.viewable !== false" class="border-t border-gray-100 dark:border-gray-700">
                 <th
                   class="sticky left-0 z-10 bg-white dark:bg-gray-800 text-left py-2 pr-3 font-medium text-gray-900 dark:text-white whitespace-nowrap"
                 >
@@ -154,12 +156,19 @@ const isBaseline = (capability) => BASELINE_CAPABILITIES.includes(capability)
                 </td>
               </tr>
 
-              <tr v-if="area.manageable !== false" class="border-t border-gray-50 dark:border-gray-700/50">
+              <tr
+                v-if="area.manageable !== false"
+                :class="[
+                  'border-t',
+                  area.viewable === false ? 'border-gray-100 dark:border-gray-700' : 'border-gray-50 dark:border-gray-700/50',
+                ]"
+              >
                 <th
                   class="sticky left-0 z-10 bg-white dark:bg-gray-800 text-left py-2 pr-3 font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap"
                 >
+                  <span v-if="area.viewable === false" class="block text-gray-900 dark:text-white">{{ area.label }}</span>
                   <span class="block text-[9px] font-normal text-gray-400 pl-1">
-                    add, edit, delete
+                    {{ area.viewable === false ? 'plan their part of each Sunday' : 'add, edit, delete' }}
                   </span>
                 </th>
                 <td v-for="tag in tags" :key="`${tag}-m-${area.key}`" class="px-2 py-2 text-center">

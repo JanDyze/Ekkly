@@ -1,9 +1,12 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { ChevronDown, ChevronRight, UserCheck } from '../../icons'
+import { UserCheck } from '../../icons'
 import AppScreen from '../../components/appframe/AppScreen.vue'
+import ListGroup from '../../components/appframe/ListGroup.vue'
+import ListRow from '../../components/appframe/ListRow.vue'
+import DateTile from '../../components/appframe/DateTile.vue'
 import { useScheduleOverview } from '../../composables/useScheduleOverview'
-import { formatServiceDate, formatShortDate, todayIso } from '../../utils/lineupUtils'
+import { formatServiceDate, todayIso } from '../../utils/lineupUtils'
 
 // Every service this account is on, across every month on file.
 //
@@ -36,92 +39,53 @@ const subtitle = computed(() => {
 
 <template>
   <AppScreen title="My turns" :subtitle="subtitle" :back="{ name: 'SchedulesHome' }" root="/schedules">
-    <div v-if="loading" class="flex flex-col gap-2">
-      <div v-for="n in 3" :key="n" class="h-16 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
-    </div>
+    <div v-if="loading" class="h-48 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
 
     <!-- An account not tied to anybody on the roll has no turns to find. -->
     <div v-else-if="!myMember" class="p-8 text-center text-gray-500 dark:text-gray-400">
       <UserCheck class="mx-auto mb-3 h-10 w-10 text-gray-300 dark:text-gray-600" />
-      <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Your account is not linked to anyone on the roll</p>
-      <p class="mx-auto mt-1 max-w-xs text-xs">
-        Once it is, every Sunday you are on shows here. Link it from your account in Ekkly.
-      </p>
+      <p class="text-base font-medium text-gray-700 dark:text-gray-300">Your account is not linked to anyone on the roll</p>
+      <p class="mx-auto mt-1 max-w-xs text-sm">Once it is, every Sunday you are on shows here.</p>
     </div>
 
-    <template v-else>
-      <div v-if="!myUpcoming.length" class="p-8 text-center text-gray-500 dark:text-gray-400">
-        <UserCheck class="mx-auto mb-3 h-10 w-10 text-gray-300 dark:text-gray-600" />
-        <p class="text-sm font-medium text-gray-700 dark:text-gray-300">You are not on any schedule coming up</p>
-        <p class="mx-auto mt-1 max-w-xs text-xs">When you are put on a Sunday, it shows here.</p>
-      </div>
-
-      <div v-else class="flex flex-col gap-2">
-        <RouterLink
+    <div v-else class="flex flex-col gap-5">
+      <ListGroup title="Coming up" :count="myUpcoming.length || null">
+        <ListRow
           v-for="(turn, index) in myUpcoming"
           :key="turn.date"
           :to="{ name: 'SchedulesSunday', params: { date: turn.date } }"
-          :style="{ animationDelay: `${Math.min(index, 8) * 35}ms` }"
-          :class="[
-            'animate-rise group flex items-center gap-3 rounded-2xl border p-3 transition-[transform,border-color] duration-200 ease-out pressed:scale-[0.99]',
-            index === 0
-              ? 'border-primary/30 bg-primary/5 dark:border-primary-light/30 dark:bg-primary-light/10'
-              : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700/80 dark:bg-gray-800',
-          ]"
+          :title="myRolesOn(turn).map((r) => r.name).join(' · ')"
+          :subtitle="[formatServiceDate(turn.date), turn.theme, turn.draft ? 'draft' : ''].filter(Boolean).join(' · ')"
         >
-          <span
-            class="flex size-12 shrink-0 flex-col items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light"
-          >
-            <span class="text-[10px] font-bold uppercase leading-none">{{ formatShortDate(turn.date).split(' ')[0] }}</span>
-            <span class="text-lg font-bold leading-tight">{{ formatShortDate(turn.date).split(' ')[1] }}</span>
-          </span>
-          <span class="min-w-0 flex-1">
-            <span class="block truncate text-base font-semibold leading-tight text-gray-900 dark:text-white">
-              {{ myRolesOn(turn).map((r) => r.name).join(' · ') }}
-            </span>
-            <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
-              {{ formatServiceDate(turn.date) }}{{ turn.theme ? ` · ${turn.theme}` : '' }}
-            </span>
-          </span>
-          <span
-            v-if="turn.draft"
-            class="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
-          >
-            Draft
-          </span>
-          <ChevronRight
-            class="size-4 shrink-0 text-gray-300 transition-transform duration-300 group-engaged:translate-x-1 dark:text-gray-600"
-          />
-        </RouterLink>
-      </div>
+          <template #leading><DateTile :date="turn.date" :highlight="index === 0" /></template>
+        </ListRow>
+        <ListRow v-if="!myUpcoming.length" title="You are not on any Sunday coming up" subtitle="When you are put on one, it shows here." muted />
+      </ListGroup>
 
       <!-- Already served, folded away -->
-      <div v-if="past.length" class="pt-5">
-        <button
-          type="button"
-          class="flex w-full items-center gap-1 rounded-lg px-0.5 py-1.5 text-sm font-medium text-gray-500 transition-colors hover:text-primary dark:text-gray-400"
-          @click="showPast = !showPast"
-        >
-          <ChevronDown :class="['size-4 transition-transform', showPast ? 'rotate-180' : '-rotate-90']" />
-          Served lately · {{ past.length }}
-        </button>
-        <div v-if="showPast" class="mt-1 flex flex-col gap-1">
-          <RouterLink
+      <ListGroup v-if="past.length" title="Served lately" :count="past.length">
+        <template #action>
+          <button
+            type="button"
+            class="-my-1 rounded-lg px-2 py-1 text-sm font-semibold text-primary hover:bg-primary/10 dark:text-primary-light dark:hover:bg-primary-light/15"
+            @click="showPast = !showPast"
+          >
+            {{ showPast ? 'Hide' : 'Show' }}
+          </button>
+        </template>
+        <template v-if="showPast">
+          <ListRow
             v-for="turn in past"
             :key="turn.date"
             :to="{ name: 'SchedulesSunday', params: { date: turn.date } }"
-            class="flex items-center gap-3 rounded-xl p-3 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+            :title="myRolesOn(turn).map((r) => r.name).join(' · ')"
+            :subtitle="formatServiceDate(turn.date)"
           >
-            <span class="shrink-0 rounded-lg bg-gray-100 px-2 py-1 text-[11px] font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-              {{ formatShortDate(turn.date) }}
-            </span>
-            <span class="min-w-0 flex-1 truncate text-sm font-medium text-gray-600 dark:text-gray-300">
-              {{ myRolesOn(turn).map((r) => r.name).join(' · ') }}
-            </span>
-            <ChevronRight class="size-4 shrink-0 text-gray-300 dark:text-gray-600" />
-          </RouterLink>
-        </div>
-      </div>
-    </template>
+            <template #leading><DateTile :date="turn.date" past /></template>
+          </ListRow>
+        </template>
+        <ListRow v-else :title="`${past.length} Sunday${past.length === 1 ? '' : 's'}`" muted @click="showPast = true" />
+      </ListGroup>
+    </div>
   </AppScreen>
 </template>

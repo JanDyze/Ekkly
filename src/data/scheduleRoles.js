@@ -49,13 +49,23 @@ export const isWorshipRole = (id) => WORSHIP_ROLE_IDS.includes(id)
  * stay stored, and adding the role back by the same name brings them back.
  */
 export const DEFAULT_SCHEDULE_ROLES = [
-  { id: 'preacher', name: 'Preacher', ministries: ['Preacher'] },
-  { id: SONG_LEADER_ROLE, name: 'Song leader', ministries: ['Song Leader'] },
-  { id: 'backup-song-leader', name: 'Backup song leader', ministries: ['Song Leader'] },
-  { id: BAND_ROLE, name: 'Band', ministries: ['Song Leader', 'Instrumentalist'] },
-  { id: 'ushers', name: 'Ushers', ministries: ['Usher'] },
-  { id: 'sunday-school', name: 'Sunday school teacher', ministries: [] },
+  { id: 'preacher', name: 'Preacher', ministries: ['Preacher'], team: 'preaching' },
+  { id: SONG_LEADER_ROLE, name: 'Song leader', ministries: ['Song Leader'], team: 'worship' },
+  { id: 'backup-song-leader', name: 'Backup song leader', ministries: ['Song Leader'], team: 'worship' },
+  { id: BAND_ROLE, name: 'Band', ministries: ['Song Leader', 'Instrumentalist'], team: 'worship' },
+  { id: 'ushers', name: 'Ushers', ministries: ['Usher'], team: 'ushers' },
+  // Whoever greets the people walking in, and takes the names of anyone new —
+  // the start of the follow-up the welcome team does in the week.
+  { id: 'welcome', name: 'Welcome team', ministries: [], team: 'welcome' },
+  { id: 'sunday-school', name: 'Sunday school teacher', ministries: [], team: '' },
 ]
+
+/**
+ * Which team plans a role, for a role stored before roles had teams: the
+ * built-in roles keep the team they were born into, and anything a church
+ * added itself belongs to no team until somebody says otherwise.
+ */
+const DEFAULT_TEAM = Object.fromEntries(DEFAULT_SCHEDULE_ROLES.map((r) => [r.id, r.team]))
 
 const normalizeRole = (role) => ({
   id: String(role?.id || ''),
@@ -63,6 +73,7 @@ const normalizeRole = (role) => ({
   ministries: Array.isArray(role?.ministries)
     ? [...new Set(role.ministries.map((m) => String(m || '').trim()).filter(Boolean))]
     : [],
+  team: typeof role?.team === 'string' ? role.team : DEFAULT_TEAM[String(role?.id || '')] || '',
 })
 
 /**

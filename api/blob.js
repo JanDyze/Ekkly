@@ -22,11 +22,24 @@
  * of the separation between them here.
  *
  *   POST   /api/blob   { dataUrl, folder }   -> { url }
+ *   POST   /api/blob   { action: 'upload-token', kind: 'audio', name, use?, date? }
+ *                                            -> { token, pathname }
  *   DELETE /api/blob   { urls: [...] }       -> { deleted }
+ *
+ * A song does not fit through here. A function takes at most 4.5 MB per
+ * request, a three-minute MP3 is about that already, and base64 adds a third.
+ * So for audio this route hands out a client token instead: good for ten
+ * minutes, for one path inside the church's own folder, for audio only and
+ * up to MAX_AUDIO_BYTES — or, for the recording of a Sunday's message
+ * (`use: 'sermon'`, with its `date`), into that Sunday's sermons folder and up
+ * to MAX_SERMON_BYTES. The browser then uploads the file straight to Blob
+ * with it (@vercel/blob/client `put`). The store's own credentials still never
+ * leave the server; the token can write that one file and nothing else.
  */
 import { randomUUID } from "node:crypto";
 import { del, put } from "@vercel/blob";
-import { blobAuth } from "../lib/blobAuth.js";
+import { generateClientTokenFromReadWriteToken } from "@vercel/blob/client";
+import { blobAuth, blobToken } from "../lib/blobAuth.js";
 import { requireChurchUser } from "../lib/tenant.js";
 
 // Comfortably above anything the browser compressor produces, and far below
@@ -39,6 +52,26 @@ const EXTENSIONS = {
   "image/jpeg": "jpg",
   "image/png": "png",
   "image/avif": "avif",
+};
+
+// A song for an announcement video: long enough for anything a church would
+// put under one, short of an album.
+const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
+
+// The recording of a Sunday's message: an hour of speech at a decent bitrate,
+// with room to spare. Uploaded in parts by the browser, so its size never
+// passes through a function.
+const MAX_SERMON_BYTES = 200 * 1024 * 1024;
+
+// The extension the stored file keeps, from the name it was picked as. The
+// browser's media type for audio is unreliable (an .m4a arrives as audio/x-m4a,
+// audio/mp4 or nothing), so the token allows any audio/* and the name decides
+// the extension.
+const AUDIO_EXTENSIONS = ["mp3", "m4a", "aac", "wav", "ogg", "oga", "opus", "flac", "webm"];
+
+const audioExtension = (name) => {
+  const ext = String(name || "").toLowerCase().split(".").pop();
+  return AUDIO_EXTENSIONS.includes(ext) ? ext : "mp3";
 };
 
 /** `data:image/webp;base64,...` -> the bytes and what they are. */
@@ -110,6 +143,29 @@ export default async function handler(req, res) {
 
       await del(urls, blobAuth());
       return res.status(200).json({ deleted: urls.length });
+    }
+
+    // A token for the browser to upload a song itself — see the note at the
+    // top. Only audio, only into this church's videos folder.
+    if (body.action === "upload-token") {
+      if (body.kind !== "audio") return res.status(400).json({ error: "Only audio can be uploaded this way" });
+      const token = blobToken();
+      if (!token) {
+        return res.status(500).json({ error: "The file store has no upload token. Run `vercel env pull .env.local`." });
+      }
+      const sermon = body.use === "sermon";
+      const date = /^\d{4}-\d{2}-\d{2}$/.test(String(body.date || "")) ? body.date : "";
+      if (sermon && !date) return res.status(400).json({ error: "Which Sunday is this recording for?" });
+      const folder = sermon ? `sermons/${date}` : "videos/music";
+      const pathname = `${caller.church.id}/${folder}/${randomUUID()}.${audioExtension(body.name)}`;
+      const clientToken = await generateClientTokenFromReadWriteToken({
+        token,
+        pathname,
+        allowedContentTypes: ["audio/*"],
+        maximumSizeInBytes: sermon ? MAX_SERMON_BYTES : MAX_AUDIO_BYTES,
+        validUntil: Date.now() + 10 * 60 * 1000,
+      });
+      return res.status(200).json({ token: clientToken, pathname });
     }
 
     const decoded = decodeDataUrl(body.dataUrl);

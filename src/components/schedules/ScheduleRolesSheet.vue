@@ -13,6 +13,10 @@
  * Each role can point at ministries. That grants nothing and restricts nothing
  * — it only decides who the people picker lists first, so tying Ushers to the
  * Usher ministry means the ushers are at the top when it is time to fill it.
+ *
+ * Each role also belongs to a team, which decides who plans it: a role in
+ * Worship is filled by the worship team's planners, one in Preaching by the
+ * preaching team's. A role in no team is the schedule coordinator's.
  */
 import { computed, ref, watch } from 'vue'
 import {
@@ -30,6 +34,7 @@ import { useAppSettings } from '../../composables/useAppSettings'
 import { useMinistries } from '../../composables/useMinistries'
 import { useToast } from '../../composables/useToast'
 import { isWorshipRole, roleIdFor } from '../../data/scheduleRoles'
+import { TEAMS, teamByKey, teamOfRole } from '../../data/scheduleTeams'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 
 const props = defineProps({
@@ -95,7 +100,7 @@ const handleAdd = async () => {
     toast.info('That role already exists')
     return
   }
-  const role = { id: roleIdFor(name, roles.value), name, ministries: [] }
+  const role = { id: roleIdFor(name, roles.value), name, ministries: [], team: '' }
   await write([...roles.value, role], `"${name}" added`)
   newName.value = ''
   // Straight into choosing its ministries, which is the next thing anyone does.
@@ -123,6 +128,11 @@ const toggleMinistry = (role, ministry) => {
     ? role.ministries.filter((m) => m.toLowerCase() !== ministry.toLowerCase())
     : [...role.ministries, ministry]
   write(roles.value.map((r) => (r.id === role.id ? { ...r, ministries } : r)))
+}
+
+const setTeam = (role, team) => {
+  if (teamOfRole(role) === team) return
+  write(roles.value.map((r) => (r.id === role.id ? { ...r, team } : r)))
 }
 
 const move = (index, delta) => {
@@ -255,9 +265,12 @@ const handleRemove = async () => {
                   </span>
                   <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
                     {{
-                      role.ministries.length
-                        ? `Suggests ${role.ministries.join(', ')}`
-                        : 'Suggests nobody in particular'
+                      [
+                        teamByKey(role.team)?.name || 'No team',
+                        role.ministries.length ? `suggests ${role.ministries.join(', ')}` : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')
                     }}
                   </span>
                 </span>
@@ -287,6 +300,30 @@ const handleRemove = async () => {
                   Rename
                 </button>
               </form>
+
+              <div>
+                <p class="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-400">
+                  Planned by
+                </p>
+                <div class="flex flex-wrap gap-1.5">
+                  <button
+                    v-for="team in [...TEAMS, { key: '', name: 'No team' }]"
+                    :key="team.key || 'none'"
+                    type="button"
+                    :disabled="busy || (isWorshipRole(role.id) && team.key !== 'worship')"
+                    :aria-pressed="teamOfRole(role) === team.key"
+                    :class="[
+                      'rounded-full px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-40',
+                      teamOfRole(role) === team.key
+                        ? 'bg-primary text-white'
+                        : 'bg-white text-gray-600 ring-1 ring-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700',
+                    ]"
+                    @click="setTeam(role, team.key)"
+                  >
+                    {{ team.name }}
+                  </button>
+                </div>
+              </div>
 
               <div>
                 <p class="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-400">

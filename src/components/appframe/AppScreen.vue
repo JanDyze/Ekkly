@@ -14,6 +14,9 @@ import { ChevronLeft } from '../../icons'
 // what is true today, and the way back out to Ekkly — so the screen opens on
 // what you came for rather than on a bar.
 //
+// A section's header is the top of the screen: Ekkly's own bar steps aside one
+// step into an app (AdminLayout), so this clears the phone's notch itself.
+//
 // The header hides as the page scrolls down and comes back the moment it
 // scrolls up, so reading a long list costs nothing at the top, and the way
 // back is never more than a flick away.
@@ -79,7 +82,7 @@ defineExpose({ scroller })
     <header
       v-if="hasHeader"
       :class="[
-        'sticky top-0 z-30 border-b border-gray-200/70 bg-gray-50/85 backdrop-blur-md transition-transform duration-300 ease-out dark:border-gray-800/70 dark:bg-gray-900/85',
+        'sticky top-0 z-30 border-b border-gray-200/70 bg-gray-50/85 pt-[env(safe-area-inset-top)] backdrop-blur-md transition-transform duration-300 ease-out dark:border-gray-800/70 dark:bg-gray-900/85',
         hidden ? '-translate-y-full' : '',
       ]"
       @focusin="hidden = false"

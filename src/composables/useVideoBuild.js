@@ -35,14 +35,16 @@ export function useVideoBuild(scenes, settings) {
     let file = null
     musicNote.value = ''
     if (track === 'upload') {
-      const stored = await loadOwnTrack(getChurchId())
+      const stored = await loadOwnTrack(choice, getChurchId())
       ownTrack.value = stored ? { name: stored.name } : null
       file = stored ? await decodeOwnTrack(stored).catch(() => null) : null
       if (!file) {
         track = 'morning'
         musicNote.value = stored
           ? 'Your own music would not play here, so Morning is playing instead.'
-          : 'Your own music was chosen on another device, so Morning is playing here instead.'
+          : choice.ownUrl
+            ? 'Your own music could not be loaded just now, so Morning is playing instead.'
+            : 'Your own music was chosen on another device before songs were kept with the church. Choose it again in Look and sound and every device will have it.'
       }
     }
     const buffer = await renderMusic({ track, seconds: duration, file, start: Number(choice.start) || 0 })

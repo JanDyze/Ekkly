@@ -3,6 +3,8 @@ import { computed, ref } from 'vue'
 import { ChevronLeft, ChevronRight, ListChecks } from '../../icons'
 import AppScreen from '../../components/appframe/AppScreen.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
+import ListGroup from '../../components/appframe/ListGroup.vue'
+import ListRow from '../../components/appframe/ListRow.vue'
 import ScheduleRolesSheet from '../../components/schedules/ScheduleRolesSheet.vue'
 import { useLineup } from '../../composables/useLineups'
 import { useMembers } from '../../composables/useMembers'
@@ -49,13 +51,11 @@ const nameOf = (member) => [getDisplayName(member), member?.lastName].filter(Boo
 
 const showRoles = ref(false)
 
-const card =
-  'overflow-hidden rounded-2xl border border-gray-200 bg-white divide-y divide-gray-100 dark:divide-gray-700/60 dark:border-gray-700/80 dark:bg-gray-800'
 </script>
 
 <template>
   <AppScreen
-    title="Team"
+    title="Who serves"
     :subtitle="`${formatMonthLabel(month)} · ${sundayCount} Sundays`"
     :back="{ name: 'SchedulesHome' }"
     root="/schedules"
@@ -99,57 +99,48 @@ const card =
       <div v-for="n in 4" :key="n" class="h-14 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
     </div>
 
-    <template v-else>
-      <h2 class="mb-2 px-0.5 text-sm font-medium text-gray-500 dark:text-gray-400">Serving · {{ rows.length }}</h2>
-      <ul v-if="rows.length" :class="['animate-rise', card]">
-        <li v-for="row in rows" :key="row.id" class="flex items-center gap-3 px-3 py-2.5">
-          <MemberAvatar v-if="row.member" :member="row.member" alt="" size="h-9 w-9" />
-          <span v-else class="h-9 w-9 shrink-0 rounded-full bg-gray-100 dark:bg-gray-700" />
-          <span class="min-w-0 flex-1">
-            <span class="block truncate text-sm font-semibold text-gray-900 dark:text-white">{{ row.name }}</span>
-            <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
-              {{ row.roles.map((r) => (r.count > 1 ? `${r.name} ×${r.count}` : r.name)).join(' · ') }}
-            </span>
-          </span>
+    <div v-else class="flex flex-col gap-5">
+      <ListGroup title="Serving" :count="rows.length">
+        <ListRow
+          v-for="row in rows"
+          :key="row.id"
+          :title="row.name"
+          :subtitle="row.roles.map((r) => (r.count > 1 ? `${r.name} ×${r.count}` : r.name)).join(' · ')"
+        >
+          <template #leading>
+            <MemberAvatar v-if="row.member" :member="row.member" alt="" size="h-10 w-10" class="shrink-0" />
+            <span v-else class="size-10 shrink-0 rounded-full bg-gray-100 dark:bg-gray-700" />
+          </template>
           <!-- Marked only when it is every Sunday of the month: a fixed
-               threshold would mean different things in a four-Sunday month and
-               a five-Sunday one. -->
-          <span
-            :class="[
-              'shrink-0 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums',
-              sundayCount > 1 && row.count >= sundayCount
-                ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
-                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
-            ]"
-          >
-            ×{{ row.count }}
-          </span>
-        </li>
-      </ul>
-      <p
-        v-else
-        class="rounded-2xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400"
-      >
-        Nobody is scheduled in {{ formatMonthLabel(month) }} yet.
-      </p>
-
-      <template v-if="resting.length">
-        <h2 class="mb-2 mt-6 px-0.5 text-sm font-medium text-gray-500 dark:text-gray-400">
-          Not on this month · {{ resting.length }}
-        </h2>
-        <ul :class="['animate-rise', card]" style="animation-delay: 60ms">
-          <li v-for="row in resting" :key="row.member.firestoreId" class="flex items-center gap-3 px-3 py-2.5">
-            <MemberAvatar :member="row.member" alt="" size="h-9 w-9" />
-            <span class="min-w-0 flex-1">
-              <span class="block truncate text-sm font-semibold text-gray-900 dark:text-white">{{ nameOf(row.member) }}</span>
-              <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
-                Could be {{ row.roles.map((r) => r.name.toLowerCase()).join(', ') }}
-              </span>
+               threshold would mean different things in a four-Sunday month
+               and a five-Sunday one. -->
+          <template #trailing>
+            <span
+              :class="[
+                'shrink-0 text-sm font-semibold tabular-nums',
+                sundayCount > 1 && row.count >= sundayCount ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400',
+              ]"
+            >
+              {{ row.count }} {{ row.count === 1 ? 'Sunday' : 'Sundays' }}
             </span>
-          </li>
-        </ul>
-      </template>
-    </template>
+          </template>
+        </ListRow>
+        <ListRow v-if="!rows.length" :title="`Nobody is scheduled in ${formatMonthLabel(month)} yet`" muted />
+      </ListGroup>
+
+      <ListGroup v-if="resting.length" title="Not on this month" :count="resting.length">
+        <ListRow
+          v-for="row in resting"
+          :key="row.member.firestoreId"
+          :title="nameOf(row.member)"
+          :subtitle="`Could be ${row.roles.map((r) => r.name.toLowerCase()).join(', ')}`"
+        >
+          <template #leading>
+            <MemberAvatar :member="row.member" alt="" size="h-10 w-10" class="shrink-0" />
+          </template>
+        </ListRow>
+      </ListGroup>
+    </div>
 
     <ScheduleRolesSheet :show="showRoles" @close="showRoles = false" />
   </AppScreen>

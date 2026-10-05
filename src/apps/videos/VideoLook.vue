@@ -10,18 +10,18 @@ import { useVideoBuild } from '../../composables/useVideoBuild'
 import { useAppSettings } from '../../composables/useAppSettings'
 import { useToast } from '../../composables/useToast'
 import { getChurchId } from '../../api/church'
-import { uploadImage } from '../../api/blobService'
+import { deleteImages, uploadAudio, uploadImage } from '../../api/blobService'
 import { compressImageToBase64 } from '../../utils/imageUtils'
 import { ASPECTS, LOOKS, TRANSITIONS, backgroundsOf, buildVideo } from '../../utils/video/render'
 import { FONT_OPTIONS, accentFor, ensureFont, loadImage, stackFor } from '../../utils/video/assets'
 import { SOURCE_OPTIONS, SPLIT_LIMIT, SPLIT_MODES, SPLIT_OPTIONS } from '../../utils/video/scenes'
 import {
   TRACKS,
+  cacheOwnTrack,
   decodeOwnTrack,
+  forgetOwnTrack,
   loadOwnTrack,
-  removeOwnTrack,
   renderMusic,
-  saveOwnTrack,
 } from '../../utils/video/music'
 import { fontsUrl } from '../../../lib/platformDefaults.js'
 import { currentTheme } from '../../composables/useBrandTheme'
@@ -183,41 +183,74 @@ const outroHint = computed(() => {
 
 /* ------------------------------------------------------------- the music */
 
-const ownTrack = ref(null)
+// The church's own song: stored with the church, so it is the same on every
+// device. A song chosen before that, in 0.30.0, is only in the browser that
+// chose it, and is found there for as long as it is.
+const legacyTrack = ref(null)
+const ownTrack = computed(() =>
+  musicChoice.value.ownUrl ? { name: musicChoice.value.ownName || 'Your own music', shared: true } : legacyTrack.value
+)
 const trackInput = ref(null)
 const addingTrack = ref(false)
+const uploadProgress = ref(0)
+
+const MAX_TRACK_BYTES = 25 * 1024 * 1024
 
 onMounted(async () => {
-  const stored = await loadOwnTrack(getChurchId())
-  ownTrack.value = stored ? { name: stored.name } : null
+  if (musicChoice.value.ownUrl) return
+  const stored = await loadOwnTrack({}, getChurchId())
+  legacyTrack.value = stored ? { name: stored.name, shared: false } : null
 })
 
 const onTrack = async (event) => {
   const picked = event.target.files?.[0]
   event.target.value = ''
   if (!picked) return
+  if (picked.size > MAX_TRACK_BYTES) {
+    toast.error('That song is over 25 MB. Please choose a shorter or smaller file.')
+    return
+  }
   addingTrack.value = true
+  uploadProgress.value = 0
+  const previous = { ...musicChoice.value }
   try {
-    // Decoded before it is kept, so a file the browser cannot play is turned
-    // away here rather than failing quietly under every video.
+    // Decoded before it is stored, so a file the browser cannot play is
+    // turned away here rather than failing quietly under every video.
     await decodeOwnTrack({ name: picked.name, blob: picked })
-    await saveOwnTrack(getChurchId(), picked)
-    ownTrack.value = { name: picked.name }
-    await setMusic({ track: 'upload', ownName: picked.name, start: 0 })
+  } catch (error) {
+    console.error('Could not read that music:', error)
+    toast.error('Could not play that file. Please choose an MP3, M4A or WAV.')
+    addingTrack.value = false
+    return
+  }
+  try {
+    const url = await uploadAudio(picked, (percent) => (uploadProgress.value = percent))
+    await cacheOwnTrack(url, picked)
+    await setMusic({ track: 'upload', ownUrl: url, ownName: picked.name, start: 0 })
+    // The song it replaces is no longer anyone's, here or in the store.
+    if (previous.ownUrl) deleteImages([previous.ownUrl]).catch((e) => console.error('Could not delete the old song:', e))
+    forgetOwnTrack(previous.ownUrl ? previous : {}, previous.ownUrl ? '' : getChurchId())
+    legacyTrack.value = null
     toast.success('Music added')
   } catch (error) {
-    console.error('Could not add that music:', error)
-    toast.error('Could not play that file. Please choose an MP3, M4A or WAV.')
+    console.error('Could not upload that music:', error)
+    toast.error('Could not upload that song. Please try again.')
   } finally {
     addingTrack.value = false
   }
 }
 
 const removeTrack = async () => {
+  const previous = { ...musicChoice.value }
   try {
-    await removeOwnTrack(getChurchId())
-    ownTrack.value = null
-    if (musicChoice.value.track === 'upload') await setMusic({ track: 'morning' })
+    await setMusic({
+      track: previous.track === 'upload' ? 'morning' : previous.track,
+      ownUrl: '',
+      ownName: '',
+    })
+    if (previous.ownUrl) await deleteImages([previous.ownUrl])
+    forgetOwnTrack(previous, getChurchId())
+    legacyTrack.value = null
   } catch (error) {
     console.error('Could not remove the music:', error)
     toast.error('Could not remove that music. Please try again.')
@@ -274,7 +307,7 @@ const listen = async (key) => {
   try {
     let file = null
     if (key === 'upload') {
-      file = await decodeOwnTrack(await loadOwnTrack(getChurchId()))
+      file = await decodeOwnTrack(await loadOwnTrack(musicChoice.value, getChurchId()))
       if (!file) throw new Error('No track on this device')
     }
     const buffer = await renderMusic({ track: key, seconds: 18, file, start: startAt.value })
@@ -310,7 +343,11 @@ const trackOptions = computed(() => [
         {
           key: 'upload',
           label: ownTrack.value?.name || musicChoice.value.ownName || 'Your own music',
-          hint: ownTrack.value ? 'Your own music, kept on this device' : 'Chosen on another device',
+          hint: !ownTrack.value
+            ? 'Chosen on another device. Add it again to keep it with the church'
+            : ownTrack.value.shared
+              ? 'Your own music, kept with the church'
+              : 'Only on this device. Add it again to keep it with the church',
         },
       ]
     : []),
@@ -683,7 +720,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
               v-if="track.key === 'upload' && ownTrack"
               type="button"
               class="flex size-9 shrink-0 items-center justify-center rounded-full text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
-              aria-label="Remove your music from this device"
+              aria-label="Remove your own music"
               @click="removeTrack"
             >
               <Trash2 class="h-4 w-4" />
@@ -698,12 +735,20 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
           >
             <Loader2 v-if="addingTrack" class="h-4 w-4 animate-spin" />
             <UploadSimple v-else class="h-4 w-4" />
-            {{ ownTrack ? 'Use different music of your own' : 'Use music of your own' }}
+            {{
+              addingTrack
+                ? uploadProgress
+                  ? `Uploading ${uploadProgress}%`
+                  : 'Checking the file…'
+                : ownTrack
+                  ? 'Use different music of your own'
+                  : 'Use music of your own'
+            }}
           </button>
           <input ref="trackInput" type="file" accept="audio/*" class="hidden" @change="onTrack" />
         </div>
         <p class="mt-2 px-0.5 text-xs text-gray-500 dark:text-gray-400">
-          Your own music stays on this device, so make the video here. Only use music the church has the right
+          Your own music is kept with the church, so every phone and computer plays it. Only use music the church has the right
           to post; Facebook and YouTube mute songs they recognise.
         </p>
 

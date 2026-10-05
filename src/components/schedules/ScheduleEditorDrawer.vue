@@ -16,6 +16,12 @@
  * do with them, and the person staffing the door should not have to scroll past
  * a set list to reach it; the song leader planning hers knows to look further
  * down.
+ *
+ * Opened for one team (`team`), it is that team's part of the Sunday only:
+ * its roles, and the songs for worship or the theme for preaching. The head
+ * usher planning the door sees the ushers and nothing to scroll past. What it
+ * saves is merged onto the live Sunday by the caller (mergeTeamEdit), so the
+ * other teams' parts are never written back from this copy.
  */
 import { computed, ref, watch } from 'vue'
 import { ChevronDown, ChevronUp, ListMusic, Plus, Trash2, X } from '../../icons'
@@ -29,6 +35,7 @@ import {
   rosterName,
 } from '../../utils/lineupUtils'
 import { BAND_ROLE, SONG_LEADER_ROLE, assignmentsOf } from '../../data/scheduleRoles'
+import { rolesOfTeam, teamByKey } from '../../data/scheduleTeams'
 import { INSTRUMENTS, cleanInstruments, instrumentOn, instrumentsOf } from '../../data/instruments'
 import MemberAvatar from '../members/MemberAvatar.vue'
 import InstrumentIcon from './InstrumentIcon.vue'
@@ -42,6 +49,9 @@ const props = defineProps({
   songs: { type: Array, default: () => [] },
   roles: { type: Array, default: () => [] },
   saving: { type: Boolean, default: false },
+  // One team's part only — 'worship', 'preaching', 'ushers', 'welcome' — or
+  // '' for the whole Sunday.
+  team: { type: String, default: '' },
 })
 
 const emit = defineEmits(['update:show', 'save', 'clear'])
@@ -76,6 +86,13 @@ watch(
     pickingRole.value = null
   },
   { immediate: true }
+)
+
+const shownRoles = computed(() => (props.team ? rolesOfTeam(props.roles, props.team) : props.roles))
+const showTheme = computed(() => !props.team || props.team === 'preaching')
+const showSongs = computed(() => !props.team || props.team === 'worship')
+const subtitle = computed(() =>
+  props.team ? `${teamByKey(props.team)?.name || 'Team'} · ${teamByKey(props.team)?.blurb || ''}` : 'Who serves, and what is sung'
 )
 
 const close = () => emit('update:show', false)
@@ -245,7 +262,7 @@ const handleSave = () => {
               >
                 {{ formatServiceDate(form.date) }}
               </h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Who serves, and what is sung</p>
+              <p class="truncate text-xs text-gray-500 dark:text-gray-400">{{ subtitle }}</p>
             </div>
             <button
               @click="close"
@@ -259,7 +276,7 @@ const handleSave = () => {
           <!-- Body -->
           <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
             <!-- Theme -->
-            <div>
+            <div v-if="showTheme">
               <label
                 for="schedule-theme"
                 class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -279,7 +296,7 @@ const handleSave = () => {
             <div>
               <p class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Who serves</p>
               <ul class="divide-y divide-gray-100 dark:divide-gray-700/60">
-                <li v-for="role in roles" :key="role.id" class="py-2.5">
+                <li v-for="role in shownRoles" :key="role.id" class="py-2.5">
                   <div class="flex items-center justify-between gap-2">
                     <p class="min-w-0 truncate text-sm font-semibold text-gray-900 dark:text-white">
                       {{ role.name }}
@@ -361,10 +378,13 @@ const handleSave = () => {
                   <p v-else class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">Nobody yet</p>
                 </li>
               </ul>
+              <p v-if="!shownRoles.length" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                No roles belong to this team yet. Give one a team under Who serves → Roles.
+              </p>
             </div>
 
             <!-- Songs -->
-            <div>
+            <div v-if="showSongs">
               <div class="mb-2 flex items-center justify-between gap-2">
                 <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Songs</p>
                 <button
@@ -461,6 +481,7 @@ const handleSave = () => {
             class="flex shrink-0 items-center gap-2 border-t border-gray-200 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] dark:border-gray-700"
           >
             <button
+              v-if="!team"
               type="button"
               @click="emit('clear', form.date)"
               class="rounded-lg px-3 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"

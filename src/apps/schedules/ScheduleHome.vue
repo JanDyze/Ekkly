@@ -1,64 +1,61 @@
 <script setup>
-import { computed } from 'vue'
-import {
-  CalendarDots,
-  ChevronRight,
-  EyeOff,
-  IdentificationBadge,
-  Plus,
-  UsersThree,
-  Warning,
-} from '../../icons'
+import { computed, ref } from 'vue'
+import { BellRinging, HandWaving, IdentificationBadge, Plus } from '../../icons'
 import AppScreen from '../../components/appframe/AppScreen.vue'
 import AppHero from '../../components/appframe/AppHero.vue'
-import AppTile from '../../components/appframe/AppTile.vue'
+import AppShortcut from '../../components/appframe/AppShortcut.vue'
+import AppActionsSheet from '../../components/appframe/AppActionsSheet.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
 import { useScheduleOverview } from '../../composables/useScheduleOverview'
 import { useMembers } from '../../composables/useMembers'
-import {
-  findRosterMember,
-  formatMonthLabel,
-  formatServiceDate,
-  formatShortDate,
-  parseIso,
-  todayIso,
-} from '../../utils/lineupUtils'
-import { peopleOnService } from '../../data/scheduleRoles'
+import { useSermons } from '../../composables/useSermons'
+import { useFollowUps } from '../../composables/useFollowUps'
+import { usePermissions } from '../../composables/usePermissions'
+import { rolesOfTeam } from '../../data/scheduleTeams'
+import { findRosterMember, formatMonthLabel, formatServiceDate, formatShortDate, parseIso, todayIso } from '../../utils/lineupUtils'
+import { SONG_LEADER_ROLE, assignmentsOf } from '../../data/scheduleRoles'
 import { getDisplayName } from '../../utils/memberUtils'
 
-// The Schedules app's home, and its navigation.
+// The Schedules app's home. One screen, no scrolling, and three things on it:
 //
-// A launcher, the shape every app inside Ekkly takes (src/components/appframe):
-// a hero that answers the question most visits are — who is on this Sunday,
-// and whether it is you — then a tile into each section saying what is true
-// in it, one main action, and the Sunday itself. Nothing here is a tab; each
-// section is a step in, with a way back.
+//   1. The next Sunday — when it is, whether you are on it, who preaches and
+//      who leads — and the way into it. It is the question nearly every visit
+//      is.
+//   2. What is waiting on you, behind one button with the count on it: a
+//      Sunday still to plan, a month left in draft, a role nobody is on, a
+//      message not yet written, newcomers to call, or your own next turn when
+//      it is not this Sunday. The list opens in a sheet (AppActionsSheet); the
+//      home itself carries none of it. Nothing waiting, no button.
+//   3. The doors: a picture and a name for each section, two short rows like
+//      a phone's home screen. A count on a corner says what is waiting inside.
 //
-// Putting a Sunday on the screen is not here: that is the Presentation app,
-// the tech team's own, and each Sunday's screen carries a Present button into
-// it for whoever is looking at one.
+// What it used to carry and does not: a tile per section with a sentence on
+// each (the sentences repeated the Sunday above, or the section itself), a
+// main button, and the waiting jobs themselves — they are one tap away, behind
+// the button, rather than on the face of the home.
 
 const {
   loading,
   canPlan,
+  canPlanTeam,
   myMember,
-  upcoming,
   next,
   myRolesOn,
   myUpcoming,
-  leaderOf,
-  thisMonth,
-  thisMonthSundays,
-  thisMonthStatus,
   drafts,
   gaps,
   nextUnplanned,
+  roles,
+  comingSundays,
 } = useScheduleOverview()
 const { members } = useMembers()
+const { sermonOn } = useSermons()
+const { followUpOf } = useFollowUps()
+const { can } = usePermissions()
 
 const today = todayIso()
 
-/* ---------------------------------------------------------------- hero */
+/* ------------------------------------------------------------ the Sunday */
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -81,238 +78,214 @@ const whenOf = (iso) => {
   return `on ${formatShortDate(iso)}`
 }
 
-const nameOf = (id) => {
-  const member = findRosterMember(members.value, id)
-  return member ? getDisplayName(member) : ''
-}
+const myRoles = computed(() => (next.value ? myRolesOn(next.value) : []))
 
-// One sentence that is true today. Being on the service yourself comes first,
-// because it is the one thing in here that is about you.
 const headline = computed(() => {
   if (loading.value) return 'Schedules'
   const sunday = next.value
   if (!sunday) return canPlan.value ? 'Nothing planned yet' : 'Nothing scheduled yet'
-  const mine = myRolesOn(sunday)
-  if (mine.length) return `You're on ${whenOf(sunday.date)} · ${mine.map((r) => r.name).join(', ')}`
-  const leader = nameOf(leaderOf(sunday))
-  if (leader) return `${leader} leads ${whenOf(sunday.date)}`
-  return `${peopleOnService(sunday).length} serving ${whenOf(sunday.date)}`
+  const when = whenOf(sunday.date)
+  if (myRoles.value.length) return `You're on ${when}`
+  if (when === 'today') return 'Today'
+  if (when === 'this Sunday') return 'This Sunday'
+  return formatServiceDate(sunday.date)
 })
 
 const heroDetail = computed(() => {
   if (!next.value) {
     return canPlan.value ? 'Plan a Sunday and everyone on it can see when they are on.' : 'The next service shows here once it is scheduled.'
   }
-  // Named as a theme: on its own, in quotation marks, it read as a stray
-  // quotation rather than as what the Sunday is about.
-  return next.value.theme ? `Theme · ${next.value.theme}` : formatServiceDate(next.value.date)
+  const parts = []
+  if (myRoles.value.length) parts.push(myRoles.value.map((r) => r.name).join(' · '))
+  else if (daysUntil(next.value.date) <= 6) parts.push(formatShortDate(next.value.date))
+  if (next.value.theme) parts.push(next.value.theme)
+  return parts.join(' · ')
 })
 
-const plannedThisMonth = computed(() => thisMonthSundays.value.filter((s) => s.planned).length)
-const segmentsLabel = computed(
-  () => `${formatMonthLabel(thisMonth)} · ${plannedThisMonth.value} of ${thisMonthSundays.value.length} Sundays planned`
+// Who preaches and who leads: the two a congregation asks about first.
+const keyPeople = computed(() => {
+  if (!next.value) return []
+  const assignments = assignmentsOf(next.value)
+  return [
+    { key: 'preacher', doing: 'preaching', id: assignments.preacher?.[0] },
+    { key: 'leader', doing: 'leading', id: assignments[SONG_LEADER_ROLE]?.[0] },
+  ]
+    .map((person) => ({ ...person, member: findRosterMember(members.value, person.id) }))
+    .filter((person) => person.member)
+})
+
+/* --------------------------------------------------- what is waiting on you */
+
+const coming = computed(() => comingSundays.value[0] || null)
+
+const newcomersWaiting = computed(() =>
+  can('consolidation.view')
+    ? members.value.filter((m) => m.isMember === false && followUpOf(m.firestoreId || m.id).step === 'new').length
+    : 0
 )
 
-/* --------------------------------------------------------------- tiles */
+/** Everything waiting on this person, soonest and most pressing first. */
+const waiting = computed(() => {
+  const list = []
+  const sundayLink = (date, edit) => ({ name: 'SchedulesSunday', params: { date }, ...(edit ? { query: { edit } } : {}) })
 
-const calendarDetail = computed(() => {
-  if (canPlan.value && drafts.value.length) return `${formatMonthLabel(drafts.value[0]).split(' ')[0]} is a draft`
-  if (canPlan.value && thisMonthStatus.value !== 'published' && !plannedThisMonth.value) return 'Start this month'
-  return `${upcoming.value.length} Sunday${upcoming.value.length === 1 ? '' : 's'} coming up`
-})
-
-const turnsDetail = computed(() => {
-  if (!myMember.value) return 'Link your account first'
-  const first = myUpcoming.value[0]
-  return first ? `Next: ${formatShortDate(first.date)}` : 'None coming up'
-})
-
-const teamDetail = computed(() => {
-  const count = gaps.value.filter((g) => g.planned).length
-  return count ? `${count} Sunday${count === 1 ? '' : 's'} short` : 'Who serves how often'
-})
-
-/* ------------------------------------------------------------ the action */
-
-// Planners plan. Everyone else came to find out when they are on, so the main
-// action is their own next Sunday, or failing that the next one at all.
-const action = computed(() => {
   if (canPlan.value) {
-    const target = nextUnplanned.value
-    return target
-      ? {
-          label: `Plan ${formatShortDate(target.date)}`,
-          icon: Plus,
-          to: { name: 'SchedulesSunday', params: { date: target.date }, query: { edit: '1' } },
-        }
-      : { label: 'Open the calendar', icon: CalendarDots, to: { name: 'SchedulesCalendar' } }
+    if (nextUnplanned.value) {
+      list.push({
+        key: 'plan',
+        icon: Plus,
+        tone: 'action',
+        text: `Plan ${formatShortDate(nextUnplanned.value.date)}`,
+        hint: 'Nobody is on it yet',
+        to: sundayLink(nextUnplanned.value.date, '1'),
+      })
+    }
+    drafts.value.forEach((month) =>
+      list.push({
+        key: `draft-${month}`,
+        icon: BellRinging,
+        tone: 'warn',
+        text: `${formatMonthLabel(month).split(' ')[0]} is still a draft`,
+        hint: 'Nobody else can see it until it is published',
+        to: { name: 'SchedulesCalendar', params: { month } },
+      })
+    )
+    gaps.value
+      .filter((gap) => gap.planned)
+      .forEach((gap) =>
+        list.push({
+          key: `gap-${gap.date}`,
+          icon: BellRinging,
+          tone: 'warn',
+          text: `${formatShortDate(gap.date)} needs ${gap.empty.map((r) => r.name.toLowerCase()).join(', ')}`,
+          hint: 'Still open on a Sunday coming up',
+          to: sundayLink(gap.date),
+        })
+      )
+  } else if (coming.value) {
+    // A team's own planners see their own part of the coming Sunday.
+    const date = coming.value.date
+    if (canPlanTeam('worship') && !coming.value.songs?.length) {
+      list.push({ key: 'songs', icon: Plus, tone: 'action', text: `Pick the songs for ${formatShortDate(date)}`, hint: 'Worship', to: sundayLink(date, 'worship') })
+    }
+    if (canPlanTeam('preaching') && !sermonOn(date)) {
+      list.push({ key: 'message', icon: Plus, tone: 'action', text: `Write the message for ${formatShortDate(date)}`, hint: 'Preaching', to: sundayLink(date, 'preaching') })
+    }
   }
+
+  if (can('consolidation.manage') && newcomersWaiting.value) {
+    list.push({
+      key: 'newcomers',
+      icon: HandWaving,
+      tone: 'action',
+      text: `${newcomersWaiting.value} newcomer${newcomersWaiting.value === 1 ? '' : 's'} to follow up`,
+      hint: 'Welcome',
+      to: { name: 'SchedulesWelcome' },
+    })
+  }
+
+  // Your own next turn, when it is not the Sunday the card above already shows.
   const mine = myUpcoming.value[0]
-  if (mine) return { label: 'Open your next turn', icon: IdentificationBadge, to: { name: 'SchedulesSunday', params: { date: mine.date } } }
-  if (next.value) return { label: 'See this Sunday', icon: CalendarDots, to: { name: 'SchedulesSunday', params: { date: next.value.date } } }
-  return null
+  if (mine && mine.date !== next.value?.date) {
+    list.push({
+      key: 'mine',
+      icon: IdentificationBadge,
+      tone: 'mine',
+      text: `You're on ${formatShortDate(mine.date)}`,
+      hint: myRolesOn(mine).map((r) => r.name).join(' · '),
+      to: sundayLink(mine.date),
+    })
+  }
+  return list
 })
 
-/* --------------------------------------------------------- this Sunday */
+const showActions = ref(false)
+/** Amber when something needs acting on; the accent when it is only your own turn. */
+const urgentWaiting = computed(() => waiting.value.some((item) => item.tone !== 'mine'))
 
-const crew = computed(() =>
-  next.value
-    ? peopleOnService(next.value)
-        .map((id) => findRosterMember(members.value, id))
-        .filter(Boolean)
-    : []
-)
+/* -------------------------------------------------------------- the doors */
 
-const tileDelay = (index) => 60 + index * 50
+const planningCount = computed(() => (canPlan.value ? drafts.value.length + gaps.value.filter((g) => g.planned).length : 0))
+
+const doors = computed(() => {
+  const teamDoor = (key, title, name) =>
+    // A team with no roles yet is only worth a door to someone who could set it up.
+    rolesOfTeam(roles.value, key).length || canPlanTeam(key) || (key === 'welcome' && can('consolidation.view'))
+      ? [{ key, title, glyph: key, to: { name } }]
+      : []
+  return [
+    { key: 'mine', title: 'My turns', glyph: 'mine', to: { name: 'SchedulesMine' }, badge: myUpcoming.value.length },
+    { key: 'calendar', title: 'Calendar', glyph: 'calendar', to: { name: 'SchedulesCalendar' }, badge: planningCount.value, urgent: true },
+    ...teamDoor('worship', 'Worship', 'SchedulesWorship'),
+    ...teamDoor('preaching', 'Preaching', 'SchedulesPreaching'),
+    ...teamDoor('ushers', 'Ushers', 'SchedulesUshers'),
+    ...teamDoor('welcome', 'Welcome', 'SchedulesWelcome').map((door) => ({ ...door, badge: newcomersWaiting.value })),
+    ...(canPlan.value ? [{ key: 'who', title: 'Who serves', glyph: 'who', to: { name: 'SchedulesTeam' } }] : []),
+  ]
+})
+
 </script>
 
 <template>
   <AppScreen>
     <div class="flex flex-col gap-3">
+      <!-- 1. The next Sunday, and the way into it -->
       <AppHero
         art="lineups"
         :greeting="greeting"
         :title="headline"
         :detail="heroDetail"
-        :segments="canPlan ? thisMonthSundays.map((s) => s.planned) : []"
-        :segments-label="canPlan ? segmentsLabel : ''"
-      />
-
-      <!-- The sections. Team is the planners' own, and takes the whole row
-           beneath the other two rather than leave a hole beside it. -->
-      <nav class="grid grid-cols-2 gap-3" aria-label="Schedules">
-        <AppTile
-          :to="{ name: 'SchedulesCalendar' }"
-          title="Calendar"
-          :detail="calendarDetail"
-          :icon="CalendarDots"
-          :urgent="canPlan && drafts.length > 0"
-          :delay="tileDelay(0)"
-        />
-        <AppTile
-          :to="{ name: 'SchedulesMine' }"
-          title="My turns"
-          :detail="turnsDetail"
-          :icon="IdentificationBadge"
-          :badge="myUpcoming.length"
-          :delay="tileDelay(1)"
-        />
-        <AppTile
-          v-if="canPlan"
-          :to="{ name: 'SchedulesTeam' }"
-          title="Team"
-          :detail="teamDetail"
-          :icon="UsersThree"
-          wide
-          :delay="tileDelay(2)"
-        />
-      </nav>
-
-      <RouterLink
-        v-if="action"
-        :to="action.to"
-        class="animate-rise flex h-13 items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-white transition-transform duration-200 ease-out hover:bg-primary-hover pressed:scale-[0.98]"
-        style="animation-delay: 220ms"
+        :to="next ? { name: 'SchedulesSunday', params: { date: next.date } } : null"
       >
-        <component :is="action.icon" class="size-5" />
-        {{ action.label }}
-      </RouterLink>
-
-      <!-- The Sunday itself -->
-      <section v-if="next" class="animate-rise mt-3" style="animation-delay: 310ms">
-        <h2 class="mb-2 px-0.5 text-sm font-medium text-gray-500 dark:text-gray-400">
-          {{ whenOf(next.date) === 'today' ? 'Today' : 'Next service' }}
-        </h2>
-        <RouterLink
-          :to="{ name: 'SchedulesSunday', params: { date: next.date } }"
-          class="group block rounded-2xl border border-gray-200 bg-white p-4 transition-[transform,border-color] duration-200 ease-out hover:border-gray-300 pressed:scale-[0.99] dark:border-gray-700/80 dark:bg-gray-800 dark:hover:border-gray-600"
-        >
-          <div class="flex items-start gap-3">
-            <div class="min-w-0 flex-1">
-              <p class="text-lg font-semibold leading-tight tracking-tight text-gray-900 dark:text-white">
-                {{ formatServiceDate(next.date) }}
-              </p>
-              <p v-if="next.theme" class="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
-                {{ next.theme }}
-              </p>
-            </div>
-            <span
-              v-if="next.draft"
-              class="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
-            >
-              Draft
-            </span>
-            <ChevronRight
-              class="mt-1 size-4 shrink-0 text-gray-300 transition-transform duration-300 group-engaged:translate-x-1 dark:text-gray-600"
+        <div v-if="keyPeople.length" class="mt-4 flex items-center gap-2.5 pr-8">
+          <div class="flex shrink-0 -space-x-2">
+            <MemberAvatar
+              v-for="person in keyPeople"
+              :key="person.key"
+              :member="person.member"
+              alt=""
+              size="h-8 w-8"
+              plain-class="ring-2 ring-primary"
             />
           </div>
-          <div class="mt-3 flex items-center gap-3">
-            <div class="flex -space-x-2">
-              <MemberAvatar
-                v-for="person in crew.slice(0, 4)"
-                :key="person.firestoreId"
-                :member="person"
-                alt=""
-                size="h-8 w-8"
-                class="ring-2 ring-white dark:ring-gray-800"
-              />
-            </div>
-            <p class="min-w-0 flex-1 truncate text-xs text-gray-500 dark:text-gray-400">
-              <template v-if="nameOf(leaderOf(next))">{{ nameOf(leaderOf(next)) }} leading · </template>
-              {{ crew.length }} serving · {{ next.songs?.length || 0 }} songs
-            </p>
-          </div>
-        </RouterLink>
-      </section>
-
-      <!-- For whoever plans: what is still undone -->
-      <section
-        v-if="canPlan && (drafts.length || gaps.length)"
-        class="animate-rise mt-3"
-        style="animation-delay: 360ms"
-      >
-        <h2 class="mb-2 px-0.5 text-sm font-medium text-gray-500 dark:text-gray-400">Still to do</h2>
-        <div class="flex flex-col gap-2">
-          <RouterLink
-            v-for="draft in drafts"
-            :key="draft"
-            :to="{ name: 'SchedulesCalendar', params: { month: draft } }"
-            class="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3 transition-transform duration-200 pressed:scale-[0.99] dark:border-gray-700/80 dark:bg-gray-800"
-          >
-            <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
-              <EyeOff class="size-5" />
-            </span>
-            <span class="min-w-0 flex-1">
-              <span class="block truncate text-sm font-semibold text-gray-900 dark:text-white">
-                {{ formatMonthLabel(draft) }} is still a draft
-              </span>
-              <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
-                Nobody else can see it until it is published.
-              </span>
-            </span>
-            <ChevronRight class="size-4 shrink-0 text-gray-300 dark:text-gray-600" />
-          </RouterLink>
-          <RouterLink
-            v-for="gap in gaps.slice(0, 4)"
-            :key="gap.date"
-            :to="{ name: 'SchedulesSunday', params: { date: gap.date } }"
-            class="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3 transition-transform duration-200 pressed:scale-[0.99] dark:border-gray-700/80 dark:bg-gray-800"
-          >
-            <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
-              <Warning class="size-5" />
-            </span>
-            <span class="min-w-0 flex-1">
-              <span class="block truncate text-sm font-semibold text-gray-900 dark:text-white">
-                {{ formatServiceDate(gap.date) }}
-              </span>
-              <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
-                {{ gap.planned ? `No ${gap.empty.map((r) => r.name.toLowerCase()).join(', ')}` : 'Not planned yet' }}
-              </span>
-            </span>
-            <ChevronRight class="size-4 shrink-0 text-gray-300 dark:text-gray-600" />
-          </RouterLink>
+          <p class="min-w-0 flex-1 truncate text-sm text-white/85">
+            {{ keyPeople.map((p) => `${getDisplayName(p.member)} ${p.doing}`).join(' · ') }}
+          </p>
         </div>
-      </section>
+      </AppHero>
+
+      <!-- 2. What is waiting on you: one button, the list behind it -->
+      <button
+        v-if="waiting.length"
+        type="button"
+        :class="[
+          'animate-rise inline-flex h-11 items-center gap-2 self-start rounded-full px-4 text-sm font-semibold transition-transform duration-200 ease-out pressed:scale-[0.97]',
+          urgentWaiting
+            ? 'bg-amber-50 text-amber-800 ring-1 ring-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:ring-amber-500/30'
+            : 'bg-primary/10 text-primary ring-1 ring-primary/20 dark:bg-primary-light/15 dark:text-primary-light dark:ring-primary-light/25',
+        ]"
+        style="animation-delay: 60ms"
+        @click="showActions = true"
+      >
+        <BellRinging class="size-4.5" />
+        {{ waiting.length }} {{ waiting.length === 1 ? 'thing needs' : 'things need' }} you
+      </button>
+
+      <!-- 3. The doors -->
+      <nav class="mt-1 grid grid-cols-4 gap-x-2 gap-y-3" aria-label="Schedules">
+        <AppShortcut
+          v-for="(door, index) in doors"
+          :key="door.key"
+          :to="door.to"
+          :title="door.title"
+          :glyph="door.glyph"
+          :badge="door.badge || 0"
+          :urgent="door.urgent || false"
+          :delay="120 + index * 30"
+        />
+      </nav>
     </div>
+
+    <AppActionsSheet :show="showActions" :items="waiting" @close="showActions = false" />
   </AppScreen>
 </template>

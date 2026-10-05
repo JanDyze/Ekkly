@@ -9,12 +9,26 @@
 //
 // Flat, with a hairline border and no shadow: the icon tile carries the colour,
 // and the card shrinks a touch under a finger.
+//
+// Given `art`, the tile wears one of Ekkly's drawings (src/assets/app-icons)
+// instead of a line icon — the same glossy orange and blue as the apps
+// themselves — and plays its little animation when it is pointed at or pressed.
+// Given `glyph`, it wears a section's small flat picture in the church's own
+// colours (SectionGlyph): for the rooms inside an app, a step below the app.
+
+import { ref } from 'vue'
+import AppArt from '../common/AppArt.vue'
+import SectionGlyph from './SectionGlyph.vue'
 
 defineProps({
   to: { type: [String, Object], required: true },
   title: { type: String, required: true },
   detail: { type: String, default: '' },
-  icon: { type: [Object, Function], required: true },
+  icon: { type: [Object, Function], default: null },
+  // A drawing's name in src/assets/app-icons, worn in place of `icon`.
+  art: { type: String, default: '' },
+  // A section's glyph (SectionGlyph), worn in place of `icon`.
+  glyph: { type: String, default: '' },
   badge: { type: Number, default: 0 },
   // The detail in the accent colour, for when it is asking for something.
   urgent: { type: Boolean, default: false },
@@ -23,11 +37,16 @@ defineProps({
   // Its beat in the home's entrance, in milliseconds.
   delay: { type: Number, default: 0 },
 })
+
+// Bumped to play the drawing's animation again.
+const play = ref(0)
 </script>
 
 <template>
   <RouterLink
     :to="to"
+    @pointerenter="play++"
+    @focus="play++"
     :style="{ animationDelay: `${delay}ms` }"
     :class="[
       'animate-rise group flex rounded-2xl border border-gray-200 bg-white p-4 transition-[transform,background-color,border-color] duration-200 ease-out hover:border-gray-300 pressed:scale-[0.98] dark:border-gray-700/80 dark:bg-gray-800 dark:hover:border-gray-600',
@@ -35,9 +54,15 @@ defineProps({
     ]"
   >
     <span
-      class="relative flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary-light/15"
+      :class="[
+        'relative flex size-14 shrink-0 items-center justify-center rounded-2xl',
+        art || glyph ? 'bg-gray-50 dark:bg-gray-900/50' : 'bg-primary/10 dark:bg-primary-light/15',
+      ]"
     >
+      <AppArt v-if="art" :app-key="art" :play="play" class="size-12" />
+      <SectionGlyph v-else-if="glyph" :name="glyph" class="size-8" />
       <component
+        v-else
         :is="icon"
         class="size-7 text-primary transition-transform duration-300 ease-out group-engaged:-rotate-6 group-engaged:scale-110 dark:text-primary-light"
       />

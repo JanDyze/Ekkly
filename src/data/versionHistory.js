@@ -8,6 +8,19 @@
 
 export const versionHistory = [
   {
+    version: '0.31.0',
+    date: '2026-10-05',
+    title: 'Schedules, planned by its teams',
+    summary:
+      'Worship, Preaching, Ushers and Welcome each plan their own part of every Sunday, and each has a place of its own in Schedules.',
+    highlights: [
+      'Preachers set a series, write each message with its passages, and add slides from a PDF and the recording — the readings and slides go up on the screen on their own.',
+      'Ushers tick off the Sunday jobs and record the head count; the welcome team follows newcomers up through the week.',
+      'The Schedules home fits one screen, and every page in it reads as a simple list.',
+      'Your own music for the videos now plays on every device.',
+    ],
+  },
+  {
     version: '0.30.0',
     date: '2026-10-04',
     title: 'This month’s video, made for you',

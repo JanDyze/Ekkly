@@ -27,6 +27,10 @@ const SVG_DIR = path.join(ROOT, "node_modules/@phosphor-icons/core/assets/regula
 // and an outlined one looks like an empty box. Any name ending in `Fill`
 // resolves here instead: `StopFill` -> assets/fill/stop-fill.svg.
 const FILL_DIR = path.join(ROOT, "node_modules/@phosphor-icons/core/assets/fill");
+// And `Duotone` the two-tone weight — the shape at full strength over a 20%
+// fill of the same colour — used for the small pictures of an app's sections
+// (SectionGlyph): `DoorOpenDuotone` -> assets/duotone/door-open-duotone.svg.
+const DUOTONE_DIR = path.join(ROOT, "node_modules/@phosphor-icons/core/assets/duotone");
 const OUT_DIR = path.join(ROOT, "src/icons");
 const OUT = path.join(OUT_DIR, "index.js");
 
@@ -82,10 +86,10 @@ function main() {
     process.exit(1);
   }
 
-  // asset name -> the directory it came from. Fill-weight files already carry
-  // a `-fill` suffix, so the two weights cannot collide.
+  // asset name -> the directory it came from. Fill- and duotone-weight files
+  // already carry a `-fill` or `-duotone` suffix, so the weights cannot collide.
   const available = new Map();
-  for (const dir of [SVG_DIR, FILL_DIR]) {
+  for (const dir of [SVG_DIR, FILL_DIR, DUOTONE_DIR]) {
     if (!fs.existsSync(dir)) continue;
     for (const file of fs.readdirSync(dir)) {
       if (!file.endsWith(".svg")) continue;

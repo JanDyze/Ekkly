@@ -6,8 +6,8 @@
 // the video instead of being cut off mid-phrase. The same seed gives the same
 // performance every time, so the preview and the exported video agree.
 //
-// A church's own track is decoded from the file it picks, looped if it is
-// shorter than the video, and faded in and out the same way.
+// A church's own track is uploaded to its file store, decoded, looped if it
+// is shorter than the video, and faded in and out the same way.
 
 export const TRACKS = [
   { key: 'morning', label: 'Morning', hint: 'Gentle piano over soft strings' },
@@ -16,7 +16,8 @@ export const TRACKS = [
   { key: 'none', label: 'No music', hint: 'Silent, for adding a voice-over later' },
 ]
 
-export const DEFAULT_MUSIC = { track: 'morning', volume: 70, start: 0 }
+// `ownUrl` and `ownName` are the church's own song, when it has one.
+export const DEFAULT_MUSIC = { track: 'morning', volume: 70, start: 0, ownUrl: '', ownName: '' }
 
 const SAMPLE_RATE = 44100
 
@@ -294,10 +295,14 @@ export const renderMusic = async ({ track, seconds, file = null, start = 0 }) =>
 
 /* --------------------------------------------------- the church's own track */
 
-// Kept in this browser, not uploaded: a song is several megabytes, and the
-// church's file store takes photographs. The choice of "our own music" is
-// shared with everyone who makes the video; the file is on the device it was
-// chosen on, and another device says so and plays a built-in track instead.
+// Kept with the church, in its file store under <church>/videos/music/, so
+// every phone and computer that makes the video plays the same song. The
+// settings hold its address and name (`music.ownUrl`, `music.ownName`).
+//
+// This browser keeps a copy as well, under that address, so a song is not
+// downloaded again each time the studio opens. A song chosen before songs were
+// uploaded (0.30.0) has no address: it lives only in the browser that chose
+// it, under the church's id, and is still read from there.
 
 const DB_NAME = 'ekkly-video'
 const STORE = 'music'
@@ -320,18 +325,44 @@ const withStore = async (mode, work) => {
   })
 }
 
-export const saveOwnTrack = (churchId, file) =>
-  withStore('readwrite', (store) => store.put({ name: file.name, type: file.type, blob: file }, churchId))
+const cacheKey = (url) => `url:${url}`
 
-export const loadOwnTrack = async (churchId) => {
+/** Keeps a song just uploaded in this browser too, so it plays without a download. */
+export const cacheOwnTrack = (url, file) =>
+  withStore('readwrite', (store) => store.put({ name: file.name, type: file.type, blob: file }, cacheKey(url))).catch(
+    () => null
+  )
+
+/**
+ * The church's song as `{ name, blob }`, or null when there is none or it
+ * cannot be had: this browser's copy when it has one, otherwise downloaded
+ * from the file store and copied here for next time.
+ */
+export const loadOwnTrack = async (music, churchId) => {
   try {
+    if (music?.ownUrl) {
+      const cached = await withStore('readonly', (store) => store.get(cacheKey(music.ownUrl))).catch(() => null)
+      if (cached?.blob) return cached
+      const response = await fetch(music.ownUrl)
+      if (!response.ok) return null
+      const blob = await response.blob()
+      const record = { name: music.ownName || 'Your own music', type: blob.type, blob }
+      withStore('readwrite', (store) => store.put(record, cacheKey(music.ownUrl))).catch(() => null)
+      return record
+    }
+    // Chosen before songs were uploaded: only on the device that chose it.
     return (await withStore('readonly', (store) => store.get(churchId))) || null
   } catch {
     return null
   }
 }
 
-export const removeOwnTrack = (churchId) => withStore('readwrite', (store) => store.delete(churchId))
+/** Drops this browser's copy of a song the church no longer uses. */
+export const forgetOwnTrack = (music, churchId) =>
+  withStore('readwrite', (store) => {
+    if (music?.ownUrl) store.delete(cacheKey(music.ownUrl))
+    if (churchId) store.delete(churchId)
+  }).catch(() => null)
 
 const decoded = new Map()
 

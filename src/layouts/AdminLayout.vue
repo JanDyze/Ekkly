@@ -46,6 +46,12 @@ const hidesTopbar = computed(() => Boolean(route.meta?.hideTopbar))
 const isApp = computed(() => route.matched.some((record) => record.meta?.frame === 'app'))
 const bare = computed(() => isFocus.value || isApp.value)
 
+// Only on an app's home, though. One step into it — a section, a Sunday — the
+// screen has its own header with its own back arrow, and a second bar above it
+// leading out of the whole app is one way back too many: the section's arrow
+// goes up a level, and the app's home is where you leave from.
+const inAppSection = computed(() => isApp.value && Number(route.meta?.depth) >= 1)
+
 // Pages kept in memory after you leave them, by component name (the file's
 // name). Only lists that open a record as its own page belong here - it costs
 // memory to keep one, and a page kept alive must cope with being shown again
@@ -71,7 +77,7 @@ const KEPT_ALIVE = ['Members']
            pressing back and the list sliding in. A wrapper does the hiding,
            because v-show needs one root element and these have several;
            display: contents leaves the layout as if it were not there. -->
-      <div v-show="!isFocus && !hidesTopbar" class="contents">
+      <div v-show="!isFocus && !hidesTopbar && !inAppSection" class="contents">
         <Topbar />
       </div>
 

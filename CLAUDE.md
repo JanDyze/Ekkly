@@ -48,6 +48,14 @@ installable PWA.
   (`import { Bell } from '../icons'`) and run `npm run build:icons`. Append
   `Fill` for the solid weight. Don't edit `src/icons/index.js` or import an
   icon library (`@heroicons/vue` is installed but unused).
+- **Schedules is planned by teams** (`src/data/scheduleTeams.js`): every role
+  belongs to Worship, Preaching, Ushers or Welcome, and each team's planners
+  (`worship.manage`, `preaching.manage`, `ushers.manage`,
+  `consolidation.manage`) change only their part of a Sunday. A team's save
+  goes through `mergeTeamEdit` onto the live Sunday, never a stale copy.
+  Those areas belong to the lineups app through `app` in
+  `lib/capabilities.js`; a new sub-area does the same rather than becoming an
+  app of its own.
 - **Every page belongs to an app** that a church can switch off
   (`lib/apps.js`). A capability's area is its app, so `can()` covers most
   pages. A page with no capability names its app with `app:` on its nav item
@@ -104,11 +112,16 @@ canvas from the calendar, engine in `src/utils/video/`) the third.
    spreads in under `AdminLayout`. The parent route sets
    `meta: { capability, app, frame: 'app' }`, and each screen sets
    `meta.depth`: 0 for the app's home, 1 for a section, 2 for a step further.
-2. The home is a launcher, not a page with tabs: `AppHero` (what is true
-   today), a grid of `AppTile`s into its sections, one main
-   action, then the thing for today. Every screen sits in `AppScreen`, which
-   gives a section its back arrow and hide-on-scroll header. They live in
-   `src/components/appframe/`.
+2. The home is a launcher that fits one phone screen without scrolling:
+   `AppHero` (what is true today, and the way into it), one button with the
+   count of what is waiting on this person (the list itself opens in
+   `AppActionsSheet`, never on the home), then a grid of `AppShortcut`s (a
+   glyph and a name, four across) into its sections, with counts on their
+   corners.
+   Section glyphs are `SectionGlyph`: flat, in the church's accent, plainer
+   than the app icons on purpose. Every screen sits in `AppScreen`, which
+   gives a section its back arrow and hide-on-scroll header; Ekkly's top bar
+   shows only on the app's home. They live in `src/components/appframe/`.
 3. Data still flows view → composable → service. An app's summary of its own
    data goes in one composable (`useScheduleOverview.js`), so its hero and
    tiles cannot disagree.

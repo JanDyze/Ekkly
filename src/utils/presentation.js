@@ -172,6 +172,23 @@ export const itemToSlides = (item, { songsById = {}, linesPerSlide = DEFAULT_LIN
     }))
   }
 
+  // A deck that arrived as pictures — the preacher's slides, one image each —
+  // projects as those pictures, exactly as made. A deck without them is still
+  // a cue: something shown from another program.
+  if (type === 'slides' && Array.isArray(item.images) && item.images.length) {
+    const total = item.images.length
+    return item.images.map((src, index) => ({
+      ...base,
+      kind: 'image',
+      id: `${item.id}-${index}`,
+      label: item.title || 'Slides',
+      part: `${index + 1}/${total}`,
+      src,
+      lines: [],
+      text: '',
+    }))
+  }
+
   if (ITEM_TYPES[type].renders === 'cue') {
     return [
       {
@@ -235,6 +252,92 @@ const songItemFromLineup = (entry, index, songsById) => {
  */
 export const runSheetFromSunday = (sunday, songsById = {}) =>
   (sunday?.songs || []).map((entry, index) => songItemFromLineup(entry, index, songsById))
+
+/**
+ * What the preaching team's message puts in the run sheet: each passage as a
+ * reading, the outline as slides when the preacher asked for it, and the deck.
+ * Ids are fixed per part, so the same message always yields the same items
+ * and reconciling can tell an update from an addition.
+ */
+export const sermonItems = (sermon) => {
+  if (!sermon) return []
+  const items = (sermon.passages || [])
+    .filter((p) => p.verses?.length)
+    .map((passage, index) => ({
+      id: `sermon-reading-${index}`,
+      type: 'scripture',
+      title: passage.reference,
+      reference: passage.reference,
+      verses: passage.verses,
+      version: passage.version || '',
+      fromSermon: true,
+    }))
+  const points = (sermon.points || []).filter(Boolean)
+  if (sermon.showOutline && points.length) {
+    items.push({
+      id: 'sermon-outline',
+      type: 'text',
+      title: sermon.title || 'The message',
+      // A blank line between points: one point to a slide.
+      body: [sermon.title, ...points].filter(Boolean).join('\n\n'),
+      fromSermon: true,
+    })
+  }
+  if (sermon.slides?.length) {
+    items.push({
+      id: 'sermon-slides',
+      type: 'slides',
+      title: sermon.title || sermon.slidesName || 'Sermon slides',
+      images: sermon.slides.map((s) => s.url),
+      fromSermon: true,
+    })
+  }
+  return items
+}
+
+/**
+ * Brings a run sheet into line with the preaching team's message, the way
+ * reconcileWithLineup does for the songs.
+ *
+ * The preacher goes on changing the message through the week — a passage
+ * added, the slides replaced on Saturday night — and the tech team should not
+ * have to notice. Items marked `fromSermon` follow the message: updated in
+ * place when it changes, removed when it drops them, and added after the
+ * worship set when they are new. Everything else on the run sheet is the tech
+ * team's own and is left alone. Returns the same array when nothing changed.
+ */
+export const reconcileWithSermon = (items = [], sermon = null) => {
+  const wanted = sermonItems(sermon)
+  const byId = new Map(wanted.map((item) => [item.id, item]))
+  let changed = false
+
+  const kept = []
+  items.forEach((item) => {
+    if (!item.fromSermon) {
+      kept.push(item)
+      return
+    }
+    const next = byId.get(item.id)
+    if (!next) {
+      changed = true
+      return
+    }
+    if (JSON.stringify(next) !== JSON.stringify(item)) changed = true
+    kept.push(next)
+    byId.delete(item.id)
+  })
+
+  const additions = wanted.filter((item) => byId.has(item.id))
+  if (!additions.length && !changed) return items
+  if (!additions.length) return kept
+
+  // After the songs the worship team planned, which is where the message falls.
+  const lastSong = kept.reduce((last, item, index) => (item.type === 'song' && item.fromLineup ? index : last), -1)
+  const lastSermon = kept.reduce((last, item, index) => (item.fromSermon ? index : last), -1)
+  const at = Math.max(lastSong, lastSermon)
+  if (at === -1) return [...kept, ...additions]
+  return [...kept.slice(0, at + 1), ...additions, ...kept.slice(at + 1)]
+}
 
 /** How many times each song appears in a list, keyed by id. */
 const countBySong = (entries, idOf) => {

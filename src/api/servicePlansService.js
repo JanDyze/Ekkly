@@ -37,6 +37,11 @@ const normalizeItem = (item, index) => ({
   // run sheet cannot tell the two apart, and reconciling would either strand
   // the lineup's changes or trample the operator's.
   fromLineup: item?.fromLineup === true,
+  // The same for the preaching team's message: readings, the outline and the
+  // deck follow the sermon (reconcileWithSermon).
+  fromSermon: item?.fromSermon === true,
+  // A deck that came in as pictures, one per slide.
+  images: Array.isArray(item?.images) ? item.images.filter((url) => typeof url === 'string') : [],
   // Everything typed in here: a notice, a welcome slide.
   body: item?.body || '',
   // Scripture, by contrast, is stored resolved: the reference it was looked up

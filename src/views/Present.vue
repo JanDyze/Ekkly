@@ -25,6 +25,7 @@ import {
   saveServicePlan,
   deleteServicePlan,
 } from '../api/servicePlansService'
+import { useSermons } from '../composables/useSermons'
 import { lookupReference } from '../api/bibleService'
 import { useBibleVersion } from '../composables/useBibleVersion'
 import { auth } from '../api/firebase'
@@ -38,6 +39,7 @@ import {
   buildDeck,
   runSheetFromSunday,
   reconcileWithLineup,
+  reconcileWithSermon,
   ITEM_TYPES,
 } from '../utils/presentation'
 
@@ -45,6 +47,8 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const { canManage } = usePermissions()
+// The preaching team's message, which the run sheet follows like the songs.
+const { sermonOn } = useSermons()
 
 const songs = ref([])
 const lineups = ref([])
@@ -194,7 +198,11 @@ const markEdited = () => {
  */
 const applyLineup = () => {
   if (!planLoaded.value) return
-  const next = reconcileWithLineup(items.value, sunday.value, songsById.value)
+  // The preaching team's message follows the same way the songs do.
+  const next = reconcileWithSermon(
+    reconcileWithLineup(items.value, sunday.value, songsById.value),
+    sermonOn(selectedDate.value)
+  )
   if (next !== items.value) items.value = next
 }
 
@@ -227,7 +235,7 @@ watch(
   { immediate: true }
 )
 
-watch([sunday, songsById], applyLineup)
+watch([sunday, songsById, () => sermonOn(selectedDate.value)], applyLineup)
 
 const deck = computed(() =>
   buildDeck(items.value, { songsById: songsById.value, linesPerSlide: linesPerSlide.value })
@@ -1371,8 +1379,15 @@ onUnmounted(() => {
                   LIVE
                 </span>
               </div>
+              <img
+                v-if="slide.kind === 'image'"
+                :src="slide.src"
+                alt=""
+                loading="lazy"
+                class="aspect-video w-full rounded-md bg-black object-contain"
+              />
               <pre
-                v-if="slide.text"
+                v-else-if="slide.text"
                 class="whitespace-pre-wrap break-words font-sans text-sm leading-snug text-gray-700 dark:text-gray-200"
                 >{{ slide.text }}</pre
               >
@@ -1407,6 +1422,12 @@ onUnmounted(() => {
           >
             <div v-for="(line, i) in previewSlide.lines" :key="i">{{ line }}</div>
           </div>
+          <img
+            v-else-if="previewSlide?.kind === 'image'"
+            :src="previewSlide.src"
+            alt=""
+            class="max-h-full max-w-full object-contain"
+          />
           <p
             v-else-if="previewSlide?.kind === 'cue'"
             class="text-xs uppercase tracking-widest text-white/30"

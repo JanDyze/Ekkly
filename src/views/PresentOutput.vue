@@ -172,7 +172,10 @@ onUnmounted(() => {
          while it runs, which makes it a cross-fade rather than a dip through
          black — the room never goes dark between two lines of the same song. -->
     <Transition name="slide">
-      <div :key="slideKey" class="absolute inset-0 flex items-center justify-center p-[4vw]">
+      <div
+        :key="slideKey"
+        :class="['absolute inset-0 flex items-center justify-center', slide.kind === 'image' ? '' : 'p-[4vw]']"
+      >
         <div v-if="slide.kind === 'text' && slide.lines?.length" class="w-full">
           <div
             class="text-center font-bold leading-tight text-white"
@@ -205,6 +208,15 @@ onUnmounted(() => {
           class="h-full w-full object-contain"
           playsinline
         ></video>
+
+        <!-- A slide from a preacher's deck: the picture, whole, filling the
+             wall as far as its shape allows. -->
+        <img
+          v-else-if="slide.kind === 'image' && slide.src"
+          :src="slide.src"
+          alt=""
+          class="h-full w-full object-contain"
+        />
 
         <!-- A cue with nothing attached is something playing elsewhere. The
              wall goes black rather than announcing it, because the

@@ -5,6 +5,7 @@ import { useAppSettings } from './useAppSettings'
 import { monthKeyOf, shiftMonth, sundaysInMonth, todayIso } from '../utils/lineupUtils'
 import { SONG_LEADER_ROLE, assignmentsOf } from '../data/scheduleRoles'
 import { memberKey } from '../utils/sgUtils'
+import { TEAMS, teamByKey } from '../data/scheduleTeams'
 
 // What is true across every schedule on file, for the Schedules app's home
 // and the sections that summarise it — the next service, the account's own
@@ -16,14 +17,18 @@ export function useScheduleOverview() {
   const { scheduleRoles: roles } = useAppSettings()
   const { lineups, loading } = useAllLineups()
 
-  // One permission for planning, as on the month: whoever is granted
-  // Schedules plans it. Drafts are theirs alone.
+  // Whoever is granted Schedules plans every Sunday, every team, and decides
+  // when a month is published. A team's own planners — the worship leader, the
+  // pastor, the head usher — plan their team's part of each Sunday.
   const canPlan = computed(() => canManage('lineups'))
+  const canPlanTeam = (key) => canPlan.value || Boolean(teamByKey(key) && canManage(teamByKey(key).area))
+  /** Planning anything at all — which is also who may see a month still in draft. */
+  const canPlanAny = computed(() => canPlan.value || TEAMS.some((team) => canManage(team.area)))
   const today = todayIso()
   const thisMonth = monthKeyOf()
 
   const visibleMonths = computed(() =>
-    lineups.value.filter((m) => canPlan.value || m.status === 'published')
+    lineups.value.filter((m) => canPlanAny.value || m.status === 'published')
   )
 
   /** Every planned service the account may see, soonest first, with its month. */
@@ -100,6 +105,25 @@ export function useScheduleOverview() {
       .filter((row) => row.empty.length)
   )
 
+  /**
+   * The Sundays still to come this month and next, planned or not — what a
+   * team's section lists, so a team can plan ahead onto an empty Sunday. A
+   * month in draft reads as unplanned to anyone who may not see drafts.
+   */
+  const comingSundays = computed(() =>
+    planningMonths
+      .flatMap((key) => {
+        const stored = visibleMonths.value.find((m) => m.month === key)
+        const byDate = new Map((stored?.sundays || []).map((s) => [s.date, s]))
+        return sundaysInMonth(key).map((date) => ({
+          ...(byDate.get(date) || blankSunday(date)),
+          month: key,
+          draft: stored ? stored.status !== 'published' : true,
+        }))
+      })
+      .filter((sunday) => sunday.date >= today)
+  )
+
   /** The first Sunday still to come that nobody has planned at all. */
   const nextUnplanned = computed(() => gaps.value.find((row) => !row.planned) || null)
 
@@ -108,6 +132,8 @@ export function useScheduleOverview() {
     lineups,
     roles,
     canPlan,
+    canPlanTeam,
+    canPlanAny,
     myMember,
     services,
     upcoming,
@@ -122,5 +148,6 @@ export function useScheduleOverview() {
     drafts,
     gaps,
     nextUnplanned,
+    comingSundays,
   }
 }

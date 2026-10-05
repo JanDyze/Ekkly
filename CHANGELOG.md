@@ -11,6 +11,54 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.31.0] — 2026-10-05
+
+Schedules is planned by its teams now. Worship, Preaching, Ushers and Welcome
+each plan their own part of every Sunday and have a section of their own —
+the songs, the message and its slides, the jobs on the door, the newcomers to
+call — and the app's screens were rebuilt to be read at a glance.
+
+### Added
+
+- **Teams.** Every role belongs to Worship, Preaching, Ushers or Welcome, and
+  each team has a section of Schedules and its own Plan on each Sunday. A
+  team's planners change only their part: two teams planning the same Sunday
+  at once no longer write over each other. Roles a church added itself are
+  given a team under Who serves → Roles.
+- **Planning by team, in Settings.** Worship team, Preaching and Ushers can
+  each be granted on their own, so the pastor plans the message without
+  being able to change the songs. Welcome & follow-up is granted separately
+  too, because its notes are about real newcomers.
+- **Preaching.** Set a series across several Sundays at once, and give each
+  Sunday its message: a title, passages (checked as they are typed, and kept
+  with their verses so they show without wifi), an outline, slides from a PDF
+  — each page shown exactly as made — and the recording of the message to
+  listen back to from the Sunday. The readings, outline and slides go into
+  Presentation on their own and follow any change the preacher makes.
+- **Ushers.** A list of the jobs done every Sunday, ticked off as the
+  morning goes and saying who did each, and a button straight into recording
+  that Sunday's head count in Attendance.
+- **Welcome.** The same weekly jobs for greeting, and follow-up for everyone
+  on the roll as an attendee: where they stand (new, contacted, visited,
+  connected), who is looking after them, when they were last in touch, and
+  notes.
+- **Your own music in the videos is kept with the church**, so every phone
+  and computer plays the same song.
+
+### Changed
+
+- **The Schedules home fits one screen:** the next Sunday, one button with
+  what is waiting on you, and the sections as a grid of small pictures in the
+  church's colour.
+- **Every Schedules screen reads as a simple list** — a date or faces, one
+  line, and one quiet line under it — the Sunday itself, the Calendar, My
+  turns, Who serves and the four teams.
+- **Inside an app, Ekkly's top bar shows only on the app's home;** each
+  screen beyond it has its own way back.
+- The card at the top of each app's home is a deeper shade on a dark page,
+  so its words stay readable.
+- Team is called Who serves.
+
 ## [0.30.0] — 2026-10-04
 
 The month's announcements, made into a video on their own: open Videos and

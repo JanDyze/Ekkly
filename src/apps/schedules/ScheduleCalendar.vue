@@ -2,8 +2,8 @@
 /**
  * Every Sunday, a month at a time — the Calendar section of the Schedules app.
  *
- * Each Sunday is a card: the date, the theme, who leads and how many serve, a
- * few faces, the songs, and whether you are on it. Tapping one opens the
+ * Each Sunday is one row of the month's list: the date, the theme or who
+ * leads, and one quiet line with the rest. Tapping one opens the
  * Sunday's own screen, which is where its roster is read, presented and
  * edited — so nothing here opens out in place, and the month reads as one
  * even list rather than one big panel and a row of thin lines.
@@ -28,6 +28,8 @@ import { Eye, EyeOff, Search, SearchX, SquaresFour, Table } from '../../icons'
 import AppScreen from '../../components/appframe/AppScreen.vue'
 import SchedulesToolbar from '../../components/schedules/SchedulesToolbar.vue'
 import ScheduleSundayCard from './ScheduleSundayCard.vue'
+import ListGroup from '../../components/appframe/ListGroup.vue'
+import ListRow from '../../components/appframe/ListRow.vue'
 import ScheduleMonthTable from './ScheduleMonthTable.vue'
 import { useLineup, isSundayPlanned } from '../../composables/useLineups'
 import { useMembers } from '../../composables/useMembers'
@@ -219,7 +221,6 @@ const results = computed(() => {
 
 const resultCount = computed(() => results.value.upcoming.length + results.value.past.length)
 
-const heading = 'mb-2 px-0.5 text-sm font-medium text-gray-500 dark:text-gray-400'
 </script>
 
 <template>
@@ -253,9 +254,7 @@ const heading = 'mb-2 px-0.5 text-sm font-medium text-gray-500 dark:text-gray-40
           Try a first name, a role like &ldquo;ushers&rdquo;, or a song title.
         </p>
       </div>
-      <section v-if="results.upcoming.length" class="mb-5">
-        <h2 :class="heading">Coming up · {{ results.upcoming.length }}</h2>
-        <div class="flex flex-col gap-2">
+      <ListGroup v-if="results.upcoming.length" class="mb-5" title="Coming up" :count="results.upcoming.length">
           <ScheduleSundayCard
             v-for="row in results.upcoming"
             :key="row.sunday.date"
@@ -265,11 +264,8 @@ const heading = 'mb-2 px-0.5 text-sm font-medium text-gray-500 dark:text-gray-40
             :my-roles="myRolesOn(row.sunday)"
             :matches="row.matches"
           />
-        </div>
-      </section>
-      <section v-if="results.past.length">
-        <h2 :class="heading">Earlier · {{ results.past.length }}</h2>
-        <div class="flex flex-col gap-2">
+      </ListGroup>
+      <ListGroup v-if="results.past.length" title="Earlier" :count="results.past.length">
           <ScheduleSundayCard
             v-for="row in results.past"
             :key="row.sunday.date"
@@ -280,8 +276,7 @@ const heading = 'mb-2 px-0.5 text-sm font-medium text-gray-500 dark:text-gray-40
             :matches="row.matches"
             past
           />
-        </div>
-      </section>
+      </ListGroup>
     </template>
 
     <!-- ============================ The month ============================ -->
@@ -330,46 +325,40 @@ const heading = 'mb-2 px-0.5 text-sm font-medium text-gray-500 dark:text-gray-40
 
       <template v-else>
         <!-- The month's state, for whoever can change it, saying what it means -->
-        <div
-          v-if="canPlan"
-          :class="[
-            'animate-rise mb-4 flex items-center gap-3 rounded-2xl border p-3',
-            isPublished
-              ? 'border-gray-200 bg-white dark:border-gray-700/80 dark:bg-gray-800'
-              : 'border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-900/15',
-          ]"
-        >
-          <span
-            :class="[
-              'flex size-10 shrink-0 items-center justify-center rounded-xl',
-              isPublished
-                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-            ]"
+        <ListGroup v-if="canPlan" class="mb-5">
+          <ListRow
+            :title="`${formatMonthLabel(month).split(' ')[0]} is ${isPublished ? 'published' : 'a draft'}`"
+            :subtitle="isPublished ? 'Everyone can see who is on.' : 'Only planners can see it.'"
+            :warn="!isPublished"
           >
-            <component :is="isPublished ? Eye : EyeOff" class="size-5" />
-          </span>
-          <span class="min-w-0 flex-1">
-            <span class="block truncate text-sm font-semibold text-gray-900 dark:text-white">
-              {{ formatMonthLabel(month).split(' ')[0] }} is {{ isPublished ? 'published' : 'a draft' }}
-            </span>
-            <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
-              {{ isPublished ? 'Everyone can see who is on.' : 'Only planners can see it.' }}
-            </span>
-          </span>
-          <button
-            type="button"
-            :class="[
-              'inline-flex h-9 shrink-0 items-center rounded-xl px-3 text-sm font-semibold transition-colors',
-              isPublished
-                ? 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                : 'bg-primary text-white hover:bg-primary-hover',
-            ]"
-            @click="togglePublished"
-          >
-            {{ isPublished ? 'Unpublish' : 'Publish' }}
-          </button>
-        </div>
+            <template #leading>
+              <span
+                :class="[
+                  'flex size-11 shrink-0 items-center justify-center rounded-xl',
+                  isPublished
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
+                    : 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400',
+                ]"
+              >
+                <component :is="isPublished ? Eye : EyeOff" class="size-5" />
+              </span>
+            </template>
+            <template #trailing>
+              <button
+                type="button"
+                :class="[
+                  'inline-flex h-9 shrink-0 items-center rounded-xl px-3 text-sm font-semibold transition-colors',
+                  isPublished
+                    ? 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                    : 'bg-primary text-white hover:bg-primary-hover',
+                ]"
+                @click="togglePublished"
+              >
+                {{ isPublished ? 'Unpublish' : 'Publish' }}
+              </button>
+            </template>
+          </ListRow>
+        </ListGroup>
 
         <!-- Cards or the table -->
         <div class="mb-3 flex justify-end">
@@ -412,12 +401,10 @@ const heading = 'mb-2 px-0.5 text-sm font-medium text-gray-500 dark:text-gray-40
           :today="today"
         />
 
-        <div v-else class="flex flex-col gap-2">
+        <ListGroup v-else :title="formatMonthLabel(month)" :count="shown.length">
           <ScheduleSundayCard
-            v-for="(sunday, index) in shown"
+            v-for="sunday in shown"
             :key="sunday.date"
-            class="animate-rise"
-            :style="{ animationDelay: `${40 + index * 35}ms` }"
             :sunday="sunday"
             :members="members"
             :roles="roles"
@@ -425,7 +412,7 @@ const heading = 'mb-2 px-0.5 text-sm font-medium text-gray-500 dark:text-gray-40
             :can-plan="canPlan"
             :past="sunday.date < today"
           />
-        </div>
+        </ListGroup>
       </template>
     </template>
   </AppScreen>

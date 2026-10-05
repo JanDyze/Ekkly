@@ -39,6 +39,34 @@ export const schedulesRoutes = [
         meta: { depth: 1, capability: 'lineups.manage' },
         component: () => import('./ScheduleTeam.vue'),
       },
+      // Each team's own section: its Sundays as it sees them, and the work only
+      // it does — the songs, the message, the door, the newcomers. Anyone who
+      // can see Schedules sees every team; planning each is the team's own
+      // permission (src/data/scheduleTeams.js).
+      {
+        path: 'worship',
+        name: 'SchedulesWorship',
+        meta: { depth: 1 },
+        component: () => import('./ScheduleWorship.vue'),
+      },
+      {
+        path: 'preaching',
+        name: 'SchedulesPreaching',
+        meta: { depth: 1 },
+        component: () => import('./SchedulePreaching.vue'),
+      },
+      {
+        path: 'ushers',
+        name: 'SchedulesUshers',
+        meta: { depth: 1 },
+        component: () => import('./ScheduleUshers.vue'),
+      },
+      {
+        path: 'welcome',
+        name: 'SchedulesWelcome',
+        meta: { depth: 1 },
+        component: () => import('./ScheduleWelcome.vue'),
+      },
       {
         // Presenting is an app of its own now (src/apps/presentation).
         path: 'present',
