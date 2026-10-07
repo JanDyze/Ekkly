@@ -8,6 +8,19 @@
 
 export const versionHistory = [
   {
+    version: '0.32.0',
+    date: '2026-10-07',
+    title: 'One home for everything',
+    summary:
+      'Ekkly opens on what is true today across your church, with the five apps you use most just below — and People is now an app of its own.',
+    highlights: [
+      'Swipe through today: birthdays, when you are serving, tasks that are due, and what is on. Tap × to put a card away for now.',
+      'Keep your five favourite apps on the home. More apps shows the rest — press and hold one to put it on your home.',
+      'People has birthdays a month ahead, every ministry with its people, the church at a glance, and the records still to fill in.',
+      'The bottom bar and the sidebar are gone: the home is the way between apps, and the arrow at the top always leads back to it.',
+    ],
+  },
+  {
     version: '0.31.0',
     date: '2026-10-05',
     title: 'Schedules, planned by its teams',

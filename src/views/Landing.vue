@@ -268,7 +268,7 @@ onUnmounted(() => {
 // Members reach this page too — it is the church's public link, not a
 // visitors-only door — so the calls to action point them back into the app
 // instead of asking them to sign in again.
-const appLink = computed(() => (isAuthenticated.value ? '/dashboard' : '/login'))
+const appLink = computed(() => (isAuthenticated.value ? '/home' : '/login'))
 
 // Both targets are lazy route chunks, so the first thing a tap used to do was
 // open a network request with nothing on screen to say so — which reads as a

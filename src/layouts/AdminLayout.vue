@@ -2,9 +2,7 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import Topbar from '../components/Topbar.vue'
-import Sidebar from '../components/Sidebar.vue'
 import RightSidebar from '../components/RightSidebar.vue'
-import BottomBar from '../components/BottomBar.vue'
 import { initPresence, stopPresence } from '../composables/usePresence'
 import { useFocusModeValue } from '../composables/useFocusMode'
 
@@ -46,6 +44,9 @@ const hidesTopbar = computed(() => Boolean(route.meta?.hideTopbar))
 const isApp = computed(() => route.matched.some((record) => record.meta?.frame === 'app'))
 const bare = computed(() => isFocus.value || isApp.value)
 
+// The home of all apps lays itself out, edge to edge, like an app's home.
+const isRoot = computed(() => Boolean(route.meta?.root))
+
 // Only on an app's home, though. One step into it — a section, a Sunday — the
 // screen has its own header with its own back arrow, and a second bar above it
 // leading out of the whole app is one way back too many: the section's arrow
@@ -56,22 +57,18 @@ const inAppSection = computed(() => isApp.value && Number(route.meta?.depth) >= 
 // name). Only lists that open a record as its own page belong here - it costs
 // memory to keep one, and a page kept alive must cope with being shown again
 // rather than mounted afresh (see useTitleCount and useListScrollMemory).
-const KEPT_ALIVE = ['Members']
+const KEPT_ALIVE = ['PeopleEveryone']
 </script>
 
 <template>
   <div class="flex h-dvh bg-gray-50 dark:bg-gray-900 print-root">
-    <!-- Sidebar - Desktop only. Not inside an app, which is a screen of its
-         own; hidden rather than removed, for the same reason as the top bar
-         below. -->
-    <div v-show="!isApp" class="contents">
-      <Sidebar />
-    </div>
-
+    <!-- No sidebar and no bottom bar: every app is a screen of its own, and
+         the home of all apps (/home, Apps.vue) is the way between them. The
+         top bar's mark leads back to it from everywhere else. -->
     <!-- Main content area -->
     <div class="flex-1 min-w-0 flex flex-col overflow-hidden lg:ml-0 print-main">
-      <!-- Topbar. Hidden, not removed, on a focus route (and the rail and
-           bottom bar below with it): each opens listeners and builds a fair
+      <!-- Topbar. Hidden, not removed, on a focus route (and the rail below
+           with it): each opens listeners and builds a fair
            amount of screen when it mounts, and tearing them down to open a
            record meant rebuilding all three on the way back - the lag between
            pressing back and the list sliding in. A wrapper does the hiding,
@@ -81,15 +78,11 @@ const KEPT_ALIVE = ['Members']
         <Topbar />
       </div>
 
-      <!-- Main content, the full height of the screen on a phone too. The
-           bottom bar floats over the page rather than taking a band of the
-           screen off it: it is a frosted island with the page visible round
-           and through it, and reserving space under it would leave an empty
-           strip that the island only covers part of. -->
+      <!-- Main content, the full height of the screen on a phone too. -->
       <main class="flex-1 overflow-hidden bg-white dark:bg-gray-900 print-main">
         <!-- A focus route gets the raw box and handles its own padding and
              safe areas: the deck should reach the edges of the screen. -->
-        <div :class="['h-full print-main', bare ? '' : 'p-0 sm:p-4 lg:px-8 lg:py-3']">
+        <div :class="['h-full print-main', bare || isRoot ? '' : 'p-0 sm:p-4 lg:px-8 lg:py-3']">
           <!-- The lists you open records from stay built while a record is
                open, so back is a re-show rather than a rebuild: every row,
                every photo, the search, the sort and the scroll are where they
@@ -107,11 +100,6 @@ const KEPT_ALIVE = ['Members']
          is a task, so the live presence list sits it out too. -->
     <div v-show="!bare" class="contents">
       <RightSidebar />
-    </div>
-
-    <!-- Bottom Bar - Mobile only -->
-    <div v-show="!bare" class="contents">
-      <BottomBar />
     </div>
   </div>
 </template>

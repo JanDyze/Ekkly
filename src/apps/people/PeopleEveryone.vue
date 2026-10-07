@@ -1,54 +1,50 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, onActivated } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { useMembers } from "../composables/useMembers";
-import { useMediaQuery } from "../composables/useMediaQuery";
-import { useMemberSearch } from "../composables/useMemberSearch";
-import { useMemberSorting } from "../composables/useMemberSorting";
-import { useMemberForm } from "../composables/useMemberForm";
-import { useListScrollMemory } from "../composables/useListScrollMemory";
-import { useToast } from "../composables/useToast";
-import { useTitleCount } from "../composables/useTitleCount";
-import MembersToolbar from "../components/members/MembersToolbar.vue";
-import MembersFab from "../components/members/MembersFab.vue";
-import SortSheet from "../components/common/SortSheet.vue";
-import MemberEditSheet from "../components/members/MemberEditSheet.vue";
-import MemberContextMenu from "../components/members/MemberContextMenu.vue";
-import ExportDialog from "../components/members/ExportDialog.vue";
-import MemberCard from "../components/members/MemberCard.vue";
-import MemberListItem from "../components/members/MemberListItem.vue";
-import MemberCardSkeleton from "../components/members/MemberCardSkeleton.vue";
-import MemberBandHeader from "../components/members/MemberBandHeader.vue";
-import ConfirmationModal from "../components/common/ConfirmationModal.vue";
-import BulkAssignSheet from "../components/members/BulkAssignSheet.vue";
-import { exportToExcel } from "../utils/exportUtils";
-import { mergeTagSources } from "../utils/memberUtils";
-import { usePermissions } from "../composables/usePermissions";
-import { useMinistries } from "../composables/useMinistries";
-import { areaLabel } from "../data/capabilities";
-import { Church, Tag, X } from "../icons";
+import { useMembers } from "../../composables/useMembers";
+import { useMemberSearch } from "../../composables/useMemberSearch";
+import { useMemberSorting } from "../../composables/useMemberSorting";
+import { useMemberForm } from "../../composables/useMemberForm";
+import { useListScrollMemory } from "../../composables/useListScrollMemory";
+import { useToast } from "../../composables/useToast";
+import MembersToolbar from "../../components/members/MembersToolbar.vue";
+import MembersFab from "../../components/members/MembersFab.vue";
+import SortSheet from "../../components/common/SortSheet.vue";
+import MemberEditSheet from "../../components/members/MemberEditSheet.vue";
+import MemberContextMenu from "../../components/members/MemberContextMenu.vue";
+import ExportDialog from "../../components/members/ExportDialog.vue";
+import MemberCard from "../../components/members/MemberCard.vue";
+import MemberListItem from "../../components/members/MemberListItem.vue";
+import ConfirmationModal from "../../components/common/ConfirmationModal.vue";
+import BulkAssignSheet from "../../components/members/BulkAssignSheet.vue";
+import AppScreen from "../../components/appframe/AppScreen.vue";
+import { exportToExcel } from "../../utils/exportUtils";
+import { mergeTagSources } from "../../utils/memberUtils";
+import { usePermissions } from "../../composables/usePermissions";
+import { useMinistries } from "../../composables/useMinistries";
+import { areaLabel } from "../../data/capabilities";
+import { Church, Tag, X } from "../../icons";
 import {
   subscribeToCustomTags,
   addCustomTag,
   addTagToMembers,
   removeTagFromMembers,
-} from "../api/tagsService";
+} from "../../api/tagsService";
 import {
   addMinistryToMembers,
   removeMinistryFromMembers,
-} from "../api/ministriesService";
+} from "../../api/ministriesService";
 
 const toast = useToast();
 
 const router = useRouter();
 const route = useRoute();
-const isMobile = useMediaQuery("(max-width: 1023px)");
-
-// On a phone the roll can be a list (names first, quick to scan) or a grid
-// (faces first, for putting names to people you have seen). Remembered on
-// this device only - it is how this person likes to read, not a church
-// setting - and blocked or private-mode storage just falls back to the list.
-// A desktop always shows the grid: it has the width for faces and names both.
+// The roll can be a list (names first, quick to scan) or a grid (faces first,
+// for putting names to people you have seen). Remembered on this device only -
+// it is how this person likes to read, not a church setting - and blocked or
+// private-mode storage just falls back to the list. A desktop chooses the
+// same way now: inside the People app the roll is one centred column there
+// too, which is a phone's width rather than room for faces and names both.
 const VIEW_KEY = "ekkly:people-view";
 const readView = () => {
   try {
@@ -66,7 +62,7 @@ const toggleMobileView = () => {
     // Not remembered this time; the switch itself still happened.
   }
 };
-const showGrid = computed(() => !isMobile.value || mobileView.value === "grid");
+const showGrid = computed(() => mobileView.value === "grid");
 
 // Shown again after a record (the page is kept alive while one is open), the
 // list slides in a short way rather than simply appearing. The way in to the
@@ -97,10 +93,14 @@ const { members, loading, addMemberToFirestore, removeMember } = useMembers();
 // status, occupation and address as well as names.
 const { allTags, filteredMembers: searchedMembers } = useMemberSearch(members, searchQuery);
 
-// The whole roll, beside the title - never the searched count, which the
+// The whole roll, under the title - never the searched count, which the
 // search bar already says as "8 of 142". Nothing while loading, so a zero
 // never flashes up for a church that has people.
-useTitleCount(() => (loading.value ? null : members.value.length));
+const subtitle = computed(() => {
+  if (loading.value) return "";
+  const n = members.value.length;
+  return `${n.toLocaleString()} ${n === 1 ? "person" : "people"}`;
+});
 
 // The split under the last row: the one breakdown the title has no room for.
 const rollSummary = computed(() => {
@@ -136,7 +136,7 @@ onUnmounted(() => {
 const assignableTags = computed(() => mergeTagSources(allTags.value, customTags.value));
 
 // Sorting
-const { sortBy, sortOptions, currentSort, sortMembers, arrangeMembers } = useMemberSorting();
+const { sortBy, sortOrder, sortOptions, currentSort, sortMembers, arrangeMembers } = useMemberSorting();
 const showSort = ref(false);
 
 // Apply sorting to the searched members
@@ -458,7 +458,9 @@ const handleExport = (config) => {
 };
 
 // Opening a record leaves the page, so the list has to remember where it was.
-const listScroller = ref(null);
+// The box that scrolls is the app screen's own.
+const screen = ref(null);
+const listScroller = computed(() => screen.value?.scroller || null);
 useListScrollMemory(listScroller);
 
 // One record, one destination: the focus page. It reads the record as facts
@@ -544,11 +546,8 @@ const handleMemberDelete = async (member) => {
   });
 };
 
-// Three faces across a phone, four on a desktop. Adding opens over the page
-// now rather than as a column beside it, so the grid no longer makes room.
-const gridClass = computed(() =>
-  isMobile.value ? "grid grid-cols-3 gap-2 p-2" : "grid grid-cols-4 gap-3 p-3"
-);
+// Three faces across, the width of the app's column on any screen.
+const gridClass = "grid grid-cols-3 gap-2 p-2";
 
 // The button would sit on top of whatever a drawer or the details modal is
 // showing, and both carry their own actions anyway.
@@ -570,77 +569,91 @@ const showFab = computed(
 </script>
 
 <template>
-  <div :class="['relative flex flex-col h-full', returning ? 'page-return' : '']">
-    <!-- Opened from the plus button rather than always sitting there: an
-         always-on search bar costs a row of the list on every visit, and most
-         visits are a scroll rather than a lookup. -->
-    <MembersToolbar
-      v-model:searchQuery="searchQuery"
-      :open="searchOpen"
-      :resultCount="filteredMembers.length"
-      :totalCount="members.length"
-      :canTag="canTag"
-      @tag-results="openTagSheetForResults"
-      @close="closeSearch"
-    />
+  <div :class="['relative h-full', returning ? 'page-return' : '']">
+    <AppScreen ref="screen" title="Everyone" :subtitle="subtitle" :back="{ name: 'PeopleHome' }" root="/members">
+      <!-- Opened from the plus button rather than always sitting there: an
+           always-on search bar costs a row of the list on every visit, and most
+           visits are a scroll rather than a lookup. -->
+      <MembersToolbar
+        v-model:searchQuery="searchQuery"
+        :open="searchOpen"
+        :resultCount="filteredMembers.length"
+        :totalCount="members.length"
+        :canTag="canTag"
+        @tag-results="openTagSheetForResults"
+        @close="closeSearch"
+      />
 
-    <!-- Members List -->
-    <div class="flex-1 overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex">
-      <!-- Members Content. No strip above the list: the sort is opened from
-           the plus button, which names the sort that is on so it can still be
-           checked without opening the sheet. -->
-      <div class="flex flex-1 min-w-0 h-full flex-col">
-        <!-- Room at the foot for the plus button as well as the bottom bar it
-             floats over (bar 4.6rem + button 3.5rem + air), so the last
-             person can be scrolled clear of both rather than stopping
-             under the button. -->
-        <div
-          ref="listScroller"
-          class="min-h-0 flex-1 overflow-y-auto pb-28 max-lg:pb-[calc(10rem+env(safe-area-inset-bottom))]"
+      <!-- Loading: the shape of whichever view is on, so nothing jumps when
+           the rows arrive. -->
+      <div
+        v-if="loading"
+        class="overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:bg-gray-800 dark:ring-gray-700/70"
+      >
+        <div v-if="showGrid" :class="gridClass">
+          <div
+            v-for="i in 12"
+            :key="`skeleton-${i}`"
+            class="flex flex-col items-center gap-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-700/50"
+          >
+            <div class="h-14 w-14 animate-pulse rounded-full bg-gray-200 dark:bg-gray-600"></div>
+            <div class="h-3 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+          </div>
+        </div>
+        <template v-else>
+          <div v-for="i in 10" :key="`skeleton-${i}`" class="flex items-center gap-3 px-4 py-2">
+            <div class="h-10 w-10 animate-pulse rounded-full bg-gray-200 dark:bg-gray-600"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+              <div class="h-3 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- The sort's groups, each a heading with its own count — so "we are
+           short on youth" reads without counting rows — over its people in
+           one white block, the way every list in an app reads (ListGroup).
+           A group well off screen is skipped when the list is laid out and
+           painted, so showing the roll again only draws what can be seen; the
+           intrinsic size keeps the scrollbar honest meanwhile. -->
+      <div v-else class="flex flex-col gap-5">
+        <section
+          v-for="group in memberGroups"
+          :key="group.band?.key || 'all'"
+          class="[content-visibility:auto] [contain-intrinsic-size:auto_600px]"
         >
-
-      <!-- A grid on a desktop; on a phone, a list or a grid of faces as the
-           reader chose from the plus button. All of them are divided into the
-           sort's groups, each heading carrying its own count so "we are short
-           on youth" reads without counting rows. -->
-        <template v-if="showGrid">
-          <div v-if="loading" :class="gridClass">
-            <template v-if="isMobile">
-              <div
-                v-for="i in 12"
-                :key="`skeleton-${i}`"
-                class="flex flex-col items-center gap-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-700/50"
-              >
-                <div class="h-14 w-14 rounded-full bg-gray-200 dark:bg-gray-600 animate-pulse"></div>
-                <div class="h-3 w-16 rounded bg-gray-200 dark:bg-gray-600 animate-pulse"></div>
-              </div>
-            </template>
-            <MemberCardSkeleton v-else v-for="i in 12" :key="`skeleton-${i}`" />
+          <div v-if="group.band" class="mb-1.5 flex items-end justify-between gap-3 px-1">
+            <h2 class="flex min-w-0 items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              <span :class="['size-2 shrink-0 rounded-full', group.band.dotClass]" aria-hidden="true" />
+              <span class="truncate">{{ group.band.label }}</span>
+              <span class="font-semibold tabular-nums text-gray-400 dark:text-gray-500">{{ group.members.length }}</span>
+            </h2>
+            <!-- Tagging a whole age band is the common bulk edit — the kids
+                 become WLA Kids — so picking one is one tap from its heading
+                 rather than a scroll and forty. -->
+            <button
+              v-if="picking"
+              type="button"
+              class="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10 dark:text-primary-light"
+              @click="toggleBand(group)"
+            >
+              {{ isBandPicked(group) ? 'Clear' : `Select all ${group.members.length}` }}
+            </button>
           </div>
 
-          <!-- A group well off screen is skipped when the list is laid out and
-               painted - showing the roll again only draws what can be seen.
-               The intrinsic size keeps the scrollbar honest meanwhile. -->
-          <section
-            v-else
-            v-for="group in memberGroups"
-            :key="group.band?.key || 'all'"
-            class="[content-visibility:auto] [contain-intrinsic-size:auto_600px]"
+          <div
+            :class="[
+              'overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:bg-gray-800 dark:ring-gray-700/70',
+              showGrid ? gridClass : 'divide-y divide-gray-100 dark:divide-gray-700/60',
+            ]"
           >
-            <MemberBandHeader
-              v-if="group.band"
-              :band="group.band"
-              :count="group.members.length"
-              :picking="picking"
-              :checked="isBandPicked(group)"
-              @toggle="toggleBand(group)"
-            />
-            <div :class="gridClass">
+            <template v-if="showGrid">
               <MemberCard
                 v-for="member in group.members"
                 :key="member.id"
                 :member="member"
-                :stacked="isMobile"
+                stacked
                 :picking="picking"
                 :checked="pickedIds.has(String(member.firestoreId || member.id))"
                 :holdable="canTag"
@@ -648,46 +661,8 @@ const showFab = computed(
                 @contextmenu="handleContextMenu"
                 @toggle="togglePicked"
               />
-            </div>
-          </section>
-        </template>
-
-        <template v-else>
-          <div v-if="loading">
-            <div
-              v-for="i in 10"
-              :key="`skeleton-${i}`"
-              class="px-4 py-2 flex items-center gap-3"
-            >
-              <div class="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-600 animate-pulse"></div>
-              <div class="flex-1 space-y-2">
-                <div class="h-4 w-32 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></div>
-                <div class="h-3 w-24 bg-gray-200 dark:bg-gray-600 rounded animate-pulse"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- A group well off screen is skipped when the list is laid out and
-               painted - showing the roll again only draws what can be seen.
-               The intrinsic size keeps the scrollbar honest meanwhile. -->
-          <section
-            v-else
-            v-for="group in memberGroups"
-            :key="group.band?.key || 'all'"
-            class="[content-visibility:auto] [contain-intrinsic-size:auto_600px]"
-          >
-            <MemberBandHeader
-              v-if="group.band"
-              :band="group.band"
-              :count="group.members.length"
-              :picking="picking"
-              :checked="isBandPicked(group)"
-              @toggle="toggleBand(group)"
-            />
-            <!-- No padding or gaps: a row is the full width of the list, so
-                 the press colour fills it edge to edge like a native list
-                 instead of a rounded block floating inside it. -->
-            <div>
+            </template>
+            <template v-else>
               <MemberListItem
                 v-for="member in group.members"
                 :key="member.id"
@@ -699,72 +674,72 @@ const showFab = computed(
                 @contextmenu="handleContextMenu"
                 @toggle="togglePicked"
               />
-            </div>
-          </section>
-        </template>
+            </template>
+          </div>
+        </section>
 
-        <div v-if="!loading && filteredMembers.length === 0" class="p-8 text-center text-gray-500 dark:text-gray-400">
-          Nobody matches your search.
-        </div>
+        <p v-if="filteredMembers.length === 0" class="p-8 text-center text-gray-500 dark:text-gray-400">
+          {{ members.length ? 'Nobody matches your search.' : 'Nobody on the roll yet.' }}
+        </p>
 
         <!-- Where the roll ends, what it adds up to. Only for the whole roll:
              under a search it would describe people who are not on screen. -->
         <p
-          v-else-if="!loading && !searchQuery.trim()"
-          class="px-4 pt-6 pb-2 text-center text-xs tabular-nums text-gray-400 dark:text-gray-500"
+          v-else-if="!searchQuery.trim()"
+          class="px-4 pt-1 text-center text-xs tabular-nums text-gray-400 dark:text-gray-500"
         >
           <template v-for="(part, i) in rollSummary" :key="i">
             <span v-if="i" class="px-1.5 text-gray-300 dark:text-gray-600">·</span>{{ part }}
           </template>
         </p>
-        </div>
       </div>
 
-      <!-- Adding someone: the same four steps as editing them. -->
-      <MemberEditSheet
-        mode="add"
-        :show="showAddMemberComputed"
-        :ministry-names="ministryNames"
-        :all-tags="assignableTags"
-        :busy="addingPerson"
-        @close="showAddMemberComputed = false"
-        @save="handleAddMember"
-      />
+      <!-- Room for the plus button, so the last person scrolls clear of it. -->
+      <div class="h-20" aria-hidden="true" />
+    </AppScreen>
 
-      <!-- Confirmation Modal -->
-      <ConfirmationModal
-        :show="showConfirmation"
-        :title="confirmationConfig.title"
-        :message="confirmationConfig.message"
-        :confirm-text="confirmationConfig.confirmText"
-        :cancel-text="confirmationConfig.cancelText"
-        :confirm-button-class="confirmationConfig.confirmButtonClass"
-        @update:show="showConfirmation = $event"
-        @confirm="handleConfirmation"
-        @cancel="showConfirmation = false"
-      />
+    <!-- Adding someone: the same four steps as editing them. -->
+    <MemberEditSheet
+      mode="add"
+      :show="showAddMemberComputed"
+      :ministry-names="ministryNames"
+      :all-tags="assignableTags"
+      :busy="addingPerson"
+      @close="showAddMemberComputed = false"
+      @save="handleAddMember"
+    />
 
-      <!-- Context Menu -->
-      <MemberContextMenu
-        :show="contextMenu.show"
-        :x="contextMenu.x"
-        :y="contextMenu.y"
-        :member="contextMenu.member"
-        :anchor="contextMenu.el"
-        @close="closeContextMenu"
-        @edit="handleContextEdit"
-        @delete="handleMemberDelete"
-        @select="startPicking"
-      />
-    </div>
+    <ConfirmationModal
+      :show="showConfirmation"
+      :title="confirmationConfig.title"
+      :message="confirmationConfig.message"
+      :confirm-text="confirmationConfig.confirmText"
+      :cancel-text="confirmationConfig.cancelText"
+      :confirm-button-class="confirmationConfig.confirmButtonClass"
+      @update:show="showConfirmation = $event"
+      @confirm="handleConfirmation"
+      @cancel="showConfirmation = false"
+    />
+
+    <MemberContextMenu
+      :show="contextMenu.show"
+      :x="contextMenu.x"
+      :y="contextMenu.y"
+      :member="contextMenu.member"
+      :anchor="contextMenu.el"
+      @close="closeContextMenu"
+      @edit="handleContextEdit"
+      @delete="handleMemberDelete"
+      @select="startPicking"
+    />
 
     <!-- Picking mode. One bar for the whole selection, sitting where the FAB
          would be so the thumb does not have to travel. -->
     <div
       v-if="picking"
-      class="absolute inset-x-0 bottom-0 bottom-bar! z-50 border-t border-gray-200 bg-white/95 px-3 py-3 backdrop-blur pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-gray-700 dark:bg-gray-900/95"
+      class="absolute inset-x-0 bottom-0 z-50 border-t border-gray-200 bg-white/95 px-3 py-3 backdrop-blur pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-gray-700 dark:bg-gray-900/95"
     >
-      <div class="flex items-center gap-3">
+      <div class="mx-auto flex max-w-xl items-center gap-3">
         <button
           @click="stopPicking"
           aria-label="Cancel selection"
@@ -819,7 +794,6 @@ const showFab = computed(
       </div>
     </div>
 
-    <!-- Floating actions -->
     <SortSheet
       :show="showSort"
       :options="sortOptions"
@@ -832,7 +806,7 @@ const showFab = computed(
     <MembersFab
       v-if="showFab"
       :sortLabel="currentSort.label"
-      :view="isMobile ? mobileView : null"
+      :view="mobileView"
       @search="openSearch"
       @toggle-view="toggleMobileView"
       @sort="showSort = true"
@@ -857,7 +831,6 @@ const showFab = computed(
       @apply="handleSheetApply"
     />
 
-    <!-- Export Dialog -->
     <ExportDialog
       v-model:showExport="showExport"
       :members="members"

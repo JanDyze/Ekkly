@@ -38,8 +38,11 @@ installable PWA.
   `src/api/<thing>Service.js` normalises documents and does the writes;
   `src/composables/use<Things>.js` holds one shared, ref-counted live listener
   (see `useTasks.js`). Views never touch Firestore.
-- **Navigation has one source: `src/data/navigation.js`.** The sidebar, the
-  bottom bar and the home catalogue all read it. Don't add links anywhere else.
+- **Navigation has one source: `src/data/navigation.js`.** The home of all
+  apps (`/home`, `src/views/Apps.vue`) and its All apps drawer lay their
+  tiles out from it, and the top bar names the app you are in from it. There is no sidebar or bottom bar:
+  every app is a screen of its own and the home is the way between them, the
+  top bar's mark leading back to it. Don't add links anywhere else.
 - **Access is by capability.** Capabilities are `<area>.view` and
   `<area>.manage`, and the areas are listed in `lib/capabilities.js`. A route
   sets `meta.capability` (or `meta.adminOnly`). A component hides what
@@ -102,11 +105,14 @@ installable PWA.
 ## Adding an app
 
 An app can be an app of its own inside Ekkly: under Ekkly's top bar (which
-names it and leads back out), with the sidebar, bottom bar and people rail
-stepped aside, it navigates itself. Schedules (`src/apps/schedules/`) is the
+names it and leads back out to the home of all apps), with the people rail
+stepped aside, it navigates itself. This is where every app is going; a page
+not yet made into one still opens under the top bar, whose mark leads home. Schedules (`src/apps/schedules/`) is the
 first one and the pattern to copy; Presentation (`src/apps/presentation/`) is
-the second, and Videos (`src/apps/videos/`, announcement videos drawn on a
-canvas from the calendar, engine in `src/utils/video/`) the third.
+the second, Videos (`src/apps/videos/`, announcement videos drawn on a
+canvas from the calendar, engine in `src/utils/video/`) the third, and People
+(`src/apps/people/`, the roll at `/members`, a record at `/members/:id`) the
+fourth.
 
 1. Put its screens in `src/apps/<app>/`, with a `routes.js` that the router
    spreads in under `AdminLayout`. The parent route sets
@@ -115,11 +121,16 @@ canvas from the calendar, engine in `src/utils/video/`) the third.
 2. The home is a launcher that fits one phone screen without scrolling:
    `AppHero` (what is true today, and the way into it), one button with the
    count of what is waiting on this person (the list itself opens in
-   `AppActionsSheet`, never on the home), then a grid of `AppShortcut`s (a
-   glyph and a name, four across) into its sections, with counts on their
-   corners.
+   `AppActionsSheet`, never on the home), then a grid of `AppShortcut`s (tiles
+   with a glyph and a name, and a live line when every tile has one: two
+   across with it, three without) into its sections, with counts on
+   their corners. People's home swaps the hero and the button for
+   `AppHeroDeck`: whatever matters gets a `DeckCard` of its own in a
+   swipeable, looping deck, dismissible for the session.
    Section glyphs are `SectionGlyph`: flat, in the church's accent, plainer
-   than the app icons on purpose. Every screen sits in `AppScreen`, which
+   than the app icons on purpose. A section can instead wear artwork of its
+   own (`art` on `AppShortcut`), drawn with the app icons by
+   `brand/ekkly/make-app-icons.mjs` — People's sections do. Every screen sits in `AppScreen`, which
    gives a section its back arrow and hide-on-scroll header; Ekkly's top bar
    shows only on the app's home. They live in `src/components/appframe/`.
 3. Data still flows view → composable → service. An app's summary of its own

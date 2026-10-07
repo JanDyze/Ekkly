@@ -4,7 +4,6 @@ import {
   ClipboardCheck,
   FileText,
   Heart,
-  Home,
   FilmSlate,
   Image,
   Link2,
@@ -38,7 +37,6 @@ import accountsArt from '../assets/app-icons/accounts.svg'
 import attendanceArt from '../assets/app-icons/attendance.svg'
 import auditArt from '../assets/app-icons/audit.svg'
 import bibleArt from '../assets/app-icons/bible.svg'
-import dashboardArt from '../assets/app-icons/dashboard.svg'
 import eventsArt from '../assets/app-icons/events.svg'
 import financesArt from '../assets/app-icons/finances.svg'
 import galleryArt from '../assets/app-icons/gallery.svg'
@@ -58,14 +56,13 @@ import videosArt from '../assets/app-icons/videos.svg'
 /**
  * Every place in the app you can go, in one list.
  *
- * The sidebar, the bottom bar and the home catalogue all read from here. They
- * used to each keep their own copy, and the copies drifted — Presentation was
- * in the sidebar and missing from the bottom bar, so on a phone the tech team
- * could not reach the projector from the navigation at all.
+ * The home of all apps (src/views/Apps.vue) lays its tiles out from here, in
+ * these groups, and the top bar names the app you are in from here. There
+ * was a sidebar and a bottom bar reading it too; every app is a screen of its
+ * own now, and the home is the way between them.
  *
- * `short` is only for the bottom bar, where a tab is about 65px wide and a
- * name like "Prayer Concerns" would be cut off. Everywhere with room uses
- * `name`; anything without a `short` has a name that already fits.
+ * `short` is a name for anywhere narrow, where "Prayer Concerns" would be cut
+ * off. Everywhere with room uses `name`.
  *
  * `description` is a plain sentence saying what you would open the thing to do.
  * It is what makes the home page worth having: a grid of names tells you no
@@ -80,15 +77,6 @@ export const NAV_GROUPS = [
     key: 'overview',
     label: '',
     items: [
-      {
-        name: 'Dashboard',
-        path: '/dashboard',
-        image: dashboardArt,
-        art: 'dashboard',
-        icon: Home,
-        capability: 'dashboard.view',
-        description: 'The week at a glance — who is serving, what is coming, what needs attention.',
-      },
       {
         name: 'Tasks',
         path: '/tasks',
@@ -305,13 +293,6 @@ export const NAV_GROUPS = [
 
 /** Flat, for anything that wants to look an item up by path. */
 export const NAV_ITEMS = NAV_GROUPS.flatMap((group) => group.items)
-
-/**
- * The four the bottom bar puts on the bar itself; everything else lives behind
- * More. Named by path so the definitions above stay the only place an item is
- * described.
- */
-export const PRIMARY_PATHS = ['/dashboard', '/members', '/events', '/attendance']
 
 /**
  * @param item one of the entries above

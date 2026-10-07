@@ -272,7 +272,7 @@ const doors = computed(() => {
       </button>
 
       <!-- 3. The doors -->
-      <nav class="mt-1 grid grid-cols-4 gap-x-2 gap-y-3" aria-label="Schedules">
+      <nav class="grid grid-cols-3 gap-2.5" aria-label="Schedules">
         <AppShortcut
           v-for="(door, index) in doors"
           :key="door.key"

@@ -82,7 +82,7 @@ admin and writes a `platformLog` entry with the change.
 | Activity | The platform log. |
 
 **Apps.** Each app is tied to its pages and permissions in `lib/apps.js`. An app
-that is off disappears from the sidebar, bottom bar, home page and dashboard
+that is off disappears from the home of all apps and its Today deck
 (`usePermissions().can()` refuses its capabilities), its routes redirect home,
 and its tools leave the Claude connector. Nothing in it is deleted. A church's
 administrators choose their own apps under **Settings → Apps & plan**, except

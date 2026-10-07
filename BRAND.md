@@ -100,7 +100,7 @@ amber.
 
 ### The app artwork's palette
 
-[brand/ekkly/make-app-icons.mjs](brand/ekkly/make-app-icons.mjs) draws the 20
+[brand/ekkly/make-app-icons.mjs](brand/ekkly/make-app-icons.mjs) draws the
 icons in [src/assets/app-icons/](src/assets/app-icons/) from a fixed ramp:
 orange `#FFB21E → #FF7417 → #EC4319`, blue `#3D9DFF → #1467E8 → #0A4FC4`, teal
 `#2BD4C0 → #0B93AB`, card lines `#8E9CB3`, navy `#0B2A6B`. Glossy two-tone
@@ -110,6 +110,11 @@ Fourteen are the apps a church can buy, and the front door shows those. The
 other six — dashboard, presentation, todos, accounts, audit, settings — are
 pages rather than apps, drawn so the church's sidebar can wear artwork the
 whole way down ([src/data/navigation.js](src/data/navigation.js)).
+
+Six more, named `people-…`, are the sections of the People app — the roll,
+birthdays, ministries, the overview, the records to fill in, your own — so
+the tiles on its home wear the same artwork as the apps. They are rooms of
+one app, not apps, and nothing sells them.
 
 Edit the generator and re-run it. Never hand-edit an icon in
 `src/assets/app-icons/`.

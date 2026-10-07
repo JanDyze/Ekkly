@@ -11,6 +11,58 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.32.0] — 2026-10-07
+
+Ekkly opens on one home now, and every app is heading towards being a screen
+of its own. The home leads with what is true today across the whole church,
+and keeps the five apps you use most one tap away. People is the newest app
+of its own, with birthdays, ministries and the records still to fill in.
+
+### Added
+
+- **A home for everything.** Ekkly opens on a deck of cards about today,
+  drawn from every app you can open: someone asking to link their account,
+  whose birthday it is, when you are next serving, tasks of yours that are due
+  or late, gatherings nobody has counted, and what is on. Swipe a card and it
+  goes under the deck; tap the × and it stays away until the app is opened
+  again. The deck remembers which card you left on top.
+- **Your five apps.** Under the deck sit the five apps you keep there, each
+  saying what is true inside it ("32 people", "3 this week", "You're on
+  Oct 12"). More apps opens every app: tap one to open it, or press and hold
+  to drag it onto your home. Your choice follows your account to every device.
+- **People, as an app of its own.** A home with a deck of its own — today's
+  birthdays with the person's face, the birthdays coming up, records still
+  missing a birthday or sex, the people in no ministry, and the church's
+  count — and its sections: Everyone, Birthdays, Ministries, Overview, Missing
+  info and your own record.
+- **Birthdays**, a month ahead: today, this week and the weeks after, each
+  saying how old they turn.
+- **Ministries**: how much of the church serves somewhere, each ministry with
+  its people and faces, and everyone not yet in a ministry, on a list of
+  their own.
+- **Overview**: members and attendees, the ages the church plans around, and
+  men and women — the numbers a church is asked for.
+- **Missing info**: the records still missing a detail, each opening straight
+  into its editor.
+- **New artwork** for each of People's sections, in the same style as the
+  app icons.
+
+### Changed
+
+- **The roll is People's Everyone section**, in one column on every screen,
+  with a list or a grid of faces on a desktop too. A person's record opens
+  from wherever you were — a birthday, a ministry — and its back arrow
+  returns there.
+- **The tiles in an app** are larger, with the section's picture and a line
+  of what is in it.
+
+### Removed
+
+- **Breaking: the bottom bar, the sidebar and the Dashboard.** The home is the
+  way between apps now, and Ekkly's top bar leads back to it from every
+  screen. The Dashboard's questions are the cards at the top of the home;
+  old links to it open the home.
+
 ## [0.31.0] — 2026-10-05
 
 Schedules is planned by its teams now. Worship, Preaching, Ushers and Welcome

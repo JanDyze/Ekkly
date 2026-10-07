@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="o" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB21E"/><stop offset=".5" stop-color="#FF7417"/><stop offset="1" stop-color="#EC4319"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D9DFF"/><stop offset=".55" stop-color="#1467E8"/><stop offset="1" stop-color="#0A4FC4"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BD4C0"/><stop offset="1" stop-color="#0B93AB"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  
+  <clipPath id="c"><rect x="4" y="6" width="56" height="52" rx="10"/></clipPath>
+  <g clip-path="url(#c)">
+    <rect x="4" y="6" width="56" height="52" fill="url(#b)"/>
+    <path d="M14.08 6 H60 V43.44 Z" fill="url(#o)"/>
+    <rect x="4" y="6" width="56" height="52" fill="url(#shine)"/>
+  </g>
+  <rect x="9.5" y="12" width="45" height="40" rx="5" fill="#fff"/>
+  <g class="a-pop" style="--i:0">
+  <circle cx="19" cy="20" r="3.6" fill="url(#o)"/>
+  <path d="M13.5 31.5 C13.5 27.92 15.92 25.58 19 25.58 C22.08 25.58 24.5 27.92 24.5 31.5 Z" fill="url(#o)"/></g><g class="a-pop" style="--i:1">
+  <circle cx="32" cy="20" r="3.6" fill="url(#b)"/>
+  <path d="M26.5 31.5 C26.5 27.92 28.92 25.58 32 25.58 C35.08 25.58 37.5 27.92 37.5 31.5 Z" fill="url(#b)"/></g><g class="a-pop" style="--i:2">
+  <circle cx="45" cy="20" r="3.6" fill="url(#t)"/>
+  <path d="M39.5 31.5 C39.5 27.92 41.92 25.58 45 25.58 C48.08 25.58 50.5 27.92 50.5 31.5 Z" fill="url(#t)"/></g><g class="a-pop" style="--i:3">
+  <circle cx="19" cy="36.5" r="3.6" fill="url(#b)"/>
+  <path d="M13.5 48 C13.5 44.42 15.92 42.08 19 42.08 C22.08 42.08 24.5 44.42 24.5 48 Z" fill="url(#b)"/></g><g class="a-pop" style="--i:4">
+  <circle cx="32" cy="36.5" r="3.6" fill="url(#t)"/>
+  <path d="M26.5 48 C26.5 44.42 28.92 42.08 32 42.08 C35.08 42.08 37.5 44.42 37.5 48 Z" fill="url(#t)"/></g><g class="a-pop" style="--i:5">
+  <circle cx="45" cy="36.5" r="3.6" fill="url(#o)"/>
+  <path d="M39.5 48 C39.5 44.42 41.92 42.08 45 42.08 C48.08 42.08 50.5 44.42 50.5 48 Z" fill="url(#o)"/></g>
+</svg>

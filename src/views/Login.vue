@@ -53,7 +53,7 @@ const handleSignedIn = (user) => {
   error.value = ''
   toast.success(`Welcome, ${user.displayName || user.email}!`)
   const redirect = route.query.redirect
-  router.replace(typeof redirect === 'string' ? redirect : '/dashboard')
+  router.replace(typeof redirect === 'string' ? redirect : '/home')
 }
 </script>
 

@@ -1,88 +1,378 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { CalendarDots, ClipboardCheck, KeyRound, ListChecks, MicrophoneStage } from '../icons'
+import AppHeroDeck from '../components/appframe/AppHeroDeck.vue'
+import DeckCard from '../components/appframe/DeckCard.vue'
+import AppShortcut from '../components/appframe/AppShortcut.vue'
+import AppsDrawer from '../components/appframe/AppsDrawer.vue'
+import AppArt from '../components/common/AppArt.vue'
+import { useAppOrder } from '../composables/useAppOrder'
+import BirthdayCard from '../components/members/BirthdayCard.vue'
 import { usePermissions } from '../composables/usePermissions'
 import { useAuth } from '../composables/useAuth'
 import { useAppSettings } from '../composables/useAppSettings'
-import { getDisplayName } from '../utils/memberUtils'
+import { useToast } from '../composables/useToast'
+import { useToday } from '../composables/useToday'
 import { allowedGroups } from '../data/navigation'
+import { APPS } from '../../lib/apps'
+import { getDisplayName, getFullName } from '../utils/memberUtils'
+import { formatShortDate } from '../utils/lineupUtils'
+
+// The home of all apps: where Ekkly opens, and where every app's back arrow
+// leads. Each app is a screen of its own now (src/apps/), with its own home
+// and its own way between its sections, so this is the one place to go
+// between them — there is no bottom bar or sidebar any more.
+//
+// Two things on it:
+//
+//   1. Today, as a deck of cards (AppHeroDeck) drawn from every app: an
+//      account waiting to be linked, whose birthday it is, when you are next
+//      serving, the tasks you owe, gatherings nobody has counted, what is on.
+//      Under them all, the card that is always true: the day, and the church.
+//      This is what the dashboard was, asked as a deck rather than a page of
+//      tiles.
+//   2. The apps this person keeps on their home — five, as tiles with their
+//      artwork and one line of what is true inside each — and More apps, which
+//      opens every app (AppsDrawer), where they can open any of them or press
+//      and hold to choose which five are here. The bottom bar's drawer did
+//      the same; the five it kept on the bar are the five kept here.
+//
+// Everything is gated on the capability of the app it comes from (useToday,
+// allowedGroups), so nobody sees a card or a tile for something they cannot
+// open.
+
+const route = useRoute()
+const router = useRouter()
+const toast = useToast()
+
+// The router sends anyone without access to a page back here. Say so, rather
+// than leaving them wondering why the tap did nothing.
+onMounted(() => {
+  if (!route.query.denied) return
+  toast.warning(`You do not have access to ${route.query.denied}. Ask an administrator for the right ministry tag.`, 5000)
+  router.replace({ query: {} })
+})
 
 const { can, isAdmin, myMember } = usePermissions()
 const { displayName } = useAuth()
-const { church } = useAppSettings()
+const { church, logoUrl } = useAppSettings()
+const today = useToday()
 
-// Read from the same list the sidebar reads from, so a page added in one place
-// cannot go missing from the other.
-//
-// Flattened, but still in the sidebar's order, so related things stay
-// neighbours without each group costing a heading and a fresh row: five small
-// groups made six rows of seventeen apps, where one grid makes four.
-const apps = computed(() => allowedGroups(can, isAdmin.value).flatMap((group) => group.items))
+const plural = (n, one, many) => `${n.toLocaleString()} ${n === 1 ? one : many}`
 
-const greeting = computed(() => {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
-})
+/** A `YYYY-MM-DD` key read as a local date, never as UTC midnight. */
+const dateOf = (key) => {
+  const [y, m, d] = String(key).split('-').map(Number)
+  return new Date(y, (m || 1) - 1, d || 1)
+}
+const weekday = (key) => dateOf(key).toLocaleDateString(undefined, { weekday: 'long' })
+const timeLabel = (time) => {
+  if (!time) return ''
+  const [h, m] = String(time).split(':')
+  const hour = Number(h)
+  if (!Number.isFinite(hour)) return ''
+  return `${hour % 12 === 0 ? 12 : hour % 12}:${m ?? '00'} ${hour >= 12 ? 'PM' : 'AM'}`
+}
+const tileDate = (key) => {
+  const date = dateOf(key)
+  return { month: date.toLocaleDateString(undefined, { month: 'short' }), day: date.getDate() }
+}
 
 const name = computed(() => getDisplayName(myMember.value) || displayName.value)
+const greeting = computed(() => {
+  const hour = new Date().getHours()
+  const part = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+  return name.value ? `${part}, ${name.value}` : part
+})
+
+/* -------------------------------------------------------------- the deck */
+
+const cards = computed(() => {
+  const list = []
+
+  // Someone waiting to be let in properly leads: they cannot do anything
+  // until it is done.
+  if (isAdmin.value && today.claimsWaiting.value) {
+    const n = today.claimsWaiting.value
+    list.push({
+      kind: 'plain',
+      key: `claims:${n}`,
+      tone: 'warn',
+      icon: KeyRound,
+      dismissible: true,
+      kicker: 'Waiting on you',
+      title: `${plural(n, 'account', 'accounts')} to link`,
+      detail: 'Someone signed in and says a record on the roll is theirs.',
+      to: '/accounts',
+    })
+  }
+
+  today.birthdaysToday.value.forEach(({ member, turning }) => {
+    list.push({
+      kind: 'birthday',
+      key: `birthday:${member.firestoreId || member.id}:${today.today}`,
+      tone: 'celebrate',
+      dismissible: true,
+      kicker: 'Birthday today',
+      detail: getFullName(member),
+      to: { name: 'MemberDetails', params: { id: member.id || member.firestoreId } },
+      member,
+      name: getDisplayName(member),
+      turning,
+    })
+  })
+
+  const turn = today.myNextTurn.value
+  if (turn) {
+    const isToday = turn.date === today.today
+    list.push({
+      kind: 'dated',
+      key: `turn:${turn.date}`,
+      tone: 'plain',
+      icon: MicrophoneStage,
+      dismissible: true,
+      kicker: 'You are serving',
+      title: isToday ? "You're on today" : `You're on ${weekday(turn.date)}`,
+      detail: turn.roles.map((role) => role.name).join(' · '),
+      to: { name: 'SchedulesSunday', params: { date: turn.date } },
+      date: tileDate(turn.date),
+    })
+  }
+
+  // Late first, then due today, never both: two cards about one list.
+  const late = today.myOverdue.value
+  const due = today.myDueToday.value
+  if (late.length || due.length) {
+    const tasks = late.length ? late : due
+    list.push({
+      kind: 'plain',
+      key: `tasks:${late.length ? 'late' : 'today'}:${tasks.length}`,
+      tone: late.length ? 'warn' : 'plain',
+      icon: ListChecks,
+      dismissible: true,
+      kicker: late.length ? 'Overdue' : 'Due today',
+      title: `${plural(tasks.length, 'task', 'tasks')} of yours ${late.length ? 'overdue' : 'due today'}`,
+      detail: tasks.map((task) => task.title).slice(0, 2).join(' · '),
+      to: '/tasks',
+    })
+  }
+
+  if (today.unrecorded.value) {
+    const n = today.unrecorded.value
+    list.push({
+      kind: 'plain',
+      key: `unrecorded:${n}`,
+      tone: 'warn',
+      icon: ClipboardCheck,
+      dismissible: true,
+      kicker: 'Still to count',
+      title: `${plural(n, 'gathering', 'gatherings')} with no attendance`,
+      detail: 'They stay on the list until someone records or dismisses them.',
+      to: '/attendance',
+    })
+  }
+
+  // What is on: today's, or the next thing this week.
+  const on = today.eventsToday.value
+  if (on.length) {
+    list.push({
+      kind: 'dated',
+      key: `on:${today.today}`,
+      tone: 'plain',
+      icon: CalendarDots,
+      dismissible: true,
+      kicker: 'On today',
+      title: on.length === 1 ? on[0].title || 'A gathering' : `${on.length} things on today`,
+      detail: on.slice(0, 3).map((e) => [on.length > 1 ? e.title : '', timeLabel(e.time)].filter(Boolean).join(' ')).join(' · '),
+      to: '/events',
+      date: tileDate(today.today),
+    })
+  } else if (today.nextEvent.value) {
+    const next = today.nextEvent.value
+    list.push({
+      kind: 'dated',
+      key: `next:${next.date}:${next.title}`,
+      tone: 'plain',
+      icon: CalendarDots,
+      dismissible: true,
+      kicker: 'Coming up',
+      title: next.title || 'A gathering',
+      detail: [weekday(next.date), timeLabel(next.time)].filter(Boolean).join(' · '),
+      to: '/events',
+      date: tileDate(next.date),
+    })
+  }
+
+  // The card that is always there: the day, and whose church this is.
+  const now = new Date()
+  list.push({
+    kind: 'day',
+    key: 'day',
+    tone: 'accent',
+    kicker: greeting.value,
+    title: now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }),
+    detail: church.value?.shortName || church.value?.fullName || '',
+    to: null,
+  })
+
+  return list
+})
+
+/* -------------------------------------------------------------- the apps */
+
+// Every app this person may open, in the navigation's order; the five on
+// the home are whichever they keep first (useAppOrder).
+const allApps = computed(() => allowedGroups(can, isAdmin.value).flatMap((group) => group.items))
+const { ordered, primary } = useAppOrder(allApps)
+const others = computed(() => ordered.value.slice(primary.value.length))
+
+const showDrawer = ref(false)
+
+const APP_LINES = Object.fromEntries(APPS.map((app) => [app.key, app.description]))
+
+// One line of what is true inside each app, where the home already knows it;
+// otherwise what the app is for, in the words the church bought it under.
+const lineOf = (item) => {
+  switch (item.path) {
+    case '/members':
+      return today.people.loading.value ? '' : plural(today.people.counts.value.total, 'person', 'people')
+    case '/tasks': {
+      const n = today.myTasks.value.length
+      return myMember.value ? (n ? `${n} of yours open` : 'Nothing on you') : APP_LINES.tasks
+    }
+    case '/events': {
+      const n = today.eventsThisWeek.value.length
+      return n ? `${n} this week` : 'Nothing this week'
+    }
+    case '/schedules': {
+      const turn = today.myNextTurn.value
+      return turn ? `You're on ${formatShortDate(turn.date)}` : APP_LINES.lineups
+    }
+    case '/attendance': {
+      const last = today.lastCount.value
+      return last ? `${last.totalAttendees || 0} on ${formatShortDate(last.date)}` : APP_LINES.attendance
+    }
+    case '/prayer-concerns':
+      return today.openPrayers.value ? `${today.openPrayers.value} open` : APP_LINES.prayer
+    default:
+      return APP_LINES[item.art] || item.description
+  }
+}
 </script>
 
 <template>
-  <div class="flex h-full flex-col gap-2 overflow-y-auto pb-bar!">
-    <div class="flex shrink-0 items-baseline gap-2">
-      <h1 class="truncate text-base font-bold text-gray-900 dark:text-white">
-        {{ greeting }}<template v-if="name">, {{ name }}</template>
-      </h1>
-      <p class="truncate text-[11px] text-gray-400 dark:text-gray-500">
-        {{ church?.shortName || church?.fullName || '' }}
-      </p>
-    </div>
+  <div class="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
+    <main class="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pb-[max(3rem,env(safe-area-inset-bottom))] pt-4 sm:pt-6">
+      <!-- 1. Today, most important on top -->
+      <AppHeroDeck :cards="cards" scope="home" label="Today">
+        <template #card="{ card }">
+          <BirthdayCard v-if="card.kind === 'birthday'" :card="card" />
 
-    <div
-      v-if="!apps.length"
-      class="rounded-lg border border-dashed border-gray-300 p-8 text-center dark:border-gray-600"
-    >
-      <p class="text-sm text-gray-500 dark:text-gray-400">
-        Nothing has been shared with this account yet.
-      </p>
-      <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
-        An administrator grants access by ministry in Settings.
-      </p>
-    </div>
+          <!-- Something on a day: its date, the way a calendar shows it. -->
+          <DeckCard
+            v-else-if="card.kind === 'dated'"
+            :tone="card.tone"
+            :icon="card.icon"
+            :kicker="card.kicker"
+            :title="card.title"
+            :detail="card.detail"
+            :to="card.to"
+            :inset="card.dismissible"
+          >
+            <template #leading>
+              <span class="flex size-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-primary/10 leading-none text-primary dark:bg-primary-light/15 dark:text-primary-light">
+                <span class="text-[11px] font-bold uppercase">{{ card.date.month }}</span>
+                <span class="mt-0.5 text-xl font-bold tabular-nums">{{ card.date.day }}</span>
+              </span>
+            </template>
+          </DeckCard>
 
-    <!-- One grid, home-screen density. No headings: they cost a row each, and
-         the order already keeps related things together. -->
-    <div
-      v-else
-      class="grid grid-cols-5 gap-x-1 gap-y-2 sm:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12"
-    >
-      <router-link
-        v-for="item in apps"
-        :key="item.path"
-        :to="item.path"
-        class="group flex flex-col items-center gap-1 rounded-lg px-0.5 py-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50"
-      >
-        <!-- Artwork and line icon share one tile, so a painted page and a
-             plain one sit at the same weight in the grid. Tinted in light mode,
-             a plain dark surface in dark mode. -->
-        <span
-          class="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20 dark:bg-gray-700 dark:text-primary-light dark:group-hover:bg-gray-600"
-        >
-          <img
-            v-if="item.image"
-            :src="item.image"
-            alt=""
-            class="h-8 w-8 object-contain"
+          <!-- The day, and the church: always at the bottom of the deck. -->
+          <DeckCard
+            v-else-if="card.kind === 'day'"
+            tone="accent"
+            :kicker="card.kicker"
+            :title="card.title"
+            :detail="card.detail"
+          >
+            <template #art>
+              <!-- Light through an arched window, the outline of Ekkly's mark
+                   (BRAND.md: the window is the motif). -->
+              <svg class="absolute -bottom-10 right-5 h-60 w-36" viewBox="0 0 144 240" fill="none">
+                <defs>
+                  <linearGradient id="home-arch-light" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="white" stop-opacity="0.2" />
+                    <stop offset="0.75" stop-color="white" stop-opacity="0.03" />
+                    <stop offset="1" stop-color="white" stop-opacity="0" />
+                  </linearGradient>
+                </defs>
+                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" fill="url(#home-arch-light)" />
+                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" stroke="white" stroke-opacity="0.14" stroke-width="1.5" />
+              </svg>
+            </template>
+            <!-- The church's own logo, on white so any logo reads on any
+                 church colour. -->
+            <template #trailing>
+              <span class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-lg shadow-black/10">
+                <img :src="logoUrl" alt="" class="size-full object-contain" />
+              </span>
+            </template>
+          </DeckCard>
+
+          <DeckCard
+            v-else
+            :tone="card.tone"
+            :icon="card.icon"
+            :kicker="card.kicker"
+            :title="card.title"
+            :detail="card.detail"
+            :to="card.to"
+            :inset="card.dismissible"
           />
-          <component v-else :is="item.icon" class="h-6 w-6" />
-        </span>
-        <span
-          class="line-clamp-2 w-full text-center text-[10px] font-medium leading-tight text-gray-600 dark:text-gray-400"
+        </template>
+      </AppHeroDeck>
+
+      <!-- 2. The apps kept on the home, and the way to all of them -->
+      <div
+        v-if="!allApps.length"
+        class="rounded-2xl border border-dashed border-gray-300 p-8 text-center dark:border-gray-600"
+      >
+        <p class="text-sm text-gray-500 dark:text-gray-400">Nothing has been shared with this account yet.</p>
+        <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">An administrator grants access by ministry in Settings.</p>
+      </div>
+
+      <nav v-else class="grid grid-cols-2 gap-2.5 sm:grid-cols-3" aria-label="Your apps">
+        <AppShortcut
+          v-for="(item, index) in primary"
+          :key="item.path"
+          :to="item.path"
+          :title="item.name"
+          :art="item.art"
+          :detail="lineOf(item)"
+          :delay="120 + index * 30"
+        />
+
+        <!-- More apps: a peek at four of the rest, the way a phone shows a
+             folder, so it reads as more of the same rather than a setting. -->
+        <button
+          v-if="others.length"
+          type="button"
+          :style="{ animationDelay: `${120 + primary.length * 30}ms` }"
+          class="animate-rise group flex min-w-0 flex-col gap-3 rounded-2xl bg-white p-3.5 text-left ring-1 ring-gray-200/80 transition duration-200 ease-out hover:ring-gray-300 pressed:scale-[0.97] dark:bg-gray-800 dark:ring-gray-700/80 dark:hover:ring-gray-600"
+          @click="showDrawer = true"
         >
-          {{ item.name }}
-        </span>
-      </router-link>
-    </div>
+          <span class="grid size-11 grid-cols-2 gap-0.5 rounded-xl bg-gray-100 p-1 dark:bg-gray-700/60">
+            <AppArt v-for="item in others.slice(0, 4)" :key="item.path" :app-key="item.art" class="size-full" />
+          </span>
+          <span class="mt-auto min-w-0">
+            <span class="block truncate text-[15px] font-semibold leading-snug text-gray-900 dark:text-white">More apps</span>
+            <span class="mt-0.5 block truncate text-xs text-gray-500 dark:text-gray-400">{{ others.length }} more · arrange yours</span>
+          </span>
+        </button>
+      </nav>
+    </main>
+
+    <AppsDrawer :show="showDrawer" :apps="allApps" @close="showDrawer = false" />
   </div>
 </template>

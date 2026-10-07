@@ -3,13 +3,14 @@ import { clearUserPref, saveUserPrefs, subscribeToUserPrefs } from '../api/userP
 import { useAuth } from './useAuth'
 
 /**
- * The order the apps sit in, and therefore which four ride on the bottom bar.
+ * The order the apps sit in, and therefore which ones are on the home of all
+ * apps (src/views/Apps.vue); the rest wait behind More apps (AppsDrawer).
  *
- * Alphabetical to begin with, because any other default is a guess about what
- * this particular church does most. After that it is whatever the person
- * dragged: the four they pull to the front become their bar, so the dock ends
- * up holding the apps they actually use without anyone having to configure a
- * dock.
+ * The navigation's own order to begin with (src/data/navigation.js), which
+ * puts the apps most churches use most — tasks, people, groups, attendance,
+ * events — first. After that it is whatever the person dragged: the ones they
+ * pull onto the home become their home, so it ends up holding the apps they
+ * actually use without anyone having to configure it.
  *
  * Kept against the account, not the device. Somebody who arranges their apps
  * on their phone and then opens the app on a borrowed laptop should find their
@@ -25,7 +26,7 @@ const PREF_KEY = 'appOrder'
 // What the device remembers is now only a paint cache of the signed-in
 // account's order, keyed by uid. Firestore is the truth, but it answers a
 // moment after the first render, and without something to draw in the meantime
-// the bottom bar would reshuffle itself on every cold start.
+// the home would reshuffle itself on every cold start.
 const cacheKey = (uid) => `uec.appOrder.${uid}`
 
 // The old device-wide key, from before the order followed the account. Read
@@ -64,12 +65,15 @@ const uid = ref(null)
 /**
  * Pages whose path changed, old to new. A path survives a rename of the label,
  * but not a rename of the path itself — so without this, whoever had Lineups
- * on their bar would find Schedules dropped to the back of the list.
+ * on their home would find Schedules dropped to the back of the list.
  */
 const RENAMED_PATHS = { '/lineups': '/schedules', '/present': '/presentation' }
 
-/** How many of them the bar shows. */
-export const BAR_SLOTS = 4
+/**
+ * How many of them the home shows. Five, and More apps makes the sixth: three
+ * even rows of two tiles on a phone.
+ */
+export const HOME_SLOTS = 5
 
 /**
  * An account whose preferences hold no order, on a device that was arranging
@@ -113,7 +117,7 @@ export const initAppOrder = () => {
 
       if (!now) {
         // Signing out takes the arrangement with it: the next person at this
-        // device gets plain alphabetical until they sign in.
+        // device gets the default until they sign in.
         order.value = []
         return
       }
@@ -123,7 +127,7 @@ export const initAppOrder = () => {
 
       unsubscribe = subscribeToUserPrefs(now, (prefs) => {
         // A failed read leaves whatever is on screen alone rather than
-        // flattening the bar to alphabetical.
+        // flattening the home back to the default.
         if (!prefs) return
         const saved = prefs[PREF_KEY]
         if (Array.isArray(saved)) {
@@ -142,21 +146,19 @@ export const initAppOrder = () => {
 export function useAppOrder(allowedItems) {
   /**
    * Saved order first, then anything it has never heard of — a newly added
-   * page, or one a role was just granted — in alphabetical order after it.
-   * Nothing is dropped for being unknown, and nothing is invented for being
-   * saved and since removed.
+   * page, or one a role was just granted — after it, in the navigation's
+   * order. Nothing is dropped for being unknown, and nothing is invented for
+   * being saved and since removed.
    */
   const ordered = computed(() => {
     const items = allowedItems.value
     const rank = new Map(order.value.map((path, i) => [RENAMED_PATHS[path] || path, i]))
     const known = items.filter((i) => rank.has(i.path)).sort((a, b) => rank.get(a.path) - rank.get(b.path))
-    const fresh = items
-      .filter((i) => !rank.has(i.path))
-      .sort((a, b) => a.name.localeCompare(b.name))
+    const fresh = items.filter((i) => !rank.has(i.path))
     return [...known, ...fresh]
   })
 
-  const primary = computed(() => ordered.value.slice(0, BAR_SLOTS))
+  const primary = computed(() => ordered.value.slice(0, HOME_SLOTS))
 
   const setOrder = (items) => {
     const paths = items.map((i) => i.path)
@@ -168,7 +170,7 @@ export function useAppOrder(allowedItems) {
     )
   }
 
-  /** Back to plain alphabetical, on every device this account signs in on. */
+  /** Back to the default, on every device this account signs in on. */
   const resetOrder = () => {
     order.value = []
     if (!uid.value) return

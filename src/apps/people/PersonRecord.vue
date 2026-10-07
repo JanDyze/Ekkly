@@ -16,11 +16,11 @@ import {
   Tag,
   User,
   Users,
-} from '../icons'
-import { useMembers } from '../composables/useMembers'
-import { useMinistries } from '../composables/useMinistries'
-import { usePermissions } from '../composables/usePermissions'
-import { useMemberAttendance } from '../composables/useMemberAttendance'
+} from '../../icons'
+import { useMembers } from '../../composables/useMembers'
+import { useMinistries } from '../../composables/useMinistries'
+import { usePermissions } from '../../composables/usePermissions'
+import { useMemberAttendance } from '../../composables/useMemberAttendance'
 import {
   getFullName,
   getSexIcon,
@@ -28,18 +28,18 @@ import {
   calculateAgeFromDate,
   mergeTagSources,
   missingMemberFields,
-} from '../utils/memberUtils'
-import { subscribeToCustomTags } from '../api/tagsService'
-import MemberAvatar from '../components/members/MemberAvatar.vue'
-import YouBadge from '../components/members/YouBadge.vue'
-import ConfirmationModal from '../components/common/ConfirmationModal.vue'
-import ImageCropper from '../components/members/ImageCropper.vue'
-import MemberEditSheet from '../components/members/MemberEditSheet.vue'
-import LabelMark from '../components/common/LabelMark.vue'
-import { useLabelMarks } from '../composables/useLabelMarks'
-import { getIconForEvent } from '../utils/eventIcons'
-import { uploadImage } from '../api/blobService'
-import { useToast } from '../composables/useToast'
+} from '../../utils/memberUtils'
+import { subscribeToCustomTags } from '../../api/tagsService'
+import MemberAvatar from '../../components/members/MemberAvatar.vue'
+import YouBadge from '../../components/members/YouBadge.vue'
+import ConfirmationModal from '../../components/common/ConfirmationModal.vue'
+import ImageCropper from '../../components/members/ImageCropper.vue'
+import MemberEditSheet from '../../components/members/MemberEditSheet.vue'
+import LabelMark from '../../components/common/LabelMark.vue'
+import { useLabelMarks } from '../../composables/useLabelMarks'
+import { getIconForEvent } from '../../utils/eventIcons'
+import { uploadImage } from '../../api/blobService'
+import { useToast } from '../../composables/useToast'
 
 const route = useRoute()
 const router = useRouter()
@@ -81,6 +81,16 @@ const saveEdit = async (changes) => {
   }
 }
 const showImageCropper = ref(false)
+
+// Back is to wherever in the People app the record was opened from — the roll,
+// a birthday, a ministry, the records to fill in — and from anywhere else in
+// Ekkly (the top bar's own record, Accounts, Minutes) to the People app's home.
+// Never a new history entry, the same as every screen of an app (AppScreen).
+const goBack = () => {
+  const previous = window.history.state?.back
+  if (previous && String(previous).startsWith('/members')) router.back()
+  else router.replace({ name: 'PeopleHome' })
+}
 
 // The bar only says the name once the heading carrying it has scrolled past,
 // so the first screen does not print it twice.
@@ -408,7 +418,7 @@ const handleDelete = () => {
     onConfirm: async () => {
       try {
         await removeMember(member.value)
-        router.push('/members')
+        router.replace({ name: 'Members' })
       } catch (error) {
         console.error('Error deleting member:', error)
         toast.error('Could not delete that person. Please try again.')
@@ -443,7 +453,7 @@ const handleImageUpdate = async (base64Image) => {
       class="sticky top-0 z-30 flex shrink-0 items-center gap-2 border-b border-gray-200 bg-white/90 px-2 py-2 backdrop-blur pt-[calc(0.5rem+env(safe-area-inset-top))] dark:border-gray-700 dark:bg-gray-800/90"
     >
       <button
-        @click="router.push('/members')"
+        @click="goBack"
         class="flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
       >
         <ArrowLeft class="h-5 w-5 shrink-0" />
@@ -483,7 +493,7 @@ const handleImageUpdate = async (base64Image) => {
       <Users class="mb-4 h-16 w-16 opacity-50" />
       <p class="text-lg">Member not found</p>
       <button
-        @click="router.push('/members')"
+        @click="router.replace({ name: 'PeopleHome' })"
         class="mt-4 rounded-lg bg-primary px-4 py-2 text-white transition-colors hover:bg-primary-hover"
       >
         Back to People
@@ -493,7 +503,7 @@ const handleImageUpdate = async (base64Image) => {
     <div
       v-else
       @scroll.passive="onScroll"
-      class="flex-1 overflow-y-auto pb-bar! pb-[calc(2rem+env(safe-area-inset-bottom))]"
+      class="flex-1 overflow-y-auto pb-[calc(2rem+env(safe-area-inset-bottom))]"
     >
       <div class="mx-auto w-full max-w-2xl space-y-3 pb-3 sm:px-4 sm:pt-3">
         <!-- ============ Identity ============ -->

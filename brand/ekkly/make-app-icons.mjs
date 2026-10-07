@@ -396,6 +396,97 @@ const ICONS = {
   <rect class="a-line" style="--i:2" x="34" y="32" width="15" height="4.2" rx="2.1" fill="${LINE}"/>
   <rect class="a-line" style="--i:3" x="34" y="40.5" width="10" height="4.2" rx="2.1" fill="${LINE}"/>`),
 
+  // ---- Sections of the People app (src/apps/people), drawn the same way as
+  // the apps so the People home's tiles wear Ekkly's artwork too. Named
+  // `people-<section>`; they are rooms of one app, not apps, and nothing
+  // sells them.
+
+  // The whole roll: six people in rows on a card, arriving one by one.
+  'people-everyone': svg(`
+  ${splitTile(4, 6, 56, 52, 10, 'c')}
+  <rect x="9.5" y="12" width="45" height="40" rx="5" fill="#fff"/>
+  ${[0, 1]
+    .map((r) =>
+      [0, 1, 2]
+        .map(
+          (c) =>
+            `<g class="a-pop" style="--i:${r * 3 + c}">${person(19 + c * 13, 20 + r * 16.5, 3.6, 11, 31.5 + r * 16.5, ['url(#o)', 'url(#b)', 'url(#t)'][(r + c) % 3])}</g>`
+        )
+        .join('')
+    )
+    .join('')}`),
+
+  // A birthday: a two-tier cake, and its candles lighting.
+  'people-birthdays': svg(`
+  <clipPath id="c"><rect x="8" y="34" width="48" height="22" rx="6"/></clipPath>
+  <g clip-path="url(#c)">
+    <rect x="8" y="34" width="48" height="22" fill="url(#b)"/>
+    <path d="M16 34H56V52Z" fill="url(#o)"/>
+    <path d="M8 34H56V40c-4 0-4 4-8 4s-4-4-8-4-4 4-8 4-4-4-8-4-4 4-8 4-4-4-8-4z" fill="#fff"/>
+    <rect x="8" y="34" width="48" height="22" fill="url(#shine)"/>
+  </g>
+  <rect x="15" y="22" width="34" height="14" rx="5" fill="url(#o)"/>
+  <rect x="15" y="22" width="34" height="5" rx="2.5" fill="#fff"/>
+  <circle cx="21" cy="27" r="2.4" fill="#fff"/>
+  <circle cx="32" cy="27.6" r="3" fill="#fff"/>
+  <circle cx="43" cy="27" r="2.4" fill="#fff"/>
+  ${[22, 32, 42]
+    .map(
+      (x, i) => `
+  <rect x="${x - 1.7}" y="14" width="3.4" height="9" rx="1.7" fill="url(#b)"/>
+  <path class="a-pop" style="--i:${i}" d="M${x} 5.5c2 2.6 3 4.2 3 5.6a3 3 0 0 1-6 0c0-1.4 1-3 3-5.6z" fill="url(#o)"/>`
+    )
+    .join('')}`),
+
+  // Ministries: the church, its door the arched window of the mark.
+  'people-ministries': svg(`
+  <rect x="29.6" y="2" width="4.8" height="13" rx="1.6" fill="${NAVY}"/>
+  <rect x="26" y="5.2" width="12" height="4.4" rx="1.6" fill="${NAVY}"/>
+  ${splitTile(10, 28, 44, 30, 6, 'c')}
+  <path d="M8.5 31L32 13.5 55.5 31z" fill="url(#o)" stroke="url(#o)" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M8.5 31L32 13.5 55.5 31z" fill="url(#shine)"/>
+  <g class="a-pop" style="--i:1">
+    <path d="M26 58V46a6 6 0 0 1 12 0V58z" fill="#fff"/>
+    <path d="M15 45v-3.5a3.5 3.5 0 0 1 7 0V45z" fill="#fff"/>
+    <path d="M42 45v-3.5a3.5 3.5 0 0 1 7 0V45z" fill="#fff"/>
+  </g>`),
+
+  // The roll at a glance: a ring in three parts.
+  'people-glance': svg(`
+  <g transform="rotate(-90 32 32)">
+    <g class="a-pop">
+      <circle cx="32" cy="32" r="21" fill="none" stroke="url(#b)" stroke-width="12" pathLength="100" stroke-dasharray="46 54"/>
+      <circle cx="32" cy="32" r="21" fill="none" stroke="url(#o)" stroke-width="12" pathLength="100" stroke-dasharray="29 71" stroke-dashoffset="-48.5"/>
+      <circle cx="32" cy="32" r="21" fill="none" stroke="url(#t)" stroke-width="12" pathLength="100" stroke-dasharray="17 83" stroke-dashoffset="-80"/>
+    </g>
+  </g>
+  <circle cx="32" cy="32" r="27" fill="none" stroke="url(#shine)" stroke-width="12"/>`),
+
+  // Records to fill in: a clipboard, two rows ticked and the third still open.
+  'people-missing': svg(`
+  ${splitTile(9, 9, 46, 51, 9, 'c')}
+  <rect x="14" y="17" width="36" height="38" rx="4" fill="#fff"/>
+  <rect x="22" y="4" width="20" height="10" rx="4" fill="${NAVY}" stroke="#fff" stroke-width="1.5"/>
+  ${[0, 1]
+    .map(
+      (i) => `
+  <circle cx="21" cy="${26 + i * 10}" r="3.8" fill="url(#b)"/>
+  ${check(18.9, 24 + i * 10, 4.2, '#fff', 1.7, i)}
+  <rect class="a-line" style="--i:${i}" x="28" y="${24.2 + i * 10}" width="${16 - i * 3}" height="3.6" rx="1.8" fill="${LINE}"/>`
+    )
+    .join('')}
+  <circle class="a-pop" style="--i:2" cx="21" cy="46" r="3.4" fill="none" stroke="url(#o)" stroke-width="2.2"/>
+  <rect x="28" y="44.2" width="10" height="3.6" rx="1.8" fill="${LINE}"/>`),
+
+  // Your own record: a name badge with you on it.
+  'people-me': svg(`
+  ${splitTile(12, 9, 40, 51, 9, 'c')}
+  <rect x="26.5" y="13" width="11" height="3" rx="1.5" fill="#fff"/>
+  <rect x="17" y="20" width="30" height="35" rx="4.5" fill="#fff"/>
+  <g class="a-pop">${person(32, 29.5, 5.2, 17, 42.5, 'url(#o)')}</g>
+  <rect class="a-line" style="--i:0" x="22" y="45.5" width="20" height="3.6" rx="1.8" fill="${LINE}"/>
+  <rect class="a-line" style="--i:1" x="25.5" y="50.6" width="13" height="2.8" rx="1.4" fill="${LINE}"/>`),
+
 }
 
 for (const [key, text] of Object.entries(ICONS)) writeFileSync(join(outDir, `${key}.svg`), text)

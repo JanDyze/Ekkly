@@ -35,11 +35,18 @@ CHANGELOG.md.
 
 `src/layouts/AdminLayout.vue` wraps every signed-in page:
 
-- **Desktop (`lg`, 1024px and up):** sidebar on the left, top bar, people rail
-  on the right.
-- **Phone (below `lg`):** top bar, bottom bar.
-- The shell pads the content area (`p-0 sm:p-4 lg:px-8 lg:py-3`), so **a page
-  never adds its own outer padding.**
+- **Every screen:** the top bar, and on a desktop the people rail on the
+  right. There is no sidebar or bottom bar: the home of all apps (`/home`,
+  `src/views/Apps.vue`, `meta.root`) is the way between apps, and the top
+  bar's mark is a back arrow to it from every other screen.
+- **The home of all apps** leads with a Today deck (`AppHeroDeck`, fed by
+  `useToday`) drawn from every app, then the five apps the person keeps there
+  as `AppShortcut` tiles (artwork and a live line) and a More apps tile. More
+  apps opens `AppsDrawer`: every app, the five on the home on a shelf, press
+  and hold to drag one onto it. The order is the person's, saved to their
+  account (`useAppOrder`).
+- The shell pads the content area (`p-0 sm:p-4 lg:px-8 lg:py-3`) of a page
+  that is not yet an app, so **such a page never adds its own outer padding.**
 
 `lg` is the line between phone and desktop everywhere. In script, use
 `useMediaQuery('(max-width: 1023px)')`.
@@ -48,9 +55,10 @@ Route `meta` options that change the shell:
 
 | meta | Effect | Use for |
 |---|---|---|
-| `focus: true` | No top bar, bottom bar or people rail. The page handles its own padding and safe areas, and **must have its own back button.** | Something you finish: one person's record, taking attendance, a minute |
-| `hideTopbar: true` | Top bar hidden, bottom bar kept | A page with its own header that you still browse from (Bible) |
-| `frame: 'app'` | Top bar kept (named for the app, its mark a back arrow to all apps); no sidebar, bottom bar or people rail. The app's home is a launcher (`AppHero`, `AppTile`s) and every screen sits in `AppScreen`, from `src/components/appframe/` | An app of its own inside Ekkly (Schedules). One centred column on every screen; sections are a step off the home, with a back arrow, not tabs |
+| `focus: true` | No top bar or people rail. The page handles its own padding and safe areas, and **must have its own back button.** | Something you finish: one person's record, taking attendance, a minute |
+| `hideTopbar: true` | Top bar hidden, people rail kept | A page with its own header that you still browse from (Bible) |
+| `frame: 'app'` | Top bar kept on the app's home (named for the app, its mark a back arrow to all apps); no people rail. The app's home is a launcher (`AppHero` or `AppHeroDeck`, then `AppShortcut`s) and every screen sits in `AppScreen`, from `src/components/appframe/` | An app of its own inside Ekkly (Schedules, People). One centred column on every screen; sections are a step off the home, with a back arrow, not tabs |
+| `root: true` | Unpadded, people rail kept | The home of all apps only |
 
 ## Anatomy of a list page
 

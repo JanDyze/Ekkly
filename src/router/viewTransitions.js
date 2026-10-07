@@ -48,6 +48,10 @@ const PAIRS = [
     // name permanently (MemberDetails.vue).
     tag: (to) => ({ el: rowAvatar(to.params.id), name: 'member-avatar' }),
   },
+  // Back from a record to the roll is still instant, inside the People app as
+  // it was before it: an app's own slide back would snapshot the whole roll,
+  // which is the freeze described above. The roll plays its own entrance.
+  { from: 'MemberDetails', to: 'Members', still: true },
   { from: 'PublicPageBuilder', to: 'PublicPagePreview', nav: 'grow' },
   { from: 'PublicPagePreview', to: 'PublicPageBuilder', nav: 'shrink' },
 ]
@@ -82,8 +86,11 @@ const appMove = (to, from) => {
   return { nav: into ? 'app-forward' : 'app-back' }
 }
 
-const pairFor = (to, from) =>
-  PAIRS.find((pair) => from.name === pair.from && to.name === pair.to) || appMove(to, from)
+const pairFor = (to, from) => {
+  const pair = PAIRS.find((each) => from.name === each.from && to.name === each.to)
+  if (pair) return pair.still ? null : pair
+  return appMove(to, from)
+}
 
 const wantsMotion = () =>
   typeof document !== 'undefined' &&

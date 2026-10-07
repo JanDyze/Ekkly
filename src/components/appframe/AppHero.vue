@@ -36,6 +36,9 @@ defineProps({
   // true is done, false is not.
   segments: { type: Array, default: () => [] },
   segmentsLabel: { type: String, default: '' },
+  // Room at the top right for something laid over the card — the deck's
+  // dismiss button (AppHeroDeck) — so a long title never runs under it.
+  inset: { type: Boolean, default: false },
 })
 </script>
 
@@ -58,7 +61,7 @@ defineProps({
     </div>
 
     <div class="flex items-start gap-3">
-      <div class="min-w-0 flex-1">
+      <div :class="['min-w-0 flex-1', inset ? 'pr-9' : '']">
         <p v-if="greeting" class="text-sm text-white/70">{{ greeting }}</p>
         <h1 :class="['text-2xl font-bold leading-tight', greeting ? 'mt-0.5' : '']">{{ title }}</h1>
         <p v-if="detail" class="mt-1 text-sm text-white/75">{{ detail }}</p>

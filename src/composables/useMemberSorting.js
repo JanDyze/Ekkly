@@ -70,7 +70,7 @@ const byName = (a, b) =>
  * year on the record is when they were born, not when to expect the cake — so
  * it is compared as day-of-year, rolling into next year once it has passed.
  */
-const daysUntilBirthday = (member) => {
+export const daysUntilBirthday = (member) => {
   const iso = member?.dateOfBirth;
   if (!iso) return Infinity;
   const dob = new Date(iso);

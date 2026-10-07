@@ -21,25 +21,24 @@
   }
 }
 
-/* Room for the phone's bottom bar. The page runs the full height of the
-   screen and the bar floats over it, so anything that has to be reachable at
-   the foot of a page makes its own room: the bar's 64px (it sits right on
-   the screen's edge), the safe area, and a little air. Phone only - from
-   lg up there is no bar, and whatever the element set for itself stands.
+/* The foot of a phone screen. There was a bottom bar here, floating over
+   every page; there is not any more (every app is a screen of its own, and
+   the home of all apps is the way between them), so these only keep things
+   clear of the phone's home indicator. Kept as names because many pages and
+   floating buttons use them, and they still say what is meant.
 
    pb-bar goes on a page's scrolling area, so its last row can scroll clear
-   of the bar. bottom-bar goes on something pinned to a page's foot - a
-   floating button, a selection bar - so it sits above the bar instead of
-   under it. */
+   of the screen's edge. bottom-bar goes on something pinned to a page's
+   foot - a floating button, a selection bar. */
 @utility pb-bar {
   @media (width < 64rem) {
-    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
   }
 }
 
 @utility bottom-bar {
   @media (width < 64rem) {
-    bottom: calc(4.625rem + env(safe-area-inset-bottom));
+    bottom: calc(1rem + env(safe-area-inset-bottom));
   }
 }
 

@@ -1,11 +1,17 @@
 <script setup>
 import { computed } from 'vue'
 import {
+  AddressBookDuotone,
   BookOpenTextDuotone,
+  CakeDuotone,
   CalendarDotsDuotone,
+  ChartPieSliceDuotone,
+  ChurchDuotone,
+  ClipboardTextDuotone,
   DoorOpenDuotone,
   HandWavingDuotone,
   IdentificationBadgeDuotone,
+  IdentificationCardDuotone,
   MicrophoneStageDuotone,
   UsersThreeDuotone,
 } from '../../icons'
@@ -23,7 +29,8 @@ import {
 // inside the church's app its rooms look like the church.
 
 const props = defineProps({
-  // calendar · mine · who · worship · preaching · ushers · welcome
+  // Schedules: calendar · mine · who · worship · preaching · ushers · welcome
+  // People: everyone · birthdays · ministries · glance · missing · me
   name: { type: String, required: true },
 })
 
@@ -35,6 +42,12 @@ const GLYPHS = {
   preaching: BookOpenTextDuotone,
   ushers: DoorOpenDuotone,
   welcome: HandWavingDuotone,
+  everyone: AddressBookDuotone,
+  birthdays: CakeDuotone,
+  ministries: ChurchDuotone,
+  glance: ChartPieSliceDuotone,
+  missing: ClipboardTextDuotone,
+  me: IdentificationCardDuotone,
 }
 
 const glyph = computed(() => GLYPHS[props.name] || CalendarDotsDuotone)

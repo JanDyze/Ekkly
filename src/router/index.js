@@ -14,6 +14,7 @@ import { churchAppsReady, isAppEnabled } from '../composables/useChurchApps'
 // The catalogue rather than the dashboard, and it carries no capability on
 // purpose — every "denied" redirect lands here, so a page that could itself be
 // denied would bounce forever.
+import { peopleRoutes } from '../apps/people/routes'
 import { schedulesRoutes } from '../apps/schedules/routes'
 import { presentationRoutes } from '../apps/presentation/routes'
 import { videosRoutes } from '../apps/videos/routes'
@@ -107,25 +108,13 @@ const churchRoutes = [
     meta: { requiresAuth: true },
     children: [
       {
+        // The dashboard became the Today deck on the home of all apps.
         path: 'dashboard',
-        name: 'Home',
-        component: () => import('../views/Home.vue')
+        redirect: HOME
       },
-      {
-        path: 'members',
-        name: 'Members',
-        meta: { capability: 'members.view' },
-        component: () => import('../views/Members.vue')
-      },
-      {
-        path: 'members/:id',
-        name: 'MemberDetails',
-        // focus: one record is a task, and the chrome around it was costing a
-        // topbar and a bottom bar's worth of a phone screen. The page carries
-        // its own way back, so nothing is stranded by dropping the nav.
-        meta: { capability: 'members.view', focus: true },
-        component: () => import('../views/MemberDetails.vue')
-      },
+      // People is an app of its own: a home, and its sections a step off it.
+      // Its screens live with it, in src/apps/people.
+      ...peopleRoutes,
       {
         path: 'small-groups',
         name: 'SmallGroups',
@@ -269,8 +258,10 @@ const churchRoutes = [
         component: () => import('../views/PrayerConcerns.vue')
       },
       {
+        // The home of all apps: where Ekkly opens and every app leads back to.
         path: 'home',
         name: 'Apps',
+        meta: { root: true },
         component: () => import('../views/Apps.vue')
       },
       {
@@ -381,8 +372,8 @@ const platformRoutes = [
 // Going back to a list must land where you left it. Every list opens a record
 // as a full page now, so "check three people in a row" is back-scroll-tap —
 // and without this, each back lands at the top of the roll.
-// A change of query alone is not a new page - the app drawer opens as ?apps
-// over the page you are on - so it leaves the scroll where it was.
+// A change of query alone is not a new page - a sheet opening as ?add over
+// the page you are on - so it leaves the scroll where it was.
 const scrollBehavior = (to, from, savedPosition) =>
   savedPosition || (to.path === from.path ? false : { top: 0 })
 
