@@ -130,6 +130,29 @@ export function useAttendanceStats(rows, members) {
     return Math.min(100, Math.round(((count || 0) / roster.value) * 100))
   }
 
+  /**
+   * Every member, findable by either id a record may hold for them. The
+   * recorder writes the roll number (memberKey prefers `id`), older records
+   * and imports may hold the document id, and a person counted both ways is
+   * still one person. Looking people up by the document id alone found nobody
+   * in a church whose records carry roll numbers, and the quiet list stayed
+   * empty however long people had been away.
+   */
+  const memberIndex = computed(() => {
+    const index = new Map()
+    ;(members.value || []).forEach((m) => {
+      if (m.firestoreId) index.set(String(m.firestoreId), m)
+      if (m.id !== undefined && m.id !== null && m.id !== '') index.set(String(m.id), m)
+    })
+    return index
+  })
+
+  /** One key per person, whichever id a record held them under. */
+  const personKey = (id) => {
+    const member = memberIndex.value.get(String(id))
+    return member ? String(member.firestoreId || member.id) : String(id)
+  }
+
   const months = computed(() => {
     const byKey = new Map()
 
@@ -141,7 +164,7 @@ export function useAttendanceStats(rows, members) {
       month.gatherings += 1
       // Ids arrive as strings from the checker but a legacy record may hold
       // numbers; normalise or the same person counts twice.
-      ;(row.attendees || []).forEach((id) => month.people.add(String(id)))
+      ;(row.attendees || []).forEach((id) => month.people.add(personKey(id)))
       month.largest = Math.max(month.largest, countOf(row))
     })
 
@@ -186,7 +209,7 @@ export function useAttendanceStats(rows, members) {
     const seen = new Map()
     recorded.value.forEach((row) => {
       ;(row.attendees || []).forEach((id) => {
-        const key = String(id)
+        const key = personKey(id)
         const previous = seen.get(key)
         if (!previous || String(row.date) > previous) seen.set(key, String(row.date))
       })
@@ -206,14 +229,13 @@ export function useAttendanceStats(rows, members) {
    */
   const quiet = computed(() => {
     const cutoff = daysAgoKey(QUIET_DAYS)
-    const byId = new Map((members.value || []).map((m) => [String(m.firestoreId || m.id), m]))
 
     const people = []
     lastSeen.value.forEach((date, id) => {
       if (date >= cutoff) return
-      const member = byId.get(id)
+      const member = memberIndex.value.get(id)
       if (!member) return // left the roster; not a person to go looking for
-      people.push({ id, date, name: getDisplayName(member) })
+      people.push({ id, date, name: getDisplayName(member), member })
     })
 
     // Longest away first: if only two names fit, they should be the two who
@@ -308,5 +330,7 @@ export function useAttendanceStats(rows, members) {
     }))
   })
 
-  return { stats, recentBars }
+  // The lists behind the summary lines, for the Attendance app's own sections:
+  // every month's reach, everyone gone quiet, every gathering still owed.
+  return { stats, recentBars, months, quiet, awaiting, recorded }
 }

@@ -178,7 +178,9 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // mp3 for the app's few recorded sounds (src/assets/sounds), which are
+        // small and should play offline like everything else.
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,mp3}'],
         // FCM registers its own service worker — keep it out of the precache
         // The event PNGs exist for digest email and the notification tray,
         // never for the app itself, which draws Phosphor SVG components.

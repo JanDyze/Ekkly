@@ -14,16 +14,27 @@
     </linearGradient>
   </defs>
 
-  <g class="a-side a-left">
-  <circle cx="14" cy="22" r="6.5" fill="url(#b)"/>
-  <path d="M3 50 C3 36.3 7.84 32.075 14 32.075 C20.16 32.075 25 36.3 25 50 Z" fill="url(#b)"/></g>
-  <g class="a-side a-right">
-  <circle cx="50" cy="22" r="6.5" fill="url(#b)"/>
-  <path d="M39 50 C39 36.3 43.84 32.075 50 32.075 C56.16 32.075 61 36.3 61 50 Z" fill="url(#b)"/></g>
-  <g class="a-pop">
-    
-  <circle cx="32" cy="17" r="9.5" fill="url(#o)"/>
-  <path d="M16 55 C16 37.900000000000006 23.04 31.725 32 31.725 C40.96 31.725 48 37.900000000000006 48 55 Z" fill="url(#o)"/>
-    <path d="M22.5 17a9.5 9.5 0 0 1 19 0" fill="url(#shine)"/>
+  <mask id="tall" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="#fff"/><g stroke="#000" stroke-width="4"><g class="a-shuffle" style="--i:0;--dx:-14.5px">
+  <circle cx="27" cy="14" r="7.4" fill="#000"/>
+  <path d="M14.5 58 C14.5 30.28 20 25.47 27 25.47 C34 25.47 39.5 30.28 39.5 58 Z" fill="#000"/></g></g></mask>
+  <mask id="child" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="#fff"/><g stroke="#000" stroke-width="4"><g class="a-shuffle" style="--i:1;--dx:11.5px">
+  <circle cx="40.5" cy="35" r="4.6" fill="#000"/>
+  <path d="M32.5 58 C32.5 45.12 36.019999999999996 42.13 40.5 42.13 C44.980000000000004 42.13 48.5 45.12 48.5 58 Z" fill="#000"/></g></g></mask>
+  <g mask="url(#tall)"><g class="a-shuffle" style="--i:0;--dx:14.5px">
+  <circle cx="12.5" cy="23" r="5.6" fill="url(#b)"/>
+  <path d="M3 58 C3 35.32 7.18 31.68 12.5 31.68 C17.82 31.68 22 35.32 22 58 Z" fill="url(#b)"/></g></g>
+  <g mask="url(#child)"><g class="a-shuffle" style="--i:1;--dx:-11.5px">
+  <circle cx="52" cy="27" r="5.4" fill="url(#t)"/>
+  <path d="M42.5 58 C42.5 38.88 46.68 35.370000000000005 52 35.370000000000005 C57.32 35.370000000000005 61.5 38.88 61.5 58 Z" fill="url(#t)"/></g></g>
+  <g mask="url(#child)">
+    <g class="a-shuffle" style="--i:0;--dx:-14.5px">
+      
+  <circle cx="27" cy="14" r="7.4" fill="url(#o)"/>
+  <path d="M14.5 58 C14.5 30.28 20 25.47 27 25.47 C34 25.47 39.5 30.28 39.5 58 Z" fill="url(#o)"/>
+      <path d="M19.6 14a7.4 7.4 0 0 1 14.8 0" fill="url(#shine)"/>
+    </g>
   </g>
+  <g class="a-shuffle" style="--i:1;--dx:11.5px">
+  <circle cx="40.5" cy="35" r="4.6" fill="#FFB21E"/>
+  <path d="M32.5 58 C32.5 45.12 36.019999999999996 42.13 40.5 42.13 C44.980000000000004 42.13 48.5 45.12 48.5 58 Z" fill="#FFB21E"/></g>
 </svg>

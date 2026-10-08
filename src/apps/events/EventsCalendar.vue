@@ -1,22 +1,37 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useEvents } from '../composables/useEvents'
-import { useMembers } from '../composables/useMembers'
-import { useBirthdayEvents } from '../composables/useBirthdayEvents'
-import { useRecurringEvents } from '../composables/useRecurringEvents'
-import { useEventForm } from '../composables/useEventForm'
-import { useEventSearch } from '../composables/useEventSearch'
-import { useCalendar } from '../composables/useCalendar'
-import EventsToolbar from '../components/events/EventsToolbar.vue'
-import EventsFab from '../components/events/EventsFab.vue'
-import CalendarView from '../components/events/CalendarView.vue'
-import MonthEventsDrawer from '../components/events/MonthEventsDrawer.vue'
-import DayEventsDrawer from '../components/events/DayEventsDrawer.vue'
-import AddEditEventDrawer from '../components/events/AddEditEventDrawer.vue'
-import ConfirmationModal from '../components/common/ConfirmationModal.vue'
-import EventDetailsDrawer from '../components/events/EventDetailsDrawer.vue'
-import EventStatusSheet from '../components/events/EventStatusSheet.vue'
-import { useEventStatus } from '../composables/useEventStatus'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import AppScreen from '../../components/appframe/AppScreen.vue'
+import { useEvents } from '../../composables/useEvents'
+import { useMembers } from '../../composables/useMembers'
+import { useBirthdayEvents } from '../../composables/useBirthdayEvents'
+import { useRecurringEvents } from '../../composables/useRecurringEvents'
+import { useEventForm } from '../../composables/useEventForm'
+import { useEventSearch } from '../../composables/useEventSearch'
+import { useCalendar } from '../../composables/useCalendar'
+import EventsToolbar from '../../components/events/EventsToolbar.vue'
+import EventsFab from '../../components/events/EventsFab.vue'
+import CalendarView from '../../components/events/CalendarView.vue'
+import MonthEventsDrawer from '../../components/events/MonthEventsDrawer.vue'
+import DayEventsDrawer from '../../components/events/DayEventsDrawer.vue'
+import AddEditEventDrawer from '../../components/events/AddEditEventDrawer.vue'
+import ConfirmationModal from '../../components/common/ConfirmationModal.vue'
+import EventDetailsDrawer from '../../components/events/EventDetailsDrawer.vue'
+import EventStatusSheet from '../../components/events/EventStatusSheet.vue'
+import { useEventStatus } from '../../composables/useEventStatus'
+
+// The Events app's Calendar: the month grid, with a day, the month's list and
+// an event opening beside it on a desktop and over it on a phone. It was the
+// whole Events page; the app's home leads now with what is on next and what
+// has changed, and this is where the month is read and planned.
+//
+// It fills the screen under its header rather than scrolling as one page
+// (AppScreen's `fill`): the grid scrolls itself, and wheels between months.
+// ?date=YYYY-MM-DD opens that day, which is how Coming up sends someone to a
+// gathering.
+
+const route = useRoute()
+const router = useRouter()
 
 // Events data management
 const {
@@ -543,10 +558,30 @@ const monthEvents = computed(() =>
 const showFab = computed(
   () => !showAddEvent.value && !showEditEvent.value && !showEventDetails.value && !showDayEvents.value
 )
+
+// A day asked for in the address: the month it falls in, and the day open.
+// Read once, then dropped from the address, so a refresh or the phone's back
+// button does not keep reopening it.
+onMounted(() => {
+  const asked = String(route.query.date || '')
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(asked)) return
+  const [year, month, day] = asked.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  currentDate.value = new Date(year, month - 1, 1)
+  handleDayClick({ fullDate: date })
+  router.replace({ query: {} })
+})
+
+const subtitle = computed(() => {
+  if (loading.value) return ''
+  const n = monthEvents.value.length
+  return `${currentMonth.value} · ${n} ${n === 1 ? 'entry' : 'entries'}`
+})
 </script>
 
 <template>
-  <div class="relative flex flex-col h-full">
+  <AppScreen title="Calendar" :subtitle="subtitle" :back="{ name: 'EventsHome' }" root="/events" fill wide>
+  <div class="relative flex min-h-0 flex-1 flex-col">
     <!-- Opened from the floating button, alongside adding, switching views
          and jumping to today -->
     <EventsToolbar
@@ -673,4 +708,5 @@ const showFab = computed(
       @cancel="showConfirmation = false"
     />
   </div>
+  </AppScreen>
 </template>

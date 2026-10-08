@@ -111,10 +111,25 @@ other six — dashboard, presentation, todos, accounts, audit, settings — are
 pages rather than apps, drawn so the church's sidebar can wear artwork the
 whole way down ([src/data/navigation.js](src/data/navigation.js)).
 
-Six more, named `people-…`, are the sections of the People app — the roll,
-birthdays, ministries, the overview, the records to fill in, your own — so
-the tiles on its home wear the same artwork as the apps. They are rooms of
-one app, not apps, and nothing sells them.
+More, named `<app>-<section>`, are the sections of the apps that are screens
+of their own: `people-…` (the roll, birthdays, ministries, the overview, the
+records to fill in, your own) and `schedules-…` (your turns, the calendar,
+who serves, worship, preaching, ushers, welcome) `attendance-…` (the
+gatherings, what is still to record, who has gone quiet, the months) and
+`finances-…` (the book, the statement, the accounts, the months; money in is
+teal and money out orange on all four) and `events-…` (the calendar, what is
+coming up, what happens every week). They are rooms of an app, not apps,
+and nothing sells them.
+
+**An app and a section never look alike.** An app is Ekkly's, so wherever it
+is offered as an app — the home of all apps, the All apps drawer, the top
+bar — it wears this artwork as drawn, glossy, on a raised plate like an icon
+on a phone. A section is a room in the church's app, so its tile shows the
+same drawing flat, in the church's accent (`AppArt`'s `flat`: blue full,
+orange at half, teal at a third, no shine), on a tinted chip with no lift.
+Colour, plate and depth all differ at once, and because the flat version is
+the church's colour, the difference holds for every church. One drawing
+serves both; never draw a section twice.
 
 Edit the generator and re-run it. Never hand-edit an icon in
 `src/assets/app-icons/`.

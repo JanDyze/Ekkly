@@ -11,6 +11,70 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.33.0] — 2026-10-08
+
+Attendance, Finances and Events are apps of their own now, each opening on
+what matters today, and Schedules was rebuilt the same way. The apps page
+became a place to discover apps, and moving about the app has sound.
+
+### Added
+
+- **Attendance, as an app.** It opens on the oldest gathering still to count,
+  the people not seen in three weeks (with an invitation to bring them back),
+  and how many different people the church saw this month against last, with
+  the last few turnouts drawn under it. Sections for every gathering, what is
+  still to record, who has not been seen lately, and each month side by side.
+- **Leave a gathering out.** In To record, swipe a gathering left to say it
+  happened but will not be counted; it stops being asked for everywhere, and
+  Undo puts it back.
+- **Finances, as an app.** It opens on the balance today and how this month is
+  going, with only the things a treasurer is actually behind on: no opening
+  balance yet, Sunday offerings not entered (for a church that enters them
+  weekly — the card opens the entry already filled in but for the amount),
+  last month's statement in the days a committee asks for it, and entries no
+  statement line can hold. The book, the statement (with Excel), the accounts
+  and the opening balance, and the months side by side are its sections.
+- **Events, as an app.** It opens on what is on next with the week ahead
+  marked day by day, and leads with any change of plan in the next two weeks,
+  a holiday this week, and this month's announcement video. A new Coming up
+  list reads the next two months in order, and Every week shows when the
+  church meets. The calendar is unchanged inside, and opens on any day.
+- **A new apps page.** More apps opens a store of every app: a spotlight on
+  one you do not use yet (put it away for the day), each app with what it is
+  for and Open, a search that finds an app by what it does ("birthday",
+  "offering"), and — for administrators — the apps not on the plan yet, with
+  Add.
+- **Hold an app on the home** to see what it is and what is in it, without
+  opening it.
+- **Sounds.** Swiping a card makes a soft swipe, a card landing under the deck
+  a quiet thud, putting one away a light lift. They follow the phone's silent
+  switch, and can be turned off beside the theme in the account menu.
+
+### Changed
+
+- **Schedules opens on a deck too:** a month still in draft, the next Sunday
+  nobody has planned, open roles, a team's own part still to do, newcomers to
+  call, your next turn — and under them the next Sunday with everyone serving
+  on it. Its sections each say what is true inside them.
+- **Putting an app on your home asks which one it replaces,** and says which
+  went, instead of quietly bumping the fifth.
+- **Apps and the rooms inside them look different:** an app wears Ekkly's
+  artwork on a raised plate, a section inside an app is drawn flat in the
+  church's own colour. Every section of People, Schedules, Attendance,
+  Finances and Events has artwork of its own.
+- New pictures for People (the church in a photo), Attendance (a tally),
+  Schedules (people round the clock) and Finances (an envelope with a peso),
+  each moving as it appears.
+- The apps page shows five across, so the five on your home make one row.
+
+### Fixed
+
+- **Not seen lately was always empty** for a church whose records count people
+  by their roll number; it now finds them, and each month's count of people
+  seen counts everyone once.
+- Editing an entry in the book no longer loses its category when it is a
+  different kind from the last one opened.
+
 ## [0.32.0] — 2026-10-07
 
 Ekkly opens on one home now, and every app is heading towards being a screen

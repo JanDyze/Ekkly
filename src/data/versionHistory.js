@@ -8,6 +8,19 @@
 
 export const versionHistory = [
   {
+    version: '0.33.0',
+    date: '2026-10-08',
+    title: 'Attendance, Finances and Events, each its own app',
+    summary:
+      'Each opens on what matters today — what is still to count, what the treasurer is behind on, what has changed on the calendar — and More apps is now a place to discover apps.',
+    highlights: [
+      'Attendance shows who has not been seen lately, so you can invite them back. Swipe a gathering left to leave it out of the count.',
+      'Finances opens on the balance today, and reminds a treasurer of Sunday offerings not yet entered — filled in, ready for the amount.',
+      'Events leads with any change of plan, and a new Coming up list reads the next two months in order.',
+      'Hold an app on the home to peek inside it. Swiping cards now makes a soft sound — turn it off in the account menu.',
+    ],
+  },
+  {
     version: '0.32.0',
     date: '2026-10-07',
     title: 'One home for everything',

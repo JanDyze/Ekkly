@@ -20,6 +20,15 @@ import { prefetchRoute } from '../../router/prefetch'
 // artwork (faces, a date, a ring), and the default slot, under the words (a
 // bar). Each tile then looks like what is in it, so no two are alike.
 //
+// Two levels, and they must never be mistaken for each other: an app is
+// Ekkly's, and opens from anywhere; a section is a room inside one, and
+// belongs to the church. So an app's tile (`level="app"`, on the home of all
+// apps) carries Ekkly's glossy artwork on a raised plate, the way an icon sits
+// on a phone's home screen, and a section's carries the same kind of drawing
+// flat, in the church's accent, on a tinted chip with no lift. The colour, the
+// plate and the depth all differ at once, so no one of them has to carry the
+// difference alone, and it holds for every church's colours.
+//
 // The picture sits top left and the words bottom left, so a row of tiles
 // lines up along both edges however long the names are. Anything waiting
 // inside shows as a count on the corner. The grid around them decides how many
@@ -34,6 +43,8 @@ const props = defineProps({
   art: { type: String, default: '' },
   // A section's glyph (SectionGlyph), for a section with no artwork.
   glyph: { type: String, default: '' },
+  // 'app' on the home of all apps; 'section' inside an app.
+  level: { type: String, default: 'section' },
   // How many things in there are waiting on you.
   badge: { type: Number, default: 0 },
   // The badge in the warning colour, for things that are overdue rather than new.
@@ -57,7 +68,22 @@ const warm = () => prefetchRoute(router, props.to)
     class="animate-rise group relative flex min-w-0 flex-col gap-3 rounded-2xl bg-white p-3.5 ring-1 ring-gray-200/80 transition duration-200 ease-out hover:ring-gray-300 pressed:scale-[0.97] dark:bg-gray-800 dark:ring-gray-700/80 dark:hover:ring-gray-600"
   >
     <span class="flex items-start justify-between gap-2">
-      <AppArt v-if="art" :app-key="art" :play="1" class="size-11 shrink-0" />
+      <!-- An app: Ekkly's artwork, raised on a plate. Marked, so the home's
+           press-and-hold peek (AppPeek) can open out of it. -->
+      <span
+        v-if="art && level === 'app'"
+        data-art-plate
+        class="flex size-12 shrink-0 items-center justify-center rounded-[14px] bg-linear-to-b from-white to-gray-50 shadow-md shadow-gray-900/10 ring-1 ring-gray-200/90 dark:from-gray-600 dark:to-gray-700 dark:shadow-black/30 dark:ring-gray-500/40"
+      >
+        <AppArt :app-key="art" :play="1" class="size-9" />
+      </span>
+      <!-- A section: the same kind of drawing, flat, in the church's colour. -->
+      <span
+        v-else-if="art"
+        class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light"
+      >
+        <AppArt :app-key="art" :play="1" flat class="size-7" />
+      </span>
       <span v-else class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 dark:bg-primary-light/15">
         <SectionGlyph :name="glyph" class="size-6" />
       </span>

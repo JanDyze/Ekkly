@@ -15,6 +15,9 @@ import { churchAppsReady, isAppEnabled } from '../composables/useChurchApps'
 // purpose — every "denied" redirect lands here, so a page that could itself be
 // denied would bounce forever.
 import { peopleRoutes } from '../apps/people/routes'
+import { attendanceRoutes } from '../apps/attendance/routes'
+import { financesRoutes } from '../apps/finances/routes'
+import { eventsRoutes } from '../apps/events/routes'
 import { schedulesRoutes } from '../apps/schedules/routes'
 import { presentationRoutes } from '../apps/presentation/routes'
 import { videosRoutes } from '../apps/videos/routes'
@@ -133,12 +136,8 @@ const churchRoutes = [
         meta: { capability: 'smallgroups.view' },
         component: () => import('../views/SgSessionDetails.vue')
       },
-      {
-        path: 'events',
-        name: 'Events',
-        meta: { capability: 'events.view' },
-        component: () => import('../views/Events.vue')
-      },
+      // Events is an app of its own (src/apps/events).
+      ...eventsRoutes,
       {
         path: 'gallery/:id?/:view?/:photoId?',
         name: 'Gallery',
@@ -226,23 +225,8 @@ const churchRoutes = [
         meta: { capability: 'minutes.view', focus: true },
         component: () => import('../views/MinuteDetails.vue')
       },
-      {
-        path: 'attendance',
-        name: 'Attendance',
-        meta: { capability: 'attendance.view' },
-        component: () => import('../views/Attendance.vue')
-      },
-      {
-        // Recording is its own screen: a swipe deck and a hundred names need
-        // more room than a drawer. ?key= a gathering, ?id= an existing record,
-        // neither = a one-off.
-        path: 'attendance/record',
-        name: 'RecordAttendance',
-        // focus: no top or bottom bar. Taking attendance is a task with its
-        // own back arrow, and the swipe deck wants every pixel.
-        meta: { capability: 'attendance.manage', focus: true },
-        component: () => import('../views/RecordAttendance.vue')
-      },
+      // Attendance is an app of its own (src/apps/attendance).
+      ...attendanceRoutes,
       {
         // Between the dashboard and the pages it summarises: what the church
         // still has to do is the second thing anyone opens the app for.
@@ -264,12 +248,8 @@ const churchRoutes = [
         meta: { root: true },
         component: () => import('../views/Apps.vue')
       },
-      {
-        path: 'finances',
-        name: 'Finances',
-        meta: { capability: 'finances.view' },
-        component: () => import('../views/Finances.vue')
-      },
+      // Finances is an app of its own (src/apps/finances).
+      ...financesRoutes,
       {
         path: 'todo',
         name: 'Todo',

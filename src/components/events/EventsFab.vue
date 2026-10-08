@@ -84,7 +84,7 @@ onBeforeUnmount(() => {
   <div
     ref="fabRef"
     tabindex="-1"
-    class="absolute bottom-4 bottom-bar! right-4 z-50 flex flex-col items-end gap-2.5 focus:outline-none"
+    class="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 flex flex-col items-end gap-2.5 focus:outline-none"
   >
     <Transition name="fab-actions">
       <div v-if="open" role="menu" class="flex flex-col items-end gap-2.5">

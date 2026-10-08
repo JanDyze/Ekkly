@@ -1,10 +1,25 @@
 <script>
+import { ref } from 'vue'
+
 // Counted across every copy on the page, for the names below.
 let copies = 0
+
+// The time any clock in the artwork shows (Schedules' does), shared by every
+// copy and kept by one timer while at least one clock is on the page. It
+// ticks at the turn of each minute, so the minute hand moves when the minute
+// does, and not between.
+const now = ref(new Date())
+let clocks = 0
+let timer = null
+
+const tick = () => {
+  now.value = new Date()
+  timer = setTimeout(tick, 60000 - (Date.now() % 60000) + 50)
+}
 </script>
 
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, watch } from 'vue'
 
 // One app's artwork, drawn into the page rather than loaded as an image, so its
 // parts can move: a check drawing itself, a star arriving, coins stacking.
@@ -21,7 +36,27 @@ const props = defineProps({
   appKey: { type: String, required: true },
   // Change it (a counter works) to play the animation again.
   play: { type: Number, default: 0 },
+  // Drawn flat, in the colour of the text around it, rather than in Ekkly's
+  // glossy orange and blue. For a section inside an app: an app wears Ekkly's
+  // artwork and a room in it wears the church's colour (BRAND.md), from the
+  // same drawing, so nothing is drawn twice.
+  flat: { type: Boolean, default: false },
 })
+
+/**
+ * The same drawing, recoloured to one colour at three weights: the blue parts
+ * full, the orange half, the teal a third, and the shine left off. White stays
+ * white and the grey text lines stay grey, so the drawing still reads as the
+ * same thing. `currentColor`, so the colour is whatever the page gives it —
+ * the church's accent, where a section's tile sets it.
+ */
+const flatten = (svg) =>
+  svg
+    .replace(/(fill|stroke)="url\(#shine\)"/g, '$1="none"')
+    .replace(/(fill|stroke)="url\(#b\)"/g, '$1="currentColor"')
+    .replace(/(fill|stroke)="url\(#o\)"/g, '$1="currentColor" $1-opacity=".55"')
+    .replace(/(fill|stroke)="url\(#t\)"/g, '$1="currentColor" $1-opacity=".3"')
+    .replace(/(fill|stroke)="#(?:FFB21E|FF7417|EC4319|3D9DFF|1467E8|0A4FC4|2BD4C0|0B93AB|0B2A6B|FFD9A6)"/gi, '$1="currentColor" $1-opacity=".8"')
 
 const RAW = import.meta.glob('../../assets/app-icons/*.svg', { query: '?raw', import: 'default', eager: true })
 
@@ -32,10 +67,36 @@ const prefix = `art${++copies}-`
 
 const markup = computed(() => {
   const raw = RAW[`../../assets/app-icons/${props.appKey}.svg`] || RAW['../../assets/app-icons/ai.svg'] || ''
-  return raw
+  return (props.flat ? flatten(raw) : raw)
     .replace(/<svg /, '<svg aria-hidden="true" focusable="false" ')
     .replace(/id="([^"]+)"/g, `id="${prefix}$1"`)
     .replace(/url\(#([^)]+)\)/g, `url(#${prefix}$1)`)
+})
+
+// A picture with clock hands in it keeps the shared timer going while it is
+// on the page, and its hands are turned to the time on this device.
+const hasClock = computed(() => markup.value.includes('clock-hour'))
+let holdingClock = false
+const holdClock = (on) => {
+  if (on === holdingClock) return
+  holdingClock = on
+  clocks += on ? 1 : -1
+  if (on && clocks === 1) tick()
+  if (!on && clocks === 0) {
+    clearTimeout(timer)
+    timer = null
+  }
+}
+watch(hasClock, holdClock, { immediate: true })
+onBeforeUnmount(() => holdClock(false))
+
+const clockStyle = computed(() => {
+  if (!hasClock.value) return null
+  const minutes = now.value.getMinutes()
+  return {
+    '--clock-hour': `${((now.value.getHours() % 12) + minutes / 60) * 30}deg`,
+    '--clock-minute': `${minutes * 6}deg`,
+  }
 })
 
 // Off, then on again a frame later, so the same animation can play twice.
@@ -54,7 +115,7 @@ watch(
 </script>
 
 <template>
-  <span :class="['app-art', `app-art-${appKey}`, { playing }]" v-html="markup"></span>
+  <span :class="['app-art', `app-art-${appKey}`, { playing, 'app-art-flat': flat }]" :style="clockStyle" v-html="markup"></span>
 </template>
 
 <style>
@@ -79,6 +140,23 @@ watch(
   transform-origin: center;
 }
 
+/* A clock's hands, at the time the script sets on the wrapper. They turn
+   about the middle of the picture, which is the middle of the face, and the
+   rule replaces the time the file was drawn showing. */
+.app-art .clock-hour,
+.app-art .clock-minute {
+  transform-box: view-box;
+  transform-origin: 32px 32px;
+}
+
+.app-art .clock-hour {
+  transform: rotate(var(--clock-hour, 120deg));
+}
+
+.app-art .clock-minute {
+  transform: rotate(var(--clock-minute, 0deg));
+}
+
 .app-art {
   --art-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --art-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -91,6 +169,22 @@ watch(
 
 .app-art.playing .a-draw {
   animation: art-draw 0.5s var(--art-ease) calc(0.15s + var(--i, 0) * 0.12s) both;
+}
+
+/* A tally kept by hand: each stroke written top to bottom, one after the
+   other, and the strike across them last — slower, as a hand slows to cross
+   a finished five. */
+.app-art .a-tally {
+  stroke-dasharray: 1;
+}
+
+.app-art.playing .a-tally {
+  animation: art-draw 0.18s ease-in calc(0.2s + var(--i, 0) * 0.22s) both;
+}
+
+.app-art.playing .a-tally-strike {
+  animation-duration: 0.32s;
+  animation-timing-function: ease-in-out;
 }
 
 @keyframes art-draw {
@@ -230,6 +324,69 @@ watch(
   from {
     opacity: 0;
     translate: 0 -8px;
+  }
+}
+
+/* An arm waving someone over — "Tara!" — turning about the shoulder, twice,
+   and coming to rest raised. */
+.app-art.playing .a-wave {
+  transform-origin: 0% 100%;
+  animation: art-wave 0.9s ease-in-out 0.15s both;
+}
+
+@keyframes art-wave {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+  25% {
+    rotate: -16deg;
+  }
+  50% {
+    rotate: 8deg;
+  }
+  75% {
+    rotate: -10deg;
+  }
+}
+
+/* People rearranging themselves, the way a group sorts itself out for a
+   photo: each starts in a neighbour's place (--dx) and swaps into its own,
+   with a small hop as they pass. */
+.app-art.playing .a-shuffle {
+  animation: art-shuffle 0.85s var(--art-ease) calc(0.05s + var(--i, 0) * 0.16s) both;
+}
+
+@keyframes art-shuffle {
+  0% {
+    opacity: 0;
+    translate: var(--dx, 0px) 0;
+  }
+  18% {
+    opacity: 1;
+    translate: var(--dx, 0px) 0;
+  }
+  55% {
+    translate: calc(var(--dx, 0px) * 0.3) -3px;
+  }
+  100% {
+    translate: 0 0;
+  }
+}
+
+/* Something coming up out of what holds it — a bill out of its envelope —
+   rising past where it rests and settling back. */
+.app-art.playing .a-rise {
+  animation: art-rise 0.7s var(--art-spring) 0.1s both;
+}
+
+@keyframes art-rise {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
+  25% {
+    opacity: 1;
   }
 }
 

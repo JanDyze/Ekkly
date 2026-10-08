@@ -2,13 +2,13 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { useRoute, useRouter } from 'vue-router'
-import AttendanceChecker from '../components/attendance/AttendanceChecker.vue'
-import { useAttendance } from '../composables/useAttendance'
-import { useEvents } from '../composables/useEvents'
-import { useMinutes } from '../composables/useMinutes'
-import { useToast } from '../composables/useToast'
-import ConfirmationModal from '../components/common/ConfirmationModal.vue'
-import { provenanceForRow, ATTENDANCE_SOURCES } from '../../lib/attendance'
+import AttendanceChecker from '../../components/attendance/AttendanceChecker.vue'
+import { useAttendance } from '../../composables/useAttendance'
+import { useEvents } from '../../composables/useEvents'
+import { useMinutes } from '../../composables/useMinutes'
+import { useToast } from '../../composables/useToast'
+import ConfirmationModal from '../../components/common/ConfirmationModal.vue'
+import { provenanceForRow, ATTENDANCE_SOURCES } from '../../../lib/attendance'
 
 // Taking attendance is a task, not a side panel. A hundred names, a swipe deck
 // and several rounds of latecomers need the whole screen — on a phone the
@@ -338,7 +338,7 @@ const handleDeleteSource = async () => {
 
 const leave = () => {
   if (window.history.state?.back) router.back()
-  else router.push('/attendance')
+  else router.replace({ name: 'AttendanceHome' })
 }
 
 

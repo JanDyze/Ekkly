@@ -39,3 +39,12 @@ export const formatDateTime = (value) => {
   if (!date) return '—'
   return `${formatDate(date)}, ${date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
 }
+
+/** "19:00" -> "7:00 PM", the way a church says when something starts. */
+export const clockLabel = (time) => {
+  if (!time) return ''
+  const [h, m] = String(time).split(':')
+  const hour = Number(h)
+  if (!Number.isFinite(hour)) return ''
+  return `${hour % 12 === 0 ? 12 : hour % 12}:${m ?? '00'} ${hour >= 12 ? 'PM' : 'AM'}`
+}

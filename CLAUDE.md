@@ -110,27 +110,38 @@ stepped aside, it navigates itself. This is where every app is going; a page
 not yet made into one still opens under the top bar, whose mark leads home. Schedules (`src/apps/schedules/`) is the
 first one and the pattern to copy; Presentation (`src/apps/presentation/`) is
 the second, Videos (`src/apps/videos/`, announcement videos drawn on a
-canvas from the calendar, engine in `src/utils/video/`) the third, and People
+canvas from the calendar, engine in `src/utils/video/`) the third, People
 (`src/apps/people/`, the roll at `/members`, a record at `/members/:id`) the
-fourth.
+fourth, Attendance (`src/apps/attendance/`, the recorder still at
+`/attendance/record`) the fifth, Finances (`src/apps/finances/`, the book
+at `/finances/book/:month`) the sixth, and Events (`src/apps/events/`, the
+month grid at `/events/calendar`, `?date=` to open a day) the seventh. A
+screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
+`wide` for two panes side by side).
 
 1. Put its screens in `src/apps/<app>/`, with a `routes.js` that the router
    spreads in under `AdminLayout`. The parent route sets
    `meta: { capability, app, frame: 'app' }`, and each screen sets
    `meta.depth`: 0 for the app's home, 1 for a section, 2 for a step further.
-2. The home is a launcher that fits one phone screen without scrolling:
-   `AppHero` (what is true today, and the way into it), one button with the
-   count of what is waiting on this person (the list itself opens in
-   `AppActionsSheet`, never on the home), then a grid of `AppShortcut`s (tiles
-   with a glyph and a name, and a live line when every tile has one: two
-   across with it, three without) into its sections, with counts on
-   their corners. People's home swaps the hero and the button for
-   `AppHeroDeck`: whatever matters gets a `DeckCard` of its own in a
-   swipeable, looping deck, dismissible for the session.
-   Section glyphs are `SectionGlyph`: flat, in the church's accent, plainer
-   than the app icons on purpose. A section can instead wear artwork of its
-   own (`art` on `AppShortcut`), drawn with the app icons by
-   `brand/ekkly/make-app-icons.mjs` — People's sections do. Every screen sits in `AppScreen`, which
+2. The home is a launcher, built the way People's and Schedules' are:
+   - `AppHeroDeck` first: whatever matters gets a `DeckCard` of its own, most
+     important on top, in a swipeable, looping deck. A card has to be
+     something someone would act on this week, earned from the church's own
+     habits rather than a rule of thumb — see `useFinanceOverview.js` for the
+     reasoning written down, including the cards deliberately left out. Each card but the last
+     can be put away for the session. The last is the one that is always
+     true (People's roll, Schedules' next Sunday) and the richest: the
+     church's colour, the app's artwork on a white tile, faces along its foot.
+   - Then the sections as `AppShortcut` tiles, two across, each with its own
+     artwork (`art`, drawn with the app icons by
+     `brand/ekkly/make-app-icons.mjs` as `<app>-<section>`, and shown flat in
+     the church's accent — only an app wears the glossy artwork on a plate,
+     `level="app"`; see BRAND.md), a live line of
+     what is true inside it, and a small preview of its data in the `aside`
+     slot (faces, a date, a bar) rather than a count badge.
+   Presentation and Videos still use the older `AppHero` with a waiting
+   button (`AppActionsSheet`) and `SectionGlyph` tiles; move them to this when
+   they are next touched. Every screen sits in `AppScreen`, which
    gives a section its back arrow and hide-on-scroll header; Ekkly's top bar
    shows only on the app's home. They live in `src/components/appframe/`.
 3. Data still flows view → composable → service. An app's summary of its own

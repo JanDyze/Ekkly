@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
-import { Bell, Sun, Moon, X, Users, LogOut, UserCheck, UserPlus, Clock3, ChevronLeft, ChevronRight } from '../icons';
+import { Bell, Sun, Moon, X, Users, LogOut, UserCheck, UserPlus, Clock3, ChevronLeft, ChevronRight, SpeakerHigh, SpeakerSlash } from '../icons';
+import { useSounds } from "../composables/useSounds";
 import { useRouter } from "vue-router";
 import { useTheme } from "../composables/useTheme";
 import { useTitleCountValue } from "../composables/useTitleCount";
@@ -30,6 +31,9 @@ import { NAV_ITEMS } from "../data/navigation";
 const route = useRoute();
 const router = useRouter();
 const { isDark, toggleTheme } = useTheme();
+// The app's small sounds, on or off for this device (useSounds). In the
+// account menu on a desktop; a phone has the same switch in the people drawer.
+const { soundsOn, toggleSounds } = useSounds();
 const { displayName, email: userEmail, logout } = useAuth();
 // Prefers the linked member record's photo over the sign-in thumbnail.
 const { myAvatarUrl } = useAvatars();
@@ -403,6 +407,20 @@ const openMyProfile = () => {
                       >
                         Last request was declined
                       </span>
+                    </span>
+                  </button>
+                </div>
+
+                <div class="px-3 pb-3 border-t-2 border-gray-50 dark:border-gray-800 pt-3">
+                  <button
+                    @click="toggleSounds"
+                    :aria-pressed="soundsOn"
+                    class="w-full flex items-center gap-2.5 p-2.5 rounded-xl text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <SpeakerHigh v-if="soundsOn" class="w-4 h-4 shrink-0 text-primary dark:text-primary-light" />
+                    <SpeakerSlash v-else class="w-4 h-4 shrink-0 text-gray-400" />
+                    <span class="flex-1 text-[11px] font-bold text-gray-900 dark:text-white">
+                      {{ soundsOn ? 'Sounds on' : 'Sounds off' }}
                     </span>
                   </button>
                 </div>

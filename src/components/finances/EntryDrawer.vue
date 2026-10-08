@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { Trash2, X } from '../../icons'
 import { useFocusTrap } from '../../composables/useFocusTrap'
 import { useToast } from '../../composables/useToast'
@@ -10,6 +10,10 @@ import { todayIso } from '../../utils/ledgerUtils'
 const props = defineProps({
   show: { type: Boolean, default: false },
   entry: { type: Object, default: null },
+  // A new entry, already filled in — the Sunday offering, dated that Sunday
+  // — for the treasurer to finish with the amount. Saved as new, never as an
+  // edit.
+  draft: { type: Object, default: null },
   saving: { type: Boolean, default: false },
 })
 
@@ -46,12 +50,19 @@ watch(
   () => props.show,
   (open) => {
     if (!open) return
-    const e = props.entry
+    const e = props.entry || props.draft
     date.value = e?.date || todayIso()
     direction.value = e?.direction || 'in'
-    amountText.value = e ? centavosToInput(e.amount) : ''
+    amountText.value = e?.amount ? centavosToInput(e.amount) : ''
     description.value = e?.description || ''
-    categoryKey.value = e ? packed(e.category, e.subcategory) : ''
+    // A tick later: changing the direction clears the category (the watcher
+    // below), and that runs after this one, so a category set here at once
+    // would be wiped as soon as it was filled in.
+    const wanted = e ? packed(e.category, e.subcategory) : ''
+    categoryKey.value = wanted
+    nextTick(() => {
+      categoryKey.value = wanted
+    })
     account.value = e?.account || CASH
     toAccount.value = e?.toAccount || (e?.account === BANK ? CASH : BANK)
     payee.value = e?.payee || ''

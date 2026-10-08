@@ -35,6 +35,18 @@
         ],
         "createdAt": "2026-10-04T10:27:16.649Z",
         "reason": "Claude: grey remove icon rests on a grey-50 row and only turns red on its own red-50 hover, matching the song-remove button in ScheduleEditorDrawer"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "createdAt": "2026-10-08T01:34:45.995Z",
+        "reason": "Existing design, predates this session: AppArt.vue's --art-spring is the icon set's deliberate overshoot, commented as 'Something arriving with a little give'"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "drawer-wobble",
+        "createdAt": "2026-10-08T04:48:11.511Z",
+        "reason": "Claude: domain-appropriate motion — the iOS-style 'jiggle' that marks the home shelf's apps as swappable, shown only while choosing which app to swap out; honours prefers-reduced-motion"
       }
     ]
   }

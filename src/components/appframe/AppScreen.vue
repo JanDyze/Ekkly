@@ -30,7 +30,16 @@ const props = defineProps({
   // Every route inside this app starts with it, so back can tell whether the
   // screen before was this app's own.
   root: { type: String, default: '' },
+  // A screen that scrolls itself — a month grid, with its day and its event
+  // opening beside it — rather than one long page: the screen does not
+  // scroll, the header stays, and the content fills the height under it.
+  fill: { type: Boolean, default: false },
+  // Room for two panes side by side on a desktop, where a phone's column
+  // would squeeze them. Only for a screen that has two.
+  wide: { type: Boolean, default: false },
 })
+
+const column = computed(() => (props.wide ? 'max-w-5xl' : 'max-w-xl'))
 
 const router = useRouter()
 const hasHeader = computed(() => Boolean(props.title || props.back))
@@ -76,7 +85,10 @@ defineExpose({ scroller })
 <template>
   <div
     ref="scroller"
-    class="h-full overflow-y-auto overscroll-contain bg-gray-50 dark:bg-gray-900"
+    :class="[
+      'h-full bg-gray-50 dark:bg-gray-900',
+      fill ? 'flex flex-col overflow-hidden' : 'overflow-y-auto overscroll-contain',
+    ]"
     @scroll.passive="onScroll"
   >
     <header
@@ -87,7 +99,7 @@ defineExpose({ scroller })
       ]"
       @focusin="hidden = false"
     >
-      <div class="mx-auto flex h-16 w-full max-w-xl items-center gap-3 px-4">
+      <div :class="['mx-auto flex h-16 w-full items-center gap-3 px-4', column]">
         <button
           v-if="back"
           type="button"
@@ -109,7 +121,9 @@ defineExpose({ scroller })
 
     <main
       :class="[
-        'mx-auto w-full max-w-xl px-4 pb-[max(3rem,env(safe-area-inset-bottom))]',
+        'mx-auto w-full px-4',
+        column,
+        fill ? 'flex min-h-0 flex-1 flex-col pb-[max(1rem,env(safe-area-inset-bottom))]' : 'pb-[max(3rem,env(safe-area-inset-bottom))]',
         hasHeader ? 'pt-4' : 'pt-4 sm:pt-6',
       ]"
     >

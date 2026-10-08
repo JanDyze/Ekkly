@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { X } from '../../icons'
 import AppHero from './AppHero.vue'
+import { useSounds } from '../../composables/useSounds'
 
 // An app's first card, when there is more than one thing worth leading with.
 //
@@ -28,6 +29,10 @@ import AppHero from './AppHero.vue'
 // is about (People's home draws a birthday, a bar, a date). Without the slot a
 // card is a plain AppHero, from `{ greeting, title, detail, to, badge }`.
 // `tone` is the card's background, so the dismiss button can be seen on it.
+//
+// Each move is heard as well as seen (useSounds): a whoosh to the side a card
+// is swiped, a soft thud as it lands under the deck, a light lift as one is
+// put away.
 
 const props = defineProps({
   cards: { type: Array, required: true },
@@ -50,6 +55,8 @@ const readDismissed = () => {
   }
 }
 
+const { prime, swipe, tuck, lift } = useSounds()
+
 const dismissed = ref(readDismissed())
 const idOf = (card) => `${props.scope}:${card.key}`
 
@@ -62,6 +69,7 @@ const leaving = ref(null)
 const dismiss = (card) => {
   if (leaving.value) return
   leaving.value = card.key
+  lift()
   setTimeout(() => {
     const next = new Set(dismissed.value)
     next.add(idOf(card))
@@ -94,15 +102,20 @@ watch(count, () => {
 // rather than vanishing.
 const flying = ref(null)
 const FLY_MS = 260
+// The thud waits for the card to be most of the way back under the deck: its
+// slide in eases out, so by this point it has all but landed.
+const LAND_MS = FLY_MS + 150
 
 const sendUnder = (dir) => {
   if (count.value < 2 || flying.value || leaving.value) return
   flying.value = { key: visible.value[index.value].key, dir }
+  swipe(dir)
   setTimeout(() => {
     index.value = wrap(index.value + 1)
     flying.value = null
     rememberTop()
   }, FLY_MS)
+  setTimeout(tuck, LAND_MS)
 }
 
 /** Straight to a card — a dot, or back one with the arrow key. */
@@ -173,6 +186,9 @@ let swallowClick = false
 const width = () => deck.value?.clientWidth || 320
 
 const onPointerDown = (event) => {
+  // A browser lets a page make sound only from inside a touch, so the audio
+  // is woken here, before the swipe it will be needed for.
+  prime()
   if (event.button > 0 || count.value < 2 || flying.value) return
   if (event.target.closest('[data-deck-dismiss]')) return
   start = { x: event.clientX, y: event.clientY }

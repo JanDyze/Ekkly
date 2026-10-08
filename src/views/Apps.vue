@@ -6,8 +6,10 @@ import AppHeroDeck from '../components/appframe/AppHeroDeck.vue'
 import DeckCard from '../components/appframe/DeckCard.vue'
 import AppShortcut from '../components/appframe/AppShortcut.vue'
 import AppsDrawer from '../components/appframe/AppsDrawer.vue'
+import AppPeek from '../components/appframe/AppPeek.vue'
 import AppArt from '../components/common/AppArt.vue'
 import { useAppOrder } from '../composables/useAppOrder'
+import { usePressAndHold } from '../composables/usePressAndHold'
 import BirthdayCard from '../components/members/BirthdayCard.vue'
 import { usePermissions } from '../composables/usePermissions'
 import { useAuth } from '../composables/useAuth'
@@ -37,6 +39,8 @@ import { formatShortDate } from '../utils/lineupUtils'
 //      opens every app (AppsDrawer), where they can open any of them or press
 //      and hold to choose which five are here. The bottom bar's drawer did
 //      the same; the five it kept on the bar are the five kept here.
+//      Holding one of the five shows what that app is, full screen, until
+//      the finger lifts (AppPeek); a tap still just opens it.
 //
 // Everything is gated on the capability of the app it comes from (useToday,
 // allowedGroups), so nobody sees a card or a tile for something they cannot
@@ -169,7 +173,7 @@ const cards = computed(() => {
       kicker: 'Still to count',
       title: `${plural(n, 'gathering', 'gatherings')} with no attendance`,
       detail: 'They stay on the list until someone records or dismisses them.',
-      to: '/attendance',
+      to: { name: 'AttendanceOwed' },
     })
   }
 
@@ -185,7 +189,7 @@ const cards = computed(() => {
       kicker: 'On today',
       title: on.length === 1 ? on[0].title || 'A gathering' : `${on.length} things on today`,
       detail: on.slice(0, 3).map((e) => [on.length > 1 ? e.title : '', timeLabel(e.time)].filter(Boolean).join(' ')).join(' · '),
-      to: '/events',
+      to: { name: 'Events', query: { date: today.today } },
       date: tileDate(today.today),
     })
   } else if (today.nextEvent.value) {
@@ -199,7 +203,7 @@ const cards = computed(() => {
       kicker: 'Coming up',
       title: next.title || 'A gathering',
       detail: [weekday(next.date), timeLabel(next.time)].filter(Boolean).join(' · '),
-      to: '/events',
+      to: { name: 'Events', query: { date: next.date } },
       date: tileDate(next.date),
     })
   }
@@ -228,6 +232,9 @@ const { ordered, primary } = useAppOrder(allApps)
 const others = computed(() => ordered.value.slice(primary.value.length))
 
 const showDrawer = ref(false)
+
+// Holding an app's tile shows what it is; letting go puts it away.
+const { held, start: startHold, holdStill, swallowClick } = usePressAndHold()
 
 const APP_LINES = Object.fromEntries(APPS.map((app) => [app.key, app.description]))
 
@@ -349,8 +356,12 @@ const lineOf = (item) => {
           :to="item.path"
           :title="item.name"
           :art="item.art"
+          level="app"
           :detail="lineOf(item)"
           :delay="120 + index * 30"
+          @pointerdown="startHold($event, item)"
+          @touchmove="holdStill"
+          @click.capture="swallowClick"
         />
 
         <!-- More apps: a peek at four of the rest, the way a phone shows a
@@ -362,7 +373,7 @@ const lineOf = (item) => {
           class="animate-rise group flex min-w-0 flex-col gap-3 rounded-2xl bg-white p-3.5 text-left ring-1 ring-gray-200/80 transition duration-200 ease-out hover:ring-gray-300 pressed:scale-[0.97] dark:bg-gray-800 dark:ring-gray-700/80 dark:hover:ring-gray-600"
           @click="showDrawer = true"
         >
-          <span class="grid size-11 grid-cols-2 gap-0.5 rounded-xl bg-gray-100 p-1 dark:bg-gray-700/60">
+          <span class="grid size-12 grid-cols-2 gap-0.5 rounded-[14px] bg-linear-to-b from-white to-gray-50 p-1.5 shadow-md shadow-gray-900/10 ring-1 ring-gray-200/90 dark:from-gray-600 dark:to-gray-700 dark:shadow-black/30 dark:ring-gray-500/40">
             <AppArt v-for="item in others.slice(0, 4)" :key="item.path" :app-key="item.art" class="size-full" />
           </span>
           <span class="mt-auto min-w-0">
@@ -374,5 +385,6 @@ const lineOf = (item) => {
     </main>
 
     <AppsDrawer :show="showDrawer" :apps="allApps" @close="showDrawer = false" />
+    <AppPeek :app="held?.item" :from="held?.el" :line="held ? lineOf(held.item) : ''" />
   </div>
 </template>

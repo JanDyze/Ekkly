@@ -9,6 +9,8 @@ import {
   LogOut,
   Moon,
   Sun,
+  SpeakerHigh,
+  SpeakerSlash,
   UserPlus,
   Users,
   X,
@@ -22,6 +24,7 @@ import { useMediaQuery } from '../composables/useMediaQuery'
 import ActivePeopleList from './people/ActivePeopleList.vue'
 import MemberAvatar from './members/MemberAvatar.vue'
 import { useTheme } from '../composables/useTheme'
+import { useSounds } from '../composables/useSounds'
 import { useToast } from '../composables/useToast'
 import { useMyMember } from '../composables/useMyMember'
 import { getFullName } from '../utils/memberUtils'
@@ -39,6 +42,9 @@ const router = useRouter()
 // the theme, alongside who else is here. Notifications keep a drawer of their
 // own off the bell - they are a feed you come to read, not a setting.
 const { isDark, toggleTheme } = useTheme()
+// Beside the theme because it is the same kind of thing: how this device
+// looks and sounds, which is the person's choice rather than the church's.
+const { soundsOn, toggleSounds } = useSounds()
 const { isLinked } = useMyMember()
 
 const { accountMember, accountAvatarUrl, myMember, myAvatarUrl } = useAvatars()
@@ -345,6 +351,17 @@ watch(railIsVisible, (visible) => {
               <Moon v-else class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
               <span class="flex-1 text-[11px] font-bold text-gray-900 dark:text-white">
                 {{ isDark ? 'Light mode' : 'Dark mode' }}
+              </span>
+            </button>
+            <button
+              @click="toggleSounds"
+              :aria-pressed="soundsOn"
+              class="flex w-full items-center gap-2.5 rounded-xl p-2.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
+            >
+              <SpeakerHigh v-if="soundsOn" class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
+              <SpeakerSlash v-else class="h-4 w-4 shrink-0 text-gray-400 dark:text-slate-500" />
+              <span class="flex-1 text-[11px] font-bold text-gray-900 dark:text-white">
+                {{ soundsOn ? 'Sounds on' : 'Sounds off' }}
               </span>
             </button>
           </div>

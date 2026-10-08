@@ -41,7 +41,15 @@ CHANGELOG.md.
   bar's mark is a back arrow to it from every other screen.
 - **The home of all apps** leads with a Today deck (`AppHeroDeck`, fed by
   `useToday`) drawn from every app, then the five apps the person keeps there
-  as `AppShortcut` tiles (artwork and a live line) and a More apps tile. More
+  as `AppShortcut` tiles (`level="app"`: the glossy artwork on a raised plate,
+  and a live line) and a More apps tile. A section's tile inside an app shows
+  its drawing flat in the church's accent instead, so an app and a section are
+  never mistaken for each other (BRAND.md). Holding one of the five shows
+  what that app is, full screen, for as long as the finger stays down
+  (`AppPeek`, `usePressAndHold`): the church's colour opens out of the tile's
+  plate, the plate flies to the middle, then its name, its live line and its
+  front-door headline and wins; letting go runs it backwards. A tap still
+  just opens the app. More
   apps opens `AppsDrawer`: every app, the five on the home on a shelf, press
   and hold to drag one onto it. The order is the person's, saved to their
   account (`useAppOrder`).
