@@ -63,15 +63,14 @@ export function useScheduleOverview() {
 
   const monthOf = (key) => lineups.value.find((m) => m.month === key) || null
 
+  /** A month's Sundays, each marked planned or not. */
+  const sundaysOf = (key) => {
+    const byDate = new Map((monthOf(key)?.sundays || []).map((s) => [s.date, s]))
+    return sundaysInMonth(key).map((date) => ({ date, planned: isSundayPlanned(byDate.get(date) || blankSunday(date)) }))
+  }
+
   /** This month's Sundays, each marked planned or not — the hero's segments. */
-  const thisMonthSundays = computed(() => {
-    const stored = monthOf(thisMonth)
-    const byDate = new Map((stored?.sundays || []).map((s) => [s.date, s]))
-    return sundaysInMonth(thisMonth).map((date) => {
-      const sunday = byDate.get(date) || blankSunday(date)
-      return { date, planned: isSundayPlanned(sunday) }
-    })
-  })
+  const thisMonthSundays = computed(() => sundaysOf(thisMonth))
 
   const thisMonthStatus = computed(() => monthOf(thisMonth)?.status || 'draft')
 
@@ -100,7 +99,7 @@ export function useScheduleOverview() {
       .map(({ month, sunday }) => {
         const assignments = assignmentsOf(sunday)
         const empty = roles.value.filter((role) => !(assignments[role.id] || []).length)
-        return { month, date: sunday.date, empty, planned: isSundayPlanned(sunday) }
+        return { month, date: sunday.date, sunday, empty, planned: isSundayPlanned(sunday) }
       })
       .filter((row) => row.empty.length)
   )
@@ -143,6 +142,7 @@ export function useScheduleOverview() {
     myUpcoming,
     leaderOf,
     thisMonth,
+    sundaysOf,
     thisMonthSundays,
     thisMonthStatus,
     drafts,

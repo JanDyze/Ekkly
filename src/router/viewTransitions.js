@@ -24,6 +24,8 @@ import { nextTick } from 'vue'
 // nothing to snapshot, and a window that grew out of the corner but did not go
 // back into it would leave the eye nowhere to follow.
 //
+// Any other change of page settles in over the one it replaces (pageMove).
+//
 // Where the browser has no View Transitions (Safari before 18), or the reader
 // has asked for less motion, the navigation is simply instant, as before.
 
@@ -86,10 +88,24 @@ const appMove = (to, from) => {
   return { nav: into ? 'app-forward' : 'app-back' }
 }
 
+/**
+ * Every other change of page: the new one settles in over the old, which
+ * holds still beneath it, so the screen is never blank or dimmed between the
+ * two. Not the first navigation of the session (index.html's boot screen
+ * covers that), not a change of query alone (a search or an open tab written
+ * into the address), and never the projector's window.
+ */
+const pageMove = (to, from) => {
+  if (!from.matched.length) return null
+  if (to.path === from.path) return null
+  if (to.meta?.projector || from.meta?.projector) return null
+  return { nav: 'page' }
+}
+
 const pairFor = (to, from) => {
   const pair = PAIRS.find((each) => from.name === each.from && to.name === each.to)
   if (pair) return pair.still ? null : pair
-  return appMove(to, from)
+  return appMove(to, from) || pageMove(to, from)
 }
 
 const wantsMotion = () =>

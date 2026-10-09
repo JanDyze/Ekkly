@@ -26,6 +26,8 @@ import {
   getSexIcon,
   getSexIconColor,
   calculateAgeFromDate,
+  formatBirthDate,
+  isYearless,
   mergeTagSources,
   missingMemberFields,
 } from '../../utils/memberUtils'
@@ -241,6 +243,8 @@ const longDay = (iso) => {
 /* ----------------------------------------------------------------- record */
 const fmtDate = (iso) => {
   if (!iso) return ''
+  // A birthday with no year (memberUtils' YEARLESS) is said as the day alone.
+  if (isYearless(iso)) return formatBirthDate(iso)
   const d = new Date(iso)
   return Number.isNaN(d.getTime())
     ? ''
@@ -460,15 +464,20 @@ const handleImageUpdate = async (base64Image) => {
         <span class="hidden sm:inline">People</span>
       </button>
 
-      <p
+      <!-- The face comes up with the name: on a phone the face is how most
+           people are recognised, and a name alone reads like any other row. -->
+      <div
         :class="[
-          'min-w-0 flex-1 truncate px-1 text-sm font-semibold text-gray-900 transition-opacity dark:text-white',
+          'flex min-w-0 flex-1 items-center gap-2 px-1 transition-opacity',
           scrolled ? 'opacity-100' : 'opacity-0',
         ]"
         aria-hidden="true"
       >
-        {{ member ? getFullName(localMember) : '' }}
-      </p>
+        <MemberAvatar v-if="member" :member="localMember" size="h-7 w-7" alt="" />
+        <p class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 dark:text-white">
+          {{ member ? getFullName(localMember) : '' }}
+        </p>
+      </div>
 
       <button
         v-if="member && canEdit"
@@ -646,8 +655,14 @@ const handleImageUpdate = async (base64Image) => {
                 </span>
 
                 <template v-for="row in attendanceGrid.rows" :key="row.key">
+                  <!-- Held at the left edge while the months slide under it, so
+                       a long history scrolled sideways still says which
+                       gathering its squares belong to. Only as wide as its
+                       words, or there would be no room in the row to slide;
+                       capped at the card's width so a long title still
+                       truncates rather than running off the screen. -->
                   <p
-                    class="col-span-full mt-2 flex min-w-0 items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300"
+                    class="sticky left-4 col-span-full mt-2 flex max-w-[min(100%,calc(100vw_-_3.5rem),40rem)] min-w-0 items-center gap-1.5 justify-self-start text-xs font-medium text-gray-700 dark:text-gray-300"
                   >
                     <component :is="row.icon" class="h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
                     <span class="truncate">{{ row.title }}</span>

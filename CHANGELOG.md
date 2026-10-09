@@ -11,6 +11,77 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.33.1] — 2026-10-09
+
+A whole roll can go in at once, an address is picked rather than typed, and a
+birthday no longer needs a year. Events now puts what is out of the ordinary
+first and quietens the weekly routine, and the home opens with your church's
+name and a verse for the day.
+
+### Added
+
+- **Add several people at once.** From the + on Everyone, a sheet with a row
+  for each person: type them in, paste rows straight from Excel or Google
+  Sheets, or open last year's roll as a file. Columns are matched however the
+  sheet names them ("Surname", "Apelyido"), birthdays are read however they
+  were written, and anything that cannot be read shows blank to put right.
+  Someone already on the roll is marked and left out, so importing the same
+  file twice adds nobody twice.
+- **Pick an address.** Province, then city or municipality, then barangay,
+  from the government's own list, and a line for the house and street — so
+  one barangay is spelt one way across the whole roll. Metro Manila is at the
+  top. An address typed before stays as it was until somebody picks a place.
+- **Birthdays without a year.** A birthday is now a month, a day and, if it is
+  known, a year. Leave the year out and the birthday is still greeted on the
+  day, just with no age.
+- **A verse on the home,** under the day on the main card, in the translation
+  you read in. A tap opens its chapter in the Bible.
+- **The day on the calendar, opened up.** How far off it is, its week as a
+  strip to step through, a holiday across the top, birthdays as faces, and the
+  gatherings down a timeline with where, who for and what is different about
+  them. Today has a line at the time it is now. An empty day says what is on
+  next.
+- **The Events home** also leads with a weekly service that is somewhere or
+  sometime else this once, with the usual crossed out beside it, and with the
+  next one-off gathering coming up (marked "for you" when it is for one of
+  your groups). Planners are reminded about next month's video in the last
+  week of this one, while there is still time to add to the calendar.
+- **People's home** asks you to find your own record if your account is not
+  linked to one yet, shows who is asking to be linked, and gathers the
+  birthdays still to come this week on one card.
+- Occupations can be chosen from a list of common ones, or typed.
+
+### Changed
+
+- **Coming up, Every week and the calendar put news first.** Something typed
+  in, a service moved, an occasion or one called off stands out; the weekly
+  services fold into one line, "The usual", or sit as quiet marks in the grid.
+  A place is named only when it is not where the church usually meets. Every
+  week reads as the week itself, Sunday to Saturday, time first.
+- On a phone, the calendar lists the rest of the month's news under the grid.
+- **Back goes back** to the page you came from, even from one app into
+  another, and only to the home when there was nothing before.
+- **Changing page** settles the new page in over the old one, and a slow page
+  shows a thin bar along the top instead of covering the screen with the
+  church's mark.
+- **The top bar on the home shows your church's name** instead of "Home".
+- **Cards have an edge instead of a glow:** a solid border, thicker along the
+  foot, in a deeper shade of the card's own colour. The church-coloured cards
+  are flat colour with the arched window drawn in outline, and a birthday card
+  has a dashed frame, like an invitation.
+- Deck cards show who or which as well as how many: faces with empty seats
+  for open roles, the week as a strip, the dates still to enter as chips.
+- A standing chore on a deck (records to fill in, members to ask to serve)
+  stays put away until there are more of them, instead of coming back every
+  day. "Not serving yet" now counts members past the Kids band only.
+- Leaving a gathering out of the count has a visible eye on its row as well
+  as the swipe.
+
+### Fixed
+
+- The Claude connector no longer gives an age for a birthday with no year,
+  and a typed address replaces a picked one there too.
+
 ## [0.33.0] — 2026-10-08
 
 Attendance, Finances and Events are apps of their own now, each opening on

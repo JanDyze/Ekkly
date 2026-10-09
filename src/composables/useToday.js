@@ -58,7 +58,7 @@ export function useToday() {
     if (!can('lineups.view')) return null
     const sunday = schedules.myUpcoming.value[0]
     if (!sunday || sunday.date > weekEnd) return null
-    return { date: sunday.date, roles: schedules.myRolesOn(sunday) }
+    return { date: sunday.date, sunday, roles: schedules.myRolesOn(sunday) }
   })
 
   /* -------------------------------------------------------------- events */
@@ -79,6 +79,21 @@ export function useToday() {
   /** The next thing on after today, within the week. */
   const nextEvent = computed(() => eventsThisWeek.value.find((e) => e.date > today) || null)
 
+  /** The coming seven days, each with how much is on it, for the strip on the deck. */
+  const week = computed(() =>
+    Array.from({ length: 7 }, (_, i) => {
+      const date = dayAfter(i)
+      const [y, m, d] = date.split('-').map(Number)
+      return {
+        date,
+        count: eventsThisWeek.value.filter((e) => e.date === date).length,
+        letter: new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'narrow' }),
+        day: d,
+        isToday: i === 0,
+      }
+    })
+  )
+
   /* --------------------------------------------------------------- tasks */
 
   const myTasks = computed(() => {
@@ -92,13 +107,14 @@ export function useToday() {
   /* ---------------------------------------------------------- attendance */
 
   /** Gatherings already past that nobody has counted, for whoever counts them. */
-  const unrecorded = computed(() =>
+  const unrecordedRows = computed(() =>
     canManage('attendance')
-      ? aggregatedAttendance.value.filter(
-          (row) => !isRecorded(row) && !row.skipped && row.date && row.date < today && !isCalledOff(row)
-        ).length
-      : 0
+      ? aggregatedAttendance.value
+          .filter((row) => !isRecorded(row) && !row.skipped && row.date && row.date < today && !isCalledOff(row))
+          .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+      : []
   )
+  const unrecorded = computed(() => unrecordedRows.value.length)
 
   /** The last gathering counted, for the Attendance tile. */
   const lastCount = computed(() => {
@@ -124,12 +140,15 @@ export function useToday() {
     eventsToday,
     eventsThisWeek,
     nextEvent,
+    week,
     myTasks,
     myOverdue,
     myDueToday,
     unrecorded,
+    unrecordedRows,
     lastCount,
     openPrayers,
+    claims: people.claims,
     claimsWaiting: people.claimsWaiting,
   }
 }

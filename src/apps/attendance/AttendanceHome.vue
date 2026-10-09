@@ -6,6 +6,7 @@ import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DateTile from '../../components/appframe/DateTile.vue'
 import AppShortcut from '../../components/appframe/AppShortcut.vue'
+import DeckChips from '../../components/appframe/DeckChips.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
 import TurnoutRing from '../../components/attendance/TurnoutRing.vue'
@@ -30,7 +31,7 @@ import { getDisplayName, listPhrase } from '../../utils/memberUtils'
 // button. The list is a section now; what it could not say — reach, and who
 // has stopped coming — leads.
 
-const { loading, canRecord, stats, recentBars, months, quietPeople, awaiting, latest } = useAttendanceOverview()
+const { loading, canRecord, stats, recentBars, months, quietPeople, awaiting, recorded, latest } = useAttendanceOverview()
 const { myMember } = usePermissions()
 
 const plural = (n, one, many) => `${n.toLocaleString()} ${n === 1 ? one : many}`
@@ -64,7 +65,10 @@ const cards = computed(() => {
   // The oldest gathering still owed: one card, the rest behind To record.
   const owed = awaiting.value[0]
   if (canRecord.value && owed) {
-    const more = awaiting.value.length - 1
+    // How many came the last time this same gathering was counted: the number
+    // whoever counts it next has in mind before they start.
+    const before = [...recorded.value].reverse().find((row) => row.eventTitle && row.eventTitle === owed.eventTitle)
+    const beforeCount = before ? before.totalAttendees ?? before.attendees?.length ?? 0 : null
     list.push({
       kind: 'dated',
       key: `owed:${owed.occurrenceKey || owed.id}`,
@@ -73,9 +77,11 @@ const cards = computed(() => {
       dismissible: true,
       kicker: 'Still to count',
       title: `Record ${owed.eventTitle || 'a gathering'}`,
-      detail: more ? `${shortDate(owed.date)} · ${more} more waiting` : shortDate(owed.date),
+      detail: beforeCount === null ? 'Nobody has counted it before.' : `Last time ${plural(beforeCount, 'person', 'people')} came.`,
       to: { name: 'RecordAttendance', query: { key: String(owed.occurrenceKey || owed.id) } },
       date: owed.date,
+      // Every gathering still owed, the oldest (this one) first.
+      chips: awaiting.value.map((row) => ({ key: String(row.occurrenceKey || row.id), label: shortDate(row.date) })),
     })
   }
 
@@ -190,6 +196,7 @@ const FACES = 6
             <template #leading>
               <DateTile :date="card.date" class="size-14! rounded-2xl!" />
             </template>
+            <DeckChips :tone="card.tone" :items="card.chips" />
           </DeckCard>
 
           <!-- People gone quiet: their faces. -->
@@ -231,18 +238,12 @@ const FACES = 6
             :to="card.to"
           >
             <template #art>
-              <!-- Light through an arched window, the outline of Ekkly's mark
-                   (BRAND.md: the window is the motif). -->
+              <!-- An arched window in outline, the shape of Ekkly's mark
+                   (BRAND.md: the window is the motif), drawn as lines on the
+                   colour rather than as light glowing through it. -->
               <svg class="absolute -bottom-10 right-5 h-60 w-36" viewBox="0 0 144 240" fill="none">
-                <defs>
-                  <linearGradient id="attendance-arch-light" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="white" stop-opacity="0.2" />
-                    <stop offset="0.75" stop-color="white" stop-opacity="0.03" />
-                    <stop offset="1" stop-color="white" stop-opacity="0" />
-                  </linearGradient>
-                </defs>
-                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" fill="url(#attendance-arch-light)" />
-                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" stroke="white" stroke-opacity="0.14" stroke-width="1.5" />
+                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" stroke="white" stroke-opacity="0.3" stroke-width="1.5" />
+                <path d="M20 72a52 52 0 0 1 104 0V240H20Z" stroke="white" stroke-opacity="0.15" stroke-width="1.5" />
               </svg>
             </template>
             <!-- The Attendance artwork, on white because its orange and blue

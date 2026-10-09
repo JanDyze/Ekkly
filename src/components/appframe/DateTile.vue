@@ -6,18 +6,25 @@ import { parseIso } from '../../utils/lineupUtils'
 // large. Rows of Sundays read down this column, so the date is found before
 // anything else is read. `past` greys it; `highlight` fills it, for the one
 // row that is you.
+//
+// `weekday` puts the day's name above the date instead of the month, and
+// "Today" on today: in a list that spans a week or two, which day of the week
+// is what someone is looking for, and the month is the same on every row.
 
 const props = defineProps({
   date: { type: String, required: true },
   past: { type: Boolean, default: false },
   highlight: { type: Boolean, default: false },
+  weekday: { type: Boolean, default: false },
 })
 
 const parts = computed(() => {
   const d = parseIso(props.date)
-  return d
-    ? { month: d.toLocaleDateString('en-US', { month: 'short' }), day: d.getDate() }
-    : { month: '', day: '' }
+  if (!d) return { month: '', day: '' }
+  if (!props.weekday) return { month: d.toLocaleDateString('en-US', { month: 'short' }), day: d.getDate() }
+  const today = new Date()
+  const isToday = d.toDateString() === today.toDateString()
+  return { month: isToday ? 'Today' : d.toLocaleDateString('en-US', { weekday: 'short' }), day: d.getDate() }
 })
 </script>
 

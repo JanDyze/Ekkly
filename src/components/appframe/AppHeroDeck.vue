@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { X } from '../../icons'
+import { ChevronLeft, ChevronRight, X } from '../../icons'
 import AppHero from './AppHero.vue'
 import { useSounds } from '../../composables/useSounds'
 
@@ -21,6 +21,15 @@ import { useSounds } from '../../composables/useSounds'
 // something that mattered this morning may matter again tomorrow, and a card
 // gone for good would hide it. sessionStorage is exactly that span; where it
 // is blocked, dismissing still works until the page is left.
+//
+// A card about a standing chore — records to fill in, people to ask — is the
+// exception (`remember`, with a `level`: how many there are). Back every
+// session, it would be the same card every day for months, and soon one
+// nobody reads. So putting it away lasts, on this device, until the number
+// goes up: something new to do, rather than the same old pile. Going down is
+// progress, not news, and lowers the mark instead, so the next one added
+// brings it back. Such a card is passed in even at level 0, where it is not
+// shown, so the mark can follow the pile all the way down.
 //
 // Cards: `{ key, tone, dismissible, ... }`, and whatever else the app's own
 // faces need. Give a card's key whatever would make it news again — `claims:3`
@@ -60,7 +69,51 @@ const { prime, swipe, tuck, lift } = useSounds()
 const dismissed = ref(readDismissed())
 const idOf = (card) => `${props.scope}:${card.key}`
 
-const visible = computed(() => props.cards.filter((card) => !(card.dismissible && dismissed.value.has(idOf(card)))))
+// The `remember` cards' marks: the level each was put away at, per device.
+const KEPT_STORE = 'ekkly:put-away-cards'
+
+const readKept = () => {
+  try {
+    return JSON.parse(localStorage.getItem(KEPT_STORE) || '{}') || {}
+  } catch {
+    return {}
+  }
+}
+
+const kept = ref(readKept())
+
+const writeKept = (next) => {
+  kept.value = next
+  try {
+    localStorage.setItem(KEPT_STORE, JSON.stringify(next))
+  } catch {
+    // Not remembered past this page; it is still put away on it.
+  }
+}
+
+const levelOf = (card) => (Number.isFinite(card.level) ? card.level : 0)
+
+const isPutAway = (card) => {
+  if (!card.dismissible) return false
+  if (!card.remember) return dismissed.value.has(idOf(card))
+  const mark = kept.value[idOf(card)]
+  return Number.isFinite(mark) && levelOf(card) <= mark
+}
+
+// The pile shrank under its mark: the mark follows it down, so the next one
+// added is news again.
+watch(
+  () => props.cards.filter((card) => card.remember).map((card) => [idOf(card), levelOf(card)]),
+  (pairs) => {
+    const lower = pairs.filter(([id, level]) => Number.isFinite(kept.value[id]) && level < kept.value[id])
+    if (lower.length) writeKept({ ...kept.value, ...Object.fromEntries(lower) })
+  },
+  { immediate: true }
+)
+
+const visible = computed(() =>
+  props.cards.filter((card) => !(card.remember && levelOf(card) <= 0) && !isPutAway(card))
+)
 
 // The card on its way out: it lifts and fades first, and only then leaves the
 // deck, so the one under it rises into a space that has visibly been made.
@@ -71,17 +124,21 @@ const dismiss = (card) => {
   leaving.value = card.key
   lift()
   setTimeout(() => {
-    const next = new Set(dismissed.value)
-    next.add(idOf(card))
-    dismissed.value = next
     leaving.value = null
+    if (card.remember) {
+      writeKept({ ...kept.value, [idOf(card)]: levelOf(card) })
+    } else {
+      const next = new Set(dismissed.value)
+      next.add(idOf(card))
+      dismissed.value = next
+      try {
+        sessionStorage.setItem(STORE, JSON.stringify([...next]))
+      } catch {
+        // Not remembered past this page; it is still gone from it.
+      }
+    }
     // The card that rose into its place is the one left on top now.
     rememberTop()
-    try {
-      sessionStorage.setItem(STORE, JSON.stringify([...next]))
-    } catch {
-      // Not remembered past this page; it is still gone from it.
-    }
   }, 220)
 }
 
@@ -278,10 +335,17 @@ const styleOf = (card, i) => {
   // as much, so the next card is already arriving under the finger.
   const pull = flying.value ? 1 : dragging.value ? Math.min(Math.abs(dx.value) / w, 1) : 0
   const depth = Math.min(Math.max(pos - pull, 0), UNDER)
+  // At rest the cards underneath are faded, so the deck reads as one card
+  // with more behind it. Once the top card is moving the next one is being
+  // read, and see-through it would show the card under it through its words,
+  // so it is solid from the moment a swipe starts — eased in quickly rather
+  // than snapping, while its position still follows the finger exactly.
+  const moving = dragging.value || flying.value
+  const opacity = pos - pull > UNDER ? 0 : moving && pos === 1 ? 1 : 1 - depth * 0.3
   return {
-    ...motion,
+    ...(dragging.value ? { transition: 'opacity 150ms ease' } : motion),
     zIndex: 50 - pos,
-    opacity: pos - pull > UNDER ? 0 : 1 - depth * 0.3,
+    opacity,
     transform: `translateY(${depth * 9}px) scale(${1 - depth * 0.05})`,
   }
 }
@@ -297,14 +361,17 @@ const styleOf = (card, i) => {
     @keydown.left="go(index - 1)"
     @keydown.right="sendUnder(-1)"
   >
-    <!-- Every card in the one grid cell: the deck is as tall as its tallest
-         card, and they all share that height, so nothing jumps between them.
+    <!-- Every card in the one grid cell, each the same fixed share of the
+         screen's height (DeckCard), so nothing jumps between them. The one
+         column is minmax(0, 1fr) and the cards min-w-0: left to itself a grid
+         column grows to its widest unbroken line (a row of chips, a caption),
+         and the card would run off the screen instead of ending in "…".
          The region round it is clipped sideways at the screen's edge rather
          than the column's, so a swiped card can travel to the edge without
          the page scrolling sideways under it. -->
     <div
       ref="deck"
-      :class="['grid touch-pan-y select-none', visible.length > 1 ? 'pb-[18px]' : '']"
+      :class="['grid grid-cols-1 touch-pan-y select-none', visible.length > 1 ? 'pb-[18px]' : '']"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
@@ -319,7 +386,7 @@ const styleOf = (card, i) => {
         aria-roledescription="slide"
         :aria-label="`${i + 1} of ${visible.length}`"
         :inert="i !== index"
-        class="deck-card relative [grid-area:1/1] origin-bottom"
+        class="deck-card relative min-w-0 [grid-area:1/1] origin-bottom"
         :style="styleOf(card, i)"
       >
         <slot name="card" :card="card" :top="i === index">
@@ -345,7 +412,7 @@ const styleOf = (card, i) => {
               ? 'bg-white/15 text-white hover:bg-white/25'
               : 'bg-gray-900/5 text-gray-500 hover:bg-gray-900/10 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/15',
           ]"
-          aria-label="Dismiss until the app is opened again"
+          :aria-label="card.remember ? 'Dismiss until there are more' : 'Dismiss until the app is opened again'"
           @click="dismiss(card)"
         >
           <X class="size-4" />
@@ -353,8 +420,19 @@ const styleOf = (card, i) => {
       </div>
     </div>
 
-    <!-- Where you are in the deck, and a tap to any card in it. -->
+    <!-- Where you are in the deck, and a tap to any card in it. The chevrons
+         either side are for whoever has not guessed the cards swipe: quiet
+         enough to pass unnoticed by someone who has, and doing the same as a
+         swipe (next sends the top card under) for someone who has not. -->
     <div v-if="visible.length > 1" class="flex items-center justify-center gap-0.5">
+      <button
+        type="button"
+        class="mr-1 flex size-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-900/5 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300"
+        aria-label="Previous card"
+        @click="go(index - 1)"
+      >
+        <ChevronLeft class="size-4" />
+      </button>
       <button
         v-for="(card, i) in visible"
         :key="card.key"
@@ -370,6 +448,14 @@ const styleOf = (card, i) => {
             i === index ? 'w-5 bg-primary dark:bg-primary-light' : 'w-1.5 bg-gray-300 dark:bg-gray-600',
           ]"
         />
+      </button>
+      <button
+        type="button"
+        class="ml-1 flex size-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-900/5 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300"
+        aria-label="Next card"
+        @click="sendUnder(-1)"
+      >
+        <ChevronRight class="size-4" />
       </button>
     </div>
   </div>

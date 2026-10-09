@@ -87,6 +87,28 @@ export const CIVIL_STATUS_OPTIONS = [
 ];
 
 /**
+ * The work most people in a congregation do, offered as one tap each so an
+ * occupation is chosen rather than typed — and so "teacher", "Teacher" and
+ * "Teacher " stop being three different answers. Anything else can still be
+ * typed; these are where most answers land.
+ */
+export const OCCUPATION_OPTIONS = [
+  'Student',
+  'Teacher',
+  'Nurse',
+  'Office worker',
+  'Business owner',
+  'Self-employed',
+  'Government employee',
+  'Driver',
+  'Farmer',
+  'Homemaker',
+  'OFW',
+  'Retired',
+  'Looking for work',
+];
+
+/**
  * Starter ministries — what someone does in the church. These are the only
  * things that grant access, so the list is a controlled vocabulary managed in
  * Settings, not free text (see src/api/ministriesService.js).
@@ -124,15 +146,39 @@ export const mergeTagSources = (existingTags = [], registeredTags = []) => {
   return merged.sort((a, b) => a.localeCompare(b));
 };
 
+/**
+ * A birthday whose year nobody knows. Plenty of people will say "the ninth of
+ * October" and not their age, and a greeting on the day needs only that — so
+ * the record keeps the shape every reader already takes apart, YYYY-MM-DD,
+ * with the year as 0000. Whatever reads only the month and day (the birthday
+ * list, the calendar, the video) needs no change; whatever works out an age
+ * asks `isYearless` first and has no age to give.
+ */
+export const YEARLESS = "0000";
+
+export const isYearless = (dateOfBirth) => String(dateOfBirth || "").startsWith(`${YEARLESS}-`);
+
+/** `{ year, month, day }` as numbers, year null when it is not known; null when there is no date. */
+export const birthdayParts = (dateOfBirth) => {
+  const match = String(dateOfBirth || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return null;
+  const [, y, m, d] = match.map(Number);
+  return { year: y || null, month: m, day: d };
+};
+
 // Returns "" rather than "Invalid Date" for missing/unparseable dates
 export const formatBirthDate = (dateOfBirth) => {
   if (!dateOfBirth) return "";
+  if (isYearless(dateOfBirth)) {
+    const parts = birthdayParts(dateOfBirth);
+    return parts ? new Date(2000, parts.month - 1, parts.day).toLocaleDateString(undefined, { month: "long", day: "numeric" }) : "";
+  }
   const date = new Date(dateOfBirth);
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString();
 };
 
 export const calculateAgeFromDate = (dateOfBirth) => {
-  if (!dateOfBirth) return undefined;
+  if (!dateOfBirth || isYearless(dateOfBirth)) return undefined;
   const today = new Date();
   const birthDate = new Date(dateOfBirth);
   let age = today.getFullYear() - birthDate.getFullYear();

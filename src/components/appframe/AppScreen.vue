@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ChevronLeft } from '../../icons'
+import { goBack as stepBack } from '../../router/back'
 
 // One screen of an app inside Ekkly: its home, or a section one step off it.
 //
@@ -27,8 +28,9 @@ const props = defineProps({
   subtitle: { type: String, default: '' },
   // Where back goes when there is nowhere earlier in this app to return to.
   back: { type: [String, Object], default: null },
-  // Every route inside this app starts with it, so back can tell whether the
-  // screen before was this app's own.
+  // Every route inside this app starts with it. Back used to read it to stay
+  // inside the app; it goes to whatever came before now, and this is kept for
+  // the screens that still pass it.
   root: { type: String, default: '' },
   // A screen that scrolls itself — a month grid, with its day and its event
   // opening beside it — rather than one long page: the screen does not
@@ -44,15 +46,13 @@ const column = computed(() => (props.wide ? 'max-w-5xl' : 'max-w-xl'))
 const router = useRouter()
 const hasHeader = computed(() => Boolean(props.title || props.back))
 
-// Back returns to the screen you came from when it was one of this app's — a
-// Sunday opened from My turns goes back to My turns — and otherwise to the
-// screen above this one. Never as a new entry in the history: a back button
-// that pushed would make the phone's own back step forward again.
-const goBack = () => {
-  const previous = window.history.state?.back
-  if (previous && props.root && String(previous).startsWith(props.root)) router.back()
-  else if (props.back) router.replace(props.back)
-}
+// Back returns to the screen you came from — a Sunday opened from My turns
+// goes back to My turns, a month's video opened from the Events home goes back
+// to Events — and only with nothing before it to the screen above this one.
+// It used to go back only to a screen of this same app, so leaving one app for
+// another made the arrow skip the page you had just been on. See
+// router/back.js.
+const goBack = () => stepBack(router, props.back)
 
 /* -------------------------------------------------------- hiding on scroll */
 

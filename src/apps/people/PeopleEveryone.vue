@@ -811,6 +811,7 @@ const showFab = computed(
       @toggle-view="toggleMobileView"
       @sort="showSort = true"
       @add="showAddMemberComputed = true"
+      @add-many="router.push({ name: 'PeopleAdd' })"
       @export="showExport = true"
     />
 

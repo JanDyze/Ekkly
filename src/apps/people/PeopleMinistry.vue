@@ -18,13 +18,17 @@ import { groupByBand } from '../../utils/ageBands'
 // selection on the roll, which both say what it hands out first.
 
 const route = useRoute()
-const { loading, ministries, unplaced } = usePeopleOverview()
+const { loading, ministries, unplaced, unplacedToAsk } = usePeopleOverview()
 
 const isUnplaced = computed(() => route.name === 'PeopleUnplaced')
+// Opened from the People home's "Not serving yet" card (?ask=1), the list is
+// the people that card counted — members past the Kids band — so the number
+// on the card is the number here.
+const askOnly = computed(() => isUnplaced.value && route.query.ask === '1')
 const name = computed(() => (isUnplaced.value ? 'Not in a ministry' : String(route.params.name || '')))
 const ministry = computed(() =>
   isUnplaced.value
-    ? { name: name.value, people: unplaced.value }
+    ? { name: name.value, people: askOnly.value ? unplacedToAsk.value : unplaced.value }
     : ministries.value.find((m) => m.name.toLowerCase() === name.value.toLowerCase()) || null
 )
 const people = computed(() => ministry.value?.people || [])
@@ -34,6 +38,7 @@ const subtitle = computed(() => {
   if (loading.value) return ''
   if (!ministry.value) return 'Not a ministry the church keeps'
   const n = people.value.length
+  if (askOnly.value) return `${n} ${n === 1 ? 'member' : 'members'}, not counting kids`
   return `${n} ${n === 1 ? 'person' : 'people'}`
 })
 

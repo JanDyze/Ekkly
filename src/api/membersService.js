@@ -12,6 +12,7 @@ import {
   where,
   limit,
 } from './firestore';
+import { inBatches } from './batchWrite';
 
 const MEMBERS_COLLECTION = "members";
 
@@ -28,6 +29,10 @@ const normalizeMember = (data, docId) => {
     age: data.age || null,
     civilStatus: data.civilStatus || 'Single',
     address: data.address || '',
+    // The province, city and barangay the address was picked from, with their
+    // PSGC codes (AddressPicker), so the picker opens on them again. Null on a
+    // record whose address was only ever typed.
+    addressParts: data.addressParts || null,
     contactNumber: data.contactNumber || '',
     occupation: data.occupation || '',
     relatives: data.relatives || {},
@@ -171,3 +176,24 @@ export const batchUpdateMembers = async (members) => {
   }
 };
 
+
+/**
+ * Adds many people at once — the add-people sheet, filled in or imported.
+ *
+ * In batches (batchWrite.js) rather than one addDoc each: a congregation of
+ * two hundred is one commit and one audit entry, and either lands or does
+ * not, instead of a hundred and twelve of them arriving before the hall's
+ * wifi drops. Each record takes the next number on the roll, the same rule a
+ * single add follows.
+ *
+ * @param records  finished records, without `id`
+ * @param firstId  the number the first of them takes
+ */
+export const addMembers = async (records, firstId) => {
+  const membersRef = collection(db, MEMBERS_COLLECTION);
+  const numbered = records.map((record, i) => ({ ...record, id: firstId + i }));
+  await inBatches(numbered, (batch, record) => {
+    batch.set(doc(membersRef), record);
+  });
+  return numbered.length;
+};

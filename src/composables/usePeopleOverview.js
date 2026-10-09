@@ -4,7 +4,7 @@ import { useMinistries } from './useMinistries'
 import { useMemberClaims } from './useMemberClaims'
 import { usePermissions } from './usePermissions'
 import { daysUntilBirthday } from './useMemberSorting'
-import { ageOf } from '../utils/ageBands'
+import { ageOf, bandOf } from '../utils/ageBands'
 import { getFullName, missingMemberDetails } from '../utils/memberUtils'
 
 // What is true across the whole roll, for the People app's home and the
@@ -90,6 +90,16 @@ export function usePeopleOverview() {
       .sort(byName)
   )
 
+  /**
+   * Of those, the ones somebody might actually ask: members, past the Kids
+   * band. A child or a visitor in no ministry is not a gap, and counting them
+   * made a number that never went down. A record with no age stays in: most
+   * of those are adults whose birthday was never written down.
+   */
+  const unplacedToAsk = computed(() =>
+    unplaced.value.filter((m) => m.isMember !== false && bandOf(m)?.key !== 'kids')
+  )
+
   /* ---------------------------------------------------------- thin records */
 
   const incomplete = computed(() =>
@@ -102,7 +112,8 @@ export function usePeopleOverview() {
   /* ------------------------------------------------------------ requests */
 
   // Account links are approved in Settings, which only an administrator opens.
-  const claimsWaiting = computed(() => (isAdmin.value ? pendingClaims.value.length : 0))
+  const claims = computed(() => (isAdmin.value ? pendingClaims.value : []))
+  const claimsWaiting = computed(() => claims.value.length)
 
   return {
     members,
@@ -116,7 +127,9 @@ export function usePeopleOverview() {
     birthdaysThisWeek,
     ministries,
     unplaced,
+    unplacedToAsk,
     incomplete,
+    claims,
     claimsWaiting,
   }
 }

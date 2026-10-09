@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import {
   AddressBookDuotone,
+  UserPlusDuotone,
   BookOpenTextDuotone,
   CakeDuotone,
   CalendarDotsDuotone,
@@ -48,6 +49,7 @@ const GLYPHS = {
   glance: ChartPieSliceDuotone,
   missing: ClipboardTextDuotone,
   me: IdentificationCardDuotone,
+  add: UserPlusDuotone,
 }
 
 const glyph = computed(() => GLYPHS[props.name] || CalendarDotsDuotone)

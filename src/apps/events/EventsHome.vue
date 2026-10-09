@@ -1,23 +1,29 @@
 <script setup>
 import { computed } from 'vue'
-import { CalendarX, FilmSlate, Flag } from '../../icons'
+import { CalendarX, Clock, FilmSlate, Flag, MapPin, Sparkle } from '../../icons'
 import AppScreen from '../../components/appframe/AppScreen.vue'
 import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DateTile from '../../components/appframe/DateTile.vue'
 import AppShortcut from '../../components/appframe/AppShortcut.vue'
+import DeckChips from '../../components/appframe/DeckChips.vue'
+import DeckWeek from '../../components/appframe/DeckWeek.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import { useEventsOverview } from '../../composables/useEventsOverview'
 import { usePermissions } from '../../composables/usePermissions'
 import { getDisplayName } from '../../utils/memberUtils'
 import { clockLabel } from '../../utils/timeUtils'
+import { isCalledOff } from '../../../lib/eventStatus'
 
 // The Events app's home, built the way the other apps' are. One screen, and
 // two things on it:
 //
 //   1. A deck of cards (AppHeroDeck). Which cards, and why only these, is
 //      decided in useEventsOverview: a change of plan in the next two weeks,
-//      a holiday this week, and this month's video in the week it is shown.
+//      a weekly service somewhere or sometime other than usual, a holiday
+//      this week, a one-off gathering coming up, and the month's video —
+//      this month's in the week it is shown, next month's for planners in the
+//      week before.
 //      Under them, the card that is always there: what is on next, with the
 //      coming seven days along its foot, each marked if something is on.
 //   2. The doors: the calendar, what is coming up, what happens every week,
@@ -27,7 +33,22 @@ import { clockLabel } from '../../utils/timeUtils'
 // what it could not say at a glance — what is next, and what has changed —
 // leads.
 
-const { loading, today, next, week, thisWeek, ahead, changes, holiday, videoMonth, weekly } = useEventsOverview()
+const {
+  loading,
+  today,
+  calendar,
+  next,
+  week,
+  thisWeek,
+  ahead,
+  changes,
+  different,
+  oneOffs,
+  holiday,
+  videoMonth,
+  videoPrepMonth,
+  weekly,
+} = useEventsOverview()
 const { myMember } = usePermissions()
 
 const dateOf = (key) => {
@@ -55,6 +76,27 @@ const greeting = computed(() => {
 
 const dayOf = (key) => ({ name: 'Events', query: { date: key } })
 
+/** The month's gatherings, each once: what its video announces. */
+const titlesIn = (month) =>
+  [...new Set(calendar.value.filter((e) => e.date.startsWith(month) && !isCalledOff(e)).map((e) => e.title).filter(Boolean))].map(
+    (title) => ({ key: title, label: title })
+  )
+
+/** The first Sunday of a month, "YYYY-MM": when its video is shown. */
+const firstSundayOf = (month) => {
+  const date = dateOf(`${month}-01`)
+  date.setDate(date.getDate() + ((7 - date.getDay()) % 7))
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
+/** Who a gathering is for, as chips: its tags, or everyone, and who it leaves out. */
+const audienceChips = (event) => [
+  ...(event.audienceTags?.length
+    ? event.audienceTags.map((tag) => ({ key: `for-${tag}`, label: tag }))
+    : [{ key: 'everyone', label: 'Everyone' }]),
+  ...(event.excludeTags || []).map((tag) => ({ key: `not-${tag}`, label: tag, strike: true })),
+]
+
 /* -------------------------------------------------------------- the deck */
 
 const cards = computed(() => {
@@ -80,6 +122,40 @@ const cards = computed(() => {
         : changes.value.map((e) => `${e.title} ${shortDate(e.date)}`).join(' · '),
       to: dayOf(first.date),
       date: first.date,
+      // The dates crossed out, and where a moved one went.
+      chips: one
+        ? [
+            { key: 'from', label: shortDate(first.date), strike: true },
+            ...(first.postponedTo ? [{ key: 'to', label: `Now ${shortDate(first.postponedTo)}` }] : []),
+          ]
+        : changes.value.map((e) => ({ key: `${e.id}-${e.date}`, label: shortDate(e.date), strike: true })),
+    })
+  }
+
+  // A weekly service somewhere or sometime else this once: people come by
+  // habit, so the usual is shown crossed out beside what it is now.
+  for (const e of different.value) {
+    const name = e.title || 'A service'
+    const now = [e.timeMoved && clockLabel(e.time), e.placeMoved && e.location].filter(Boolean).join(', ')
+    list.push({
+      kind: 'dated',
+      key: `different:${e.id}-${e.date}-${e.time}-${e.location}`,
+      tone: 'warn',
+      icon: e.timeMoved ? Clock : MapPin,
+      dismissible: true,
+      kicker: e.timeMoved && e.placeMoved ? 'Not the usual time or place' : e.timeMoved ? 'Not the usual time' : 'Not the usual place',
+      title: `${name} is at ${now}`,
+      detail: [whenOf(e.date), e.timeMoved && !e.placeMoved ? e.location : ''].filter(Boolean).join(' · '),
+      to: dayOf(e.date),
+      date: e.date,
+      chips: [
+        ...(e.timeMoved
+          ? [{ key: 'usual-time', label: clockLabel(e.usual.time), strike: true }, { key: 'time', label: `Now ${clockLabel(e.time)}` }]
+          : []),
+        ...(e.placeMoved
+          ? [{ key: 'usual-place', label: e.usual.location, strike: true }, { key: 'place', label: `Now ${e.location}` }]
+          : []),
+      ],
     })
   }
 
@@ -96,6 +172,46 @@ const cards = computed(() => {
       detail: `${whenOf(h.date)} · ${h.type === 'regular' ? 'a regular holiday' : 'a special non-working day'}`,
       to: dayOf(h.date),
       date: h.date,
+      week: true,
+    })
+  }
+
+  // Something somebody typed in, not one of the weekly gatherings: the thing
+  // people have to remember, prepare for, or bring someone to. The nearest
+  // one, unless the card that is always there already leads with it; the rest
+  // are in Coming up.
+  const special = oneOffs.value.find((e) => e.id !== next.value?.id)
+  if (special) {
+    const more = oneOffs.value.filter((e) => e.id !== next.value?.id).length - 1
+    list.push({
+      kind: 'dated',
+      key: `oneoff:${special.id}-${special.date}`,
+      tone: 'plain',
+      icon: Sparkle,
+      dismissible: true,
+      kicker: special.forMe ? 'Coming up, for you' : more > 0 ? `Coming up, and ${more} more` : 'Coming up',
+      title: special.title || 'A gathering',
+      detail: [whenOf(special.date), clockLabel(special.time), special.location].filter(Boolean).join(' · '),
+      to: dayOf(special.date),
+      date: special.date,
+      chips: audienceChips(special),
+    })
+  }
+
+  // Next month's video, for planners, while what it announces can still be
+  // added to the calendar.
+  if (videoPrepMonth.value) {
+    list.push({
+      kind: 'video',
+      key: `video-prep:${videoPrepMonth.value}`,
+      tone: 'plain',
+      icon: FilmSlate,
+      dismissible: true,
+      kicker: 'Announcement video',
+      title: `Get ${monthName(videoPrepMonth.value)}'s video ready`,
+      detail: `Shown ${firstSundayOf(videoPrepMonth.value)}, made from whatever is on the calendar by then.`,
+      to: { name: 'VideosMonth', params: { month: videoPrepMonth.value } },
+      chips: titlesIn(videoPrepMonth.value),
     })
   }
 
@@ -110,6 +226,8 @@ const cards = computed(() => {
       title: `${monthName(videoMonth.value)}'s video is ready`,
       detail: 'Made from the calendar, ready to show on Sunday.',
       to: { name: 'VideosMonth', params: { month: videoMonth.value } },
+      // What it announces: the month's gatherings, each once.
+      chips: titlesIn(videoMonth.value),
     })
   }
 
@@ -194,6 +312,8 @@ const aheadCount = computed(() => ahead.value.filter((e) => e.date <= today.slic
             <template #leading>
               <DateTile :date="card.date" class="size-14! rounded-2xl!" />
             </template>
+            <DeckWeek v-if="card.week" :days="week" :mark="card.date" />
+            <DeckChips v-else :tone="card.tone" :items="card.chips" />
           </DeckCard>
 
           <!-- This month's video: the Videos artwork, as it opens there. -->
@@ -212,23 +332,18 @@ const aheadCount = computed(() => ahead.value.filter((e) => e.date <= today.slic
                 <AppArt app-key="videos" flat class="size-9" />
               </span>
             </template>
+            <DeckChips :items="card.chips" :max="3" />
           </DeckCard>
 
           <!-- What is on next, and the week ahead along its foot. -->
           <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
             <template #art>
-              <!-- Light through an arched window, the outline of Ekkly's mark
-                   (BRAND.md: the window is the motif). -->
+              <!-- An arched window in outline, the shape of Ekkly's mark
+                   (BRAND.md: the window is the motif), drawn as lines on the
+                   colour rather than as light glowing through it. -->
               <svg class="absolute -bottom-10 right-5 h-60 w-36" viewBox="0 0 144 240" fill="none">
-                <defs>
-                  <linearGradient id="events-arch-light" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="white" stop-opacity="0.2" />
-                    <stop offset="0.75" stop-color="white" stop-opacity="0.03" />
-                    <stop offset="1" stop-color="white" stop-opacity="0" />
-                  </linearGradient>
-                </defs>
-                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" fill="url(#events-arch-light)" />
-                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" stroke="white" stroke-opacity="0.14" stroke-width="1.5" />
+                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" stroke="white" stroke-opacity="0.3" stroke-width="1.5" />
+                <path d="M20 72a52 52 0 0 1 104 0V240H20Z" stroke="white" stroke-opacity="0.15" stroke-width="1.5" />
               </svg>
             </template>
             <!-- The Events artwork, on white because its orange and blue are
@@ -241,22 +356,7 @@ const aheadCount = computed(() => ahead.value.filter((e) => e.date <= today.slic
             <!-- The coming seven days: each one's letter and date, and a dot for
                  each thing on it, today ringed. -->
             <template v-if="!loading" #default>
-              <div class="grid grid-cols-7 gap-1" aria-hidden="true">
-                <span
-                  v-for="day in week"
-                  :key="day.date"
-                  :class="[
-                    'flex flex-col items-center gap-1 rounded-xl py-1.5',
-                    day.isToday ? 'bg-white/20 ring-1 ring-white/50' : '',
-                  ]"
-                >
-                  <span class="text-[10px] font-semibold uppercase text-white/70">{{ day.letter }}</span>
-                  <span class="text-sm font-bold tabular-nums">{{ day.day }}</span>
-                  <span class="flex h-1.5 gap-0.5">
-                    <span v-for="n in Math.min(day.count, 3)" :key="n" class="size-1.5 rounded-full bg-white" />
-                  </span>
-                </span>
-              </div>
+              <DeckWeek tone="accent" :days="week" />
             </template>
           </DeckCard>
         </template>

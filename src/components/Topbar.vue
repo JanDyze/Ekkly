@@ -27,6 +27,7 @@ import ClaimMemberSheet from "./auth/ClaimMemberSheet.vue";
 import MemberAvatar from "./members/MemberAvatar.vue";
 import AppArt from "./common/AppArt.vue";
 import { NAV_ITEMS } from "../data/navigation";
+import { goBack } from "../router/back";
 
 const route = useRoute();
 const router = useRouter();
@@ -116,10 +117,22 @@ const inApp = computed(() => route.matched.some((record) => record.meta?.frame =
 // Only on the home itself is it the link to the church's public page.
 const onHome = computed(() => Boolean(route.meta?.root))
 
+// The arrow goes back one page, to wherever you were — Events, when Videos was
+// opened from it — and to the home of all apps only when there was nothing
+// before (a link opened cold, a refresh). It still carries /home as its link,
+// so it can be opened in a new tab.
+const leave = (event) => {
+  if (onHome.value || event.metaKey || event.ctrlKey || event.shiftKey || event.button) return
+  event.preventDefault()
+  goBack(router, '/home')
+}
+
 const pageTitle = computed(() => {
   if (inApp.value && currentApp.value) return currentApp.value.name
+  // The home of all apps is the church's own front room, so it carries the
+  // church's name rather than a generic "Home".
+  if (onHome.value) return church.value.shortName || 'Home'
   const routeNames = {
-    Apps: 'Home',
     Members: 'People',
     MemberDetails: 'Person',
     MinuteDetails: 'Minutes',
@@ -203,10 +216,16 @@ const openMyProfile = () => {
       <div class="flex items-center justify-between h-12">
         <div class="flex min-w-0 items-center gap-2.5">
           <router-link
+            v-slot="{ href, navigate }"
             :to="onHome ? '/' : '/home'"
-            :title="onHome ? `Go to the ${church.shortName} public page` : 'Back to all apps'"
-            :aria-label="onHome ? `Go to the ${church.shortName} public page` : 'Back to all apps'"
+            custom
+          >
+          <a
+            :href="href"
+            :title="onHome ? `Go to the ${church.shortName} public page` : 'Back'"
+            :aria-label="onHome ? `Go to the ${church.shortName} public page` : 'Back'"
             class="-ml-1 flex shrink-0 items-center gap-0.5 rounded-lg p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+            @click="onHome ? navigate($event) : leave($event)"
           >
             <ChevronLeft v-if="!onHome" class="h-5 w-5 shrink-0 text-gray-500 dark:text-gray-400" />
             <!-- Keyed by app, so moving between apps swaps one picture for the
@@ -227,6 +246,7 @@ const openMyProfile = () => {
               />
               <img v-else key="logo" :src="logoUrl" :alt="church.shortName" class="h-8 w-auto" />
             </Transition>
+          </a>
           </router-link>
           <h1 class="min-w-0 truncate text-sm font-semibold text-gray-900 dark:text-white">
             {{ pageTitle }}

@@ -47,6 +47,24 @@
         "value": "drawer-wobble",
         "createdAt": "2026-10-08T04:48:11.511Z",
         "reason": "Claude: domain-appropriate motion — the iOS-style 'jiggle' that marks the home shelf's apps as swappable, shown only while choosing which app to swap out; honours prefers-reduced-motion"
+      },
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "src/apps/people/PersonRecord.vue"
+        ],
+        "createdAt": "2026-10-09T02:53:32.992Z",
+        "reason": "Claude triage: L490 is a loading spinner (animate-spin rounded-full border-b-2), not a card; the one-sided border is what draws the spin"
+      },
+      {
+        "rule": "gray-on-color",
+        "value": "*",
+        "files": [
+          "src/components/appframe/SwipeRow.vue"
+        ],
+        "createdAt": "2026-10-09T03:59:05.950Z",
+        "reason": "Claude: grey icon sits on the white row; active:bg-amber-50 pairs with active:text-amber-600, so grey never shows on colour"
       }
     ]
   }

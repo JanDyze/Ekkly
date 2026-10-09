@@ -53,6 +53,7 @@ export function useAttendanceOverview() {
     months,
     quietPeople,
     awaiting,
+    recorded,
     latest,
   }
 }

@@ -1,6 +1,8 @@
 <script setup>
+import { Comment, computed, useSlots } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ChevronRight } from '../../icons'
+import AppArt from '../common/AppArt.vue'
 
 // One card of an app's deck (AppHeroDeck): the shell every kind of card shares
 // — a small label with its icon, one sentence large, a quieter line under it,
@@ -10,32 +12,63 @@ import { ChevronRight } from '../../icons'
 // one thing.
 //
 // Tones, from loudest to quietest:
-//   accent    — the church's colour, with a soft light across it. The card
-//               that is always there, and the one a deck ends on.
-//   celebrate — the same colour, with confetti. Somebody's day.
+//   accent    — the church's colour, flat. The card that is always there,
+//               and the one a deck ends on.
+//   celebrate — the same colour, with confetti inside a dashed frame, like
+//               an invitation. Somebody's day.
 //   warn      — pale amber. Someone is waiting on you.
 //   plain     — white. Worth knowing, no hurry.
 // Accent and celebrate are both the primary token, so a church that changes
 // its colours changes them with it.
 
-defineProps({
+const props = defineProps({
   tone: { type: String, default: 'plain' },
   icon: { type: [Object, Function], default: null },
   kicker: { type: String, default: '' },
   title: { type: String, required: true },
   detail: { type: String, default: '' },
   to: { type: [String, Object], default: null },
+  // A card whose tap does something here rather than going somewhere (opens a
+  // sheet): a button, with the click passed straight through to it.
+  action: { type: Boolean, default: false },
   // Room at the top right for the deck's dismiss button.
   inset: { type: Boolean, default: false },
+  // Where the card leads, for a deck whose cards lead into different apps (the
+  // home of all apps): the artwork of the app or section it opens, by name,
+  // and that place's name for a screen reader.
+  dest: { type: String, default: '' },
+  destLabel: { type: String, default: '' },
 })
 
+// A foot whose only content is switched off by a `v-if` still arrives as a
+// slot, and would leave an empty band at the bottom of the card; it counts
+// only when something in it renders.
+const slots = useSlots()
+const tappable = computed(() => Boolean(props.to || props.action))
+const hasFoot = () => (slots.default?.() || []).some((node) => node.type !== Comment)
+
+// Every card is the same height, a share of the screen it is on, so a deck
+// does not change size as it turns and a short card is never a tall card with
+// a hole in it. Nothing in a card is ever cut off to make it fit: the height
+// is chosen to hold the fullest card there is (the Attendance and Schedules
+// cards, a two-line headline over a picture and its caption, come to 212px),
+// and the only give is in the words — the headline stops at two lines and the
+// line under it at one, each with an ellipsis. A new kind of card has to fit
+// in 216px the same way, by what it puts in, not by being clipped.
+const HEIGHT = 'h-[26dvh] min-h-54 max-h-64'
+
+// Every card has an edge rather than a glow: a solid border, thicker along
+// the foot, in a deeper shade of the card's own colour, so it reads as a
+// card with some thickness to it, standing on the page. On the church's
+// colour the border is black laid thin over it, which is a deeper shade of
+// whatever colour the church chose. The border (1px, 4px along the foot)
+// comes out of the padding, so a card's content keeps the room it was
+// measured against above.
 const TONES = {
-  // The filled cards stand up off the page on a shadow of their own colour,
-  // so the deck is the first thing on the home and the tiles under it second.
-  accent: 'deck-filled deck-glow text-white shadow-xl shadow-primary/30',
-  celebrate: 'deck-filled text-white shadow-xl shadow-primary/30',
-  warn: 'bg-amber-50 text-amber-950 ring-1 ring-amber-200 dark:bg-gray-800 dark:text-white dark:ring-amber-500/40',
-  plain: 'bg-white text-gray-900 ring-1 ring-gray-200/80 dark:bg-gray-800 dark:text-white dark:ring-gray-700/80',
+  accent: 'deck-filled text-white border-black/15 dark:border-black/40',
+  celebrate: 'deck-filled text-white border-black/15 dark:border-black/40',
+  warn: 'bg-amber-50 text-amber-950 border-amber-300 dark:bg-gray-800 dark:text-white dark:border-amber-500/50',
+  plain: 'bg-white text-gray-900 border-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-700',
 }
 
 const KICKERS = {
@@ -44,6 +77,15 @@ const KICKERS = {
   warn: 'text-amber-700 dark:text-amber-400',
   plain: 'text-primary dark:text-primary-light',
 }
+
+// The destination's artwork, beside the chevron, in its own colours: it is
+// the same app as the tile it opens, and should be recognised as that at a
+// glance. A flat, faint copy in the card's ink read as decoration instead.
+//
+// On the church's colour it sits on a small white chip. The orange and blue
+// muddy against any church's colour, and these cards already carry artwork
+// that way (the cake on a birthday, the church's logo).
+const FILLED = ['accent', 'celebrate']
 
 const DETAILS = {
   accent: 'text-white/75',
@@ -55,17 +97,21 @@ const DETAILS = {
 
 <template>
   <component
-    :is="to ? RouterLink : 'section'"
+    :is="to ? RouterLink : action ? 'button' : 'section'"
     :to="to || undefined"
+    :type="action && !to ? 'button' : undefined"
     draggable="false"
     :class="[
-      'group relative isolate flex h-full min-h-48 flex-col overflow-hidden rounded-3xl p-5',
+      'group relative isolate flex flex-col rounded-3xl border border-b-4 px-4 pb-3 pt-[15px]',
+      HEIGHT,
       TONES[tone] || TONES.plain,
-      to ? 'transition-transform duration-200 ease-out pressed:scale-[0.99]' : '',
+      tappable ? 'transition-transform duration-200 ease-out pressed:scale-[0.99]' : '',
+      action && !to ? 'w-full text-left' : '',
     ]"
   >
-    <!-- Whatever the card draws behind its words: confetti, rings. -->
-    <div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+    <!-- Whatever the card draws behind its words: confetti, rings. Only this
+         is trimmed to the card's corners; the words never are. -->
+    <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]" aria-hidden="true">
       <slot name="art" />
     </div>
 
@@ -76,43 +122,49 @@ const DETAILS = {
           <component :is="icon" v-if="icon" class="size-4 shrink-0" />
           <span class="truncate">{{ kicker }}</span>
         </p>
-        <h2 class="mt-1 text-[22px] font-bold leading-tight tracking-tight">
+        <h2 class="mt-1 line-clamp-2 text-[22px] font-bold leading-tight tracking-tight">
           <slot name="title">{{ title }}</slot>
         </h2>
-        <p v-if="detail" :class="['mt-1 text-sm', DETAILS[tone] || DETAILS.plain]">{{ detail }}</p>
+        <p v-if="detail" :class="['mt-1 truncate text-sm', DETAILS[tone] || DETAILS.plain]">{{ detail }}</p>
       </div>
       <slot name="trailing" />
     </div>
 
     <!-- The card's own picture, kept to the foot so every card's words start
          in the same place however tall the deck is. -->
-    <div v-if="$slots.default" :class="['mt-auto pt-4', to ? 'pr-7' : '']">
+    <div v-if="hasFoot()" :class="['mt-auto pt-3', tappable ? (dest ? 'pr-19' : 'pr-7') : '']">
       <slot />
     </div>
 
-    <ChevronRight
-      v-if="to"
-      aria-hidden="true"
-      :class="[
-        'absolute bottom-5 right-4 size-5 transition-transform duration-300 group-engaged:translate-x-1',
-        tone === 'accent' || tone === 'celebrate' ? 'text-white/60' : 'text-gray-300 dark:text-gray-600',
-      ]"
-    />
+    <!-- Where the tap goes, before it is made: the place's own artwork, then
+         the chevron that says it goes. -->
+    <span v-if="tappable" class="absolute bottom-4 right-4 flex h-5 items-center gap-1.5">
+      <span
+        v-if="dest && FILLED.includes(tone)"
+        class="flex size-8 items-center justify-center rounded-[10px] bg-white shadow-md shadow-black/15 transition-transform duration-300 group-engaged:scale-105"
+      >
+        <AppArt :app-key="dest" class="size-6" />
+      </span>
+      <AppArt
+        v-else-if="dest"
+        :app-key="dest"
+        class="size-6 transition-transform duration-300 group-engaged:scale-110"
+      />
+      <span v-if="destLabel" class="sr-only">Opens {{ destLabel }}</span>
+      <ChevronRight
+        aria-hidden="true"
+        :class="[
+          'size-5 transition-transform duration-300 group-engaged:translate-x-1',
+          tone === 'accent' || tone === 'celebrate' ? 'text-white/60' : 'text-gray-300 dark:text-gray-600',
+        ]"
+      />
+    </span>
   </component>
 </template>
 
 <style scoped>
 .deck-filled {
   background-color: var(--color-primary);
-}
-
-/* Light falling across the card from its top corner, and the far corner a
-   shade deeper: enough that the colour has depth rather than being a flat
-   swatch, and quiet enough that white words on it stay easy to read. */
-.deck-glow {
-  background-image:
-    radial-gradient(110% 130% at 100% 0%, color-mix(in oklab, white 24%, transparent), transparent 55%),
-    radial-gradient(90% 110% at 0% 100%, color-mix(in oklab, black 22%, transparent), transparent 60%);
 }
 
 /* On a dark page the accent token is its lighter shade, made to be read as

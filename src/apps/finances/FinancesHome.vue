@@ -6,6 +6,7 @@ import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DateTile from '../../components/appframe/DateTile.vue'
 import AppShortcut from '../../components/appframe/AppShortcut.vue'
+import DeckChips from '../../components/appframe/DeckChips.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import { useFinanceOverview } from '../../composables/useFinanceOverview'
 import { usePermissions } from '../../composables/usePermissions'
@@ -82,6 +83,11 @@ const cards = computed(() => {
       title: 'Set the opening balance',
       detail: 'Until it is set, every balance counts only what has been entered here.',
       to: { name: 'FinancesAccounts', query: { set: 'opening' } },
+      // What the balances count today without it, so the gap is plain.
+      chips: [
+        { key: 'cash', label: `Cash ${peso(balancesToday.value.cash)}` },
+        { key: 'bank', label: `Bank ${peso(balancesToday.value.bank)}` },
+      ],
     })
   }
 
@@ -101,6 +107,7 @@ const cards = computed(() => {
       detail: missed.length === 1 ? 'Nothing has been entered for it yet.' : `From ${shortDate(oldest)}, the oldest first.`,
       to: { name: 'Finances', params: { month: monthKeyOf(oldest) }, query: { new: 'offering', date: oldest } },
       date: oldest,
+      chips: missed.map((sunday) => ({ key: sunday, label: shortDate(sunday) })),
     })
   }
 
@@ -134,6 +141,9 @@ const cards = computed(() => {
       title: `${n} ${n === 1 ? 'entry has' : 'entries have'} no statement line`,
       detail: 'The statement files them under Unclassified until each is given one.',
       to: { name: 'Finances', params: { month: monthKeyOf(unclassified.value[0].date) } },
+      // The entries themselves, by what they were for.
+      chips: unclassified.value.map((e) => ({ key: e.id || e.firestoreId, label: e.description || peso(e.amount) })),
+      chipMax: 3,
     })
   }
 
@@ -237,6 +247,7 @@ const cashShare = computed(() => {
             <template #leading>
               <DateTile :date="card.date" class="size-14! rounded-2xl!" />
             </template>
+            <DeckChips :tone="card.tone" :items="card.chips" />
           </DeckCard>
 
           <!-- Last month's statement: its in and out, side by side. -->
@@ -272,18 +283,12 @@ const cashShare = computed(() => {
             :to="card.to"
           >
             <template #art>
-              <!-- Light through an arched window, the outline of Ekkly's mark
-                   (BRAND.md: the window is the motif). -->
+              <!-- An arched window in outline, the shape of Ekkly's mark
+                   (BRAND.md: the window is the motif), drawn as lines on the
+                   colour rather than as light glowing through it. -->
               <svg class="absolute -bottom-10 right-5 h-60 w-36" viewBox="0 0 144 240" fill="none">
-                <defs>
-                  <linearGradient id="finances-arch-light" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="white" stop-opacity="0.2" />
-                    <stop offset="0.75" stop-color="white" stop-opacity="0.03" />
-                    <stop offset="1" stop-color="white" stop-opacity="0" />
-                  </linearGradient>
-                </defs>
-                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" fill="url(#finances-arch-light)" />
-                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" stroke="white" stroke-opacity="0.14" stroke-width="1.5" />
+                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" stroke="white" stroke-opacity="0.3" stroke-width="1.5" />
+                <path d="M20 72a52 52 0 0 1 104 0V240H20Z" stroke="white" stroke-opacity="0.15" stroke-width="1.5" />
               </svg>
             </template>
             <!-- The Finances artwork, on white because its orange and blue
@@ -321,7 +326,9 @@ const cashShare = computed(() => {
             :detail="card.detail"
             :to="card.to"
             :inset="card.dismissible"
-          />
+          >
+            <DeckChips v-if="card.chips" :tone="card.tone" :items="card.chips" :max="card.chipMax || 4" />
+          </DeckCard>
         </template>
       </AppHeroDeck>
 

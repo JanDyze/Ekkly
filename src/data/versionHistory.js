@@ -8,6 +8,19 @@
 
 export const versionHistory = [
   {
+    version: '0.33.1',
+    date: '2026-10-09',
+    title: 'Your whole roll at once',
+    summary:
+      'Add many people in one go, pick an address instead of typing it, and leave out a birthday’s year when nobody knows it.',
+    highlights: [
+      'On Everyone, tap + then Add several people: type, paste from Excel or Google Sheets, or open a file. Anyone already on the roll is left out.',
+      'Addresses are picked by province, city and barangay, so one place is spelt one way.',
+      'Events puts what is out of the ordinary first — a moved service, an outreach — and folds the weekly routine away.',
+      'The home shows your church’s name and a verse for the day, and back now goes back to wherever you came from.',
+    ],
+  },
+  {
     version: '0.33.0',
     date: '2026-10-08',
     title: 'Attendance, Finances and Events, each its own app',

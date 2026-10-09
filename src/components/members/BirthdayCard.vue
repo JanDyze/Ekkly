@@ -8,10 +8,11 @@ import MemberAvatar from './MemberAvatar.vue'
 // app's home and on the home of every app, so the day reads the same in both.
 //
 // The day itself is the headline: their face large with the cake pinned to
-// it, their name, and the age they turn in big type, over a warm glow and
-// confetti that fills the card rather than one corner of it.
+// it, their name, and the age they turn in big type, inside a dashed frame
+// like an invitation's, with confetti that fills the card rather than one
+// corner of it.
 //
-// `card`: `{ member, name, turning, kicker, detail, to }`.
+// `card`: `{ member, name, turning, kicker, detail, to, dest?, destLabel? }`.
 
 defineProps({
   card: { type: Object, required: true },
@@ -26,10 +27,12 @@ defineProps({
     :title="card.name"
     :detail="card.detail"
     :to="card.to"
+    :dest="card.dest"
+    :dest-label="card.destLabel"
     inset
   >
     <template #art>
-      <div class="birthday-glow absolute inset-0" />
+      <div class="absolute inset-1.5 rounded-[18px] border-2 border-dashed border-white/35" />
       <svg class="absolute inset-0 size-full" viewBox="0 0 360 200" preserveAspectRatio="xMidYMid slice" fill="none">
         <circle cx="150" cy="22" r="3" class="fill-amber-300" />
         <circle cx="232" cy="40" r="4" class="fill-white/50" />
@@ -63,14 +66,3 @@ defineProps({
     <p v-else class="text-2xl font-bold">Happy birthday!</p>
   </DeckCard>
 </template>
-
-<style scoped>
-/* A warm light rising from the card's lower corner, over the church's colour:
-   amber, the colour the app keeps for things to notice, mixed thin enough
-   that the card is still the church's. */
-.birthday-glow {
-  background-image:
-    radial-gradient(80% 90% at 0% 100%, color-mix(in oklab, var(--color-amber-400, white) 38%, transparent), transparent 70%),
-    radial-gradient(70% 80% at 100% 0%, color-mix(in oklab, white 18%, transparent), transparent 60%);
-}
-</style>

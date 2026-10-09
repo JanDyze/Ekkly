@@ -5,6 +5,9 @@ import { CalendarDots, ClipboardCheck, KeyRound, ListChecks, MicrophoneStage } f
 import AppHeroDeck from '../components/appframe/AppHeroDeck.vue'
 import DeckCard from '../components/appframe/DeckCard.vue'
 import AppShortcut from '../components/appframe/AppShortcut.vue'
+import DeckFaces from '../components/appframe/DeckFaces.vue'
+import DeckChips from '../components/appframe/DeckChips.vue'
+import DeckWeek from '../components/appframe/DeckWeek.vue'
 import AppsDrawer from '../components/appframe/AppsDrawer.vue'
 import AppPeek from '../components/appframe/AppPeek.vue'
 import AppArt from '../components/common/AppArt.vue'
@@ -16,10 +19,12 @@ import { useAuth } from '../composables/useAuth'
 import { useAppSettings } from '../composables/useAppSettings'
 import { useToast } from '../composables/useToast'
 import { useToday } from '../composables/useToday'
+import { useHomeVerse } from '../composables/useHomeVerse'
 import { allowedGroups } from '../data/navigation'
 import { APPS } from '../../lib/apps'
-import { getDisplayName, getFullName } from '../utils/memberUtils'
-import { formatShortDate } from '../utils/lineupUtils'
+import { getDisplayName, getFullName, listPhrase } from '../utils/memberUtils'
+import { findRosterMember, formatShortDate } from '../utils/lineupUtils'
+import { peopleOnService } from '../data/scheduleRoles'
 
 // The home of all apps: where Ekkly opens, and where every app's back arrow
 // leads. Each app is a screen of its own now (src/apps/), with its own home
@@ -62,6 +67,7 @@ const { can, isAdmin, myMember } = usePermissions()
 const { displayName } = useAuth()
 const { church, logoUrl } = useAppSettings()
 const today = useToday()
+const { verse } = useHomeVerse()
 
 const plural = (n, one, many) => `${n.toLocaleString()} ${n === 1 ? one : many}`
 
@@ -83,6 +89,12 @@ const tileDate = (key) => {
   return { month: date.toLocaleDateString(undefined, { month: 'short' }), day: date.getDate() }
 }
 
+/** "Ana, Ben and 3 others": who a card is about, the first two by name. */
+const namesOf = (people) => {
+  const names = people.slice(0, 2).map(getDisplayName)
+  if (people.length > 2) names.push(plural(people.length - 2, 'other', 'others'))
+  return listPhrase(names)
+}
 const name = computed(() => getDisplayName(myMember.value) || displayName.value)
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -90,7 +102,15 @@ const greeting = computed(() => {
   return name.value ? `${part}, ${name.value}` : part
 })
 
+const memberOf = (id) => findRosterMember(today.people.members.value, id)
+const keyOf = (member) => member.firestoreId || member.id
+
 /* -------------------------------------------------------------- the deck */
+
+// Unlike an app's own deck, these cards each lead into a different app, so
+// each names where it goes (`dest`): the artwork of the app the tap opens —
+// the app's own, never a section's, so it matches the tile below — shown small
+// by the card's chevron.
 
 const cards = computed(() => {
   const list = []
@@ -99,6 +119,7 @@ const cards = computed(() => {
   // until it is done.
   if (isAdmin.value && today.claimsWaiting.value) {
     const n = today.claimsWaiting.value
+    const claimed = today.claims.value.map((claim) => memberOf(claim.memberId)).filter(Boolean)
     list.push({
       kind: 'plain',
       key: `claims:${n}`,
@@ -109,6 +130,9 @@ const cards = computed(() => {
       title: `${plural(n, 'account', 'accounts')} to link`,
       detail: 'Someone signed in and says a record on the roll is theirs.',
       to: '/accounts',
+      dest: 'accounts',
+      destLabel: 'Accounts',
+      faces: { members: claimed, empty: n - claimed.length, caption: claimed.length ? `For ${namesOf(claimed)}` : '' },
     })
   }
 
@@ -121,6 +145,8 @@ const cards = computed(() => {
       kicker: 'Birthday today',
       detail: getFullName(member),
       to: { name: 'MemberDetails', params: { id: member.id || member.firestoreId } },
+      dest: 'members',
+      destLabel: 'their record in People',
       member,
       name: getDisplayName(member),
       turning,
@@ -140,7 +166,15 @@ const cards = computed(() => {
       title: isToday ? "You're on today" : `You're on ${weekday(turn.date)}`,
       detail: turn.roles.map((role) => role.name).join(' · '),
       to: { name: 'SchedulesSunday', params: { date: turn.date } },
+      dest: 'lineups',
+      destLabel: 'that Sunday in Schedules',
       date: tileDate(turn.date),
+      // Who else is on with you.
+      faces: (() => {
+        const mine = myMember.value ? keyOf(myMember.value) : null
+        const others = peopleOnService(turn.sunday).map(memberOf).filter((member) => member && keyOf(member) !== mine)
+        return { members: others, empty: 0, caption: others.length ? `With ${namesOf(others)}` : '' }
+      })(),
     })
   }
 
@@ -150,15 +184,17 @@ const cards = computed(() => {
   if (late.length || due.length) {
     const tasks = late.length ? late : due
     list.push({
-      kind: 'plain',
+      kind: 'tasks',
       key: `tasks:${late.length ? 'late' : 'today'}:${tasks.length}`,
       tone: late.length ? 'warn' : 'plain',
       icon: ListChecks,
       dismissible: true,
       kicker: late.length ? 'Overdue' : 'Due today',
       title: `${plural(tasks.length, 'task', 'tasks')} of yours ${late.length ? 'overdue' : 'due today'}`,
-      detail: tasks.map((task) => task.title).slice(0, 2).join(' · '),
       to: '/tasks',
+      dest: 'tasks',
+      destLabel: 'Tasks',
+      tasks,
     })
   }
 
@@ -174,6 +210,12 @@ const cards = computed(() => {
       title: `${plural(n, 'gathering', 'gatherings')} with no attendance`,
       detail: 'They stay on the list until someone records or dismisses them.',
       to: { name: 'AttendanceOwed' },
+      dest: 'attendance',
+      destLabel: 'To record, in Attendance',
+      chips: today.unrecordedRows.value.map((row) => ({
+        key: String(row.occurrenceKey || row.id),
+        label: formatShortDate(row.date),
+      })),
     })
   }
 
@@ -190,7 +232,10 @@ const cards = computed(() => {
       title: on.length === 1 ? on[0].title || 'A gathering' : `${on.length} things on today`,
       detail: on.slice(0, 3).map((e) => [on.length > 1 ? e.title : '', timeLabel(e.time)].filter(Boolean).join(' ')).join(' · '),
       to: { name: 'Events', query: { date: today.today } },
+      dest: 'events',
+      destLabel: 'the day in Events',
       date: tileDate(today.today),
+      day: today.today,
     })
   } else if (today.nextEvent.value) {
     const next = today.nextEvent.value
@@ -204,12 +249,21 @@ const cards = computed(() => {
       title: next.title || 'A gathering',
       detail: [weekday(next.date), timeLabel(next.time)].filter(Boolean).join(' · '),
       to: { name: 'Events', query: { date: next.date } },
+      dest: 'events',
+      destLabel: 'the day in Events',
       date: tileDate(next.date),
+      day: next.date,
     })
   }
 
-  // The card that is always there: the day, and whose church this is.
+  // The card that is always there: the person greeted by name, the day, and
+  // whose church this is — with a short verse to start the day along its
+  // foot. The verse opens its chapter in the Bible, for whoever has the Bible
+  // app; until it has loaded, or where it cannot (offline, before the book
+  // was ever fetched), the foot is simply empty.
   const now = new Date()
+  const v = verse.value
+  const canRead = allApps.value.some((item) => item.path === '/bible')
   list.push({
     kind: 'day',
     key: 'day',
@@ -217,7 +271,10 @@ const cards = computed(() => {
     kicker: greeting.value,
     title: now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }),
     detail: church.value?.shortName || church.value?.fullName || '',
-    to: null,
+    to: v && canRead ? { name: 'Bible', params: { slug: v.slug, chapter: v.chapter } } : null,
+    dest: 'bible',
+    destLabel: 'the chapter in the Bible',
+    verse: v,
   })
 
   return list
@@ -285,6 +342,8 @@ const lineOf = (item) => {
             :title="card.title"
             :detail="card.detail"
             :to="card.to"
+            :dest="card.dest"
+            :dest-label="card.destLabel"
             :inset="card.dismissible"
           >
             <template #leading>
@@ -293,6 +352,29 @@ const lineOf = (item) => {
                 <span class="mt-0.5 text-xl font-bold tabular-nums">{{ card.date.day }}</span>
               </span>
             </template>
+            <DeckFaces v-if="card.faces" :tone="card.tone" v-bind="card.faces" />
+            <DeckWeek v-else-if="card.day" :days="today.week.value" :mark="card.day" />
+          </DeckCard>
+
+          <!-- Tasks you owe: the first of them, as a list to tick. -->
+          <DeckCard
+            v-else-if="card.kind === 'tasks'"
+            :tone="card.tone"
+            :icon="card.icon"
+            :kicker="card.kicker"
+            :title="card.title"
+            :to="card.to"
+            :dest="card.dest"
+            :dest-label="card.destLabel"
+            :inset="card.dismissible"
+          >
+            <ul class="flex flex-col gap-1.5">
+              <li v-for="task in card.tasks.slice(0, 2)" :key="task.id" class="flex min-w-0 items-center gap-2 text-sm">
+                <span class="size-4 shrink-0 rounded-full border-2 border-current opacity-35" aria-hidden="true" />
+                <span class="truncate">{{ task.title }}</span>
+              </li>
+            </ul>
+            <p v-if="card.tasks.length > 2" class="mt-1.5 truncate text-xs opacity-60">and {{ card.tasks.length - 2 }} more</p>
           </DeckCard>
 
           <!-- The day, and the church: always at the bottom of the deck. -->
@@ -302,20 +384,17 @@ const lineOf = (item) => {
             :kicker="card.kicker"
             :title="card.title"
             :detail="card.detail"
+            :to="card.to"
+            :dest="card.dest"
+            :dest-label="card.destLabel"
           >
             <template #art>
-              <!-- Light through an arched window, the outline of Ekkly's mark
-                   (BRAND.md: the window is the motif). -->
+              <!-- An arched window in outline, the shape of Ekkly's mark
+                   (BRAND.md: the window is the motif), drawn as lines on the
+                   colour rather than as light glowing through it. -->
               <svg class="absolute -bottom-10 right-5 h-60 w-36" viewBox="0 0 144 240" fill="none">
-                <defs>
-                  <linearGradient id="home-arch-light" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="white" stop-opacity="0.2" />
-                    <stop offset="0.75" stop-color="white" stop-opacity="0.03" />
-                    <stop offset="1" stop-color="white" stop-opacity="0" />
-                  </linearGradient>
-                </defs>
-                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" fill="url(#home-arch-light)" />
-                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" stroke="white" stroke-opacity="0.14" stroke-width="1.5" />
+                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" stroke="white" stroke-opacity="0.3" stroke-width="1.5" />
+                <path d="M20 72a52 52 0 0 1 104 0V240H20Z" stroke="white" stroke-opacity="0.15" stroke-width="1.5" />
               </svg>
             </template>
             <!-- The church's own logo, on white so any logo reads on any
@@ -325,6 +404,15 @@ const lineOf = (item) => {
                 <img :src="logoUrl" alt="" class="size-full object-contain" />
               </span>
             </template>
+            <!-- A verse for the day, small, under the day itself: three lines at
+                 most, and its reference under it. Three still fits the
+                 deck's shortest card (216px) beside a one-line date. -->
+            <figure v-if="card.verse" class="border-l-2 border-white/40 pl-3">
+              <blockquote class="line-clamp-3 text-sm leading-snug text-white/90">{{ card.verse.text }}</blockquote>
+              <figcaption class="mt-1 truncate text-xs font-medium text-white/70">
+                {{ card.verse.reference }} · {{ card.verse.version }}
+              </figcaption>
+            </figure>
           </DeckCard>
 
           <DeckCard
@@ -335,8 +423,13 @@ const lineOf = (item) => {
             :title="card.title"
             :detail="card.detail"
             :to="card.to"
+            :dest="card.dest"
+            :dest-label="card.destLabel"
             :inset="card.dismissible"
-          />
+          >
+            <DeckFaces v-if="card.faces" :tone="card.tone" v-bind="card.faces" />
+            <DeckChips v-else-if="card.chips" :tone="card.tone" :items="card.chips" />
+          </DeckCard>
         </template>
       </AppHeroDeck>
 

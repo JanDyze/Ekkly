@@ -262,13 +262,18 @@ const addApp = () => {
         class="fixed inset-0 z-100 flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center sm:p-4"
         @click.self="emit('close')"
       >
+        <!-- A fixed height, not a cap: sized to its content, the panel shrank
+             with every letter typed into the search and jumped back as it was
+             cleared, the search box sliding under the thumb as it moved. The
+             list scrolls inside it instead. Shorter on a desktop, where it
+             stands in the middle of a large screen. -->
         <div
           ref="panel"
           role="dialog"
           aria-modal="true"
           aria-labelledby="apps-drawer-title"
           tabindex="-1"
-          class="drawer-panel flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-gray-50 shadow-2xl sm:max-w-xl sm:rounded-3xl dark:bg-gray-900"
+          class="drawer-panel flex h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-gray-50 shadow-2xl sm:h-[min(92dvh,48rem)] sm:max-w-xl sm:rounded-3xl dark:bg-gray-900"
         >
           <div class="flex shrink-0 items-center justify-between gap-3 px-5 pb-2 pt-4">
             <div class="min-w-0">
@@ -320,7 +325,7 @@ const addApp = () => {
             <!-- 1. The spotlight: one app, shown off. -->
             <section
               v-if="spotlight && !searching"
-              class="drawer-spotlight relative isolate mt-2 overflow-hidden rounded-3xl p-5 text-white shadow-xl shadow-primary/25"
+              class="drawer-spotlight relative isolate mt-2 overflow-hidden rounded-3xl border border-b-4 border-black/15 p-5 text-white dark:border-black/40"
             >
               <button
                 type="button"
@@ -539,14 +544,11 @@ const addApp = () => {
   }
 }
 
-/* The spotlight: the church's colour with light falling across it, the same
-   ground as the cards at the top of each app's home. Deeper on a dark page,
-   where the accent token is its lighter shade. */
+/* The spotlight: the church's colour, flat, with the same deeper edge as the
+   cards at the top of each app's home. Deeper on a dark page, where the
+   accent token is its lighter shade. */
 .drawer-spotlight {
   background-color: var(--color-primary);
-  background-image:
-    radial-gradient(110% 130% at 100% 0%, color-mix(in oklab, white 24%, transparent), transparent 55%),
-    radial-gradient(90% 110% at 0% 100%, color-mix(in oklab, black 22%, transparent), transparent 60%);
 }
 
 :global(.dark) .drawer-spotlight {

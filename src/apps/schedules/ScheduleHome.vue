@@ -6,6 +6,7 @@ import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DateTile from '../../components/appframe/DateTile.vue'
 import AppShortcut from '../../components/appframe/AppShortcut.vue'
+import DeckFaces from '../../components/appframe/DeckFaces.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
 import { useScheduleOverview } from '../../composables/useScheduleOverview'
@@ -16,7 +17,7 @@ import { usePermissions } from '../../composables/usePermissions'
 import { rolesOfTeam } from '../../data/scheduleTeams'
 import { findRosterMember, formatMonthLabel, formatServiceDate, formatShortDate, parseIso, todayIso } from '../../utils/lineupUtils'
 import { SONG_LEADER_ROLE, assignmentsOf, peopleOnService } from '../../data/scheduleRoles'
-import { getDisplayName } from '../../utils/memberUtils'
+import { getDisplayName, listPhrase } from '../../utils/memberUtils'
 
 // The Schedules app's home, built the way People's is (src/apps/people/
 // PeopleHome.vue). One screen, and two things on it:
@@ -53,6 +54,7 @@ const {
   comingSundays,
   thisMonth,
   thisMonthSundays,
+  sundaysOf,
 } = useScheduleOverview()
 const { members } = useMembers()
 const { sermonOn } = useSermons()
@@ -62,6 +64,17 @@ const { can } = usePermissions()
 const today = todayIso()
 const memberOf = (id) => findRosterMember(members.value, id)
 const keyOf = (member) => member.firestoreId || member.id
+const plural = (n, one, many) => `${n.toLocaleString()} ${n === 1 ? one : many}`
+
+/** "Ana, Ben and 3 others": who a card is about, the first two by name. */
+const namesOf = (people) => {
+  const names = people.slice(0, 2).map(getDisplayName)
+  if (people.length > 2) names.push(plural(people.length - 2, 'other', 'others'))
+  return listPhrase(names)
+}
+
+/** Everyone serving on a Sunday, as roll records. */
+const servingOn = (sunday) => (sunday ? peopleOnService(sunday).map(memberOf).filter(Boolean) : [])
 const sundayLink = (date, edit) => ({ name: 'SchedulesSunday', params: { date }, ...(edit ? { query: { edit } } : {}) })
 
 const daysUntil = (iso) => {
@@ -143,11 +156,25 @@ const sundayCard = computed(() => {
 
 const coming = computed(() => comingSundays.value[0] || null)
 
-const newcomersWaiting = computed(() =>
+const newcomers = computed(() =>
   can('consolidation.view')
-    ? members.value.filter((m) => m.isMember === false && followUpOf(m.firestoreId || m.id).step === 'new').length
-    : 0
+    ? members.value.filter((m) => m.isMember === false && followUpOf(m.firestoreId || m.id).step === 'new')
+    : []
 )
+const newcomersWaiting = computed(() => newcomers.value.length)
+
+/**
+ * A team's part of the coming Sunday as a card's faces: whoever is on its
+ * roles, and the one who leads it named, or an empty seat where nobody is.
+ */
+const teamFaces = (key, lead, doing) => {
+  const team = teamOn(key)
+  return {
+    members: team,
+    empty: team.length ? 0 : 1,
+    caption: lead ? `${getDisplayName(lead)} ${doing}` : team.length ? '' : `Nobody ${doing} yet`,
+  }
+}
 
 const cards = computed(() => {
   const list = []
@@ -156,7 +183,7 @@ const cards = computed(() => {
     // A month in draft is a month nobody else can see, so it leads.
     drafts.value.forEach((month) =>
       list.push({
-        kind: 'plain',
+        kind: 'draft',
         key: `draft:${month}`,
         tone: 'warn',
         icon: BellRinging,
@@ -165,6 +192,7 @@ const cards = computed(() => {
         title: `${formatMonthLabel(month).split(' ')[0]} is still a draft`,
         detail: 'Nobody else can see it until it is published.',
         to: { name: 'SchedulesCalendar', params: { month } },
+        sundays: sundaysOf(month),
       })
     )
 
@@ -180,6 +208,8 @@ const cards = computed(() => {
         detail: 'Nobody is on it yet.',
         to: sundayLink(nextUnplanned.value.date, '1'),
         date: nextUnplanned.value.date,
+        // Every role, as a seat nobody is in yet.
+        faces: { members: [], empty: roles.value.length, caption: `${plural(roles.value.length, 'role', 'roles')} to fill` },
       })
     }
 
@@ -197,6 +227,8 @@ const cards = computed(() => {
         detail: gap.empty.map((role) => role.name).join(' · '),
         to: sundayLink(gap.date),
         date: gap.date,
+        // Who is on so far, and a seat for each role still open.
+        faces: { members: servingOn(gap.sunday), empty: gap.empty.length, caption: `${servingOn(gap.sunday).length} on so far` },
       })
     }
   } else if (coming.value) {
@@ -214,6 +246,7 @@ const cards = computed(() => {
         detail: 'The band and the screen both wait on them.',
         to: sundayLink(date, 'worship'),
         date,
+        faces: teamFaces('worship', leader.value, 'leading'),
       })
     }
     if (canPlanTeam('preaching') && !sermonOn(date)) {
@@ -228,12 +261,14 @@ const cards = computed(() => {
         detail: 'Its passages and slides go up on the screen on their own.',
         to: sundayLink(date, 'preaching'),
         date,
+        faces: teamFaces('preaching', preacher.value, 'preaching'),
       })
     }
   }
 
   if (can('consolidation.manage') && newcomersWaiting.value) {
     const n = newcomersWaiting.value
+    const people = newcomers.value
     list.push({
       kind: 'plain',
       key: `newcomers:${n}`,
@@ -244,6 +279,7 @@ const cards = computed(() => {
       title: `${n} ${n === 1 ? 'newcomer' : 'newcomers'} to follow up`,
       detail: 'A call in the week is what brings someone back.',
       to: { name: 'SchedulesWelcome' },
+      faces: { members: people, empty: 0, caption: namesOf(people) },
     })
   }
 
@@ -261,6 +297,11 @@ const cards = computed(() => {
       detail: myRolesOn(mine).map((role) => role.name).join(' · '),
       to: sundayLink(mine.date),
       date: mine.date,
+      // Who else is on with you that Sunday.
+      faces: (() => {
+        const others = servingOn(mine).filter((member) => !myMember.value || keyOf(member) !== keyOf(myMember.value))
+        return { members: others, empty: 0, caption: others.length ? `With ${namesOf(others)}` : '' }
+      })(),
     })
   }
 
@@ -366,6 +407,37 @@ const doors = computed(() => {
             <template #leading>
               <DateTile :date="card.date" class="size-14! rounded-2xl!" />
             </template>
+            <DeckFaces v-if="card.faces" :tone="card.tone" v-bind="card.faces" />
+          </DeckCard>
+
+          <!-- A month in draft: its Sundays, the planned ones filled in. -->
+          <DeckCard
+            v-else-if="card.kind === 'draft'"
+            :tone="card.tone"
+            :icon="card.icon"
+            :kicker="card.kicker"
+            :title="card.title"
+            :detail="card.detail"
+            :to="card.to"
+            :inset="card.dismissible"
+          >
+            <div class="flex gap-1.5" aria-hidden="true">
+              <span
+                v-for="sunday in card.sundays"
+                :key="sunday.date"
+                :class="[
+                  'flex h-9 flex-1 items-center justify-center rounded-xl text-sm font-bold tabular-nums',
+                  sunday.planned
+                    ? 'bg-amber-500 text-white dark:bg-amber-500/80'
+                    : 'border-2 border-dashed border-amber-300 text-amber-700 dark:border-gray-600 dark:text-gray-400',
+                ]"
+              >
+                {{ parseIso(sunday.date)?.getDate() }}
+              </span>
+            </div>
+            <p class="mt-1.5 text-xs text-amber-800 dark:text-gray-400">
+              {{ card.sundays.filter((s) => s.planned).length }} of {{ card.sundays.length }} Sundays planned
+            </p>
           </DeckCard>
 
           <!-- The next Sunday: always at the bottom of the deck, with
@@ -379,18 +451,12 @@ const doors = computed(() => {
             :to="card.to"
           >
             <template #art>
-              <!-- Light through an arched window, the outline of Ekkly's mark
-                   (BRAND.md: the window is the motif). -->
+              <!-- An arched window in outline, the shape of Ekkly's mark
+                   (BRAND.md: the window is the motif), drawn as lines on the
+                   colour rather than as light glowing through it. -->
               <svg class="absolute -bottom-10 right-5 h-60 w-36" viewBox="0 0 144 240" fill="none">
-                <defs>
-                  <linearGradient id="schedules-arch-light" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="white" stop-opacity="0.2" />
-                    <stop offset="0.75" stop-color="white" stop-opacity="0.03" />
-                    <stop offset="1" stop-color="white" stop-opacity="0" />
-                  </linearGradient>
-                </defs>
-                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" fill="url(#schedules-arch-light)" />
-                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" stroke="white" stroke-opacity="0.14" stroke-width="1.5" />
+                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" stroke="white" stroke-opacity="0.3" stroke-width="1.5" />
+                <path d="M20 72a52 52 0 0 1 104 0V240H20Z" stroke="white" stroke-opacity="0.15" stroke-width="1.5" />
               </svg>
             </template>
             <!-- The Schedules artwork, on white because its orange and blue
@@ -432,7 +498,9 @@ const doors = computed(() => {
             :detail="card.detail"
             :to="card.to"
             :inset="card.dismissible"
-          />
+          >
+            <DeckFaces v-if="card.faces" :tone="card.tone" v-bind="card.faces" />
+          </DeckCard>
         </template>
       </AppHeroDeck>
 

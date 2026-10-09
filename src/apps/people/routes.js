@@ -67,6 +67,13 @@ export const peopleRoutes = [
         component: () => import('./PeopleMissing.vue'),
       },
       {
+        // Many people at once, typed, pasted or imported: for whoever may add them.
+        path: 'add',
+        name: 'PeopleAdd',
+        meta: { depth: 1, capability: 'members.manage' },
+        component: () => import('./PeopleAdd.vue'),
+      },
+      {
         path: ':id',
         name: 'MemberDetails',
         meta: { depth: 2 },

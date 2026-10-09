@@ -20,8 +20,10 @@ export function useBirthdayEvents(members, firestoreEvents = { value: [] }) {
       if (!member.dateOfBirth) return;
 
       // Parse date parts directly to avoid timezone issues
+      // A year of 0000 is a birthday whose year nobody knows (memberUtils'
+      // YEARLESS): still a birthday, with no age to put on it.
       const [year, month, day] = member.dateOfBirth.split('-').map(Number);
-      if (!year || !month || !day) return;
+      if (!month || !day) return;
 
       const dateString = `${currentYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const virtualId = `birthday-${member.firestoreId || member.id}-${currentYear}`;
@@ -31,7 +33,7 @@ export function useBirthdayEvents(members, firestoreEvents = { value: [] }) {
       if (hasOverride) return;
 
       // Calculate age they'll turn this year
-      const turningAge = currentYear - year;
+      const turningAge = year ? currentYear - year : null;
 
       const fullName = getFullName(member);
       const displayName = member.nickname || member.firstName;
@@ -44,7 +46,7 @@ export function useBirthdayEvents(members, firestoreEvents = { value: [] }) {
         date: dateString,
         time: '06:00',
         location: '',
-        description: `${fullName} turns ${turningAge} years old!`,
+        description: turningAge ? `${fullName} turns ${turningAge} years old!` : `It's ${fullName}'s birthday!`,
         attendees: 0,
         icon: 'Cake',
         // Birthday-specific fields

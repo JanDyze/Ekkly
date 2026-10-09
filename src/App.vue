@@ -90,8 +90,8 @@ onUnmounted(() => {
   <div id="app">
     <router-view />
 
-    <!-- Between one page and the next: the church's mark over the gap, while
-         the view being navigated to fetches its chunk. -->
+    <!-- Between one page and the next: a thin bar along the top while the
+         view being navigated to fetches its chunk. -->
     <RouteTransition />
 
     <!-- Pull down at the top of any page: the church's logo, not Chrome's bar -->

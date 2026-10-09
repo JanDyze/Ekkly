@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { Plus, Download, Search, UserPlus, ArrowUpDown, SquaresFour, List } from "../../icons";
+import { Plus, Download, Search, UserPlus, UsersThree, ArrowUpDown, SquaresFour, List } from "../../icons";
 import { useFocusTrap } from "../../composables/useFocusTrap";
 import { usePermissions } from "../../composables/usePermissions";
 
@@ -12,7 +12,7 @@ const props = defineProps({
   view: { type: String, default: null },
 });
 
-const emit = defineEmits(["add", "export", "search", "sort", "toggle-view"]);
+const emit = defineEmits(["add", "add-many", "export", "search", "sort", "toggle-view"]);
 
 const open = ref(false);
 
@@ -38,6 +38,8 @@ const actions = computed(() => {
   }
   if (canAdd.value) {
     list.push({ key: "add", label: "Add person", icon: UserPlus, event: "add" });
+    // A whole roll at once, typed, pasted or imported (PeopleAdd.vue).
+    list.push({ key: "add-many", label: "Add several people", icon: UsersThree, event: "add-many" });
   }
   list.push({ key: "export", label: "Export", icon: Download, event: "export" });
   return list;

@@ -20,9 +20,9 @@ import { eventTypeLabel } from '../../utils/eventColors'
 //
 // Some will never be counted, and that is a fact rather than a failing: the
 // service happened but nobody had the list, the prayer meeting was four
-// people in a kitchen. Swiping a row left says so (SwipeRow) — it is an
-// occasional thing, so it waits behind the row rather than sitting on every
-// one as a button — and the gathering stops being asked for: here, on the
+// people in a kitchen. The quiet eye at a row's end says so, or swiping the
+// row left (SwipeRow) — it is an occasional thing, so it is a grey icon
+// rather than a button on every row — and the gathering stops being asked for: here, on the
 // home, on the home of all apps. It is not
 // calling the gathering off: it happened, and the calendar still says so.
 // Called off is a calendar fact, marked from Gatherings by holding a row.
@@ -93,7 +93,7 @@ const SHOWN = 10
         v-if="awaiting.length"
         title="Oldest first"
         :count="awaiting.length"
-        note="Swipe one left to leave it out: it happened, and nobody will count it. To say it never happened, hold its row in Gatherings."
+        note="Tap the eye on one (or swipe it left) to leave it out: it happened, and nobody will count it. To say it never happened, hold its row in Gatherings."
       >
         <SwipeRow
           v-for="row in awaiting"
@@ -111,7 +111,7 @@ const SHOWN = 10
             class="flex min-h-14 items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50 active:bg-gray-100 dark:hover:bg-gray-700/40 dark:active:bg-gray-700/60"
           >
             <DateTile :date="row.date" past />
-            <span class="min-w-0 flex-1 pointer-fine:pr-10">
+            <span class="min-w-0 flex-1 pr-10">
               <span class="block truncate text-[15px] font-medium leading-snug text-gray-900 dark:text-white">
                 {{ row.eventTitle || 'Untitled' }}
               </span>

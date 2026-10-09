@@ -216,12 +216,6 @@ body {
   }
 }
 
-@keyframes vt-fade-out {
-  to {
-    opacity: 0;
-  }
-}
-
 :root[data-nav]::view-transition-old(root),
 :root[data-nav]::view-transition-new(root),
 :root[data-nav]::view-transition-group(member-avatar),
@@ -242,11 +236,12 @@ body {
 }
 
 /* A desktop keeps its sidebar where it is, so sliding the whole window would
-   be too much: the new screen rises a touch as the old one fades. */
+   be too much: the new screen rises a touch over the old one, which holds
+   still beneath it. Fading the old one out as well left a moment where both
+   were half there and the background showed through them. */
 @media (width >= 64rem) {
   :root[data-nav]::view-transition-old(root) {
-    animation-name: vt-fade-out;
-    animation-duration: 0.2s;
+    animation: none;
   }
   :root[data-nav]::view-transition-new(root) {
     animation-name: vt-lift-in;
@@ -637,13 +632,32 @@ body {
   animation: app-rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-/* Moving between an app's screens: forward slides the new one in from the
-   right, back from the left, each with a short fade. The whole screen moves,
-   because the screens share no chrome to hold still. */
+/* Changing page (router/viewTransitions.js). The screen being left holds
+   still and fully opaque underneath, and the one arriving comes in over it,
+   so there is never a frame where the screen is blank or dimmed between the
+   two — the old way faded one out before the other had come in, and the gap
+   between them read as an overlay. The browser blends the pair with
+   plus-lighter by default, which lightens wherever the two differ; normal
+   blending keeps the colours true. No blur either: blurring a whole-screen
+   snapshot is expensive enough to drop frames on a phone. */
+:root[data-nav]::view-transition-old(root),
+:root[data-nav]::view-transition-new(root) {
+  mix-blend-mode: normal;
+}
+
+:root[data-nav='app-forward']::view-transition-old(root),
+:root[data-nav='app-back']::view-transition-old(root),
+:root[data-nav='page']::view-transition-old(root) {
+  animation: none;
+}
+
+/* Within an app, and into or out of one: forward comes in from the right,
+   back from the left. The fade is quicker than the slide, so the new screen
+   is solid while it is still settling and the two are seen together only
+   briefly. */
 @keyframes app-fade {
   from {
     opacity: 0;
-    filter: blur(2px);
   }
 }
 
@@ -651,39 +665,34 @@ body {
   from {
     translate: var(--app-slide) 0;
   }
-  to {
-    translate: 0 0;
-  }
-}
-
-:root[data-nav='app-forward']::view-transition-old(root),
-:root[data-nav='app-back']::view-transition-old(root) {
-  animation:
-    140ms ease-in both reverse app-fade,
-    360ms cubic-bezier(0.4, 0, 0.2, 1) both reverse app-slide;
 }
 
 :root[data-nav='app-forward']::view-transition-new(root),
 :root[data-nav='app-back']::view-transition-new(root) {
   animation:
-    200ms ease-out 120ms both app-fade,
-    360ms cubic-bezier(0.4, 0, 0.2, 1) both app-slide;
-}
-
-:root[data-nav='app-forward']::view-transition-old(root) {
-  --app-slide: -48px;
+    160ms ease-out both app-fade,
+    320ms cubic-bezier(0.2, 0, 0, 1) both app-slide;
 }
 
 :root[data-nav='app-forward']::view-transition-new(root) {
-  --app-slide: 48px;
-}
-
-:root[data-nav='app-back']::view-transition-old(root) {
-  --app-slide: 48px;
+  --app-slide: 32px;
 }
 
 :root[data-nav='app-back']::view-transition-new(root) {
-  --app-slide: -48px;
+  --app-slide: -32px;
+}
+
+/* Any other change of page has no direction to show, so it settles: a short
+   rise and fade, over before the eye has to follow it. */
+@keyframes page-settle {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+:root[data-nav='page']::view-transition-new(root) {
+  animation: page-settle 220ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

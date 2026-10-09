@@ -15,12 +15,15 @@ import { useSounds } from '../../composables/useSounds'
 //
 // For an action that is occasional and a little final — leaving a gathering
 // out of the count — and so should not sit on every row as a button, where it
-// is the loudest thing on the screen and the reason nobody reads the list. On
-// a screen with a mouse and no swipe, the same action shows as a small icon
-// at the row's end while the pointer is over it.
+// is the loudest thing on the screen and the reason nobody reads the list.
+// A swipe cannot be seen, though, and most of this is done on a phone, where
+// nothing hovers: so the same action also sits at the row's end as a quiet
+// grey icon, always there and big enough for a thumb. The swipe is the
+// shortcut; the icon is how anyone finds it.
 //
-// The default slot is the row itself (a link, usually); the `icon` slot is
-// the action's picture, for the button behind the row and the hover icon.
+// The default slot is the row itself (a link, usually), which should leave
+// room at its end for the icon (`pr-10`); the `icon` slot is the action's
+// picture, for the button behind the row and the one on it.
 
 const props = defineProps({
   // What the action is called, under its picture and to a screen reader.
@@ -159,13 +162,14 @@ const style = computed(() => ({
     >
       <slot />
 
-      <!-- With a mouse there is no swipe: the action is a small icon that
-           shows at the row's end while the pointer is over it. -->
+      <!-- The action in plain sight, for a tap or a click: the swipe is not
+           something anyone can see is there. -->
       <button
         type="button"
         :title="label"
         :aria-label="label"
-        class="absolute right-11 top-1/2 hidden size-8 -translate-y-1/2 items-center justify-center rounded-lg text-gray-400 opacity-0 transition hover:bg-gray-100 hover:text-amber-600 focus-visible:opacity-100 group-hover/swipe:opacity-100 pointer-fine:flex dark:hover:bg-gray-700 dark:hover:text-amber-400"
+        :disabled="busy"
+        class="absolute right-10 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-xl text-gray-400 transition-colors hover:bg-gray-100 hover:text-amber-600 active:bg-amber-50 active:text-amber-600 disabled:opacity-50 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-amber-400 dark:active:bg-amber-500/10"
         @click.stop.prevent="act"
       >
         <slot name="icon" />

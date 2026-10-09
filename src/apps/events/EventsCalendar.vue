@@ -51,7 +51,7 @@ const { birthdayEvents } = useBirthdayEvents(members, firestoreEvents)
 
 // Recurring events, expanded from the schedules configured in Settings.
 // firestoreEvents is passed so per-date overrides win; members sets attendee count.
-const { recurringEvents } = useRecurringEvents(firestoreEvents, members)
+const { recurringEvents, schedules } = useRecurringEvents(firestoreEvents, members)
 
 // Merge Firestore events with birthday events and recurring events
 const events = computed(() => {
@@ -331,6 +331,17 @@ const handleDayClick = (day) => {
   showDayEvents.value = true
 }
 
+// Stepping to another day from inside the day view: the week strip, its
+// arrows, "next" on an empty day. The panel stays open and only the day
+// changes; the grid beside it on a desktop follows into the day's month.
+const handleSelectDay = (date) => {
+  selectedDay.value = date
+  selectedDate.value = formatDateString(date)
+  if (date.getFullYear() !== currentDate.value.getFullYear() || date.getMonth() !== currentDate.value.getMonth()) {
+    currentDate.value = new Date(date.getFullYear(), date.getMonth(), 1)
+  }
+}
+
 const handleSetDate = (date) => {
   currentDate.value = date
 }
@@ -599,7 +610,10 @@ const subtitle = computed(() => {
       <div
         :class="[
           'flex-1 overflow-hidden transition-all duration-300 ease-out',
-          (showDayEvents || showMonthEvents) ? 'hidden lg:block' : 'block'
+          // Coming back from a day or the month's list, the calendar settles
+          // in rather than snapping: the class restarts its animation each
+          // time the grid is shown again.
+          (showDayEvents || showMonthEvents) ? 'hidden lg:block' : 'block calendar-return'
         ]"
       >
         <CalendarView
@@ -609,6 +623,7 @@ const subtitle = computed(() => {
           :selected-date="selectedDate"
           :loading="loading"
           :events="visibleEvents"
+          :schedules="schedules"
           :calendar-scroll-ref="calendarScrollRef"
           @navigate-month="navigateMonth"
           @day-click="handleDayClick"
@@ -627,6 +642,10 @@ const subtitle = computed(() => {
         :formatted-selected-day="formattedSelectedDay"
         :day-events="selectedDayEvents"
         :holiday="selectedDayHoliday"
+        :events="events"
+        :members="members"
+        :schedules="schedules"
+        @select-day="handleSelectDay"
         @update:show="showDayEvents = $event"
         @event-click="openEventDetails"
         @add-event="handleAddEventFromDay"
@@ -710,3 +729,27 @@ const subtitle = computed(() => {
   </div>
   </AppScreen>
 </template>
+
+<style scoped>
+/* The grid returning from a day: in from the left, the way back goes. */
+@keyframes calendar-return {
+  from {
+    opacity: 0;
+    translate: -20px 0;
+  }
+}
+.calendar-return {
+  animation: calendar-return 300ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+@media (min-width: 1024px) {
+  /* Beside the panel on a desktop it never left, so it does not arrive. */
+  .calendar-return {
+    animation: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .calendar-return {
+    animation: none;
+  }
+}
+</style>

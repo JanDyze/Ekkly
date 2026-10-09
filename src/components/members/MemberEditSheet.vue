@@ -12,7 +12,7 @@
 // as soon as there is something to save: fixing a phone number should not
 // mean walking through three other screens to reach the button.
 import { computed, ref, watch } from 'vue'
-import { Camera, Check, ChevronLeft, ChevronRight, Trash2, X } from '../../icons'
+import { Camera, Check, ChevronLeft, ChevronRight, FlowerTulip, GenderFemale, GenderMale, Heart, HeartBreak, Trash2, User, X } from '../../icons'
 import { useFocusTrap } from '../../composables/useFocusTrap'
 import { useSwipePage } from '../../composables/useSwipePage'
 import { useToast } from '../../composables/useToast'
@@ -23,12 +23,17 @@ import InstrumentIcon from '../schedules/InstrumentIcon.vue'
 import { uploadImage } from '../../api/blobService'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import MemberAvatar from './MemberAvatar.vue'
+import BirthdayInput from './BirthdayInput.vue'
+import AddressPicker from './AddressPicker.vue'
 import ImageCropper from './ImageCropper.vue'
 import { FIRST_TIMER_TAG } from '../../composables/useMemberForm'
 import {
   calculateAgeFromDate,
   CIVIL_STATUS_OPTIONS,
+  OCCUPATION_OPTIONS,
   getFullName,
+  getSexIconColor,
+  isYearless,
 } from '../../utils/memberUtils'
 
 const props = defineProps({
@@ -52,7 +57,7 @@ const isAdd = computed(() => props.mode === 'add')
 const STEPS = [
   { key: 'name', label: 'Name', title: 'What is their name?', fields: ['image', 'firstName', 'lastName', 'nickname'] },
   { key: 'personal', label: 'Personal', title: 'A little about them', fields: ['dateOfBirth', 'sex', 'civilStatus', 'occupation'] },
-  { key: 'contact', label: 'Contact', title: 'How to reach them', fields: ['contactNumber', 'email', 'address'] },
+  { key: 'contact', label: 'Contact', title: 'How to reach them', fields: ['contactNumber', 'email', 'address', 'addressParts'] },
   { key: 'church', label: 'Church', title: 'Their place in the church', fields: ['isMember', 'ministries', 'instruments', 'tags'] },
 ]
 
@@ -78,6 +83,8 @@ const snapshot = (member) => {
     if (LIST_FIELDS.includes(key)) out[key] = Array.isArray(value) ? [...value] : []
     else if (key === 'isMember') out[key] = !!value
     else if (key === 'image') out[key] = value || null
+    // The places an address was picked from (AddressPicker): an object, or none.
+    else if (key === 'addressParts') out[key] = value || null
     else out[key] = value ?? ''
   })
   return out
@@ -101,7 +108,7 @@ watch(
 )
 
 const same = (a, b) =>
-  Array.isArray(a) || Array.isArray(b)
+  Array.isArray(a) || Array.isArray(b) || (a && typeof a === 'object') || (b && typeof b === 'object')
     ? JSON.stringify(a || []) === JSON.stringify(b || [])
     : String(a ?? '').trim() === String(b ?? '').trim()
 
@@ -259,7 +266,23 @@ const playsInBand = computed(
     (draft.value.ministries || []).some((m) => bandMinistries.value.includes(String(m).toLowerCase()))
 )
 
-const sexOptions = ['Male', 'Female']
+// Each answer with a picture, so the choice is seen before it is read.
+const sexOptions = [
+  { value: 'Male', icon: GenderMale },
+  { value: 'Female', icon: GenderFemale },
+]
+const CIVIL_ICONS = { Single: User, Married: Heart, Widowed: FlowerTulip, Separated: HeartBreak }
+
+/** A tile that is one of a few answers: picture over word, the chosen one in the church's colour. */
+const tile = (on) => [
+  'flex flex-col items-center justify-center gap-1 rounded-xl border py-2.5 text-sm font-medium transition-colors',
+  on
+    ? 'border-primary bg-primary/10 text-primary dark:border-primary-light dark:bg-primary-light/15 dark:text-primary-light'
+    : 'border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700',
+]
+
+// The occupation is a preset when it is one, and typed only when it is not.
+const occupationIsPreset = computed(() => OCCUPATION_OPTIONS.includes(draft.value.occupation))
 
 const onEnter = (event) => {
   // Enter moves on, the way a phone keyboard's "next" key suggests it will.
@@ -419,7 +442,7 @@ const chip = (on) => [
                       enterkeyhint="next"
                       autocomplete="off"
                       autocapitalize="words"
-                      placeholder="Maria"
+                      placeholder="Juan"
                       :class="[input, nameError && nameMissing === 'first' ? 'border-red-400 dark:border-red-500' : '']"
                     />
                     <p v-if="nameError && nameMissing === 'first'" class="mt-1 text-xs text-red-600 dark:text-red-400">
@@ -438,7 +461,7 @@ const chip = (on) => [
                       enterkeyhint="next"
                       autocomplete="off"
                       autocapitalize="words"
-                      placeholder="Santos"
+                      placeholder="Bautista"
                       :class="[input, nameError && nameMissing === 'last' ? 'border-red-400 dark:border-red-500' : '']"
                     />
                     <p v-if="nameError && nameMissing === 'last'" class="mt-1 text-xs text-red-600 dark:text-red-400">
@@ -453,7 +476,7 @@ const chip = (on) => [
                       @keydown.enter="onEnter"
                       enterkeyhint="next"
                       autocomplete="off"
-                      placeholder="Ria"
+                      placeholder="Jun"
                       :class="input"
                     />
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">What people call them at church.</p>
@@ -463,19 +486,14 @@ const chip = (on) => [
                 <!-- Personal -->
                 <template v-else-if="STEPS[step].key === 'personal'">
                   <div>
-                    <label for="me-dob" :class="label">Birthday</label>
-                    <!-- color-scheme tells the browser the field is dark, so it
-                         draws its own calendar icon and picker to match rather
-                         than black on black. -->
-                    <input
-                      id="me-dob"
-                      v-model="draft.dateOfBirth"
-                      type="date"
-                      :class="[input, 'dark:scheme-dark']"
-                    />
-                    <p v-if="age !== undefined" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      {{ age }} years old
-                    </p>
+                    <label for="me-dob" :class="label">
+                      Birthday
+                      <span v-if="age !== undefined" class="font-normal text-gray-500 dark:text-gray-400">· {{ age }} years old</span>
+                      <span v-else-if="isYearless(draft.dateOfBirth)" class="font-normal text-gray-500 dark:text-gray-400">· age not known</span>
+                    </label>
+                    <!-- color-scheme tells the browser the lists are dark, so
+                         their own menus match rather than black on black. -->
+                    <BirthdayInput id="me-dob" v-model="draft.dateOfBirth" :field-class="[input, 'dark:scheme-dark']" />
                   </div>
 
                   <fieldset>
@@ -483,46 +501,60 @@ const chip = (on) => [
                     <div class="grid grid-cols-2 gap-2">
                       <button
                         v-for="opt in sexOptions"
-                        :key="opt"
+                        :key="opt.value"
                         type="button"
-                        @click="draft.sex = draft.sex === opt ? '' : opt"
-                        :aria-pressed="draft.sex === opt"
-                        :class="[
-                          'h-11 rounded-lg border text-sm font-medium transition-colors',
-                          draft.sex === opt
-                            ? 'border-primary bg-primary/10 text-primary dark:border-primary-light dark:bg-primary-light/15 dark:text-primary-light'
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700',
-                        ]"
+                        @click="draft.sex = draft.sex === opt.value ? '' : opt.value"
+                        :aria-pressed="draft.sex === opt.value"
+                        :class="[tile(draft.sex === opt.value), 'flex-row! gap-2! py-3!']"
                       >
-                        {{ opt }}
+                        <!-- The sign in its own colour, the one the record
+                             shows beside the name. -->
+                        <component :is="opt.icon" :class="['size-5', getSexIconColor(opt.value)]" />
+                        {{ opt.value }}
                       </button>
                     </div>
                   </fieldset>
 
                   <fieldset>
                     <legend :class="label">Civil status</legend>
-                    <div class="flex flex-wrap gap-2">
+                    <!-- Four answers in one row, each a picture and a word: one
+                         tap, and the same tap again to take it back. -->
+                    <div class="grid grid-cols-4 gap-2">
                       <button
                         v-for="opt in CIVIL_STATUS_OPTIONS"
                         :key="opt.value"
                         type="button"
                         @click="draft.civilStatus = draft.civilStatus === opt.value ? '' : opt.value"
                         :aria-pressed="draft.civilStatus === opt.value"
-                        :class="chip(draft.civilStatus === opt.value)"
+                        :class="tile(draft.civilStatus === opt.value)"
                       >
-                        {{ opt.label }}
+                        <component :is="CIVIL_ICONS[opt.value]" class="size-5" />
+                        <span class="text-xs">{{ opt.label }}</span>
                       </button>
                     </div>
                   </fieldset>
 
                   <div>
                     <label for="me-job" :class="label">Occupation</label>
+                    <div class="mb-2 flex flex-wrap gap-1.5">
+                      <button
+                        v-for="opt in OCCUPATION_OPTIONS"
+                        :key="opt"
+                        type="button"
+                        @click="draft.occupation = draft.occupation === opt ? '' : opt"
+                        :aria-pressed="draft.occupation === opt"
+                        :class="chip(draft.occupation === opt)"
+                      >
+                        {{ opt }}
+                      </button>
+                    </div>
                     <input
                       id="me-job"
-                      v-model="draft.occupation"
+                      :value="occupationIsPreset ? '' : draft.occupation"
+                      @input="draft.occupation = $event.target.value"
                       @keydown.enter="onEnter"
                       enterkeyhint="next"
-                      placeholder="Teacher"
+                      placeholder="Something else? Type it here"
                       :class="input"
                     />
                   </div>
@@ -555,19 +587,18 @@ const chip = (on) => [
                       enterkeyhint="next"
                       autocomplete="off"
                       autocapitalize="off"
-                      placeholder="maria@example.com"
+                      placeholder="juan@example.com"
                       :class="input"
                     />
                   </div>
                   <div>
-                    <label for="me-address" :class="label">Address</label>
-                    <textarea
-                      id="me-address"
+                    <p :class="label">Address</p>
+                    <AddressPicker
                       v-model="draft.address"
-                      rows="3"
-                      placeholder="12 Mabini St, Barangay San Roque"
-                      :class="[input, 'resize-none']"
-                    ></textarea>
+                      v-model:parts="draft.addressParts"
+                      :field-class="[input, 'dark:scheme-dark']"
+                      label-class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400"
+                    />
                   </div>
                 </template>
 
