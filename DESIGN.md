@@ -38,10 +38,13 @@ CHANGELOG.md.
 - **Every screen:** the top bar, and on a desktop the people rail on the
   right. There is no sidebar: the home of all apps (`/home`,
   `src/views/Apps.vue`, `meta.root`) is the way between apps, and the top
-  bar's mark is a back arrow to it from every other screen. On a phone, a
-  bottom bar is there for whoever turns it on in Preferences: Home, the first
-  three apps on their home in the same order, and More. It sits at the foot
-  of the column rather than floating, so pages end above it.
+  bar's mark is a back arrow to it from every other screen. On a phone, the
+  bottom bar is there for whoever turns it on in Preferences: a floating
+  island with the first four apps on their home, two either side of Ekkly's
+  round mark, which opens every app. The column leaves room under the page
+  for it, so nothing ends up behind it. The top bar's magnifying glass (and Ctrl+K)
+  opens one search over everything (`SearchSheet`, `useGlobalSearch`): words
+  first, meaning too once the person lets the small model onto their device.
 - **The home of all apps** leads with a Today deck (`AppHeroDeck`, fed by
   `useToday`) drawn from every app, then the five apps the person keeps there
   drawn by `HomeAppCards` (`src/components/home/`) in one of six styles —
@@ -56,7 +59,12 @@ CHANGELOG.md.
   under the apps the church on its hill, always whole, its window Ekkly's own
   mark (lit and glowing at night), with the day's verse on a
   frosted card beside it. Every colour in it is a `--scene-*` setting (a
-  night set for dark mode), so it can be recoloured without redrawing. The
+  night set for dark mode), so it can be recoloured without redrawing.
+  With Live sky on (Preferences, on by default; `useLiveSky`) the picture
+  follows the time and weather over the church's own town instead of the
+  theme: dawn, day, dusk or night from that day's sunrise and sunset, and
+  clouds, rain, a storm or fog from Open-Meteo, all as `data-sky` and
+  `data-weather` on its wrapper. The
   verse steps aside on a screen too short for it, so the home never scrolls and a More apps tile. A section's tile inside an app shows
   its drawing flat in the church's accent instead, so an app and a section are
   never mistaken for each other (BRAND.md). A section's tile is its name alone,

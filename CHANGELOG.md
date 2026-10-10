@@ -11,6 +11,40 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.33.3] — 2026-10-10
+
+Search everything by what you mean, a sky over the home that follows the
+weather and the time of day, the bottom bar as it used to be, and small
+groups beside ministries in People.
+
+### Added
+
+- **Search everything,** from the magnifying glass in the top bar (or Ctrl+K
+  on a computer): people, songs, events, tasks, minutes, small groups and the
+  apps themselves, in one list, best first. Turn on **search by meaning** and
+  it finds what you mean, not only the words — "songs about grace" finds
+  Amazing Grace. It downloads 23 MB once, asks first, then works offline, and
+  nothing you search leaves your phone. Names still come first by their
+  letters. Meaning works in English; Tagalog is found by its words.
+- **Live sky.** The picture behind the home follows the time of day over your
+  church — dawn, day, dusk and night, from that day's sunrise and sunset —
+  and its weather: cloud, rain, a storm or fog. On by default; Preferences ›
+  Live sky turns it off, and the picture goes back to following light and
+  dark mode.
+- **Small groups in People.** Under Ministries, how many members are in a
+  small group, each group with its people, and who is in none. A card on
+  the People home says how many members are in no group yet, for whoever
+  can place them.
+
+### Changed
+
+- **The bottom bar is the one it used to be:** a floating island with four of
+  your apps either side of Ekkly's round mark, which opens every app. Still
+  off unless you turn it on.
+- **Holding an app on the home shows what is inside it** — its sections,
+  each with its own picture — on the app's own colour, instead of a pitch
+  for it.
+
 ## [0.33.2] — 2026-10-10
 
 The home becomes a picture: a church on its hill under the sky, its window

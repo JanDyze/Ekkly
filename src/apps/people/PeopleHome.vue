@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { Cake, ClipboardText, HandHeart, Hourglass, KeyRound, UserCircleCheck } from '../../icons'
+import { Cake, ClipboardText, HandHeart, Hourglass, KeyRound, UserCircleCheck, UsersThree } from '../../icons'
 import AppScreen from '../../components/appframe/AppScreen.vue'
 import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
@@ -10,6 +10,7 @@ import DeckFaces from '../../components/appframe/DeckFaces.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import { usePeopleOverview, whenOfBirthday } from '../../composables/usePeopleOverview'
+import { usePeopleGroups } from '../../composables/usePeopleGroups'
 import { getDisplayName, getFullName, listPhrase } from '../../utils/memberUtils'
 import { findRosterMember, todayIso } from '../../utils/lineupUtils'
 import { suggestMembers } from '../../utils/memberMatch'
@@ -53,6 +54,9 @@ const {
 // and the sheet that asks (drawn once, by the top bar, which this home has).
 const { myPendingClaim, openClaimSheet } = useClaimFlow()
 const { displayName } = useAuth()
+
+// Members in no small group, for whoever may see the groups (usePeopleGroups).
+const { canSee: seesGroups, loading: groupsLoading, ungrouped } = usePeopleGroups()
 
 const plural = (n, one, many) => `${n.toLocaleString()} ${n === 1 ? one : many}`
 
@@ -227,6 +231,25 @@ const cards = computed(() => {
     })
   }
 
+  // A member in no small group, asked the same way: members past the Kids
+  // band, a standing chore remembered until the number goes up.
+  if (canEdit.value && seesGroups.value && !loading.value && !groupsLoading.value) {
+    list.push({
+      kind: 'unplaced',
+      key: 'ungrouped',
+      tone: 'plain',
+      icon: UsersThree,
+      dismissible: true,
+      remember: true,
+      level: ungrouped.value.length,
+      kicker: 'No small group yet',
+      title: `${plural(ungrouped.value.length, 'member', 'members')} in no small group`,
+      detail: 'Worth inviting each of them to one near them.',
+      to: { name: 'PeopleUngrouped' },
+      members: ungrouped.value,
+    })
+  }
+
   // The card that is always there, at the bottom of the deck.
   const { total, members: memberCount, attendees } = counts.value
   list.push({
@@ -378,7 +401,7 @@ const doors = computed(() => {
           <DeckCard
             v-else-if="card.kind === 'unplaced'"
             tone="plain"
-            :icon="HandHeart"
+            :icon="card.icon || HandHeart"
             :kicker="card.kicker"
             :title="card.title"
             :detail="card.detail"

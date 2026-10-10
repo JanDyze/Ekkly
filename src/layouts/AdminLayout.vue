@@ -33,6 +33,9 @@ const { bottomBar } = useBottomBar()
 const pageWantsFocus = useFocusModeValue()
 const isFocus = computed(() => Boolean(route.meta?.focus) || pageWantsFocus.value)
 
+// The bottom bar, for whoever turned it on, everywhere but a focus route.
+const showBar = computed(() => bottomBar.value && !isFocus.value)
+
 // A page that puts up its own header does not want the app's as well: two
 // stacked bars, the top one saying "Bible" over a row already saying "Juan 3".
 // Narrower than `focus` on purpose — the sidebar and the bottom bar stay, so
@@ -70,7 +73,7 @@ const KEPT_ALIVE = ['PeopleEveryone']
          leads back to it from everywhere else. A bottom bar is there only for
          whoever turned it on in Preferences (useBottomBar). -->
     <!-- Main content area -->
-    <div class="flex-1 min-w-0 flex flex-col overflow-hidden lg:ml-0 print-main">
+    <div :class="['flex-1 min-w-0 flex flex-col overflow-hidden lg:ml-0 print-main', showBar ? 'pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0' : '']">
       <!-- Topbar. Hidden, not removed, on a focus route (and the rail below
            with it): each opens listeners and builds a fair
            amount of screen when it mounts, and tearing them down to open a
@@ -99,10 +102,11 @@ const KEPT_ALIVE = ['PeopleEveryone']
         </div>
       </main>
 
-      <!-- At the foot of the column rather than floating over it, so every
-           page simply ends above it and nothing is hidden behind it. Not on
-           a focus route: that is a task, with its own way out. -->
-      <BottomBar v-if="bottomBar && !isFocus" />
+      <!-- It floats over the foot of the screen, and the column above leaves
+           room for it (showBar), so a page ends above the bar rather than
+           behind it. Not on a focus route: that is a task, with its own way
+           out. -->
+      <BottomBar v-if="showBar" />
     </div>
 
     <!-- People rail - wide screens; a drawer everywhere else. A focus route

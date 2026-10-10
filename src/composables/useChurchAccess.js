@@ -11,6 +11,7 @@ import { initAppSettings } from './useAppSettings'
 import { initAppOrder } from './useAppOrder'
 import { initHomeCards } from './useHomeCards'
 import { initBottomBar } from './useBottomBar'
+import { initLiveSky } from './useLiveSky'
 import { initChurchApps } from './useChurchApps'
 
 // Whether the signed-in account may open this church, answered live.
@@ -62,6 +63,7 @@ const onGranted = (user) => {
   initAppOrder()
   initHomeCards()
   initBottomBar()
+  initLiveSky()
   initChurchApps()
   // Deliberately not awaited: a slow write must never hold up the app.
   recordSignIn(user).catch((error) => console.error('Error recording sign-in:', error))

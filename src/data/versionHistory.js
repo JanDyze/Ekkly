@@ -8,6 +8,18 @@
 
 export const versionHistory = [
   {
+    version: '0.33.3',
+    date: '2026-10-10',
+    title: 'Find anything',
+    summary: 'Search everything from the top bar — by what you mean, not only the words.',
+    highlights: [
+      'Tap the magnifying glass to search people, songs, events, tasks and more. Turn on search by meaning to find “songs about grace”.',
+      'The sky behind your home now follows the weather and the time of day over your church. Turn it off under Preferences › Live sky.',
+      'People › Ministries now shows small groups too, and who is not in one yet.',
+      'The bottom bar is back as it was: four apps either side of the Ekkly button.',
+    ],
+  },
+  {
     version: '0.33.2',
     date: '2026-10-10',
     title: 'A home that is yours',

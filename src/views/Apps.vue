@@ -12,6 +12,7 @@ import AppPeek from '../components/appframe/AppPeek.vue'
 import HomeScene from '../components/home/HomeScene.vue'
 import HomeAppCards from '../components/home/HomeAppCards.vue'
 import { useHomeCards } from '../composables/useHomeCards'
+import { useLiveSky } from '../composables/useLiveSky'
 import { useAppOrder } from '../composables/useAppOrder'
 import { usePressAndHold } from '../composables/usePressAndHold'
 import BirthdayCard from '../components/members/BirthdayCard.vue'
@@ -301,6 +302,9 @@ const hold = { start: startHold, still: holdStill, swallow: swallowClick }
 
 const { style: cardStyle } = useHomeCards()
 
+// The time and weather over the church, for the picture (live sky).
+const { sky } = useLiveSky()
+
 const APP_LINES = Object.fromEntries(APPS.map((app) => [app.key, app.description]))
 
 // One line of what is true inside each app, where the home already knows it;
@@ -338,7 +342,7 @@ const lineOf = (item) => {
        bottom padding alone used to tip it over and let the page slide. -->
   <!-- The page stands in a picture (HomeScene): its sky behind everything,
        and its church on the hill in the room the apps leave at the foot. -->
-  <div class="home-scene relative h-full overflow-hidden bg-(--scene-sky-3)">
+  <div class="home-scene relative h-full overflow-hidden bg-(--scene-sky-3)" v-bind="sky">
     <HomeScene part="sky" class="pointer-events-none absolute inset-0 size-full" />
 
     <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6">

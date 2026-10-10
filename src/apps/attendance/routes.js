@@ -21,26 +21,26 @@ export const attendanceRoutes = [
         // had, which Schedules' ushers fall back to.
         path: 'gatherings',
         name: 'Attendance',
-        meta: { art: 'attendance-gatherings', depth: 1 },
+        meta: { art: 'attendance-gatherings', title: 'Gatherings', depth: 1 },
         component: () => import('./AttendanceGatherings.vue'),
       },
       {
         // What is still to be counted is for whoever counts it.
         path: 'to-record',
         name: 'AttendanceOwed',
-        meta: { art: 'attendance-record', depth: 1, capability: 'attendance.manage' },
+        meta: { art: 'attendance-record', title: 'To record', depth: 1, capability: 'attendance.manage' },
         component: () => import('./AttendanceOwed.vue'),
       },
       {
         path: 'quiet',
         name: 'AttendanceQuiet',
-        meta: { art: 'attendance-quiet', depth: 1 },
+        meta: { art: 'attendance-quiet', title: 'Not seen lately', depth: 1 },
         component: () => import('./AttendanceQuiet.vue'),
       },
       {
         path: 'months',
         name: 'AttendanceMonths',
-        meta: { art: 'attendance-months', depth: 1 },
+        meta: { art: 'attendance-months', title: 'By month', depth: 1 },
         component: () => import('./AttendanceMonths.vue'),
       },
       {

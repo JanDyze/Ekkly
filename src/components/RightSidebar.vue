@@ -12,6 +12,7 @@ import {
   SlidersHorizontal,
   SquaresFour,
   Rows,
+  CloudSun,
   CaretDown,
   Sun,
   SpeakerHigh,
@@ -37,6 +38,7 @@ import { useClaimFlow } from '../composables/useClaimFlow'
 import { usePermissions } from '../composables/usePermissions'
 import { useHomeCards } from '../composables/useHomeCards'
 import { useBottomBar } from '../composables/useBottomBar'
+import { useLiveSky } from '../composables/useLiveSky'
 import { homeCardName } from '../data/homeCards'
 import CardStyleSheet from './home/CardStyleSheet.vue'
 
@@ -70,6 +72,9 @@ const showCardStyles = ref(false)
 
 // The bottom bar, on or off for this person.
 const { bottomBar, setBottomBar } = useBottomBar()
+
+// The home's sky following the time and weather over the church.
+const { liveSky, setLiveSky } = useLiveSky()
 
 const openSettings = () => {
   showPeoplePanel.value = false
@@ -437,6 +442,16 @@ watch(railIsVisible, (visible) => {
                 <Rows class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
                 <span class="flex-1 text-sm text-gray-700 dark:text-slate-200">Bottom bar</span>
                 <span class="text-xs text-gray-400 dark:text-slate-500">{{ bottomBar ? 'On' : 'Off' }}</span>
+              </button>
+              <button
+                @click="setLiveSky(!liveSky)"
+                role="switch"
+                :aria-checked="liveSky"
+                class="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
+              >
+                <CloudSun class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
+                <span class="flex-1 text-sm text-gray-700 dark:text-slate-200">Live sky</span>
+                <span class="text-xs text-gray-400 dark:text-slate-500">{{ liveSky ? 'On' : 'Off' }}</span>
               </button>
             </div>
           </div>

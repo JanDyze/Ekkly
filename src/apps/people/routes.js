@@ -24,19 +24,19 @@ export const peopleRoutes = [
         // into a record and the add sheet's ?add=true both look for it.
         path: 'everyone',
         name: 'Members',
-        meta: { art: 'people-everyone', depth: 1 },
+        meta: { art: 'people-everyone', title: 'Everyone', depth: 1 },
         component: () => import('./PeopleEveryone.vue'),
       },
       {
         path: 'birthdays',
         name: 'PeopleBirthdays',
-        meta: { art: 'people-birthdays', depth: 1 },
+        meta: { art: 'people-birthdays', title: 'Birthdays', depth: 1 },
         component: () => import('./PeopleBirthdays.vue'),
       },
       {
         path: 'ministries',
         name: 'PeopleMinistries',
-        meta: { art: 'people-ministries', depth: 1 },
+        meta: { art: 'people-ministries', title: 'Ministries', depth: 1 },
         component: () => import('./PeopleMinistries.vue'),
       },
       {
@@ -48,6 +48,14 @@ export const peopleRoutes = [
         component: () => import('./PeopleMinistry.vue'),
       },
       {
+        // The members in no small group: the same screen again, the same
+        // question asked of small groups (usePeopleGroups).
+        path: 'not-in-a-group',
+        name: 'PeopleUngrouped',
+        meta: { art: 'people-ministries', depth: 2, capability: 'smallgroups.view' },
+        component: () => import('./PeopleMinistry.vue'),
+      },
+      {
         path: 'ministries/:name',
         name: 'PeopleMinistry',
         meta: { art: 'people-ministries', depth: 2 },
@@ -56,14 +64,14 @@ export const peopleRoutes = [
       {
         path: 'glance',
         name: 'PeopleGlance',
-        meta: { art: 'people-glance', depth: 1 },
+        meta: { art: 'people-glance', title: 'Overview', depth: 1 },
         component: () => import('./PeopleGlance.vue'),
       },
       {
         // Filling in other people's records is for whoever may edit them.
         path: 'missing',
         name: 'PeopleMissing',
-        meta: { art: 'people-missing', depth: 1, capability: 'members.manage' },
+        meta: { art: 'people-missing', title: 'Missing info', depth: 1, capability: 'members.manage' },
         component: () => import('./PeopleMissing.vue'),
       },
       {

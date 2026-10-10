@@ -42,6 +42,15 @@ defineProps({
         <stop offset="0.84" style="stop-color: var(--scene-horizon)" />
         <stop offset="1" style="stop-color: var(--scene-horizon)" />
       </linearGradient>
+      <pattern id="scene-rain-sky" width="34" height="58" patternUnits="userSpaceOnUse" patternTransform="rotate(14)">
+        <line x1="6" y1="0" x2="6" y2="22" stroke-width="2" stroke-linecap="round" style="stroke: var(--scene-rain)" />
+        <line x1="23" y1="30" x2="23" y2="50" stroke-width="2" stroke-linecap="round" style="stroke: var(--scene-rain)" />
+      </pattern>
+      <linearGradient id="scene-rain-sky-haze" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" style="stop-color: var(--scene-haze); stop-opacity: 0" />
+        <stop offset="0.55" style="stop-color: var(--scene-haze); stop-opacity: 0.75" />
+        <stop offset="1" style="stop-color: var(--scene-haze); stop-opacity: 0.9" />
+      </linearGradient>
       <radialGradient id="scene-glow" cx="820" cy="1420" r="420" gradientUnits="userSpaceOnUse">
         <stop offset="0" style="stop-color: var(--scene-glow); stop-opacity: 0.9" />
         <stop offset="1" style="stop-color: var(--scene-glow); stop-opacity: 0" />
@@ -78,6 +87,18 @@ defineProps({
       d="M80 1502C110 1480 150 1478 175 1495C200 1470 262 1470 282 1500C330 1490 382 1502 402 1532H80Z"
       style="fill: var(--scene-cloud-warm)"
     />
+
+    <!-- The weather (useLiveSky), each layer shown only when the sky's
+         wrapper says so (data-weather, the rules below): more and heavier
+         clouds, a grey veil when it is overcast, rain, and fog. -->
+    <g class="scene-extra-clouds" style="fill: var(--scene-cloud)">
+      <path d="M520 360C540 316 600 300 640 324C668 280 750 276 784 318C830 300 887 320 887 360Z" />
+      <path d="M-20 560C10 520 70 506 110 524C140 480 220 474 252 514C300 500 350 520 362 560Z" />
+      <path d="M480 980C500 946 548 934 580 952C606 916 670 912 700 946C740 934 790 952 800 980Z" />
+    </g>
+    <rect class="scene-overcast" width="887" height="1774" style="fill: var(--scene-overcast)" />
+    <rect class="scene-rain" width="887" height="1774" fill="url(#scene-rain-sky)" />
+    <rect class="scene-haze" y="1100" width="887" height="674" fill="url(#scene-rain-sky-haze)" />
   </svg>
 
   <svg
@@ -88,6 +109,15 @@ defineProps({
     aria-hidden="true"
   >
     <defs>
+      <pattern id="scene-rain-land" width="34" height="58" patternUnits="userSpaceOnUse" patternTransform="rotate(14)">
+        <line x1="6" y1="0" x2="6" y2="22" stroke-width="2" stroke-linecap="round" style="stroke: var(--scene-rain)" />
+        <line x1="23" y1="30" x2="23" y2="50" stroke-width="2" stroke-linecap="round" style="stroke: var(--scene-rain)" />
+      </pattern>
+      <linearGradient id="scene-rain-land-haze" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" style="stop-color: var(--scene-haze); stop-opacity: 0" />
+        <stop offset="0.55" style="stop-color: var(--scene-haze); stop-opacity: 0.75" />
+        <stop offset="1" style="stop-color: var(--scene-haze); stop-opacity: 0.9" />
+      </linearGradient>
       <!-- Ekkly's mark (public/ekkly-mark.svg), its four panes, for the
            church's window. The cross between them is the wall showing
            through, as in the mark itself. -->
@@ -194,6 +224,12 @@ defineProps({
       style="fill: var(--scene-ground)"
     />
     <path d="M300 1774C380 1720 482 1700 602 1720C682 1690 782 1652 887 1650V1774Z" style="fill: var(--scene-ground-deep)" />
+
+    <!-- Rain and fog over the church as well (see the sky above). No grey
+         veil here: this layer's top edge is in the middle of the sky, and a
+         veil would draw it as a line; the sky's veil is behind the hills. -->
+    <rect class="scene-rain" x="-4000" y="1240" width="4887" height="534" fill="url(#scene-rain-land)" />
+    <rect class="scene-haze" x="-4000" y="1380" width="4887" height="394" fill="url(#scene-rain-land-haze)" />
   </svg>
 </template>
 
@@ -237,8 +273,10 @@ defineProps({
   --scene-window-glow: 0;
 }
 
-/* Night: the same church at dusk, its window lit. */
-.dark .home-scene {
+/* Night: the same church after dark, its window lit. From the theme while
+   live sky is off (no data-sky); from the clock while it is on. */
+.dark .home-scene:not([data-sky]),
+.home-scene[data-sky='night'] {
   --scene-sky-1: #0b1628;
   --scene-sky-2: #11213a;
   --scene-sky-3: #182c4a;
@@ -271,6 +309,78 @@ defineProps({
   --scene-glass: #ffcf6b;
   --scene-door: #143a52;
   --scene-window-light: #ffc861;
+  /* A veil that darkens a night sky rather than lightening it. */
+  --scene-overcast: #050a14;
   --scene-window-glow: 0.55;
+}
+
+/* The weather's own colours, the same day and night. */
+.home-scene {
+  --scene-rain: rgb(255 255 255 / 0.55);
+  --scene-haze: #eef2f4;
+  --scene-overcast: #8c99aa;
+}
+
+/* Dawn and dusk (useLiveSky), over the day's land: the sky and its clouds
+   warm, and at dusk the church's window starts to show. */
+.home-scene[data-sky='dawn'] {
+  --scene-sky-1: #6f86c9;
+  --scene-sky-2: #9fb0e0;
+  --scene-sky-3: #d9c3db;
+  --scene-sky-4: #f6d2c8;
+  --scene-horizon: #fde2c6;
+  --scene-glow: #ffd8a8;
+  --scene-pane: #c2cbf0;
+  --scene-pane-dim: #5f76c0;
+  --scene-cloud: #fbe9e6;
+  --scene-cloud-shade: #efd6da;
+  --scene-cloud-warm: #fde9d8;
+}
+.home-scene[data-sky='dusk'] {
+  --scene-sky-1: #3c4f93;
+  --scene-sky-2: #6d64a8;
+  --scene-sky-3: #c47c9a;
+  --scene-sky-4: #f09b7a;
+  --scene-horizon: #fbbf86;
+  --scene-glow: #ffb36b;
+  --scene-pane: #8b8fd0;
+  --scene-pane-dim: #34407f;
+  --scene-cloud: #f6c9b8;
+  --scene-cloud-shade: #e2a6a4;
+  --scene-cloud-warm: #fbd2b0;
+  --scene-window-glow: 0.3;
+}
+
+.scene-extra-clouds,
+.scene-overcast,
+.scene-rain,
+.scene-haze {
+  display: none;
+}
+.home-scene[data-weather='cloudy'] .scene-extra-clouds,
+.home-scene[data-weather='rain'] .scene-extra-clouds,
+.home-scene[data-weather='storm'] .scene-extra-clouds,
+.home-scene[data-weather='cloudy'] .scene-overcast,
+.home-scene[data-weather='rain'] .scene-overcast,
+.home-scene[data-weather='storm'] .scene-overcast,
+.home-scene[data-weather='rain'] .scene-rain,
+.home-scene[data-weather='storm'] .scene-rain,
+.home-scene[data-weather='fog'] .scene-haze {
+  display: inline;
+}
+.home-scene[data-weather='cloudy'] .scene-overcast {
+  opacity: 0.22;
+}
+.home-scene[data-weather='rain'] .scene-overcast {
+  opacity: 0.34;
+}
+.home-scene[data-weather='storm'] .scene-overcast {
+  opacity: 0.5;
+}
+.home-scene[data-weather='storm'] .scene-rain {
+  opacity: 1;
+}
+.home-scene[data-weather='rain'] .scene-rain {
+  opacity: 0.7;
 }
 </style>

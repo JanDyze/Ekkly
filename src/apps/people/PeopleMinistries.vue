@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import AppScreen from '../../components/appframe/AppScreen.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
 import { usePeopleOverview } from '../../composables/usePeopleOverview'
+import { usePeopleGroups } from '../../composables/usePeopleGroups'
 
 // Who serves where: every ministry the church keeps, with its people.
 //
@@ -16,6 +17,12 @@ import { usePeopleOverview } from '../../composables/usePeopleOverview'
 //
 // It was a list of rows with a few faces at the start of each, and the faces
 // spilled over the names once a ministry had more than two people in it.
+//
+// Under the ministries, the same question asked of small groups, for whoever
+// may see them: how many members are in one, each group with its faces, and
+// the members in none. Here rather than a tile of its own on the People home,
+// because it is the same question of where somebody belongs — and the place
+// house fellowships will join when they are kept.
 
 const { loading, ministries, unplaced, counts, isAdmin } = usePeopleOverview()
 
@@ -36,10 +43,18 @@ const share = computed(() => (counts.value.total ? serving.value / counts.value.
 
 const subtitle = computed(() => {
   const n = ministries.value.length
-  return `${n} ${n === 1 ? 'ministry' : 'ministries'}`
+  const g = groups.value.length
+  const parts = [`${n} ${n === 1 ? 'ministry' : 'ministries'}`]
+  if (seesGroups.value && g) parts.push(`${g} small ${g === 1 ? 'group' : 'groups'}`)
+  return parts.join(' · ')
 })
 
 const keyOf = (member) => member.firestoreId || member.id
+
+const { canSee: seesGroups, groups, ungrouped, eligible } = usePeopleGroups()
+const grouped = computed(() => eligible.value.length - ungrouped.value.length)
+const groupShare = computed(() => (eligible.value.length ? grouped.value / eligible.value.length : 0))
+const memberCount = (n) => `${n.toLocaleString()} ${n === 1 ? 'member' : 'members'}`
 </script>
 
 <template>
@@ -138,5 +153,85 @@ const keyOf = (member) => member.firestoreId || member.id
         </span>
       </RouterLink>
     </div>
+
+    <!-- Small groups: the same question, asked of the groups. -->
+    <section v-if="!loading && seesGroups && (groups.length || eligible.length)" class="mt-6 flex flex-col gap-2.5" aria-labelledby="people-groups-title">
+      <h2 id="people-groups-title" class="px-1 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Small groups</h2>
+
+      <section
+        v-if="eligible.length"
+        class="animate-rise rounded-2xl bg-white p-4 ring-1 ring-gray-200/80 dark:bg-gray-800 dark:ring-gray-700/80"
+      >
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          <span class="text-2xl font-bold tabular-nums text-gray-900 dark:text-white">{{ grouped.toLocaleString() }}</span>
+          of {{ memberCount(eligible.length) }} are in a small group
+        </p>
+        <div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700" aria-hidden="true">
+          <div class="h-full rounded-full bg-primary dark:bg-primary-light" :style="{ width: `${Math.round(groupShare * 100)}%` }" />
+        </div>
+      </section>
+
+      <div v-if="groups.length" class="grid grid-cols-2 gap-2.5">
+        <RouterLink
+          v-for="(group, index) in groups"
+          :key="group.id"
+          :to="{ name: 'SmallGroupDetails', params: { id: group.id } }"
+          :style="{ animationDelay: `${60 + index * 25}ms` }"
+          :class="[
+            'animate-rise flex min-h-32 min-w-0 flex-col gap-3 rounded-2xl p-3.5 transition duration-200 ease-out pressed:scale-[0.97]',
+            group.people.length
+              ? 'bg-white ring-1 ring-gray-200/80 hover:ring-gray-300 dark:bg-gray-800 dark:ring-gray-700/80 dark:hover:ring-gray-600'
+              : 'border border-dashed border-gray-300 dark:border-gray-700',
+          ]"
+        >
+          <div class="min-w-0">
+            <p class="line-clamp-2 text-[15px] font-semibold leading-snug text-gray-900 dark:text-white">{{ group.name }}</p>
+            <p class="mt-0.5 truncate text-xs tabular-nums text-gray-500 dark:text-gray-400">
+              {{ group.people.length ? sizeOf(group.people.length) : 'Nobody yet' }}<template v-if="group.leader"> · led by {{ group.leader.nickname || group.leader.firstName }}</template>
+            </p>
+          </div>
+          <div v-if="group.people.length" class="mt-auto flex items-center">
+            <div class="flex -space-x-2">
+              <MemberAvatar
+                v-for="member in group.people.slice(0, FACES)"
+                :key="keyOf(member)"
+                :member="member"
+                alt=""
+                size="h-8 w-8"
+                plain-class="ring-2 ring-white dark:ring-gray-800"
+              />
+            </div>
+            <span v-if="group.people.length > FACES" class="ml-1.5 text-xs font-semibold tabular-nums text-gray-500 dark:text-gray-400">
+              +{{ group.people.length - FACES }}
+            </span>
+          </div>
+        </RouterLink>
+      </div>
+
+      <!-- The members in no small group. -->
+      <RouterLink
+        v-if="ungrouped.length"
+        :to="{ name: 'PeopleUngrouped' }"
+        class="animate-rise flex items-center gap-3 rounded-2xl bg-white p-3.5 ring-1 ring-gray-200/80 transition duration-200 ease-out hover:ring-gray-300 pressed:scale-[0.98] dark:bg-gray-800 dark:ring-gray-700/80 dark:hover:ring-gray-600"
+      >
+        <div class="min-w-0 flex-1">
+          <p class="text-[15px] font-semibold text-gray-900 dark:text-white">Not in a small group</p>
+          <p class="mt-0.5 text-xs tabular-nums text-gray-500 dark:text-gray-400">{{ memberCount(ungrouped.length) }}, not counting kids</p>
+        </div>
+        <div class="flex -space-x-2">
+          <MemberAvatar
+            v-for="member in ungrouped.slice(0, FACES)"
+            :key="keyOf(member)"
+            :member="member"
+            alt=""
+            size="h-8 w-8"
+            plain-class="ring-2 ring-white dark:ring-gray-800"
+          />
+        </div>
+        <span v-if="ungrouped.length > FACES" class="text-xs font-semibold tabular-nums text-gray-500 dark:text-gray-400">
+          +{{ ungrouped.length - FACES }}
+        </span>
+      </RouterLink>
+    </section>
   </AppScreen>
 </template>

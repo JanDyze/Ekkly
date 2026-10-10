@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
-import { Bell, Sun, Moon, X, Users, LogOut, UserCheck, UserPlus, Clock3, ChevronLeft, ChevronRight, SpeakerHigh, SpeakerSlash, Settings, SquaresFour } from '../icons';
+import { Bell, Sun, Moon, X, Users, LogOut, UserCheck, UserPlus, Clock3, ChevronLeft, ChevronRight, SpeakerHigh, SpeakerSlash, Settings, SquaresFour, CloudSun, MagnifyingGlass } from '../icons';
 import { useSounds } from "../composables/useSounds";
 import { useRouter } from "vue-router";
 import { useTheme } from "../composables/useTheme";
@@ -29,7 +29,9 @@ import AppArt from "./common/AppArt.vue";
 import { NAV_ITEMS } from "../data/navigation";
 import { homeCardName } from "../data/homeCards";
 import { useHomeCards } from "../composables/useHomeCards";
+import { useLiveSky } from "../composables/useLiveSky";
 import CardStyleSheet from "./home/CardStyleSheet.vue";
+import SearchSheet from "./search/SearchSheet.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -152,9 +154,24 @@ const { swipeTarget: notifSwipe, swipeStyle: notifStyle } = useSwipeDismiss({
 const notifPanelRef = ref(null)
 useFocusTrap(notifPanelRef, isNotifOpen, () => { isNotifOpen.value = false }, { trap: false })
 
+// Search everything (SearchSheet). Ctrl+K or ⌘K anywhere, and "/" when the
+// caret is not already in a field, the way most apps open their search.
+const showSearch = ref(false)
+const onSearchKey = (event) => {
+  const typing = event.target?.closest?.('input, textarea, select, [contenteditable="true"]')
+  if ((event.key === 'k' && (event.ctrlKey || event.metaKey)) || (event.key === '/' && !typing)) {
+    event.preventDefault()
+    showSearch.value = true
+  }
+}
+onMounted(() => window.addEventListener('keydown', onSearchKey))
+onUnmounted(() => window.removeEventListener('keydown', onSearchKey))
+
 // How the home draws its apps, for this person (useHomeCards).
 const { style: cardStyle, myChoice: myCardStyle } = useHomeCards()
 const showCardStyles = ref(false)
+// The home's sky following the time and weather over the church.
+const { liveSky, setLiveSky } = useLiveSky()
 
 // User account menu
 const isUserMenuOpen = ref(false)
@@ -287,6 +304,18 @@ const openMyProfile = () => {
           >
             <Sun v-if="isDark" class="w-4 h-4" />
             <Moon v-else class="w-4 h-4" />
+          </button>
+
+          <!-- Search everything, at every size. -->
+          <button
+            type="button"
+            class="p-1.5 rounded-full text-primary dark:text-primary-light hover:bg-gray-100 dark:hover:bg-gray-700"
+            title="Search (Ctrl+K)"
+            aria-label="Search"
+            aria-haspopup="dialog"
+            @click="showSearch = true"
+          >
+            <MagnifyingGlass class="w-5 h-5" />
           </button>
 
           <!-- Notifications, at every size. A feed you come to read earns its
@@ -452,6 +481,16 @@ const openMyProfile = () => {
                     <span class="truncate text-[10px] text-gray-400 dark:text-gray-500">{{ myCardStyle ? homeCardName(cardStyle) : 'Church’s choice' }}</span>
                   </button>
                   <button
+                    @click="setLiveSky(!liveSky)"
+                    role="switch"
+                    :aria-checked="liveSky"
+                    class="w-full flex items-center gap-2.5 p-2.5 rounded-xl text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <CloudSun class="w-4 h-4 shrink-0 text-primary dark:text-primary-light" />
+                    <span class="flex-1 text-[11px] font-bold text-gray-900 dark:text-white">Live sky</span>
+                    <span class="text-[10px] text-gray-400 dark:text-gray-500">{{ liveSky ? 'On' : 'Off' }}</span>
+                  </button>
+                  <button
                     @click="toggleSounds"
                     :aria-pressed="soundsOn"
                     class="w-full flex items-center gap-2.5 p-2.5 rounded-xl text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -577,6 +616,7 @@ const openMyProfile = () => {
     </Teleport>
 
     <CardStyleSheet :show="showCardStyles" @close="showCardStyles = false" />
+    <SearchSheet :show="showSearch" @close="showSearch = false" />
 
     <ClaimMemberSheet
       v-model:show="showClaimSheet"

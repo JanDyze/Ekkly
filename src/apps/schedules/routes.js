@@ -23,20 +23,20 @@ export const schedulesRoutes = [
         // shared with whoever is serving.
         path: 'calendar/:month(\\d{4}-\\d{2})?',
         name: 'SchedulesCalendar',
-        meta: { art: 'schedules-calendar', depth: 1 },
+        meta: { art: 'schedules-calendar', title: 'Calendar', depth: 1 },
         component: () => import('./ScheduleCalendar.vue'),
       },
       {
         path: 'mine',
         name: 'SchedulesMine',
-        meta: { art: 'schedules-mine', depth: 1 },
+        meta: { art: 'schedules-mine', title: 'My turns', depth: 1 },
         component: () => import('./ScheduleMine.vue'),
       },
       {
         // Who serves how often is for whoever assigns people.
         path: 'team',
         name: 'SchedulesTeam',
-        meta: { art: 'schedules-who', depth: 1, capability: 'lineups.manage' },
+        meta: { art: 'schedules-who', title: 'Who serves', depth: 1, capability: 'lineups.manage' },
         component: () => import('./ScheduleTeam.vue'),
       },
       // Each team's own section: its Sundays as it sees them, and the work only
@@ -46,25 +46,25 @@ export const schedulesRoutes = [
       {
         path: 'worship',
         name: 'SchedulesWorship',
-        meta: { art: 'schedules-worship', depth: 1 },
+        meta: { art: 'schedules-worship', title: 'Worship', depth: 1 },
         component: () => import('./ScheduleWorship.vue'),
       },
       {
         path: 'preaching',
         name: 'SchedulesPreaching',
-        meta: { art: 'schedules-preaching', depth: 1 },
+        meta: { art: 'schedules-preaching', title: 'Preaching', depth: 1 },
         component: () => import('./SchedulePreaching.vue'),
       },
       {
         path: 'ushers',
         name: 'SchedulesUshers',
-        meta: { art: 'schedules-ushers', depth: 1 },
+        meta: { art: 'schedules-ushers', title: 'Ushers', depth: 1 },
         component: () => import('./ScheduleUshers.vue'),
       },
       {
         path: 'welcome',
         name: 'SchedulesWelcome',
-        meta: { art: 'schedules-welcome', depth: 1 },
+        meta: { art: 'schedules-welcome', title: 'Welcome', depth: 1 },
         component: () => import('./ScheduleWelcome.vue'),
       },
       {

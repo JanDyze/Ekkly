@@ -185,7 +185,9 @@ export default defineConfig(({ mode }) => ({
         // The event PNGs exist for digest email and the notification tray,
         // never for the app itself, which draws Phosphor SVG components.
         // Precaching 44 images nothing in the app requests is pure payload.
-        globIgnores: ['**/firebase-messaging-sw.js', 'icons/events/**'],
+        // The search-by-meaning worker is for whoever turns it on, not for
+        // every install: cached the first time it runs (below) instead.
+        globIgnores: ['**/firebase-messaging-sw.js', 'icons/events/**', '**/embedWorker-*.js'],
         navigateFallback: '/index.html',
         // /__/auth/ is Firebase's sign-in handler, reverse-proxied onto this
         // domain (see vercel.json) so the iOS redirect flow stays first-party.
@@ -214,6 +216,19 @@ export default defineConfig(({ mode }) => ({
             options: {
               cacheName: 'public-images',
               expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Search by meaning (src/search/embedWorker.js): the worker and
+            // the 21 MB runtime it runs the model in, fetched only once a
+            // person turns it on and kept from then on, so it works offline.
+            // Both are content-hashed, so a new build is a new file.
+            urlPattern: /\/assets\/(embedWorker-[^/]+\.js|ort-wasm[^/]+\.(wasm|mjs))$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'search-model-runtime',
+              expiration: { maxEntries: 6 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },

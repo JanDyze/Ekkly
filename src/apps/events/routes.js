@@ -20,19 +20,19 @@ export const eventsRoutes = [
         // The month grid. ?date=YYYY-MM-DD opens that day.
         path: 'calendar',
         name: 'Events',
-        meta: { art: 'events-calendar', depth: 1 },
+        meta: { art: 'events-calendar', title: 'Calendar', depth: 1 },
         component: () => import('./EventsCalendar.vue'),
       },
       {
         path: 'coming-up',
         name: 'EventsUpcoming',
-        meta: { art: 'events-upcoming', depth: 1 },
+        meta: { art: 'events-upcoming', title: 'Coming up', depth: 1 },
         component: () => import('./EventsUpcoming.vue'),
       },
       {
         path: 'weekly',
         name: 'EventsWeekly',
-        meta: { art: 'events-weekly', depth: 1 },
+        meta: { art: 'events-weekly', title: 'Every week', depth: 1 },
         component: () => import('./EventsWeekly.vue'),
       },
     ],

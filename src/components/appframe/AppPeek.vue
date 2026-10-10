@@ -1,19 +1,24 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import AppArt from '../common/AppArt.vue'
 import { APP_DETAILS } from '../frontdoor/appDetails'
 import { APPS } from '../../../lib/apps'
 import { useScrollLock } from '../../composables/useScrollLock'
+import { usePermissions } from '../../composables/usePermissions'
+import { hueOf } from '../../data/appHues'
 
 // What an app is, shown while its tile on the home of all apps is held, and
 // gone the moment the finger lifts (src/views/Apps.vue, usePressAndHold).
 //
-// The screen opens out of the tile: the church's colour grows from the app's
-// plate to fill it, and the plate itself flies up to the middle and grows,
-// its artwork playing as it lands. Then the app's name, what is true in it
-// right now (the tile's own line), and what a church gets from it — the
-// front door's headline and three wins (frontdoor/appDetails.js), kept as
-// short as they are there. Letting go runs it all backwards, the plate
+// The screen opens out of the tile: the app's own colour (data/appHues.js,
+// the one its card on the home wears) grows from its picture to fill the
+// screen, and the picture flies up to the middle and grows, its artwork
+// playing as it lands. Then the app's name, what is true in it right now
+// (the tile's own line), one line on what it is for, and what is inside it:
+// its sections, each with its own drawing, as its home lays them out — a look
+// inside rather than a pitch. An app with no sections of its own yet shows
+// the front door's three wins instead (frontdoor/appDetails.js). Letting go runs it all backwards, the plate
 // settling back into its tile, so it reads as a look inside rather than a
 // place you went.
 //
@@ -54,6 +59,31 @@ const headline = computed(
   () => detail.value?.headline || APPS.find((a) => a.key === shown.value?.art)?.description || shown.value?.description || ''
 )
 const wins = computed(() => detail.value?.wins || [])
+
+// The app's sections, from its routes: one step in (meta.depth 1), named
+// (meta.title), with a drawing (meta.art), and open to this person.
+const router = useRouter()
+const { can } = usePermissions()
+const sections = computed(() => {
+  const base = shown.value?.path
+  if (!base) return []
+  return router
+    .getRoutes()
+    .filter(
+      (r) =>
+        r.path.startsWith(`${base}/`) &&
+        // An optional part of the address (the book's month) is still the
+        // section; one that must be filled in is a step further in.
+        !r.path.replace(/:\w+(\([^)]*\))?\?/g, '').includes(':') &&
+        r.meta?.depth === 1 &&
+        r.meta?.title &&
+        r.meta?.art &&
+        (!r.meta.capability || can(r.meta.capability))
+    )
+    .map((r) => ({ path: r.path, title: r.meta.title, art: r.meta.art }))
+})
+
+const hue = computed(() => hueOf(shown.value?.art))
 
 // Where an app has nothing live to say, the tile's line is its description,
 // which would only repeat the headline.
@@ -136,6 +166,7 @@ const onLeave = (el, done) => {
       <div
         v-if="app && shown"
         aria-hidden="true"
+        :style="{ '--hue': hue }"
         class="app-peek fixed inset-0 z-100 flex select-none flex-col items-center justify-center overflow-hidden px-6 pb-[max(4rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))] text-white"
       >
         <!-- Light through an arched window, the outline of Ekkly's mark
@@ -165,9 +196,27 @@ const onLeave = (el, done) => {
             <p v-if="live" class="peek-in mt-2.5 rounded-full bg-white/15 px-3 py-1 text-sm font-semibold" style="--d: 200ms">
               {{ live }}
             </p>
-            <p class="peek-in mt-4 text-lg leading-snug text-white/90" style="--d: 240ms">{{ headline }}</p>
+            <p class="peek-in mt-3 text-base leading-snug text-white/85" style="--d: 240ms">{{ headline }}</p>
 
-            <ul v-if="wins.length" class="mt-7 flex w-full flex-col gap-2 text-left">
+            <!-- What is inside: its sections, each with its own drawing. -->
+            <div v-if="sections.length" class="mt-7 w-full">
+              <p class="peek-in mb-2 text-left text-xs font-semibold uppercase tracking-wider text-white/60" style="--d: 300ms">Inside</p>
+              <ul class="grid grid-cols-3 gap-2">
+                <li
+                  v-for="(section, index) in sections"
+                  :key="section.path"
+                  class="peek-in flex min-w-0 flex-col items-center gap-1.5 rounded-2xl bg-white/12 px-1.5 py-3"
+                  :style="{ '--d': `${320 + index * 45}ms` }"
+                >
+                  <span class="flex size-10 items-center justify-center rounded-xl bg-white/90 shadow-sm">
+                    <AppArt :app-key="section.art" flat class="peek-hue size-7" />
+                  </span>
+                  <span class="w-full truncate text-xs font-semibold">{{ section.title }}</span>
+                </li>
+              </ul>
+            </div>
+
+            <ul v-else-if="wins.length" class="mt-7 flex w-full flex-col gap-2 text-left">
               <li
                 v-for="(win, index) in wins"
                 :key="win.text"
@@ -196,16 +245,22 @@ const onLeave = (el, done) => {
 </template>
 
 <style scoped>
-/* The church's colour, lit from one corner, as the drawer's spotlight is. */
+/* The app's own colour, deepened so white reads on it however light the
+   colour is, lit from one corner as the drawer's spotlight is. */
 .app-peek {
-  background-color: var(--color-primary);
+  background-color: color-mix(in oklab, var(--hue) 62%, black);
   background-image:
     radial-gradient(110% 80% at 100% 0%, color-mix(in oklab, white 22%, transparent), transparent 55%),
     radial-gradient(90% 70% at 0% 100%, color-mix(in oklab, black 24%, transparent), transparent 60%);
 }
 
 .dark .app-peek {
-  background-color: color-mix(in oklab, var(--color-primary) 55%, black);
+  background-color: color-mix(in oklab, var(--hue) 52%, black);
+}
+
+/* A section's drawing, in the app's own colour on its white chip. */
+.peek-hue {
+  color: color-mix(in oklab, var(--hue) 85%, black);
 }
 
 /* Each line rises in after the plate has landed, in reading order. */

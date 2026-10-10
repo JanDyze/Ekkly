@@ -46,8 +46,9 @@ installable PWA.
   tiles out from it, and the top bar names the app you are in from it. There is no sidebar:
   every app is a screen of its own and the home is the way between them, the
   top bar's mark leading back to it. A bottom bar (`src/components/BottomBar.vue`)
-  shows on phones only for whoever turns it on in Preferences (`useBottomBar`),
-  and holds the same apps in the same order as the home. Don't add links
+  shows on phones only for whoever turns it on in Preferences (`useBottomBar`):
+  the first four apps on their home either side of Ekkly's round mark, which
+  opens the All apps drawer. Don't add links
   anywhere else. The one
   exception is a page marked `account: true` (Settings): it is not an app, so
   the app lists leave it out and it opens from the avatar's drawer instead.
