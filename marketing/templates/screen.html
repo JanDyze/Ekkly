@@ -1,0 +1,34 @@
+<!doctype html>
+<!--
+  A real screen of the app, seen through Ekkly's window.
+  Take the screen with the dev app running on the showcase church (marketing/CLAUDE.md):
+    node marketing/scripts/render.mjs shot "http://localhost:5173/<page>?church=<showcase>" marketing/ads/<folder>/screen.png
+  Never a real church's members: their names and numbers are personal data.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="ad-size" content="1080x1350">
+  <link rel="stylesheet" href="/marketing/templates/ad.css">
+  <style>
+    .window { --w: 640px; height: 760px; margin: 0 auto; }
+  </style>
+</head>
+<body class="feed">
+  <main class="ad">
+    <h1 class="headline small">Sunday’s count in a minute</h1>
+    <div style="height: 28px"></div>
+    <p class="sub">No more tally sheets.</p>
+
+    <div class="grow"></div>
+    <div class="arch window"><img src="screen.png" alt=""></div>
+    <div class="grow"></div>
+
+    <div class="foot">
+      <div class="brand"><img src="/public/ekkly-mark.svg" alt=""><span class="name">Ekkly</span></div>
+      <span class="link">ekkly.online</span>
+    </div>
+  </main>
+  <script src="/marketing/templates/ad.js"></script>
+</body>
+</html>

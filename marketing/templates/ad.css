@@ -1,0 +1,159 @@
+/*
+ * Ekkly's ads. Every ad links this file, so a change here re-styles all of
+ * them on the next render — which is the point: one look across the page's
+ * whole feed.
+ *
+ * Sizes are in real pixels at 1080 wide, because that is what Meta shows.
+ * Colours are only ever these variables. The pane colours are the mark's own
+ * and stay fixed (BRAND.md); the accent is the front door's default.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=Poppins:wght@500&display=block');
+
+:root {
+  --ink: #0f1c4d;
+  --muted: #56617f;
+  --ground: #ffffff;
+  --soft: #f3f5fa;
+  --line: #e3e7f0;
+  --accent: #1d64d8;
+  --accent-soft: color-mix(in srgb, var(--accent) 10%, var(--ground));
+
+  --amber: #fdc24b;
+  --orange: #f19140;
+  --cyan: #09a4c6;
+  --blue: #0270dc;
+
+  --pad: 88px;
+  /* Stories keep their top and bottom clear of Instagram's own bars. */
+  --safe-top: 0px;
+  --safe-bottom: 0px;
+}
+
+/* A dark ground: the navy of the wordmark, with ink and accent turned light. */
+.night {
+  --ink: #ffffff;
+  --muted: #b9c3dc;
+  --ground: #0f1c4d;
+  --soft: #18275e;
+  --line: #24356f;
+  --accent: #5b9dff;
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, var(--ground));
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { width: 1080px; overflow: hidden; }
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+body.feed { height: 1350px; }
+body.square { height: 1080px; }
+body.story { height: 1920px; --safe-top: 250px; --safe-bottom: 340px; }
+body.reel { height: 1920px; --safe-top: 250px; --safe-bottom: 670px; }
+
+.ad {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--pad) + var(--safe-top)) var(--pad) calc(var(--pad) + var(--safe-bottom));
+}
+.grow { flex: 1; }
+.center { justify-content: center; }
+
+/* ---------------------------------------------------------------- the brand */
+
+.brand { display: flex; align-items: center; gap: 22px; }
+.brand img { width: 76px; height: 76px; display: block; }
+.brand .name {
+  font-family: Poppins, 'Avenir Next', Avenir, 'Segoe UI', system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 54px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+/* On a coloured ground the mark sits on a white tile, or two panes vanish. */
+.brand.tile img { background: #ffffff; border-radius: 22px; padding: 10px; width: 92px; height: 92px; }
+
+/* ------------------------------------------------------------------- words */
+
+.kicker { font-size: 38px; font-weight: 600; color: var(--muted); letter-spacing: -0.01em; }
+.headline {
+  font-size: 112px;
+  font-weight: 900;
+  line-height: 1.0;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.headline.big { font-size: 140px; }
+.headline.small { font-size: 88px; }
+.sub { font-size: 44px; line-height: 1.3; color: var(--muted); font-weight: 500; text-wrap: pretty; }
+.accent { color: var(--accent); }
+
+.wins { list-style: none; display: grid; gap: 30px; }
+.wins li { display: flex; align-items: center; gap: 30px; font-size: 46px; font-weight: 600; letter-spacing: -0.015em; }
+.wins .chip {
+  flex: none;
+  width: 92px;
+  height: 92px;
+  border-radius: 24px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+}
+.wins .chip .icon { width: 52px; height: 52px; }
+
+/* ad.js turns <i data-icon="phone"> into one of these. */
+.icon { display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; }
+
+/* ----------------------------------------------------------------- objects */
+
+/* An app wears its artwork on a raised plate, like an icon on a phone. */
+.plate {
+  width: 176px;
+  height: 176px;
+  border-radius: 44px;
+  background: #ffffff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 4px rgb(15 28 77 / 0.06), 0 18px 40px rgb(15 28 77 / 0.12);
+}
+.plate img { width: 128px; height: 128px; }
+.plate-row { display: flex; align-items: center; gap: 32px; }
+
+/* The window: half-round on top, square below, as the mark's outline is.
+   Size it with --w (and a height); the top is always a true half-circle. */
+.arch {
+  width: var(--w, 640px);
+  border-radius: calc(var(--w, 640px) / 2) calc(var(--w, 640px) / 2) 28px 28px;
+  overflow: hidden;
+  background: var(--soft);
+  border: 2px solid var(--line);
+}
+.arch img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+
+/* Warm over cool, the way the mark's panes sit. A divider, never a backdrop. */
+.panes { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; width: 120px; height: 18px; gap: 4px; }
+.panes span:nth-child(1) { background: var(--amber); }
+.panes span:nth-child(2) { background: var(--orange); }
+.panes span:nth-child(3) { background: var(--blue); }
+.panes span:nth-child(4) { background: var(--cyan); }
+.panes span { border-radius: 3px; }
+
+/* --------------------------------------------------------------- the close */
+
+.foot { display: flex; align-items: center; justify-content: space-between; gap: 32px; }
+.cta {
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 40px;
+  font-weight: 700;
+  padding: 30px 46px;
+  border-radius: 24px;
+  white-space: nowrap;
+}
+.night .cta { color: var(--ground); }
+.link { font-size: 38px; font-weight: 600; color: var(--muted); }

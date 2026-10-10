@@ -44,3 +44,7 @@ data/bible/
 
 # Worktrees created for parallel agent work
 .claude/worktrees/
+
+# Rendered ads. They are re-made from the HTML beside them with
+# marketing/scripts/render.mjs, so only the source is kept.
+marketing/**/out/
