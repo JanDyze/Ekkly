@@ -148,10 +148,10 @@ const missingDefaults = computed(() => {
         :key="value"
         v-bind="dragItem(index)"
         :class="[
-          'inline-flex items-center gap-1.5 rounded-full py-1.5 pl-2.5 pr-1 text-sm font-medium transition-shadow',
+          'inline-flex items-center gap-1.5 rounded-full py-1.5 pl-2.5 pr-1 text-sm font-medium transition-colors',
           colourable ? 'cursor-pointer' : '',
           draggingIndex === index
-            ? 'bg-primary/15 text-primary shadow-sm dark:text-primary-light'
+            ? 'bg-primary/15 text-primary dark:text-primary-light'
             : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200',
           colouring === value ? 'ring-2 ring-primary dark:ring-primary-light' : '',
         ]"
@@ -193,7 +193,7 @@ const missingDefaults = computed(() => {
           :aria-label="swatch.hue"
           :aria-pressed="hueOf && hueOf(colouring) === swatch.hue"
           :class="[
-            'h-8 w-8 rounded-full ring-offset-2 transition-transform hover:scale-110 dark:ring-offset-gray-800',
+            'h-8 w-8 rounded-full ring-offset-2 transition-transform dark:ring-offset-gray-800',
             swatch.dot,
             hueOf && hueOf(colouring) === swatch.hue ? 'ring-2 ring-primary dark:ring-primary-light' : '',
           ]"

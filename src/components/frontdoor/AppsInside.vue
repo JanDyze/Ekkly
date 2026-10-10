@@ -240,7 +240,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
           :aria-modal="!isDesktop"
           :aria-label="openApp.name"
           :class="[
-            'panel relative flex flex-col bg-gray-100 shadow-2xl shadow-gray-900/10 ring-1 ring-gray-900/5 focus:outline-none dark:bg-gray-900 dark:shadow-black/40 dark:ring-white/10',
+            'panel relative flex flex-col bg-gray-100 ring-1 ring-gray-900/5 focus:outline-none dark:bg-gray-900 dark:ring-white/10',
             isDesktop ? 'h-full rounded-2xl' : 'max-h-[85dvh] w-full max-w-md rounded-2xl',
           ]"
         >
@@ -262,7 +262,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
                 :title="app.name"
                 :class="[
                   'tab flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                  app.key === openKey ? 'is-current bg-white shadow-sm ring-1 ring-primary/30 dark:bg-gray-800' : 'hover:bg-gray-200/70 dark:hover:bg-gray-800',
+                  app.key === openKey ? 'is-current bg-white ring-1 ring-primary/30 dark:bg-gray-800' : 'hover:bg-gray-200/70 dark:hover:bg-gray-800',
                 ]"
                 @click="pick(app.key)"
               >
@@ -312,7 +312,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
                     v-for="(win, i) in detail.wins"
                     :key="win.text"
                     :style="{ '--i': i }"
-                    class="win flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm shadow-gray-900/5 lg:gap-4 lg:p-[clamp(0.625rem,2dvh,1.125rem)] dark:bg-gray-800/60 dark:shadow-none"
+                    class="win flex items-center gap-3 rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 p-3 lg:gap-4 lg:p-[clamp(0.625rem,2dvh,1.125rem)] dark:bg-gray-800/60"
                   >
                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary lg:h-11 lg:w-11 dark:bg-primary-light/15 dark:text-primary-light">
                       <component :is="win.icon" class="h-5 w-5 lg:h-5.5 lg:w-5.5" />
@@ -341,7 +341,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
                   <button
                     v-if="openApp.core || inPlan(openApp)"
                     type="button"
-                    class="group/cta inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-gray-900 shadow-sm ring-1 ring-gray-900/10 transition-colors hover:bg-gray-50 lg:px-5 dark:bg-gray-800 dark:text-white dark:ring-white/10 dark:hover:bg-gray-700"
+                    class="group/cta inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-gray-900 ring-1 ring-gray-900/10 transition-colors hover:bg-gray-50 lg:px-5 dark:bg-gray-800 dark:text-white dark:ring-white/10 dark:hover:bg-gray-700"
                     @click="viewPlan"
                   >
                     See my plan
@@ -369,7 +369,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 
 <style scoped>
 /* An app on the home screen answers the pointer with a soft tint behind it and
-   a deeper shadow under its icon, never by moving. */
+   a deeper under its icon, never by moving. */
 .launch:hover,
 .launch:active {
   background-color: color-mix(in oklab, var(--color-gray-100) 70%, transparent);
@@ -390,27 +390,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
     opacity 0.5s ease;
 }
 
+/* Switched on, the artwork simply comes into colour. It used to glow as well,
+   with coloured drop shadows under it, but the artwork sits flat on the page
+   like every card in Ekkly, and the colour coming in says enough. */
 .launch.is-on .app-icon,
 .art-glow {
-  filter: drop-shadow(0 -2px 8px rgb(255 140 30 / 0.28)) drop-shadow(0 6px 12px rgb(20 103 232 / 0.26));
+  filter: none;
   opacity: 1;
-}
-
-.launch.is-on:hover .app-icon {
-  filter: drop-shadow(0 -3px 12px rgb(255 140 30 / 0.4)) drop-shadow(0 9px 18px rgb(20 103 232 / 0.36));
-}
-
-/* A drop-shadow lays its colour over whatever is behind it, so the value that
-   reads as a hint of warmth on white reads as a lamp on gray-900: the same
-   alpha is a far bigger jump in luminance against a dark ground. Held at about
-   three fifths here, which still lights the artwork without haloing it. */
-.dark .launch.is-on .app-icon,
-.dark .art-glow {
-  filter: drop-shadow(0 -2px 8px rgb(255 140 30 / 0.17)) drop-shadow(0 6px 12px rgb(20 103 232 / 0.16));
-}
-
-.dark .launch.is-on:hover .app-icon {
-  filter: drop-shadow(0 -3px 12px rgb(255 140 30 / 0.24)) drop-shadow(0 9px 18px rgb(20 103 232 / 0.22));
 }
 
 /* The strip of apps in an open panel: the one showing in colour, the rest

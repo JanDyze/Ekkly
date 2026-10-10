@@ -169,24 +169,25 @@ const onLeave = (el, done) => {
         :style="{ '--hue': hue }"
         class="app-peek fixed inset-0 z-100 flex select-none flex-col items-center justify-center overflow-hidden px-6 pb-[max(4rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))] text-white"
       >
-        <!-- Light through an arched window, the outline of Ekkly's mark
-             (BRAND.md: the window is the motif), as on the home's day card. -->
-        <svg class="pointer-events-none absolute -bottom-24 left-1/2 h-[34rem] w-80 -translate-x-1/2" viewBox="0 0 144 240" fill="none">
-          <defs>
-            <linearGradient id="peek-arch-light" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="white" stop-opacity="0.16" />
-              <stop offset="0.75" stop-color="white" stop-opacity="0.03" />
-              <stop offset="1" stop-color="white" stop-opacity="0" />
-            </linearGradient>
-          </defs>
-          <path d="M4 72a68 68 0 0 1 136 0V240H4Z" fill="url(#peek-arch-light)" />
-          <path d="M4 72a68 68 0 0 1 136 0V240H4Z" stroke="white" stroke-opacity="0.12" stroke-width="1" />
+        <!-- Ekkly's panes of light in the corner, the same shapes as in the
+             home's sky (HomeScene), so holding an app feels like a look
+             through the same window. Not the arch that used to stand here: an
+             arch running off the foot of the screen read as a door, and its
+             outline showed through the section tiles. -->
+        <svg class="pointer-events-none absolute left-0 top-0 h-[60%] w-[75%] max-w-md" viewBox="0 0 338 522" preserveAspectRatio="xMinYMin meet" aria-hidden="true">
+          <path d="M0 0H338V285C338 345 300 385 240 415L0 522Z" fill="white" fill-opacity="0.05" />
+          <path d="M123 163L297 0H338V285C338 345 300 385 240 415L123 468Z" fill="white" fill-opacity="0.08" />
+          <path d="M0 0H113V165L0 232Z" fill="white" fill-opacity="0.06" />
         </svg>
 
         <div class="relative flex w-full max-w-sm flex-col items-center text-center">
+          <!-- Two fine rings round the picture: lines, not a glow, so it reads
+               as the centre of the screen rather than lit from behind. -->
+          <span class="pointer-events-none absolute left-1/2 top-14 size-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15" aria-hidden="true" />
+          <span class="pointer-events-none absolute left-1/2 top-14 size-80 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/8" aria-hidden="true" />
           <span
             data-peek-plate
-            class="flex size-28 items-center justify-center rounded-[30px] bg-linear-to-b from-white to-gray-50 shadow-2xl shadow-black/25 ring-1 ring-white/60 dark:from-gray-600 dark:to-gray-700 dark:ring-gray-500/40"
+            class="flex size-28 items-center justify-center rounded-[30px] bg-white ring-1 ring-white/60 dark:bg-gray-700 dark:ring-gray-500/40"
           >
             <AppArt :app-key="shown.art" :play="plays" class="size-20" />
           </span>
@@ -208,7 +209,7 @@ const onLeave = (el, done) => {
                   class="peek-in flex min-w-0 flex-col items-center gap-1.5 rounded-2xl bg-white/12 px-1.5 py-3"
                   :style="{ '--d': `${320 + index * 45}ms` }"
                 >
-                  <span class="flex size-10 items-center justify-center rounded-xl bg-white/90 shadow-sm">
+                  <span class="flex size-10 items-center justify-center rounded-xl bg-white/90">
                     <AppArt :app-key="section.art" flat class="peek-hue size-7" />
                   </span>
                   <span class="w-full truncate text-xs font-semibold">{{ section.title }}</span>

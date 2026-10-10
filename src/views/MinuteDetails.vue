@@ -39,7 +39,7 @@ const isMobile = useMediaQuery('(max-width: 1023px)')
 
 const canAddTasks = computed(() => canManage('tasks'))
 const canEditMinute = computed(() => canManage('minutes'))
-// Writing up is EKRIS, an app of its own. Without it the notes are still
+// Writing up is YUNIT, an app of its own. Without it the notes are still
 // taken and the minute still written by hand.
 const canWriteUp = computed(() => canEditMinute.value && isAppEnabled('ai'))
 const mentions = useMentionPicker(members)
@@ -1255,7 +1255,7 @@ watch(() => minute.value, (newMinute, oldMinute) => {
             :class="[
               'w-full text-left px-4 py-3 rounded-lg transition-all duration-200 font-semibold',
               showSummary
-                ? 'bg-primary text-white shadow-md'
+                ? 'bg-primary text-white'
                 : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600'
             ]"
           >
@@ -1292,7 +1292,7 @@ watch(() => minute.value, (newMinute, oldMinute) => {
                   :class="[
                     'w-full text-left px-3 py-2.5 rounded-md transition-all duration-150 group',
                     selectedAgendaIndex === index
-                      ? 'bg-primary text-white shadow-sm'
+                      ? 'bg-primary text-white'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 border border-transparent hover:border-gray-200 dark:hover:border-gray-600'
                   ]"
                 >
@@ -1634,7 +1634,7 @@ watch(() => minute.value, (newMinute, oldMinute) => {
         @click.self="closeAddAgendaModal"
       >
         <div
-          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full"
+          class="bg-white ring-1 ring-gray-200 dark:ring-gray-700 dark:bg-gray-800 rounded-lg max-w-md w-full"
           @click.stop
         >
           <!-- Header -->
@@ -1685,7 +1685,7 @@ watch(() => minute.value, (newMinute, oldMinute) => {
     <Teleport to="body">
       <div v-if="itemMenuOpen && currentAgendaItem" class="fixed inset-0 z-90" @click="itemMenuOpen = false">
         <div
-          class="absolute right-3 top-28 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl dark:border-gray-600 dark:bg-gray-800"
+          class="absolute right-3 top-28 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 dark:border-gray-600 dark:bg-gray-800"
           @click.stop
         >
           <button
@@ -1763,7 +1763,7 @@ watch(() => minute.value, (newMinute, oldMinute) => {
       <div
         v-if="showToast"
         :class="[
-          'fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2',
+          'fixed bottom-4 right-4 px-4 py-3 rounded-lg z-50 flex items-center gap-2',
           toastType === 'success' 
             ? 'bg-green-500 text-white' 
             : 'bg-red-500 text-white'

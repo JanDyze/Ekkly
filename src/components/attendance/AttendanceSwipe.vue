@@ -412,7 +412,7 @@ const displayName = (member) => getFullName(member) || member.firstName || 'Memb
              element has no previous position to animate from. -->
         <div
           :key="`card-${idOf(current)}`"
-          class="absolute inset-0 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg overflow-hidden touch-none cursor-grab active:cursor-grabbing"
+          class="absolute inset-0 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden touch-none cursor-grab active:cursor-grabbing"
           :style="cardStyle"
           @pointerdown="onPointerDown"
           @pointermove="onPointerMove"
@@ -440,7 +440,7 @@ const displayName = (member) => getFullName(member) || member.firstName || 'Memb
               :member="current"
               alt=""
               size="w-32 h-32"
-              plain-class="border-4 border-gray-100 dark:border-gray-700 shadow-sm"
+              plain-class="border-4 border-gray-100 dark:border-gray-700"
             />
             <div class="min-w-0">
               <p class="text-xl font-bold text-gray-900 dark:text-white leading-tight break-words">
@@ -472,7 +472,7 @@ const displayName = (member) => getFullName(member) || member.firstName || 'Memb
           <button
             v-if="unmarked > 0"
             @click="nextRound"
-            class="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-primary text-white text-sm font-semibold shadow-sm transition-transform active:scale-95"
+            class="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-primary text-white text-sm font-semibold transition-transform"
           >
             <Users class="h-4 w-4" />
             Go through the {{ unmarked }} again
@@ -497,7 +497,7 @@ const displayName = (member) => getFullName(member) || member.firstName || 'Memb
       <div class="flex items-center justify-center gap-3">
         <button
           @click="decide('skip')"
-          class="h-16 w-16 rounded-full border-2 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 flex items-center justify-center transition-transform active:scale-90 hover:bg-gray-50 dark:hover:bg-gray-700"
+          class="h-16 w-16 rounded-full border-2 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 flex items-center justify-center transition-transform hover:bg-gray-50 dark:hover:bg-gray-700"
           aria-label="Not yet — come back to them"
         >
           <X class="h-7 w-7" />
@@ -506,7 +506,7 @@ const displayName = (member) => getFullName(member) || member.firstName || 'Memb
         <button
           @click="undo"
           :disabled="!history.length"
-          class="h-12 w-12 rounded-full border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 flex items-center justify-center transition-transform active:scale-90 disabled:opacity-30"
+          class="h-12 w-12 rounded-full border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 flex items-center justify-center transition-transform disabled:opacity-30"
           aria-label="Undo last"
         >
           <RotateCcw class="h-5 w-5" />
@@ -514,7 +514,7 @@ const displayName = (member) => getFullName(member) || member.firstName || 'Memb
 
         <button
           @click="decide('present')"
-          class="h-16 w-16 rounded-full border-2 border-emerald-200 dark:border-emerald-500/30 text-emerald-500 flex items-center justify-center transition-transform active:scale-90 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+          class="h-16 w-16 rounded-full border-2 border-emerald-200 dark:border-emerald-500/30 text-emerald-500 flex items-center justify-center transition-transform hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
           aria-label="Mark present"
         >
           <Check class="h-7 w-7" />

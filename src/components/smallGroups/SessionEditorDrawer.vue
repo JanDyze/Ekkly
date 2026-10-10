@@ -169,7 +169,7 @@ const sectionClass =
         :class="[
           isMobile
             ? 'fixed inset-0 z-80 flex flex-col justify-end'
-            : 'sg-drawer border-l-4 border-primary bg-white dark:bg-gray-800 w-1/2 h-full flex flex-col shrink-0 shadow-2xl',
+            : 'sg-drawer border-l-4 border-primary bg-white dark:bg-gray-800 w-1/2 h-full flex flex-col shrink-0',
         ]"
       >
         <div v-if="isMobile" class="absolute inset-0 bg-black/50" @click="close" />
@@ -183,7 +183,7 @@ const sectionClass =
           :class="[
             'flex flex-col min-h-0',
             isMobile
-              ? 'relative z-10 w-full max-h-[92dvh] rounded-t-2xl bg-white dark:bg-gray-800 shadow-2xl border-t border-gray-200 dark:border-gray-700'
+              ? 'relative z-10 w-full max-h-[92dvh] rounded-t-2xl bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700'
               : 'flex-1',
           ]"
         >

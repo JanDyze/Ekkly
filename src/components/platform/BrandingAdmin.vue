@@ -153,7 +153,7 @@ const input =
     <div v-if="form" class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700" aria-label="Front door preview">
       <div class="bg-gradient-to-b from-primary to-primary-hover px-5 py-6">
         <p class="flex items-center gap-2">
-          <span class="flex items-center justify-center rounded-lg bg-white p-1 shadow-sm">
+          <span class="flex items-center justify-center rounded-lg bg-white p-1 ring-1 ring-gray-200 dark:ring-gray-700">
             <img :src="mark" alt="" class="h-5 w-5" />
           </span>
           <span class="font-[Poppins,system-ui,sans-serif] text-lg font-medium tracking-tight text-white">{{ preview.name }}</span>

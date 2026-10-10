@@ -58,7 +58,7 @@ const recordOf = (member) => ({ name: 'MemberDetails', params: { id: member.id |
   <AppScreen
     :title="ministry?.name || name"
     :subtitle="subtitle"
-    :back="{ name: 'PeopleMinistries' }"
+    :back="isUngrouped ? { name: 'PeopleMinistries', query: { tab: 'groups' } } : { name: 'PeopleMinistries' }"
     root="/members"
   >
     <div v-if="loading" class="flex flex-col gap-2">

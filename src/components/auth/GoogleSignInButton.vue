@@ -93,17 +93,18 @@ const handleClick = async () => {
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.65), 0 2px 6px -2px rgba(0, 0, 0, 0.4);
-  transition: box-shadow 0.2s, transform 0.15s, background-color 0.2s;
+  /* Flat, like every surface in Ekkly: a hairline edge rather than a
+     shadow, and the hover is a change of colour. */
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+  transition: background-color 0.2s;
 }
 
 .google:hover:not(:disabled) {
   background: #f8f9fa;
-  box-shadow: 0 16px 38px -12px rgba(0, 0, 0, 0.7), 0 2px 6px -2px rgba(0, 0, 0, 0.4);
 }
 
 .google:active:not(:disabled) {
-  transform: scale(0.97);
+  background: #f1f3f4;
 }
 
 .google:disabled {

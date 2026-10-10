@@ -121,18 +121,20 @@ teal and money out orange on all four) and `events-…` (the calendar, what is
 coming up, what happens every week). They are rooms of an app, not apps,
 and nothing sells them.
 
-**An app and a section never look alike.** An app is Ekkly's, so wherever it
-is offered as an app — the home of all apps, the All apps drawer, the top
-bar — it wears this artwork as drawn, glossy, on a raised plate like an icon
-on a phone. On the home that plate is a circle, and each card style carries
-a colour from the app's own drawing
+**Apps and sections wear their artwork in colour.** Wherever an app is
+offered — the home of all apps, the All apps drawer, the top bar — it wears
+this artwork as drawn, glossy, on a flat plate of colour (no shadow under
+it). On the home that plate is a circle, and each card style carries a
+colour from the app's own drawing
 ([src/data/appHues.js](src/data/appHues.js)): Ekkly's colours, never the
-church's, which the day card above already wears. A section is a room in the church's app, so its tile shows the
-same drawing flat, in the church's accent (`AppArt`'s `flat`: blue full,
-orange at half, teal at a third, no shine), on a tinted chip with no lift.
-Colour, plate and depth all differ at once, and because the flat version is
-the church's colour, the difference holds for every church. One drawing
-serves both; never draw a section twice.
+church's, which the day card above already wears. A section inside an app is
+drawn the same way, on the same card (`HomeCard`, in whichever style was
+chosen), its colour given out in turn from the same palette
+(`SECTION_HUES`) so neighbouring cards never match. Sections used to be
+drawn flat in the church's one accent, to keep them from being mistaken for
+apps; an app's home of identical tinted cards read as dull, and the screen
+already says which app you are in. Nothing on either is raised: no shadows.
+One drawing serves a section wherever it appears; never draw one twice.
 
 Edit the generator and re-run it. Never hand-edit an icon in
 `src/assets/app-icons/`.
@@ -168,8 +170,32 @@ Phosphor, line weight, imported from the generated
 directly.
 
 An icon says what a thing *does*. Nothing wears a sparkle or a wand to mean
-"this part is clever" — EKRIS writes minutes up, so it wears a pencil, and it
+"this part is clever" — YUNIT writes minutes up, so it wears a pencil, and it
 answers questions, so it wears a speech bubble.
+
+## YUNIT
+
+The assistant is YUNIT — **Y**et another **U**seful **I**ntelligence
+**T**ool — and he has a face: a round white head held by four petals in
+yellow, orange, teal and blue, two navy feet, and a burst of "!" beside him.
+His wordmark sets the i without its dot and gives it a blue one. Like the app
+artwork, his colours are his own and never follow a church's accent. He is
+"he" in copy.
+
+He stands in a three-quarter pose, his face turned and tipped to his right,
+so his eyes are a matched pair set level along that tilt, never two
+different ellipses at two heights; a blink closes both alike.
+
+He is drawn live by
+[YunitMascot.vue](src/components/yunit/YunitMascot.vue), the same drawing as
+[brand/yunit/yunit.svg](brand/yunit/yunit.svg) and the `ai` app icon. He is a
+rig of springs rather than keyframes, so he never snaps, restarts or vanishes
+between poses. Nobody makes him move with buttons: on his page
+([Yunit.vue](src/views/Yunit.vue)) he moves because of the conversation
+(`useYunitChat`) — listening while you type, thinking while he works it out,
+talking while the reply arrives, then happy, puzzled or sorry as the reply
+asks, and asleep after a long quiet. Idle, he blinks, follows the pointer and
+now and then glances round or hops; he never breathes or bobs.
 
 ## Shape and motion
 

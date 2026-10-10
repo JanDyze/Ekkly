@@ -45,7 +45,7 @@ const choose = async (key) => {
           aria-modal="true"
           aria-labelledby="card-style-title"
           tabindex="-1"
-          class="relative flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-w-md sm:rounded-3xl dark:bg-gray-900"
+          class="relative flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 sm:max-w-md sm:rounded-3xl dark:bg-gray-900"
         >
           <div class="flex shrink-0 items-start gap-3 px-5 pb-3 pt-5">
             <div class="min-w-0 flex-1">

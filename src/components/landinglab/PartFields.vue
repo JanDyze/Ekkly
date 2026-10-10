@@ -78,7 +78,7 @@ const linkedBtn =
             :aria-label="colour.name"
             :aria-pressed="model.theme.accent === colour.hex"
             :class="[
-              'h-10 w-10 rounded-full border transition-transform hover:scale-110',
+              'h-10 w-10 rounded-full border transition-transform',
               model.theme.accent === colour.hex
                 ? 'border-transparent ring-2 ring-primary ring-offset-2 dark:ring-offset-gray-900'
                 : 'border-black/10 dark:border-white/20',

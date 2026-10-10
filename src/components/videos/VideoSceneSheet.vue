@@ -136,7 +136,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
           aria-modal="true"
           aria-labelledby="scene-sheet-title"
           tabindex="-1"
-          class="sheet-panel flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white shadow-2xl sm:max-w-lg sm:rounded-2xl dark:border-gray-700 dark:bg-gray-800"
+          class="sheet-panel flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white sm:max-w-lg sm:rounded-2xl dark:border-gray-700 dark:bg-gray-800"
         >
           <div class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-4 py-3.5 dark:border-gray-700">
             <div class="flex min-w-0 items-center gap-2.5">
@@ -182,7 +182,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
                   :class="[
                     'h-9 flex-1 truncate rounded-md px-2 text-xs font-medium sm:text-sm',
                     (split || '') === mode.key
-                      ? 'bg-white text-primary shadow-sm dark:bg-gray-800 dark:text-primary-light'
+                      ? 'bg-white text-primary dark:bg-gray-800 dark:text-primary-light ring-1 ring-gray-200 dark:ring-gray-700'
                       : 'text-gray-500 dark:text-gray-400',
                   ]"
                   @click="emit('split', mode.key)"
@@ -272,7 +272,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
                   :class="[
                     'h-9 flex-1 truncate rounded-md px-2 text-xs font-medium sm:text-sm',
                     backgroundMode === mode.key
-                      ? 'bg-white text-primary shadow-sm dark:bg-gray-800 dark:text-primary-light'
+                      ? 'bg-white text-primary dark:bg-gray-800 dark:text-primary-light ring-1 ring-gray-200 dark:ring-gray-700'
                       : 'text-gray-500 dark:text-gray-400',
                   ]"
                   @click="

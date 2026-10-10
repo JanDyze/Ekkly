@@ -129,7 +129,7 @@ useFocusTrap(dialogRef, () => props.show, close)
           aria-modal="true"
           aria-labelledby="mark-sheet-title"
           tabindex="-1"
-          class="flex h-[80dvh] w-full flex-col rounded-t-2xl bg-white shadow-xl dark:bg-gray-800 sm:h-[36rem] sm:max-w-lg sm:rounded-2xl"
+          class="flex h-[80dvh] w-full flex-col rounded-t-2xl bg-white dark:bg-gray-800 sm:h-[36rem] sm:max-w-lg sm:rounded-2xl ring-1 ring-gray-200 dark:ring-gray-700"
         >
           <div
             class="flex shrink-0 items-center gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-700"

@@ -64,7 +64,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
         aria-modal="true"
         aria-labelledby="follow-up-title"
         tabindex="-1"
-        class="flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white shadow-2xl sm:max-w-md sm:rounded-2xl dark:border-gray-700 dark:bg-gray-800"
+        class="flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white sm:max-w-md sm:rounded-2xl dark:border-gray-700 dark:bg-gray-800"
       >
         <div class="flex items-center gap-3 border-b border-gray-200 px-4 py-3.5 dark:border-gray-700">
           <MemberAvatar :member="person" alt="" size="h-10 w-10" />

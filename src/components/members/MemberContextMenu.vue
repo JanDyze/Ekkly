@@ -111,7 +111,7 @@ const shouldShowDivider = (index) => {
       <div
         v-if="show && member"
         ref="menuRef"
-        class="fixed z-9999 min-w-45 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-1 overflow-hidden"
+        class="fixed z-9999 min-w-45 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 py-1 overflow-hidden"
         :style="position ? { left: `${position.left}px`, top: `${position.top}px` } : { left: `${x}px`, top: `${y}px`, visibility: 'hidden' }"
       >
         <template v-for="(item, index) in menuItems" :key="item.id">

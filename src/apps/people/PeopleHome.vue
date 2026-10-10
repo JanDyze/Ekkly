@@ -3,9 +3,10 @@ import { computed } from 'vue'
 import { Cake, ClipboardText, HandHeart, Hourglass, KeyRound, UserCircleCheck, UsersThree } from '../../icons'
 import AppScreen from '../../components/appframe/AppScreen.vue'
 import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
+import CardPanes from '../../components/appframe/CardPanes.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import BirthdayCard from '../../components/members/BirthdayCard.vue'
-import AppShortcut from '../../components/appframe/AppShortcut.vue'
+import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
 import DeckFaces from '../../components/appframe/DeckFaces.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
 import AppArt from '../../components/common/AppArt.vue'
@@ -458,13 +459,7 @@ const doors = computed(() => {
           <!-- The roll: its number, large, and what it is made of. -->
           <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
             <template #art>
-              <!-- An arched window in outline, the shape of Ekkly's mark
-                   (BRAND.md: the window is the motif), drawn as lines on the
-                   colour rather than as light glowing through it. -->
-              <svg class="absolute -bottom-10 right-5 h-60 w-36" viewBox="0 0 144 240" fill="none">
-                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" stroke="white" stroke-opacity="0.3" stroke-width="1.5" />
-                <path d="M20 72a52 52 0 0 1 104 0V240H20Z" stroke="white" stroke-opacity="0.15" stroke-width="1.5" />
-              </svg>
+              <CardPanes />
             </template>
             <template v-if="card.ready" #title>
               <span class="text-5xl font-bold tabular-nums tracking-tight">{{ card.total.toLocaleString() }}</span>
@@ -474,7 +469,7 @@ const doors = computed(() => {
                  orange and blue are Ekkly's and need a white ground on a
                  coloured card (BRAND.md). -->
             <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-lg shadow-black/10">
+              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
                 <AppArt app-key="members" :play="1" class="size-10" />
               </span>
             </template>
@@ -504,20 +499,7 @@ const doors = computed(() => {
       </AppHeroDeck>
 
       <!-- 2. The doors -->
-      <nav class="grid grid-cols-2 gap-2.5" aria-label="People">
-        <AppShortcut
-          v-for="(door, index) in doors"
-          :key="door.key"
-          :to="door.to"
-          :title="door.title"
-          :detail="door.detail"
-          :art="door.art"
-          :glyph="door.glyph"
-          :badge="door.badge"
-          :urgent="door.urgent"
-          :delay="120 + index * 30"
-        />
-      </nav>
+      <AppShortcuts :doors="doors" label="People" />
     </div>
   </AppScreen>
 </template>

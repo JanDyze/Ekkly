@@ -72,7 +72,11 @@ onBeforeUnmount(() => {
     tabindex="-1"
     :class="[
       'absolute right-4 z-50 flex flex-col items-end gap-2.5 focus:outline-none',
-      aboveBottomBar ? 'bottom-4 bottom-bar!' : 'bottom-[max(1rem,calc(env(safe-area-inset-bottom)+0.5rem))]',
+      // Either way it clears the bottom bar when someone has it on: the bar's
+      // space is 0 without one, and bottom-bar reads it too (style.css).
+      aboveBottomBar
+        ? 'bottom-4 bottom-bar!'
+        : 'bottom-[max(1rem,calc(env(safe-area-inset-bottom)+0.5rem),calc(var(--bottom-bar-space)+0.75rem))]',
     ]"
   >
     <Transition name="fab-actions">
@@ -82,7 +86,7 @@ onBeforeUnmount(() => {
           :key="action.key"
           role="menuitem"
           @click="run(action)"
-          class="flex items-center gap-2.5 rounded-full bg-white/80 py-1.5 pl-4 pr-1.5 shadow-lg ring-1 ring-gray-200/70 backdrop-blur-xl transition-transform active:scale-95 hover:bg-white dark:bg-gray-800/80 dark:ring-white/10 dark:hover:bg-gray-800"
+          class="flex items-center gap-2.5 rounded-full bg-white/80 py-1.5 pl-4 pr-1.5 ring-1 ring-gray-200/70 backdrop-blur-xl transition-transform hover:bg-white dark:bg-gray-800/80 dark:ring-white/10 dark:hover:bg-gray-800"
         >
           <span class="flex flex-col items-end leading-tight">
             <span
@@ -119,7 +123,7 @@ onBeforeUnmount(() => {
       :aria-expanded="open"
       aria-haspopup="menu"
       :aria-label="open ? 'Close actions' : label"
-      class="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform active:scale-95 hover:bg-primary-hover"
+      class="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white transition-transform hover:bg-primary-hover"
     >
       <Plus
         class="h-6 w-6 transition-transform duration-300 ease-in-out"

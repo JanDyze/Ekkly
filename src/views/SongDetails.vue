@@ -377,7 +377,7 @@ onUnmounted(() => {
       >
         <div v-if="canManage('songs')" class="mb-2 flex shrink-0 items-center justify-between gap-2">
           <p class="text-xs font-bold text-gray-400">Lyrics</p>
-          <!-- EKRIS is its own app; without it the lyrics are still
+          <!-- YUNIT is its own app; without it the lyrics are still
                typed and arranged by hand. -->
           <button
             v-if="isAppEnabled('ai')"
@@ -413,7 +413,7 @@ onUnmounted(() => {
               v-bind="canManage('songs') ? sectionDrag(index) : {}"
               :class="[
                 'flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-bold text-gray-600 select-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300',
-                draggingSection === index ? 'opacity-80 shadow-lg ring-2 ring-primary/40' : '',
+                draggingSection === index ? 'opacity-80 ring-2 ring-primary/40' : '',
               ]"
             >
               {{ section.label || 'Untitled' }}
@@ -475,7 +475,7 @@ onUnmounted(() => {
               v-bind="canManage('songs') ? chipDrag(index) : {}"
               :class="[
                 'flex items-center gap-1 rounded-full bg-primary/10 py-1 pl-2.5 pr-1 text-xs font-bold text-primary select-none',
-                draggingChip === index ? 'opacity-80 shadow-lg ring-2 ring-primary/40' : '',
+                draggingChip === index ? 'opacity-80 ring-2 ring-primary/40' : '',
               ]"
             >
               {{ label }}
@@ -539,7 +539,7 @@ onUnmounted(() => {
               :class="[
                 'group rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900',
                 canManage('songs') ? 'select-none' : '',
-                draggingSlide === at ? 'opacity-80 shadow-xl ring-2 ring-primary/40' : '',
+                draggingSlide === at ? 'opacity-80 ring-2 ring-primary/40' : '',
               ]"
             >
               <div class="mb-1.5 flex items-center justify-between gap-2">

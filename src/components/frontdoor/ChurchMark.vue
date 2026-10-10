@@ -38,13 +38,13 @@ const mark = computed(() => MARKS[props.church] || null)
 
 <template>
   <!-- A real logo keeps its own colours, on white. -->
-  <span v-if="image" class="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[30%] bg-white shadow-md shadow-black/15 ring-1 ring-black/5">
+  <span v-if="image" class="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[30%] bg-white ring-1 ring-black/5">
     <img :src="image" alt="" draggable="false" class="h-[88%] w-[88%] select-none object-contain" />
   </span>
   <span
     v-else
     :class="[
-      'relative flex h-full w-full items-center justify-center bg-linear-to-br from-primary to-primary-hover text-white shadow-md shadow-primary/30',
+      'relative flex h-full w-full items-center justify-center bg-linear-to-br from-primary to-primary-hover text-white',
       mark ? mark.shape : 'rounded-[30%]',
     ]"
   >

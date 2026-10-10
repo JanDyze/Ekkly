@@ -132,7 +132,7 @@ const applyNew = () => {
         aria-modal="true"
         aria-labelledby="bulk-assign-title"
         tabindex="-1"
-        class="w-full sm:max-w-md max-h-[85dvh] flex flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-200 dark:border-gray-700"
+        class="w-full sm:max-w-md max-h-[85dvh] flex flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
       >
         <!-- Header -->
         <div

@@ -199,7 +199,7 @@ defineExpose({ seek, play, pause, playing, time })
     <div
       ref="wrapper"
       :style="frameStyle"
-      class="group relative overflow-hidden rounded-2xl bg-gray-900 shadow-sm ring-1 ring-black/5 dark:ring-white/10"
+      class="group relative overflow-hidden rounded-2xl bg-gray-900 ring-1 ring-black/5 dark:ring-white/10"
     >
       <canvas ref="canvas" class="block size-full" @click="toggle" />
 
@@ -209,7 +209,7 @@ defineExpose({ seek, play, pause, playing, time })
       <button
         v-if="video && !playing"
         type="button"
-        class="absolute left-1/2 top-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition-transform duration-200 ease-out hover:bg-black/60 pressed:scale-95"
+        class="absolute left-1/2 top-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition-transform duration-200 ease-out hover:bg-black/60"
         aria-label="Play"
         @click="play"
       >

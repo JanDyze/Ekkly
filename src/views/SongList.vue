@@ -427,7 +427,7 @@ const copyLyrics = async (song) => {
   <div class="flex flex-col h-full overflow-hidden bg-transparent">
 
     <!-- Action Bar -->
-    <div class="sticky top-0 z-40 mb-2 shrink-0 rounded-xl border border-gray-200/80 bg-white/95 px-2 py-2 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/95 sm:px-3">
+    <div class="sticky top-0 z-40 mb-2 shrink-0 rounded-xl border border-gray-200/80 bg-white/95 px-2 py-2 backdrop-blur dark:border-gray-700 dark:bg-gray-900/95 sm:px-3">
       <div class="flex items-center justify-between gap-2 w-full flex-nowrap">
         <SearchBar v-model="searchQuery" v-model:open="mobileSearchOpen" placeholder="Search songs..." />
 
@@ -448,7 +448,7 @@ const copyLyrics = async (song) => {
             </button>
 
             <Transition name="fade">
-              <div v-if="showFilterDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 py-2 overflow-hidden">
+              <div v-if="showFilterDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 z-50 py-2 overflow-hidden">
                 <button
                   v-for="cat in categories"
                   :key="cat"
@@ -466,7 +466,7 @@ const copyLyrics = async (song) => {
           <button
             v-if="canManage('songs')"
             @click="handleAdd"
-            class="flex h-10 items-center justify-center rounded-lg bg-primary text-white shadow-sm transition-colors hover:bg-primary-hover px-2.5 sm:px-4 gap-1.5 w-10 sm:w-auto shrink-0"
+            class="flex h-10 items-center justify-center rounded-lg bg-primary text-white transition-colors hover:bg-primary-hover px-2.5 sm:px-4 gap-1.5 w-10 sm:w-auto shrink-0"
           >
             <Plus class="h-5 w-5 shrink-0" /> <span class="hidden sm:inline whitespace-nowrap">Add</span>
           </button>
@@ -697,7 +697,7 @@ const copyLyrics = async (song) => {
           :class="[
             isMobile
               ? 'fixed inset-0 z-80 flex flex-col justify-end'
-              : 'song-form-panel m-3 rounded-2xl border-2 border-primary/30 dark:border-primary-light/30 bg-white dark:bg-gray-800 w-[calc(50%-1rem)] h-[calc(100%-1.5rem)] flex flex-col shrink-0 shadow-xl relative overflow-hidden z-60'
+              : 'song-form-panel m-3 rounded-2xl border-2 border-primary/30 dark:border-primary-light/30 bg-white dark:bg-gray-800 w-[calc(50%-1rem)] h-[calc(100%-1.5rem)] flex flex-col shrink-0 relative overflow-hidden z-60'
           ]"
         >
           <div
@@ -714,7 +714,7 @@ const copyLyrics = async (song) => {
             :class="[
               'flex flex-col min-h-0',
               isMobile
-                ? 'relative z-10 w-full max-h-[92dvh] rounded-t-2xl bg-white dark:bg-gray-800 shadow-2xl border-t border-gray-200 dark:border-gray-700'
+                ? 'relative z-10 w-full max-h-[92dvh] rounded-t-2xl bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700'
                 : 'h-full w-full'
             ]"
           >
@@ -864,7 +864,7 @@ const copyLyrics = async (song) => {
           :class="[
             isMobile
               ? 'fixed inset-0 z-80 flex flex-col justify-end'
-              : 'song-view-panel m-3 rounded-2xl border-2 border-primary/30 dark:border-primary-light/30 bg-white dark:bg-gray-800 w-[calc(50%-1rem)] h-[calc(100%-1.5rem)] flex flex-col shrink-0 shadow-xl relative overflow-hidden z-60'
+              : 'song-view-panel m-3 rounded-2xl border-2 border-primary/30 dark:border-primary-light/30 bg-white dark:bg-gray-800 w-[calc(50%-1rem)] h-[calc(100%-1.5rem)] flex flex-col shrink-0 relative overflow-hidden z-60'
           ]"
         >
           <div
@@ -881,7 +881,7 @@ const copyLyrics = async (song) => {
             :class="[
               'flex flex-col min-h-0',
               isMobile
-                ? 'relative z-10 w-full max-h-[92dvh] rounded-t-2xl bg-white dark:bg-gray-800 shadow-2xl border-t border-gray-200 dark:border-gray-700'
+                ? 'relative z-10 w-full max-h-[92dvh] rounded-t-2xl bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700'
                 : 'h-full w-full'
             ]"
           >
@@ -1045,7 +1045,7 @@ const copyLyrics = async (song) => {
             aria-modal="true"
             aria-labelledby="song-actions-title"
             tabindex="-1"
-            class="actions-sheet relative z-10 w-full sm:max-w-sm flex flex-col rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border-t sm:border border-gray-200 dark:border-gray-700"
+            class="actions-sheet relative z-10 w-full sm:max-w-sm flex flex-col rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 border-t sm:border border-gray-200 dark:border-gray-700"
           >
             <div class="flex items-center gap-3 px-4 py-4 border-b border-gray-100 dark:border-gray-700">
               <span class="flex h-10 w-18 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-gray-50 text-gray-400 dark:border-gray-800 dark:bg-gray-900">

@@ -472,7 +472,7 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
         </div>
 
         <!-- The plan so far: the starter apps, and whatever was added above. -->
-        <aside class="rounded-2xl bg-gray-900 p-6 text-white shadow-2xl dark:bg-gray-800">
+        <aside class="rounded-2xl bg-gray-900 p-6 text-white dark:bg-gray-800">
           <p class="text-xs font-semibold uppercase tracking-wider text-white/60">Your plan so far</p>
           <div class="mt-4 flex flex-wrap gap-2">
             <AppArt v-for="app in plan.apps" :key="app.key" :app-key="app.key" :title="app.name" class="h-10 w-10" />
@@ -634,7 +634,7 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
 }
 
 /* A heading, lit by a band of coloured light crossing it. The gradient is three
-   times the heading's width — lit text, the band, then text still in shadow —
+   times the heading's width — lit text, the band, then text still in —
    and the scroll slides it from the shadowed end to the lit one. The text keeps
    its colour (only its fill is see-through), so currentColor is the heading's
    own ink in light, dark and the dark "How it works" band alike. */
@@ -658,7 +658,7 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
 /* The last call, seen first through a narrow arched window that widens into
    the whole card. The frame is a size container, so 100cqw is the card's own
    width: shut, the window is the middle 40% with a round top half as wide;
-   open, the clip stands 4rem outside the card, so its shadow shows and its
+   open, the clip stands 4rem outside the card, so its shows and its
    corners are its own. */
 .arch-frame {
   container-type: inline-size;

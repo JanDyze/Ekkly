@@ -63,7 +63,7 @@ const styles = computed(() => {
 <template>
   <div
     :class="[
-      'flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg backdrop-blur-sm min-w-70 max-w-md',
+      'flex items-center gap-3 px-4 py-3 rounded-lg border backdrop-blur-sm min-w-70 max-w-md',
       styles.bg,
       styles.border,
     ]"

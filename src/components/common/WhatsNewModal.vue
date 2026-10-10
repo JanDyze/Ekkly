@@ -64,7 +64,7 @@ const formatDate = (iso) =>
           aria-modal="true"
           aria-labelledby="whats-new-title"
           tabindex="-1"
-          class="flex flex-col w-full sm:max-w-lg max-h-[85dvh] sm:max-h-[80dvh] bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-xl"
+          class="flex flex-col w-full sm:max-w-lg max-h-[85dvh] sm:max-h-[80dvh] bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl ring-1 ring-gray-200 dark:ring-gray-700"
           @click.stop
         >
           <!-- Header -->

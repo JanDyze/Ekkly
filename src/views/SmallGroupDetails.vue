@@ -280,7 +280,7 @@ const sessionsByMonth = computed(() => {
         <div v-if="showMenu" class="fixed inset-0 z-40" @click="showMenu = false" />
         <div
           v-if="showMenu"
-          class="absolute right-0 top-full mt-1 z-50 w-56 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg py-1"
+          class="absolute right-0 top-full mt-1 z-50 w-56 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-1"
         >
           <button
             v-if="canManage('smallgroups')"

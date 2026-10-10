@@ -88,7 +88,7 @@ over cool. Colours are the variables in `templates/ad.css`, not hex in an ad.
 **None of the SaaS look.** The list in BRAND.md → *What Ekkly is not* applies
 to every ad: no blurred blobs, dot grids, gradient words, badge chips over a
 headline, frosted panels, glowing buttons, or sparkle and wand icons for
-EKRIS. Real app screens and the app artwork beat any illustration.
+YUNIT. Real app screens and the app artwork beat any illustration.
 
 **A benefit, then a few practical wins.** One line saying what changes for the
 church, then at most three wins of three to seven words. No paragraphs on the
@@ -121,7 +121,7 @@ privacy page, so it is the owner's decision, not an ad's.
 tried. The launch prices in `lib/apps.js` are a plan, not an offer. An ad
 quotes a price only when the owner has said it is live.
 
-**Names.** Ekkly with a capital E. The assistant is EKRIS — never "AI-powered",
+**Names.** Ekkly with a capital E. The assistant is YUNIT — never "AI-powered",
 Claude, or a model name. Say *link*, not address, for a church's
 `<id>.ekkly.online`. Sentence case everywhere.
 

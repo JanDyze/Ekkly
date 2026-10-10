@@ -103,9 +103,9 @@ const SCENES = [
   },
   {
     key: 'assistant',
-    chip: 'Ask EKRIS',
+    chip: 'Ask YUNIT',
     art: 'ai',
-    title: 'Ask EKRIS about your church',
+    title: 'Ask YUNIT about your church',
     component: markRaw(SceneAssistant),
     duration: 7000,
   },
@@ -237,7 +237,7 @@ const tintStyle = computed(() =>
       <!-- The device: a phone, or a monitor for the computer pass. -->
       <div :class="['device absolute left-1/2', desktop ? 'is-desktop' : 'is-phone']">
         <!-- Its body. The scenes draw the screen. -->
-        <div class="frame absolute inset-0 border-10 border-gray-900 bg-gray-50 shadow-2xl shadow-gray-900/25 dark:border-gray-700 dark:bg-gray-900 dark:shadow-black/50" aria-hidden="true"></div>
+        <div class="frame absolute inset-0 border-10 border-gray-900 bg-gray-50 dark:border-gray-700 dark:bg-gray-900" aria-hidden="true"></div>
 
         <!-- A monitor's stand. -->
         <Transition name="fade">
@@ -330,7 +330,7 @@ const tintStyle = computed(() =>
     <div class="mt-4 flex items-center justify-center gap-2">
       <div class="relative flex h-9 items-center rounded-full bg-gray-100 p-0.5 dark:bg-gray-800">
         <span
-          class="thumb absolute left-0.5 top-0.5 h-8 w-[calc(50%-0.125rem)] rounded-full bg-white shadow-sm dark:bg-gray-700"
+          class="thumb absolute left-0.5 top-0.5 h-8 w-[calc(50%-0.125rem)] rounded-full bg-white ring-1 ring-gray-200 dark:ring-gray-700 dark:bg-gray-700"
           :style="{ translate: desktop ? '100% 0' : '0 0' }"
           aria-hidden="true"
         ></span>

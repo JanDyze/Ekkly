@@ -263,7 +263,7 @@ const input =
             aria-modal="true"
             aria-labelledby="payment-title"
             tabindex="-1"
-            class="flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white shadow-2xl sm:max-w-md sm:rounded-2xl dark:border-gray-700 dark:bg-gray-800"
+            class="flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white sm:max-w-md sm:rounded-2xl dark:border-gray-700 dark:bg-gray-800"
           >
             <div class="flex shrink-0 items-center justify-between border-b border-gray-200 px-4 py-4 sm:px-6 dark:border-gray-700">
               <h3 id="payment-title" class="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">

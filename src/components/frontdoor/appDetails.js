@@ -106,7 +106,7 @@ export const APP_DETAILS = {
     headline: 'Minutes done before you get home',
     wins: [
       { icon: Keyboard, text: 'Just type notes in the meeting' },
-      { icon: NotePencil, text: 'Written up for you by EKRIS' },
+      { icon: NotePencil, text: 'Written up for you by YUNIT' },
       { icon: Printer, text: 'Print or export to file' },
     ],
   },

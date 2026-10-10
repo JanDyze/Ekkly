@@ -119,7 +119,7 @@ useFocusTrap(dialogRef, () => props.show, handleCancel)
         :class="[
           isMobile
             ? 'fixed inset-0 z-80 flex flex-col justify-end'
-            : 'task-drawer m-3 flex h-[calc(100%-1.5rem)] w-[calc(50%-1.5rem)] shrink-0 flex-col overflow-hidden rounded-2xl border-2 border-primary/30 bg-white shadow-xl dark:border-primary-light/30 dark:bg-gray-800'
+            : 'task-drawer m-3 flex h-[calc(100%-1.5rem)] w-[calc(50%-1.5rem)] shrink-0 flex-col overflow-hidden rounded-2xl border-2 border-primary/30 bg-white dark:border-primary-light/30 dark:bg-gray-800'
         ]"
       >
         <div v-if="isMobile" class="absolute inset-0 bg-black/50" @click="handleCancel" />
@@ -132,7 +132,7 @@ useFocusTrap(dialogRef, () => props.show, handleCancel)
           :class="[
             'flex min-h-0 flex-col',
             isMobile
-              ? 'relative z-10 max-h-[92dvh] w-full rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800'
+              ? 'relative z-10 max-h-[92dvh] w-full rounded-t-2xl border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
               : 'h-full w-full'
           ]"
         >
@@ -202,7 +202,7 @@ useFocusTrap(dialogRef, () => props.show, handleCancel)
                   <Transition name="dropdown">
                     <div
                       v-if="showMemberDropdown && availableMembers.length"
-                      class="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-gray-300 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800"
+                      class="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800"
                     >
                       <button
                         v-for="member in availableMembers"

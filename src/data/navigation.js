@@ -12,6 +12,7 @@ import {
   Mic2,
   NotebookPen,
   ProjectorScreen,
+  Robot,
   Settings,
   UserCog,
   History,
@@ -34,6 +35,7 @@ import { isAppEnabled } from '../composables/useChurchApps'
 // to. Every page has one today; the pair is what lets a new one arrive before
 // its drawing does.
 import accountsArt from '../assets/app-icons/accounts.svg'
+import aiArt from '../assets/app-icons/ai.svg'
 import attendanceArt from '../assets/app-icons/attendance.svg'
 import auditArt from '../assets/app-icons/audit.svg'
 import bibleArt from '../assets/app-icons/bible.svg'
@@ -257,6 +259,24 @@ export const NAV_GROUPS = [
         icon: Link2,
         capability: 'links.view',
         description: 'The links the church hands out — forms, giving, and where to find it online.',
+      },
+    ],
+  },
+  {
+    key: 'extras',
+    label: 'Extras',
+    items: [
+      // YUNIT, the assistant. Named by its app rather than a capability, the
+      // way the Bible is: every account may meet him where the church has him.
+      {
+        name: 'YUNIT',
+        tagline: 'Help with anything',
+        path: '/yunit',
+        app: 'ai',
+        image: aiArt,
+        art: 'ai',
+        icon: Robot,
+        description: 'The church’s assistant: he writes up minutes, finds songs and lays out lyrics.',
       },
     ],
   },

@@ -219,7 +219,7 @@ const removeFromChurch = async (account) => {
       <button
         @click="handleSync"
         :disabled="syncing"
-        class="shrink-0 flex h-10 items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 text-gray-600 dark:text-gray-300 transition-transform active:scale-95 disabled:opacity-50"
+        class="shrink-0 flex h-10 items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 text-gray-600 dark:text-gray-300 transition-transform disabled:opacity-50"
         title="Pull the latest list from Firebase"
       >
         <RefreshCw :class="['h-4 w-4', syncing ? 'animate-spin' : '']" />
@@ -319,7 +319,7 @@ const removeFromChurch = async (account) => {
           :class="[
             'h-9 px-3.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors border',
             activeFilter === filter.key
-              ? 'bg-primary text-white border-primary shadow-sm'
+              ? 'bg-primary text-white border-primary'
               : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700',
           ]"
         >
@@ -456,7 +456,7 @@ const removeFromChurch = async (account) => {
           <div class="absolute inset-0 bg-black/50" @click="selected = null" />
 
           <div
-            class="sheet-panel relative z-10 w-full sm:max-w-md max-h-[92dvh] flex flex-col rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border-t sm:border border-gray-200 dark:border-gray-700"
+            class="sheet-panel relative z-10 w-full sm:max-w-md max-h-[92dvh] flex flex-col rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 border-t sm:border border-gray-200 dark:border-gray-700"
           >
             <div
               class="shrink-0 flex items-start gap-3 px-5 py-4 border-b border-gray-200 dark:border-gray-700"

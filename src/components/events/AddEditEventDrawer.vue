@@ -88,7 +88,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('cancel'))
         :class="[
           'flex flex-col min-h-0',
           isMobile
-            ? 'relative z-10 w-full max-h-[92dvh] overflow-hidden rounded-t-2xl bg-white dark:bg-gray-800 shadow-2xl border-t border-gray-200 dark:border-gray-700'
+            ? 'relative z-10 w-full max-h-[92dvh] overflow-hidden rounded-t-2xl bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700'
             : 'h-full w-full'
         ]"
       >

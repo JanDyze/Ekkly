@@ -257,7 +257,7 @@ const { swipeTarget: dragSheet, swipeStyle: dragStyle } = useSwipeDismiss({
                         :aria-label="`Use ${hex} from your logo`"
                         :aria-pressed="chosenColour === hex"
                         :class="[
-                          'h-10 w-10 rounded-full border transition-transform hover:scale-105',
+                          'h-10 w-10 rounded-full border transition-transform',
                           chosenColour === hex
                             ? 'border-transparent ring-2 ring-primary ring-offset-2 dark:ring-offset-gray-800'
                             : 'border-black/10 dark:border-white/20',

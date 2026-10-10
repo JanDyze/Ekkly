@@ -548,13 +548,13 @@ const switchKnob = (on) => [
                   </div>
                   <div
                     v-if="isShared(album.id)"
-                    class="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow"
+                    class="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white"
                   >
                     <Check class="h-3.5 w-3.5" />
                   </div>
                   <div
                     v-else
-                    class="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-gray-900/70 text-white shadow"
+                    class="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-gray-900/70 text-white"
                   >
                     <EyeOff class="h-3.5 w-3.5" />
                   </div>

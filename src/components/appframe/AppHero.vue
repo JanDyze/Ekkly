@@ -48,7 +48,7 @@ defineProps({
     :to="to || undefined"
     :class="[
       'app-hero animate-rise group relative isolate block overflow-hidden rounded-2xl bg-primary p-5 text-white',
-      to ? 'transition-transform duration-200 ease-out pressed:scale-[0.99]' : '',
+      to ? 'transition-[filter] duration-200 ease-out hover:brightness-95' : '',
     ]"
   >
     <!-- The app's mark, faint and bleeding off the corner. Flattened to white

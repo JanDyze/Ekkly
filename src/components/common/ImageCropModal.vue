@@ -217,7 +217,7 @@ onBeforeUnmount(releaseKeyboard)
           aria-modal="true"
           aria-label="Adjust photo"
           tabindex="-1"
-          class="relative z-10 w-full max-w-lg rounded-2xl bg-white dark:bg-gray-800 shadow-2xl overflow-hidden"
+          class="relative z-10 w-full max-w-lg rounded-2xl bg-white dark:bg-gray-800 overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700"
         >
           <div
             class="flex items-center justify-between gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700"

@@ -89,6 +89,22 @@ explicit `replace: true`.
 
 ---
 
+## YUNIT uses the same tools
+
+YUNIT, the assistant inside the app (`/yunit`, [lib/yunit.js](lib/yunit.js)),
+works the records through these same tools, run as the signed-in person: the
+tools their access and the church's apps allow, writes included, audited in
+their name ("YUNIT (for Ana Reyes)"). He reads on his own, but never runs a
+write himself — each one comes back to the page as a card, and happens only
+when the person presses Confirm, which goes back through `/api/enhance` and
+is checked again there.
+
+Because a person confirms every change in the app, YUNIT also offers a few
+deletes the connector does not ([lib/mcp/deletes.js](lib/mcp/deletes.js)):
+tasks, prayer concerns, one-off events, songs and ledger entries, each needing
+`.manage` on its area. They are never in `TOOLS`, so the connector above
+still deletes nothing. The roll and minutes have no delete even there.
+
 ## Whose link it is
 
 One endpoint serves every church on the platform, and a link answers two

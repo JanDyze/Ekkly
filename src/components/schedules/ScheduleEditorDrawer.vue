@@ -233,7 +233,7 @@ const handleSave = () => {
         :class="[
           isMobile
             ? 'fixed inset-0 z-80 flex flex-col justify-end'
-            : 'schedule-drawer m-3 flex h-[calc(100%-1.5rem)] w-[calc(50%-1.5rem)] shrink-0 flex-col overflow-hidden rounded-2xl border-2 border-primary/30 bg-white shadow-xl dark:border-primary-light/30 dark:bg-gray-800',
+            : 'schedule-drawer m-3 flex h-[calc(100%-1.5rem)] w-[calc(50%-1.5rem)] shrink-0 flex-col overflow-hidden rounded-2xl border-2 border-primary/30 bg-white dark:border-primary-light/30 dark:bg-gray-800',
         ]"
       >
         <div v-if="isMobile" class="absolute inset-0 bg-black/50" @click="close" />
@@ -247,7 +247,7 @@ const handleSave = () => {
           :class="[
             'flex min-h-0 flex-col',
             isMobile
-              ? 'relative z-10 max-h-[92dvh] w-full rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800'
+              ? 'relative z-10 max-h-[92dvh] w-full rounded-t-2xl border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
               : 'flex-1',
           ]"
         >

@@ -723,7 +723,7 @@ const iconBtn = 'rounded-lg p-2 text-gray-400 hover:bg-gray-100 disabled:opacity
         <div ref="previewPane" class="min-h-0 flex-1 overflow-y-auto p-6">
           <div
             :class="[
-              'mx-auto overflow-hidden rounded-2xl border border-gray-300 bg-white shadow-lg transition-all dark:border-gray-700',
+              'mx-auto overflow-hidden rounded-2xl border border-gray-300 bg-white transition-all dark:border-gray-700',
               previewWide ? 'max-w-3xl' : 'max-w-sm',
             ]"
           >
@@ -756,7 +756,7 @@ const iconBtn = 'rounded-lg p-2 text-gray-400 hover:bg-gray-100 disabled:opacity
       <div v-if="!miniHidden" class="pointer-events-auto relative touch-none select-none">
         <RouterLink
           :to="previewLink"
-          class="block overflow-hidden rounded-xl border border-gray-300 bg-white shadow-xl ring-1 ring-black/5 dark:border-gray-600 dark:bg-gray-800"
+          class="block overflow-hidden rounded-xl border border-gray-300 bg-white ring-1 ring-black/5 dark:border-gray-600 dark:bg-gray-800"
           :style="{ width: `${MINI_WIDTH}px`, viewTransitionName: 'public-page' }"
           :aria-label="`Preview: ${miniLabel}. Opens the full page.`"
         >
@@ -772,7 +772,7 @@ const iconBtn = 'rounded-lg p-2 text-gray-400 hover:bg-gray-100 disabled:opacity
           </p>
         </RouterLink>
         <button
-          class="absolute -left-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+          class="absolute -left-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
           aria-label="Put the preview away"
           @click="setMiniHidden(true)"
         >
@@ -781,7 +781,7 @@ const iconBtn = 'rounded-lg p-2 text-gray-400 hover:bg-gray-100 disabled:opacity
       </div>
       <button
         v-else
-        class="pointer-events-auto flex h-11 items-center gap-1.5 rounded-full bg-primary px-4 text-xs font-bold text-white shadow-lg hover:bg-primary-hover"
+        class="pointer-events-auto flex h-11 items-center gap-1.5 rounded-full bg-primary px-4 text-xs font-bold text-white hover:bg-primary-hover"
         @click="setMiniHidden(false)"
       >
         <Eye class="h-4 w-4" />
@@ -805,9 +805,8 @@ const iconBtn = 'rounded-lg p-2 text-gray-400 hover:bg-gray-100 disabled:opacity
 /* Picked up: off the page, and no transition between it and the pointer. */
 .lab-lifted {
   transition: none;
-  box-shadow:
-    0 12px 28px -8px rgb(0 0 0 / 0.28),
-    0 2px 6px rgb(0 0 0 / 0.08);
+  /* Marked by an outline in the accent rather than lifted on a shadow. */
+  box-shadow: 0 0 0 2px var(--color-primary);
   cursor: grabbing;
 }
 

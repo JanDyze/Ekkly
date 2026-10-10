@@ -103,8 +103,8 @@ const anchorStyle = computed(() => {
       <div
         :class="
           isMobile
-            ? 'absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl dark:border-gray-700 dark:bg-gray-800'
-            : 'absolute w-66 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-600 dark:bg-gray-800'
+            ? 'absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] dark:border-gray-700 dark:bg-gray-800'
+            : 'absolute w-66 overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800'
         "
         :style="isMobile ? {} : anchorStyle"
         @click.stop

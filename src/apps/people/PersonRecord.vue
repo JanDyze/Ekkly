@@ -531,7 +531,7 @@ const handleImageUpdate = async (base64Image) => {
                 :member="localMember"
                 size="h-20 w-20"
                 style="view-transition-name: member-avatar"
-                plain-class="border-2 border-white dark:border-gray-700 shadow-md"
+                plain-class="border-2 border-white dark:border-gray-700"
               />
               <!-- Always drawn, not revealed on hover: there is no hover on a
                    phone, and this was the only way to change a photo. -->
@@ -539,7 +539,7 @@ const handleImageUpdate = async (base64Image) => {
                 v-if="canEdit"
                 @click="showImageCropper = true"
                 aria-label="Change photo"
-                class="absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-white bg-primary p-1.5 text-white shadow-md transition-colors hover:bg-primary-hover dark:border-gray-800"
+                class="absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-white bg-primary p-1.5 text-white transition-colors hover:bg-primary-hover dark:border-gray-800"
               >
                 <Camera class="h-3.5 w-3.5" />
               </button>

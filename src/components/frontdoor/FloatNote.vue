@@ -24,7 +24,7 @@ const TONES = {
 
 <template>
   <div
-    class="fd-pop absolute z-30 flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-white px-2 py-1.5 shadow-xl ring-1 ring-gray-900/5 sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2 dark:bg-gray-800 dark:ring-white/10"
+    class="fd-pop absolute z-30 flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-white px-2 py-1.5 ring-1 ring-gray-900/5 sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2 dark:bg-gray-800 dark:ring-white/10"
     :style="{ '--d': `${delay}ms` }"
   >
     <span v-if="icon" :class="['flex h-6 w-6 shrink-0 items-center justify-center rounded-md sm:h-7 sm:w-7 sm:rounded-lg', TONES[tone] || TONES.primary]">

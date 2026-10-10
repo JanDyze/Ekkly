@@ -65,7 +65,7 @@ onBeforeUnmount(() => {
       <span
         v-if="open"
         role="tooltip"
-        class="absolute left-0 top-full z-50 mt-1 w-56 max-w-[min(14rem,70vw)] rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-[11px] font-normal leading-snug text-gray-600 shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+        class="absolute left-0 top-full z-50 mt-1 w-56 max-w-[min(14rem,70vw)] rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-[11px] font-normal leading-snug text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
       >
         {{ text }}
       </span>

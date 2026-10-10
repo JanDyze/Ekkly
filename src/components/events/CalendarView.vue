@@ -351,7 +351,7 @@ const handleDayKeydown = (event, day) => {
         <button
           @click="emit('navigateMonth', 'prev')"
           aria-label="Previous month"
-          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 active:scale-95 dark:text-gray-400 dark:hover:bg-gray-700"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
         >
           <ChevronLeft class="h-5 w-5" />
         </button>
@@ -379,7 +379,7 @@ const handleDayKeydown = (event, day) => {
             aria-modal="true"
             aria-label="Choose month and year"
             tabindex="-1"
-            class="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 sm:p-4 z-50 w-72 max-w-[calc(100vw-2rem)] sm:left-1/2 sm:-translate-x-1/2"
+            class="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3 sm:p-4 z-50 w-72 max-w-[calc(100vw-2rem)] sm:left-1/2 sm:-translate-x-1/2"
           >
             <!-- Year Selector -->
             <div class="mb-4">
@@ -437,7 +437,7 @@ const handleDayKeydown = (event, day) => {
         <button
           @click="emit('navigateMonth', 'next')"
           aria-label="Next month"
-          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 active:scale-95 dark:text-gray-400 dark:hover:bg-gray-700"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
         >
           <ChevronRight class="h-5 w-5" />
         </button>

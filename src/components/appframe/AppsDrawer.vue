@@ -57,7 +57,9 @@ useFocusTrap(panel, () => props.show, () => emit('close'))
 const { can, isAdmin } = usePermissions()
 const { ordered, setOrder, resetOrder } = useAppOrder(computed(() => props.apps))
 
-const PLATED = 'grid shrink-0 place-items-center rounded-[14px] bg-linear-to-b from-white to-gray-50 shadow-md shadow-gray-900/10 ring-1 ring-gray-200/90 dark:from-gray-600 dark:to-gray-700 dark:shadow-black/30 dark:ring-gray-500/40'
+// The square an app's artwork sits on: flat, a white tile with a hairline
+// ring, never raised on a shadow. The artwork's own gloss is the only depth.
+const PLATED = 'grid shrink-0 place-items-center rounded-[14px] bg-white ring-1 ring-gray-200 dark:bg-gray-700 dark:ring-gray-600'
 
 /** What an app is for, in the words Ekkly sells it with. */
 const detailOf = (item) => APP_DETAILS[item.art] || null
@@ -259,23 +261,24 @@ const addApp = () => {
     <Transition name="drawer">
       <div
         v-if="show"
-        class="fixed inset-0 z-100 flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center sm:p-4"
+        class="fixed inset-0 z-100 flex bg-black/50"
         @click.self="emit('close')"
       >
-        <!-- A fixed height, not a cap: sized to its content, the panel shrank
-             with every letter typed into the search and jumped back as it was
-             cleared, the search box sliding under the thumb as it moved. The
-             list scrolls inside it instead. Shorter on a desktop, where it
-             stands in the middle of a large screen. -->
+        <!-- The whole screen, on every size: every app is a place to go, and
+             a sheet with the page showing round it made the catalogue look
+             like a menu over something else. A fixed height rather than one
+             sized to its content, so it never shrank with every letter typed
+             into the search; the list scrolls inside it. On a wide screen the
+             content keeps to a readable column down the middle. -->
         <div
           ref="panel"
           role="dialog"
           aria-modal="true"
           aria-labelledby="apps-drawer-title"
           tabindex="-1"
-          class="drawer-panel flex h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-gray-50 shadow-2xl sm:h-[min(92dvh,48rem)] sm:max-w-xl sm:rounded-3xl dark:bg-gray-900"
+          class="drawer-panel flex h-dvh w-full flex-col overflow-hidden bg-gray-50 pt-[env(safe-area-inset-top)] dark:bg-gray-900"
         >
-          <div class="flex shrink-0 items-center justify-between gap-3 px-5 pb-2 pt-4">
+          <div class="mx-auto flex w-full max-w-2xl shrink-0 items-center justify-between gap-3 px-5 pb-2 pt-4">
             <div class="min-w-0">
               <h2 id="apps-drawer-title" class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Apps</h2>
               <p class="text-xs text-gray-500 dark:text-gray-400">{{ apps.length }} for your church</p>
@@ -296,7 +299,7 @@ const addApp = () => {
           <!-- The search, outside the scrolling list so it is always in reach.
                Never focused on its own: on a phone that would raise the
                keyboard every time the drawer opened. -->
-          <div class="shrink-0 px-4 pb-2">
+          <div class="mx-auto w-full max-w-2xl shrink-0 px-4 pb-2">
             <div class="relative">
               <MagnifyingGlass class="pointer-events-none absolute left-3.5 top-1/2 size-4.5 -translate-y-1/2 text-gray-400" />
               <input
@@ -321,7 +324,7 @@ const addApp = () => {
             </div>
           </div>
 
-          <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+          <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] [&>*]:mx-auto [&>*]:max-w-2xl">
             <!-- 1. The spotlight: one app, shown off. -->
             <section
               v-if="spotlight && !searching"
@@ -354,7 +357,7 @@ const addApp = () => {
               </ul>
               <button
                 type="button"
-                class="mt-5 inline-flex h-10 items-center rounded-full bg-white px-5 text-sm font-bold text-primary transition-transform duration-200 pressed:scale-[0.97]"
+                class="mt-5 inline-flex h-10 items-center rounded-full bg-white px-5 text-sm font-bold text-primary transition-colors duration-200 hover:bg-white/90"
                 @pointerdown="prefetchRoute(router, spotlight.path)"
                 @click="open(spotlight)"
               >
@@ -384,7 +387,7 @@ const addApp = () => {
               </div>
               <div
                 :class="[
-                  'grid grid-cols-5 gap-1 rounded-2xl bg-white p-2 ring-1 transition-shadow dark:bg-gray-800',
+                  'grid grid-cols-5 gap-1 rounded-2xl bg-white p-2 ring-1 transition-colors dark:bg-gray-800',
                   swapping ? 'ring-2 ring-primary dark:ring-primary-light' : 'ring-gray-200/70 dark:ring-gray-700/70',
                 ]"
               >
@@ -574,12 +577,6 @@ const addApp = () => {
 .drawer-enter-from .drawer-panel,
 .drawer-leave-to .drawer-panel {
   transform: translateY(100%);
-}
-@media (min-width: 640px) {
-  .drawer-enter-from .drawer-panel,
-  .drawer-leave-to .drawer-panel {
-    transform: translateY(0.5rem) scale(0.96);
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .drawer-enter-active .drawer-panel,

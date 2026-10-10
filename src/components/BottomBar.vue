@@ -237,31 +237,31 @@ watch([activeTabPath, primaryNav], () => nextTick(placeIndicator))
 </script>
 
 <template>
-  <!-- A floating island rather than a full-width strip: the page scrolls
-       visibly past its frosted edges, which is what tells you there is more
-       page down there. The outer band takes no pointer events, so the gap
-       either side of the island still belongs to the content behind it. The
-       layout leaves room for it at the foot (AdminLayout). -->
+  <!-- A floating island rather than a strip along the foot: lifted a clear
+       gap above the phone's home indicator and held in from both sides, so it
+       reads as something resting over the page rather than the page's floor.
+       Flat, like every card here - it is told apart from the page by its own
+       surface and a hairline, not a shadow. The outer band takes no pointer
+       events, so the gap round the island still belongs to the content behind
+       it. The gap, the island and the mark rising out of it add up to
+       --bottom-bar-space (style.css), which is what the page leaves free. -->
   <nav
-    class="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-1.5 pb-[env(safe-area-inset-bottom)] lg:hidden no-print"
+    class="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] lg:hidden no-print"
     aria-label="Quick apps"
   >
-    <div ref="islandRef" class="pointer-events-auto relative mx-auto flex h-16 w-full items-center px-1">
+    <div ref="islandRef" class="pointer-events-auto relative mx-auto flex h-16 w-full max-w-md items-center px-1">
       <!-- The bar's surface, a layer of its own so it can be cut to shape
            (barPath) without cutting the centre button out with it. Clipped
            rather than drawn, so the frosted blur behind it follows the shape
-           too; the hairline round it is the same path drawn over the top. The
-           shadow is a strip along the foot, because a clip takes a shadow
-           with everything else. -->
-      <span class="nav-shadow" aria-hidden="true" />
+           too; the hairline round it is the same path drawn over the top. -->
       <span
-        class="absolute inset-0 rounded-full bg-white/80 backdrop-blur-xl dark:bg-gray-800/80"
+        class="absolute inset-0 rounded-full bg-white/90 backdrop-blur-xl dark:bg-gray-800/90"
         :style="barPath ? { clipPath: `path('${barPath}')` } : undefined"
         aria-hidden="true"
       />
       <svg
         v-if="barPath"
-        class="pointer-events-none absolute inset-0 h-full w-full overflow-visible text-gray-200/70 dark:text-white/10"
+        class="pointer-events-none absolute inset-0 h-full w-full overflow-visible text-gray-200 dark:text-white/15"
         :viewBox="`0 0 ${islandW} 64`"
         aria-hidden="true"
       >
@@ -352,16 +352,6 @@ watch([activeTabPath, primaryNav], () => nextTick(placeIndicator))
 </template>
 
 <style scoped>
-/* The bar's shadow, on a strip that covers only the lower half so the dip
-   has nothing above it to shade. Its corners are the pill's own. */
-.nav-shadow {
-  position: absolute;
-  inset: 50% 0 0;
-  border-radius: 0 0 2rem 2rem;
-  box-shadow: 0 12px 28px -12px rgba(15, 23, 42, 0.45);
-  pointer-events: none;
-}
-
 /* The selected tab carries the whole answer to "where am I", so it gets a
    tinted pill in the church's colour, the bar's own shape in miniature. One
    element that slides rather than one per tab: the eye follows the movement

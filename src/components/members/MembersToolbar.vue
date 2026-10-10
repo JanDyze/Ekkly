@@ -60,7 +60,7 @@ const closeSearch = () => emit("close");
 <template>
   <div
     v-if="open"
-    class="mb-3 shrink-0 rounded-xl border border-gray-200/80 bg-white/95 px-2 py-2 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/95 sm:px-3 lg:mb-4"
+    class="mb-3 shrink-0 rounded-xl border border-gray-200/80 bg-white/95 px-2 py-2 backdrop-blur dark:border-gray-700 dark:bg-gray-900/95 sm:px-3 lg:mb-4"
   >
     <!-- ==================== Mobile ==================== -->
     <!-- Always-visible search: it is the only way the list is narrowed -->

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Topbar from '../components/Topbar.vue'
 import RightSidebar from '../components/RightSidebar.vue'
@@ -35,6 +35,14 @@ const isFocus = computed(() => Boolean(route.meta?.focus) || pageWantsFocus.valu
 
 // The bottom bar, for whoever turned it on, everywhere but a focus route.
 const showBar = computed(() => bottomBar.value && !isFocus.value)
+
+// The bar floats over the foot of the screen, so what is under it needs to
+// know it is there. Marked on the root element rather than passed down,
+// because what has to make room is everywhere - the home, every app's screens,
+// their floating buttons, sheets teleported to the body - and style.css turns
+// the mark into --bottom-bar-space (0 when there is no bar) for all of them.
+watch(showBar, (on) => document.documentElement.toggleAttribute('data-bottom-bar', on), { immediate: true })
+onUnmounted(() => document.documentElement.removeAttribute('data-bottom-bar'))
 
 // A page that puts up its own header does not want the app's as well: two
 // stacked bars, the top one saying "Bible" over a row already saying "Juan 3".
@@ -73,7 +81,7 @@ const KEPT_ALIVE = ['PeopleEveryone']
          leads back to it from everywhere else. A bottom bar is there only for
          whoever turned it on in Preferences (useBottomBar). -->
     <!-- Main content area -->
-    <div :class="['flex-1 min-w-0 flex flex-col overflow-hidden lg:ml-0 print-main', showBar ? 'pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0' : '']">
+    <div class="flex-1 min-w-0 flex flex-col overflow-hidden lg:ml-0 print-main">
       <!-- Topbar. Hidden, not removed, on a focus route (and the rail below
            with it): each opens listeners and builds a fair
            amount of screen when it mounts, and tearing them down to open a
@@ -85,11 +93,21 @@ const KEPT_ALIVE = ['PeopleEveryone']
         <Topbar />
       </div>
 
-      <!-- Main content, the full height of the screen on a phone too. -->
-      <main class="flex-1 overflow-hidden bg-white dark:bg-gray-900 print-main">
+      <!-- Main content, the full height of the screen on a phone too. An
+           ordinary page ends above the bottom bar, so nothing in it can end
+           up behind the bar, while the page's own surface carries on under
+           the floating island. Inside, the bar's space is set back to 0: the
+           page has already been given it, and its own floating buttons and
+           scrolling areas would otherwise make room twice. The home and an
+           app's screens run to the foot of the screen behind the bar and make
+           room for it themselves (style.css, --bottom-bar-space). -->
+      <!-- data-morph-page: where a page appears, so a tapped card can grow
+           into it and the page shrink back into its card (the card becoming the page in
+           router/viewTransitions.js). -->
+      <main data-morph-page :class="['flex-1 overflow-hidden bg-white dark:bg-gray-900 print-main', bare || isRoot ? '' : 'pb-(--bottom-bar-space)']">
         <!-- A focus route gets the raw box and handles its own padding and
              safe areas: the deck should reach the edges of the screen. -->
-        <div :class="['h-full print-main', bare || isRoot ? '' : 'p-0 sm:p-4 lg:px-8 lg:py-3']">
+        <div :class="['h-full print-main', bare || isRoot ? '' : 'p-0 sm:p-4 lg:px-8 lg:py-3 [--bottom-bar-space:0px]']">
           <!-- The lists you open records from stay built while a record is
                open, so back is a re-show rather than a rebuild: every row,
                every photo, the search, the sort and the scroll are where they
@@ -102,10 +120,10 @@ const KEPT_ALIVE = ['PeopleEveryone']
         </div>
       </main>
 
-      <!-- It floats over the foot of the screen, and the column above leaves
-           room for it (showBar), so a page ends above the bar rather than
-           behind it. Not on a focus route: that is a task, with its own way
-           out. -->
+      <!-- It floats over the foot of the screen, and what is under it makes
+           room (data-bottom-bar above), so a page ends above the bar rather
+           than behind it. Not on a focus route: that is a task, with its own
+           way out. -->
       <BottomBar v-if="showBar" />
     </div>
 

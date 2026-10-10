@@ -319,7 +319,7 @@ const field =
         aria-label="Chat with us"
         :style="phoneStyle"
         :class="side === 'left' ? 'sm:left-0' : 'sm:right-0'"
-        class="panel fixed inset-x-0 top-0 flex h-dvh flex-col overflow-hidden bg-white sm:absolute sm:inset-x-auto sm:top-auto sm:bottom-18 sm:h-[min(38rem,calc(100dvh-11rem))] sm:w-92 sm:transform-none sm:rounded-2xl sm:shadow-2xl sm:shadow-gray-900/20 sm:ring-1 sm:ring-gray-900/5 dark:bg-gray-900 dark:sm:shadow-black/50 dark:sm:ring-white/10"
+        class="panel fixed inset-x-0 top-0 flex h-dvh flex-col overflow-hidden bg-white sm:absolute sm:inset-x-auto sm:top-auto sm:bottom-18 sm:h-[min(38rem,calc(100dvh-11rem))] sm:w-92 sm:transform-none sm:rounded-2xl sm:ring-1 sm:ring-gray-900/5 dark:bg-gray-900 dark:sm:ring-white/10"
       >
         <!-- Who they are talking to, and the other ways to reach them. -->
         <header class="flex shrink-0 items-center gap-3 border-b border-gray-100 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-3 dark:border-gray-800">
@@ -473,7 +473,7 @@ const field =
     <Transition name="fade">
       <div
         v-if="preview && !open"
-        class="relative w-72 max-w-[calc(100vw-2rem)] rounded-2xl bg-white p-3 pr-9 shadow-xl shadow-gray-900/15 ring-1 ring-gray-900/5 dark:bg-gray-900 dark:shadow-black/40 dark:ring-white/10"
+        class="relative w-72 max-w-[calc(100vw-2rem)] rounded-2xl bg-white p-3 pr-9 ring-1 ring-gray-900/5 dark:bg-gray-900 dark:ring-white/10"
       >
         <button type="button" class="flex w-full items-start gap-2.5 text-left" @click="openChat">
           <img :src="developer" alt="" class="h-8 w-8 shrink-0 rounded-full" />
@@ -498,7 +498,7 @@ const field =
       @pointerup="onPointerUp"
       @pointercancel="onPointerUp"
       :class="[
-        'relative flex h-14 items-center gap-3 rounded-full bg-white p-2 shadow-xl shadow-gray-900/15 ring-1 ring-gray-900/5 transition-shadow hover:shadow-2xl sm:pr-5 dark:bg-gray-900 dark:shadow-black/40 dark:ring-white/10',
+        'relative flex h-14 items-center gap-3 rounded-full bg-white p-2 ring-1 ring-gray-900/5 transition-colors sm:pr-5 dark:bg-gray-900 dark:ring-white/10',
         { 'max-sm:hidden': open },
       ]"
       @click="open ? close() : openChat()"

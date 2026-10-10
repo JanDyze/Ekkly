@@ -180,7 +180,7 @@ const moreCount = computed(() => {
       <RouterLink
         v-if="next"
         :to="{ name: 'Present', params: { date: next.date } }"
-        class="animate-rise flex h-13 items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-white transition-transform duration-200 ease-out hover:bg-primary-hover pressed:scale-[0.98]"
+        class="animate-rise flex h-13 items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-white transition-transform duration-200 ease-out hover:bg-primary-hover"
         style="animation-delay: 210ms"
       >
         <Play class="size-5" />
@@ -194,7 +194,7 @@ const moreCount = computed(() => {
         </h2>
         <RouterLink
           :to="{ name: 'Present', params: { date: next.date } }"
-          class="group block rounded-2xl border border-gray-200 bg-white p-4 transition-[transform,border-color] duration-200 ease-out hover:border-gray-300 pressed:scale-[0.99] dark:border-gray-700/80 dark:bg-gray-800 dark:hover:border-gray-600"
+          class="group block rounded-2xl border border-gray-200 bg-white p-4 transition-[transform,border-color] duration-200 ease-out hover:border-gray-300 dark:border-gray-700/80 dark:bg-gray-800 dark:hover:border-gray-600"
         >
           <div class="flex items-start gap-3">
             <div class="min-w-0 flex-1">

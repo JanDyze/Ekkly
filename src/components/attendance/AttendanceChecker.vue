@@ -518,7 +518,7 @@ const shellClass = computed(() => {
 const panelClass = computed(() => {
   if (isPage.value) return 'flex flex-col min-h-0 h-full w-full'
   return isMobile.value
-    ? 'relative z-10 w-full max-h-[92dvh] rounded-t-2xl bg-white dark:bg-gray-800 shadow-2xl border-t border-gray-200 dark:border-gray-700'
+    ? 'relative z-10 w-full max-h-[92dvh] rounded-t-2xl bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700'
     : 'h-full w-full'
 })
 </script>
@@ -646,9 +646,12 @@ const panelClass = computed(() => {
         <!-- Members. One column on a phone, a card grid wherever there is
              room. The container is asked rather than the viewport, so the
              half-width desktop drawer and the full-width record page each land
-             on a sensible number of columns without being told apart. -->
+             on a sensible number of columns without being told apart. The
+             room at the foot is for the floating button, and for the bottom
+             bar under it when someone has that on (its space already counts
+             the safe area, so the larger of the two is taken). -->
         <div
-          class="@container flex-1 overflow-y-auto px-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))] @md:px-4"
+          class="@container flex-1 overflow-y-auto px-2 pb-[calc(5.5rem+max(env(safe-area-inset-bottom),var(--bottom-bar-space)))] @md:px-4"
         >
           <p
             v-if="filteredMembers.length === 0"

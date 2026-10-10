@@ -29,7 +29,7 @@ const schedule = computed(() => {
   <button
     type="button"
     @click="$emit('click')"
-    class="group w-full text-left rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 transition-all"
+    class="group w-full text-left rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-primary/50 transition-all"
   >
     <!-- Cover. Falls back to a tinted panel so every card keeps the same
          silhouette whether or not a photo was uploaded. -->
@@ -40,7 +40,7 @@ const schedule = computed(() => {
         v-if="group.coverPhoto"
         :src="group.coverPhoto"
         alt=""
-        class="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+        class="absolute inset-0 h-full w-full object-cover"
       />
       <UsersRound
         v-else

@@ -660,7 +660,7 @@ const showingResults = computed(() => searchable.value)
       >
         <div class="absolute inset-0 bg-black/40" @click="pickerOpen = false" />
         <div
-          class="sheet-panel relative z-10 flex max-h-[85dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800 sm:max-w-lg sm:rounded-2xl sm:border"
+          class="sheet-panel relative z-10 flex max-h-[85dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 sm:max-w-lg sm:rounded-2xl sm:border"
         >
           <div
             class="flex shrink-0 items-center gap-2 border-b border-gray-200 px-4 py-3 dark:border-gray-700"
@@ -754,7 +754,7 @@ const showingResults = computed(() => searchable.value)
       >
         <div class="absolute inset-0 bg-black/40" @click="versionOpen = false" />
         <div
-          class="sheet-panel relative z-10 flex max-h-[85dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800 sm:max-w-sm sm:rounded-2xl sm:border"
+          class="sheet-panel relative z-10 flex max-h-[85dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 sm:max-w-sm sm:rounded-2xl sm:border"
         >
           <div
             class="flex shrink-0 items-center gap-2 border-b border-gray-200 px-4 py-3 dark:border-gray-700"

@@ -59,8 +59,8 @@ const HEIGHT = 'h-[26dvh] min-h-54 max-h-64'
 
 // Every card is a rounded card in a hand of them (AppHeroDeck fans the ones
 // underneath out to either side): a fine edge in a deeper shade of its own
-// colour and a soft shadow under it, so the top card stands clear of the
-// ones behind. On the church's colour the edge is black laid thin over it,
+// colour, and nothing under it: no shadow, so the deck stays flat and the
+// edge alone sets the top card off from the ones behind. On the church's colour the edge is black laid thin over it,
 // which is a deeper shade of whatever colour the church chose. The edge used
 // to be 4px along the foot; at 1px all round the card keeps that room.
 const TONES = {
@@ -88,6 +88,16 @@ const KICKERS = {
 // that way (the cake on a birthday, the church's logo).
 const FILLED = ['accent', 'celebrate']
 
+// A tappable card answers a pointer or a finger with its colour, a shade
+// deeper, rather than by shrinking or lifting. Every shade is solid: the
+// cards are stacked, and a see-through hover shows the card behind it.
+const HOVERS = {
+  accent: 'hover:border-black/35 dark:hover:border-black/60',
+  celebrate: 'hover:border-black/35 dark:hover:border-black/60',
+  warn: 'hover:bg-amber-100 dark:hover:bg-gray-700',
+  plain: 'hover:bg-gray-50 dark:hover:bg-gray-700',
+}
+
 const DETAILS = {
   accent: 'text-white/75',
   celebrate: 'text-white/80',
@@ -103,10 +113,10 @@ const DETAILS = {
     :type="action && !to ? 'button' : undefined"
     draggable="false"
     :class="[
-      'group relative isolate flex flex-col rounded-[28px] border px-4 pb-3 pt-[15px] shadow-[0_18px_34px_-18px_rgb(15_23_42/0.35)] dark:shadow-black/50',
+      'group relative isolate flex flex-col rounded-[28px] border px-4 pb-3 pt-[15px]',
       HEIGHT,
       TONES[tone] || TONES.plain,
-      tappable ? 'transition-transform duration-200 ease-out pressed:scale-[0.99]' : '',
+      tappable ? ['transition-colors duration-200 ease-out', HOVERS[tone] || HOVERS.plain] : '',
       action && !to ? 'w-full text-left' : '',
     ]"
   >
@@ -142,14 +152,14 @@ const DETAILS = {
     <span v-if="tappable" class="absolute bottom-4 right-4 flex h-5 items-center gap-1.5">
       <span
         v-if="dest && FILLED.includes(tone)"
-        class="flex size-8 items-center justify-center rounded-[10px] bg-white shadow-md shadow-black/15 transition-transform duration-300 group-engaged:scale-105"
+        class="flex size-8 items-center justify-center rounded-[10px] bg-white ring-1 ring-black/10"
       >
         <AppArt :app-key="dest" class="size-6" />
       </span>
       <AppArt
         v-else-if="dest"
         :app-key="dest"
-        class="size-6 transition-transform duration-300 group-engaged:scale-110"
+        class="size-6"
       />
       <span v-if="destLabel" class="sr-only">Opens {{ destLabel }}</span>
       <ChevronRight

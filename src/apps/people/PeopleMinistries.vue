@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AppScreen from '../../components/appframe/AppScreen.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
 import { usePeopleOverview } from '../../composables/usePeopleOverview'
@@ -18,11 +19,13 @@ import { usePeopleGroups } from '../../composables/usePeopleGroups'
 // It was a list of rows with a few faces at the start of each, and the faces
 // spilled over the names once a ministry had more than two people in it.
 //
-// Under the ministries, the same question asked of small groups, for whoever
+// Beside the ministries, the same question asked of small groups, for whoever
 // may see them: how many members are in one, each group with its faces, and
-// the members in none. Here rather than a tile of its own on the People home,
-// because it is the same question of where somebody belongs — and the place
-// house fellowships will join when they are kept.
+// the members in none. A tab of this screen rather than a tile of its own on
+// the People home, because it is the same question of where somebody belongs
+// — and the place house fellowships will join when they are kept. Two tabs
+// rather than one long scroll, so neither list is under the other; which one
+// is open is in the address (?tab=groups), so back and a refresh keep it.
 
 const { loading, ministries, unplaced, counts, isAdmin } = usePeopleOverview()
 
@@ -55,10 +58,47 @@ const { canSee: seesGroups, groups, ungrouped, eligible } = usePeopleGroups()
 const grouped = computed(() => eligible.value.length - ungrouped.value.length)
 const groupShare = computed(() => (eligible.value.length ? grouped.value / eligible.value.length : 0))
 const memberCount = (n) => `${n.toLocaleString()} ${n === 1 ? 'member' : 'members'}`
+
+const route = useRoute()
+const router = useRouter()
+const tab = computed(() => (seesGroups.value && route.query.tab === 'groups' ? 'groups' : 'ministries'))
+const setTab = (key) => {
+  const { tab: _drop, ...rest } = route.query
+  router.replace({ query: key === 'groups' ? { ...rest, tab: 'groups' } : rest })
+}
+const TABS = [
+  { key: 'ministries', label: 'Ministries' },
+  { key: 'groups', label: 'Small groups' },
+]
 </script>
 
 <template>
   <AppScreen title="Ministries" :subtitle="subtitle" :back="{ name: 'PeopleHome' }" root="/members">
+    <!-- Ministries or small groups: two tabs rather than one long scroll. -->
+    <div
+      v-if="seesGroups"
+      role="tablist"
+      aria-label="Ministries or small groups"
+      class="mb-4 grid grid-cols-2 gap-1 rounded-full bg-gray-200/70 p-1 dark:bg-gray-800"
+    >
+      <button
+        v-for="t in TABS"
+        :key="t.key"
+        type="button"
+        role="tab"
+        :aria-selected="tab === t.key"
+        :class="[
+          'rounded-full py-2 text-sm font-semibold transition-colors',
+          tab === t.key
+            ? 'bg-white text-gray-900 dark:bg-gray-700 dark:text-white ring-1 ring-gray-200 dark:ring-gray-700'
+            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
+        ]"
+        @click="setTab(t.key)"
+      >
+        {{ t.label }}
+      </button>
+    </div>
+
     <div v-if="loading" class="flex flex-col gap-2.5">
       <div class="h-24 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
       <div class="grid grid-cols-2 gap-2.5">
@@ -66,7 +106,8 @@ const memberCount = (n) => `${n.toLocaleString()} ${n === 1 ? 'member' : 'member
       </div>
     </div>
 
-    <div v-else-if="!ministries.length" class="rounded-2xl bg-white p-6 text-center ring-1 ring-gray-200/80 dark:bg-gray-800 dark:ring-gray-700/80">
+    <template v-else-if="tab === 'ministries'">
+    <div v-if="!ministries.length" class="rounded-2xl bg-white p-6 text-center ring-1 ring-gray-200/80 dark:bg-gray-800 dark:ring-gray-700/80">
       <p class="font-semibold text-gray-900 dark:text-white">No ministries yet</p>
       <p v-if="isAdmin" class="mt-1 text-sm text-gray-500 dark:text-gray-400">Add them in Settings, under Ministries.</p>
     </div>
@@ -94,7 +135,7 @@ const memberCount = (n) => `${n.toLocaleString()} ${n === 1 ? 'member' : 'member
           :to="{ name: 'PeopleMinistry', params: { name: ministry.name } }"
           :style="{ animationDelay: `${60 + index * 25}ms` }"
           :class="[
-            'animate-rise flex min-h-32 min-w-0 flex-col gap-3 rounded-2xl p-3.5 transition duration-200 ease-out pressed:scale-[0.97]',
+            'animate-rise flex min-h-32 min-w-0 flex-col gap-3 rounded-2xl p-3.5 transition duration-200 ease-out',
             ministry.people.length
               ? 'bg-white ring-1 ring-gray-200/80 hover:ring-gray-300 dark:bg-gray-800 dark:ring-gray-700/80 dark:hover:ring-gray-600'
               : 'border border-dashed border-gray-300 dark:border-gray-700',
@@ -132,7 +173,7 @@ const memberCount = (n) => `${n.toLocaleString()} ${n === 1 ? 'member' : 'member
       <RouterLink
         v-if="counts.total && unplaced.length"
         :to="{ name: 'PeopleUnplaced' }"
-        class="animate-rise flex items-center gap-3 rounded-2xl bg-white p-3.5 ring-1 ring-gray-200/80 transition duration-200 ease-out hover:ring-gray-300 pressed:scale-[0.98] dark:bg-gray-800 dark:ring-gray-700/80 dark:hover:ring-gray-600"
+        class="animate-rise flex items-center gap-3 rounded-2xl bg-white p-3.5 ring-1 ring-gray-200/80 transition duration-200 ease-out hover:ring-gray-300 dark:bg-gray-800 dark:ring-gray-700/80 dark:hover:ring-gray-600"
       >
         <div class="min-w-0 flex-1">
           <p class="text-[15px] font-semibold text-gray-900 dark:text-white">Not in a ministry</p>
@@ -154,9 +195,17 @@ const memberCount = (n) => `${n.toLocaleString()} ${n === 1 ? 'member' : 'member
       </RouterLink>
     </div>
 
+    </template>
+
     <!-- Small groups: the same question, asked of the groups. -->
-    <section v-if="!loading && seesGroups && (groups.length || eligible.length)" class="mt-6 flex flex-col gap-2.5" aria-labelledby="people-groups-title">
-      <h2 id="people-groups-title" class="px-1 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Small groups</h2>
+    <section v-else class="flex flex-col gap-2.5" aria-label="Small groups">
+      <div
+        v-if="!groups.length"
+        class="rounded-2xl bg-white p-6 text-center ring-1 ring-gray-200/80 dark:bg-gray-800 dark:ring-gray-700/80"
+      >
+        <p class="font-semibold text-gray-900 dark:text-white">No small groups yet</p>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Start one in the Small Groups app.</p>
+      </div>
 
       <section
         v-if="eligible.length"
@@ -178,7 +227,7 @@ const memberCount = (n) => `${n.toLocaleString()} ${n === 1 ? 'member' : 'member
           :to="{ name: 'SmallGroupDetails', params: { id: group.id } }"
           :style="{ animationDelay: `${60 + index * 25}ms` }"
           :class="[
-            'animate-rise flex min-h-32 min-w-0 flex-col gap-3 rounded-2xl p-3.5 transition duration-200 ease-out pressed:scale-[0.97]',
+            'animate-rise flex min-h-32 min-w-0 flex-col gap-3 rounded-2xl p-3.5 transition duration-200 ease-out',
             group.people.length
               ? 'bg-white ring-1 ring-gray-200/80 hover:ring-gray-300 dark:bg-gray-800 dark:ring-gray-700/80 dark:hover:ring-gray-600'
               : 'border border-dashed border-gray-300 dark:border-gray-700',
@@ -212,7 +261,7 @@ const memberCount = (n) => `${n.toLocaleString()} ${n === 1 ? 'member' : 'member
       <RouterLink
         v-if="ungrouped.length"
         :to="{ name: 'PeopleUngrouped' }"
-        class="animate-rise flex items-center gap-3 rounded-2xl bg-white p-3.5 ring-1 ring-gray-200/80 transition duration-200 ease-out hover:ring-gray-300 pressed:scale-[0.98] dark:bg-gray-800 dark:ring-gray-700/80 dark:hover:ring-gray-600"
+        class="animate-rise flex items-center gap-3 rounded-2xl bg-white p-3.5 ring-1 ring-gray-200/80 transition duration-200 ease-out hover:ring-gray-300 dark:bg-gray-800 dark:ring-gray-700/80 dark:hover:ring-gray-600"
       >
         <div class="min-w-0 flex-1">
           <p class="text-[15px] font-semibold text-gray-900 dark:text-white">Not in a small group</p>

@@ -215,7 +215,7 @@ const markSeen = () => {
           role="dialog"
           aria-modal="true"
           aria-label="Upcoming gatherings"
-          class="absolute inset-x-4 top-1/2 mx-auto max-w-md -translate-y-1/2 overflow-hidden rounded-3xl bg-[#062832] shadow-2xl outline-none ring-1 ring-white/10 sm:inset-x-0"
+          class="absolute inset-x-4 top-1/2 mx-auto max-w-md -translate-y-1/2 overflow-hidden rounded-3xl bg-[#062832] outline-none ring-1 ring-white/10 sm:inset-x-0"
         >
           <header class="flex items-center justify-between px-6 pt-6">
             <p class="text-[11px] font-black uppercase tracking-[0.3em] text-primary-light">
@@ -365,7 +365,7 @@ const markSeen = () => {
         <button
           v-if="peeking && peeked && !open"
           @click="toggle"
-          class="pointer-events-auto mt-1 max-w-[min(16rem,calc(100vw-6.5rem))] rounded-xl border border-white/10 bg-[#062832] px-3.5 py-2.5 text-left shadow-xl"
+          class="pointer-events-auto mt-1 max-w-[min(16rem,calc(100vw-6.5rem))] rounded-xl border border-white/10 bg-[#062832] px-3.5 py-2.5 text-left"
         >
           <p class="text-[9px] font-bold uppercase tracking-[0.2em] text-primary-light">
             {{ dayLabel(peeked.date) || 'Soon' }}

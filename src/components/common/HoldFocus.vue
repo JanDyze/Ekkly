@@ -62,7 +62,7 @@ watch(
              and would otherwise show the blur straight through it. -->
         <div
           ref="hostRef"
-          class="hold-focus-lift absolute overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/10"
+          class="hold-focus-lift absolute overflow-hidden rounded-xl bg-white ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/10"
           :style="{
             top: `${box.top}px`,
             left: `${box.left}px`,

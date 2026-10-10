@@ -44,7 +44,7 @@ export const privacy = ({ name, email }) => ({
         'Google Firebase and Google Cloud: signing in, and storing the records.',
         'Vercel: serving the app.',
         'PayMongo: card payments. Card numbers go straight to PayMongo; we never see or keep them.',
-        'Anthropic: EKRIS and AI minutes. What you ask EKRIS, or the notes you write up, is sent to be answered and is not used to train its models.',
+        'Anthropic: YUNIT and AI minutes. What you ask YUNIT, or the notes you write up, is sent to be answered and is not used to train its models.',
         'Google’s Gmail: the emails we send.',
       ],
     },
@@ -108,7 +108,7 @@ export const terms = ({ name, email }) => ({
       ],
     },
     {
-      heading: 'EKRIS and AI minutes',
+      heading: 'YUNIT and AI minutes',
       body: ['They are helpful, and sometimes wrong. Read what they write before you rely on it or send it on.'],
     },
     {

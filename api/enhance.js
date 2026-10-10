@@ -19,6 +19,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { requireChurchUser } from "../lib/tenant.js";
 import { aiAccess, recordAiUse } from "../lib/platform/ai.js";
+import { converse, perform } from "../lib/yunit.js";
 
 // The model is the platform's choice (Console → AI), defaulting to Claude Opus
 // 5 — see lib/aiModels.js for which models this request shape is offered on.
@@ -135,6 +136,11 @@ export default async function handler(req, res) {
   // found the URL. It is a church's meeting notes either way: members only.
   const caller = await requireChurchUser(req);
   if (caller.error) return res.status(caller.status).json({ error: caller.error });
+
+  // A conversation with YUNIT shares this route rather than taking a file of
+  // its own: api/ is at Vercel Hobby's twelve functions, and the auth, the
+  // plan check and the streaming are the same job.
+  if (req.body?.mode === "chat") return chat(req, res, caller);
 
   // The platform's AI switch and the church's plan, and which model to use.
   const ai = await aiAccess(caller.church, "minutes");
@@ -337,6 +343,92 @@ const errorMessage = (error) => {
   }
   console.error("enhance failed", error);
   return "Could not write up those notes. Try again.";
+};
+
+// ------------------------------------------------------------------ YUNIT
+
+// A conversation with YUNIT (lib/yunit.js): he looks things up with the
+// church's tools and answers with a sentence and cards. Newline-delimited
+// JSON again, so the page can show what he is doing — thinking, or which
+// records he is looking through — while he does it.
+async function chat(req, res, caller) {
+  const ai = await aiAccess(caller.church, "assistant");
+  if (!ai.allowed) return res.status(403).json({ error: ai.reason });
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(500).json({ error: "ANTHROPIC_API_KEY not configured" });
+  }
+
+  // A confirmed change from one of his cards, run as the person.
+  if (req.body?.action) {
+    try {
+      const result = await perform({
+        church: caller.church,
+        caller,
+        tool: String(req.body.action.tool || ""),
+        args: req.body.action.args || {},
+      });
+      return res.status(200).json({ ok: true, result });
+    } catch (error) {
+      return res.status(error.status || 400).json({ error: error.message || "That change could not be made." });
+    }
+  }
+
+  // The last stretch of the conversation, cleaned: turns alternate starting
+  // with the person, and none is long enough to run up the bill on its own.
+  const raw = Array.isArray(req.body?.messages) ? req.body.messages.slice(-24) : [];
+  const messages = [];
+  raw.forEach((message) => {
+    const role = message?.role === "assistant" ? "assistant" : "user";
+    const text = String(message?.text || "").trim().slice(0, 6000);
+    if (!text) return;
+    if (!messages.length && role !== "user") return;
+    const previous = messages[messages.length - 1];
+    if (previous && previous.role === role) previous.content += `
+
+${text}`;
+    else messages.push({ role, content: text });
+  });
+  if (!messages.length || messages[messages.length - 1].role !== "user") {
+    return res.status(400).json({ error: "Nothing to answer." });
+  }
+
+  const today = new Date().toLocaleDateString("en-PH", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Manila",
+  });
+
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders?.();
+  const send = (event) => {
+    res.write(`${JSON.stringify(event)}
+`);
+    res.flush?.();
+  };
+
+  try {
+    const answer = await converse({
+      church: caller.church,
+      caller,
+      model: ai.model,
+      messages,
+      today,
+      onEvent: send,
+    });
+    await recordAiUse(caller.church, "assistant");
+    send({ type: "done", ...answer });
+  } catch (error) {
+    send({ type: "error", error: chatError(error) });
+  }
+  return res.end();
+}
+
+const chatError = (error) => {
+  if (error instanceof Anthropic.AuthenticationError) return "The Claude API key was rejected.";
+  if (error instanceof Anthropic.RateLimitError) return "Too many questions just now. Try again in a moment.";
+  console.error("YUNIT chat failed", error);
+  return "YUNIT could not answer just now. Try again.";
 };
 
 // Exported for the prompt check in scripts/ — the prompts are the artefact

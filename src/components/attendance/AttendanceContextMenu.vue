@@ -97,7 +97,7 @@ const handleAction = (item) => {
         v-if="show && record && items.length"
         ref="menuRef"
         role="menu"
-        class="fixed z-9999 min-w-45 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl dark:border-gray-700 dark:bg-gray-800"
+        class="fixed z-9999 min-w-45 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 dark:border-gray-700 dark:bg-gray-800"
         :style="position ? { left: `${position.left}px`, top: `${position.top}px` } : { left: `${x}px`, top: `${y}px`, visibility: 'hidden' }"
       >
         <template v-for="item in items" :key="item.id">

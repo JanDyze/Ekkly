@@ -64,7 +64,7 @@ const done = computed(() => count.value === TOTAL)
           <p class="text-sm font-bold text-gray-900 dark:text-white">Worship Service · Sunday 9:00</p>
         </div>
 
-        <div class="fd-rise mt-3 rounded-2xl bg-white p-4 text-center shadow-sm dark:bg-gray-800" style="--d: 100ms">
+        <div class="fd-rise mt-3 rounded-2xl bg-white p-4 text-center dark:bg-gray-800 ring-1 ring-gray-200 dark:ring-gray-700" style="--d: 100ms">
           <p class="text-6xl font-black tabular-nums tracking-tight text-gray-900 dark:text-white">{{ count }}</p>
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">present</p>
           <p class="mt-1 h-5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
@@ -72,13 +72,13 @@ const done = computed(() => count.value === TOTAL)
           </p>
           <div class="relative mx-auto mt-3 flex h-14 w-14 items-center justify-center">
             <span v-if="tapping" class="tap-ring absolute inset-0 rounded-full bg-primary/40"></span>
-            <span class="relative flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30">
+            <span class="relative flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white">
               <Plus class="h-6 w-6" />
             </span>
           </div>
         </div>
 
-        <div class="fd-rise mt-3 rounded-2xl bg-white p-3.5 shadow-sm dark:bg-gray-800" style="--d: 200ms">
+        <div class="fd-rise mt-3 rounded-2xl bg-white p-3.5 dark:bg-gray-800 ring-1 ring-gray-200 dark:ring-gray-700" style="--d: 200ms">
           <p class="text-xs font-semibold text-gray-900 dark:text-white">Last 8 Sundays</p>
           <div class="mt-3 flex h-20 items-end gap-1.5">
             <span
@@ -91,7 +91,7 @@ const done = computed(() => count.value === TOTAL)
         </div>
 
         <Transition name="fade">
-          <div v-if="saved" class="fd-rise absolute inset-x-4 bottom-20 flex items-center gap-2 rounded-xl bg-gray-900 px-3 py-2.5 text-xs font-semibold text-white shadow-xl dark:bg-white dark:text-gray-900">
+          <div v-if="saved" class="fd-rise absolute inset-x-4 bottom-20 flex items-center gap-2 rounded-xl bg-gray-900 px-3 py-2.5 text-xs font-semibold text-white dark:bg-white dark:text-gray-900">
             <CheckCircle class="h-4 w-4 text-emerald-400 dark:text-emerald-600" />
             Saved for {{ SUNDAY }}
           </div>
@@ -102,7 +102,7 @@ const done = computed(() => count.value === TOTAL)
     <!-- --------------------------------------------------------- computer -->
     <AppWindow v-else page="Attendance" :subtitle="`Worship Service · Sunday ${SUNDAY}`" active="attendance" :church="props.church">
       <div class="grid h-full grid-cols-[160px_1fr] gap-2.5">
-        <div class="fd-rise flex flex-col items-center justify-center rounded-xl bg-white p-3 text-center shadow-sm dark:bg-gray-800">
+        <div class="fd-rise flex flex-col items-center justify-center rounded-xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 p-3 text-center dark:bg-gray-800">
           <p class="text-[9px] font-semibold uppercase tracking-wider text-gray-400">Head count</p>
           <p class="mt-1 text-5xl font-black tabular-nums tracking-tight text-gray-900 dark:text-white">{{ count }}</p>
           <p class="text-[10px] text-gray-500 dark:text-gray-400">present</p>
@@ -111,13 +111,13 @@ const done = computed(() => count.value === TOTAL)
           </p>
           <div class="relative mt-3 flex h-11 w-11 items-center justify-center">
             <span v-if="tapping" class="tap-ring absolute inset-0 rounded-full bg-primary/40"></span>
-            <span class="relative flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white shadow-md shadow-primary/30">
+            <span class="relative flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white">
               <Plus class="h-5 w-5" />
             </span>
           </div>
         </div>
 
-        <div class="fd-rise flex flex-col rounded-xl bg-white p-3 shadow-sm dark:bg-gray-800" style="--d: 120ms">
+        <div class="fd-rise flex flex-col rounded-xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 p-3 dark:bg-gray-800" style="--d: 120ms">
           <div class="flex items-center justify-between">
             <p class="text-[11px] font-semibold text-gray-900 dark:text-white">Last 8 Sundays</p>
           </div>
@@ -134,7 +134,7 @@ const done = computed(() => count.value === TOTAL)
       </div>
 
       <Transition name="fade">
-        <div v-if="saved" class="fd-rise absolute bottom-4 right-4 flex items-center gap-1.5 rounded-lg bg-gray-900 px-2.5 py-2 text-[10px] font-semibold text-white shadow-xl dark:bg-white dark:text-gray-900">
+        <div v-if="saved" class="fd-rise absolute bottom-4 right-4 flex items-center gap-1.5 rounded-lg bg-gray-900 px-2.5 py-2 text-[10px] font-semibold text-white dark:bg-white dark:text-gray-900">
           <CheckCircle class="h-3.5 w-3.5 text-emerald-400 dark:text-emerald-600" />
           Saved for {{ SUNDAY }}
         </div>

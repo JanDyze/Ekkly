@@ -1,4 +1,5 @@
 import { nextTick } from 'vue'
+import { motionLevel } from '../composables/useMotion'
 
 // Opening a record from its list, animated as one screen giving way to
 // another: on a phone the record slides in over the list, the way a native app
@@ -108,10 +109,15 @@ const pairFor = (to, from) => {
   return appMove(to, from) || pageMove(to, from)
 }
 
+// The person's own say comes first (Preferences > Transitions, useMotion):
+// off is no animation at all; simple keeps the slides but nothing flies.
 const wantsMotion = () =>
   typeof document !== 'undefined' &&
   typeof document.startViewTransition === 'function' &&
-  !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+  motionLevel() !== 'off'
+
+const wantsFlight = () => motionLevel() === 'full'
 
 /* ------------------------------------------------------------ the morphs */
 
@@ -189,6 +195,45 @@ const landMorph = (morph) => {
   })
 }
 
+/* ------------------------------------------------- the card becoming the page */
+
+// More than the picture and the name: the card that was tapped turns over as
+// it grows from where it sits until it is the page area, so it looks to
+// become the page rather than make way for it, and on the way back the page
+// shrinks into its card, turning back (style.css draws how). The picture and
+// the name still fly on their own (the morphs above), so what can be kept on
+// screen is kept; the page's contents then rise in once it has arrived.
+//
+// A card says which page it opens with `data-morph-card` (HomeCard); the page
+// is the area pages appear in, `data-morph-page` (AdminLayout's <main>). One
+// name, handed from one to the other the way the morphs' are.
+const CARD = 'morph-card'
+const pageArea = () => document.querySelector('[data-morph-page]')
+
+/**
+ * Going in, the card for where you are going, if it is on screen. Coming back
+ * up — to a shallower screen of the same app, or out of an app — the page
+ * being left, to shrink into the card for it on the screen arriving.
+ */
+const findFlip = (to, from) => {
+  const card = morphable('card', to.path)
+  if (card) return { into: true, from: card, key: to.path }
+  const up = appOf(from) && (!appOf(to) || depthOf(to) < depthOf(from))
+  const page = up ? pageArea() : null
+  return page ? { into: false, from: page, key: from.path } : null
+}
+
+/** Hands the card's name to its twin on the screen that arrived. */
+const landFlip = (flip) => {
+  flip.from.style.viewTransitionName = ''
+  const at = flip.into ? pageArea() : morphable('card', flip.key, [flip.from])
+  if (!at) return
+  at.style.viewTransitionName = CARD
+  // As with a tile a morph lands on: already where it belongs.
+  at.closest('.animate-rise')?.style.setProperty('animation', 'none')
+  flip.landed = at
+}
+
 /** The row's photo for a record, only if it is on screen to fly from. */
 const rowAvatar = (id) => {
   if (!id) return null
@@ -210,16 +255,26 @@ export function installViewTransitions(router) {
 
     document.documentElement.dataset.nav = pair.nav
 
-    const tagged = pair.tag?.(to)
+    const tagged = wantsFlight() ? pair.tag?.(to) : null
     const named = tagged?.el || null
     if (named) named.style.viewTransitionName = tagged.name
 
     // A record's photo has its own flight; the two are never both wanted.
-    const morph = named ? null : findMorph(to, from)
+    // Nothing flies at all for someone who asked for simple motion.
+    const morph = named || !wantsFlight() ? null : findMorph(to, from)
     morph?.parts.forEach(({ part, el }) => {
       el.style.viewTransitionName = nameOf(part)
     })
     if (morph) document.documentElement.dataset.morph = ''
+
+    // And the card it came from, growing into the page (or the page back into
+    // it). While it does, the rest of the screen only fades under it
+    // (data-nav card, style.css): one thing moving, not a slide behind it.
+    const flip = named || !wantsFlight() ? null : findFlip(to, from)
+    if (flip) {
+      flip.from.style.viewTransitionName = CARD
+      document.documentElement.dataset.nav = 'card'
+    }
 
     let markRendered
     rendered = new Promise((resolve) => {
@@ -239,6 +294,13 @@ export function installViewTransitions(router) {
         await nextTick()
         await nextTick()
         if (morph) landMorph(morph)
+        if (flip) landFlip(flip)
+        // Opening a page out of a card, the page is pictured as its shell —
+        // its ground and its header — so its contents can rise in once it is
+        // live (page-arrive, below). The browser shows still pictures until
+        // the transition ends, so an entrance played any sooner would be
+        // over before anyone saw it.
+        if (flip?.into && flip.landed) flip.landed.classList.add('page-entering')
       })
 
       transition.finished.finally(() => {
@@ -249,6 +311,16 @@ export function installViewTransitions(router) {
         morph?.landed?.forEach(({ el }) => {
           el.style.viewTransitionName = ''
         })
+        if (flip) flip.from.style.viewTransitionName = ''
+        if (flip?.landed) flip.landed.style.viewTransitionName = ''
+        // The card has become the page: now its contents come in, one after
+        // another (style.css, page-arrive).
+        if (flip?.into && flip.landed) {
+          const page = flip.landed
+          page.classList.remove('page-entering')
+          page.classList.add('page-arrive')
+          setTimeout(() => page.classList.remove('page-arrive'), 900)
+        }
         delete document.documentElement.dataset.morph
         delete document.documentElement.dataset.nav
       })

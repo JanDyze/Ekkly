@@ -8,7 +8,7 @@
 // waiting on you.
 //
 // Flat, with a hairline border and no shadow: the icon tile carries the colour,
-// and the card shrinks a touch under a finger.
+// and the card greys a touch under a finger or a pointer; it never shrinks.
 //
 // Given `art`, the tile wears one of Ekkly's drawings (src/assets/app-icons)
 // instead of a line icon — the same glossy orange and blue as the apps
@@ -55,7 +55,7 @@ const play = ref(0)
     @focus="play++"
     :style="{ animationDelay: `${delay}ms` }"
     :class="[
-      'animate-rise group flex rounded-2xl border border-gray-200 bg-white p-4 transition-[transform,background-color,border-color] duration-200 ease-out hover:border-gray-300 pressed:scale-[0.98] dark:border-gray-700/80 dark:bg-gray-800 dark:hover:border-gray-600',
+      'animate-rise group flex rounded-2xl border border-gray-200 bg-white p-4 transition-[background-color,border-color] duration-200 ease-out hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700/80 dark:bg-gray-800 dark:hover:border-gray-600 dark:hover:bg-gray-700/60',
       wide ? 'col-span-2 items-center gap-4' : 'flex-col gap-3.5',
     ]"
   >

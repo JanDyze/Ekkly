@@ -25,7 +25,7 @@ const emit = defineEmits(['open', 'broken'])
   <button
     type="button"
     @click="emit('open', album)"
-    class="group relative block aspect-4/3 w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100 text-left transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none dark:border-gray-700 dark:bg-gray-900"
+    class="group relative block aspect-4/3 w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100 text-left transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none dark:border-gray-700 dark:bg-gray-900"
   >
     <img
       :src="album.coverUrl"
@@ -33,7 +33,7 @@ const emit = defineEmits(['open', 'broken'])
       loading="lazy"
       decoding="async"
       @error="emit('broken', album)"
-      class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      class="absolute inset-0 h-full w-full object-cover"
     />
     <div
       class="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 via-black/40 to-transparent px-2.5 pt-8 pb-2 sm:px-3 sm:pb-2.5"

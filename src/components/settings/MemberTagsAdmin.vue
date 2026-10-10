@@ -211,7 +211,7 @@ const handleDelete = async () => {
         <button
           @click="handleAdd"
           :disabled="!newTagName.trim() || busy === 'add'"
-          class="shrink-0 flex h-11 items-center gap-1.5 rounded-lg bg-primary px-3 text-white shadow-sm transition-transform active:scale-95 disabled:opacity-50"
+          class="shrink-0 flex h-11 items-center gap-1.5 rounded-lg bg-primary px-3 text-white transition-transform disabled:opacity-50"
         >
           <Loader2 v-if="busy === 'add'" class="h-4 w-4 animate-spin" />
           <Plus v-else class="h-4 w-4" />

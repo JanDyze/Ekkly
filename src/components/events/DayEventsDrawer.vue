@@ -409,12 +409,12 @@ const open = (event) => {
                 <button
                   type="button"
                   :class="[
-                    'group min-w-0 rounded-2xl p-3 text-left ring-1 transition-all duration-200 active:scale-[0.99]',
+                    'group min-w-0 rounded-2xl p-3 text-left ring-1 transition-all duration-200',
                     g.calledOff
                       ? 'bg-white ring-red-200 dark:bg-gray-800 dark:ring-red-500/30'
                       : g.routine
                         ? 'bg-gray-50 ring-gray-200/80 hover:bg-gray-100 dark:bg-gray-900/40 dark:ring-gray-700 dark:hover:bg-gray-900/60'
-                        : 'bg-white shadow-sm ring-gray-200 hover:shadow-md dark:bg-gray-700/40 dark:ring-gray-600',
+                        : 'bg-white ring-gray-200 dark:bg-gray-700/40 dark:ring-gray-600 ring-1 ring-gray-200 dark:ring-gray-700',
                   ]"
                   @click="open(g.event)"
                 >

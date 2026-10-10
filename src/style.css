@@ -21,24 +21,52 @@
   }
 }
 
-/* The foot of a phone screen. There was a bottom bar here, floating over
-   every page; there is not any more (every app is a screen of its own, and
-   the home of all apps is the way between them), so these only keep things
-   clear of the phone's home indicator. Kept as names because many pages and
-   floating buttons use them, and they still say what is meant.
+/* The foot of a phone screen. The bottom bar (BottomBar.vue) is there only
+   for whoever turns it on in Preferences, so most of the time these only keep
+   things clear of the phone's home indicator.
 
-   pb-bar goes on a page's scrolling area, so its last row can scroll clear
-   of the screen's edge. bottom-bar goes on something pinned to a page's
-   foot - a floating button, a selection bar. */
+   When the bar is on, AdminLayout marks the page (data-bottom-bar), and on a
+   phone --bottom-bar-space becomes everything the floating bar takes from the
+   foot of the screen: the safe area, the gap under the island, the island, and
+   the round mark rising out of its top. It is 0 otherwise, so anything that
+   reads it can always add it. The shell pads an ordinary page by it and sets
+   it back to 0 inside, because that page already ends above the bar; an app's
+   screens and the home of all apps run to the foot of the screen behind the
+   bar and use it themselves. */
+:root {
+  --bottom-bar-space: 0px;
+}
+
+@media (width < 64rem) {
+  :root[data-bottom-bar] {
+    --bottom-bar-space: calc(env(safe-area-inset-bottom) + 6.75rem);
+  }
+}
+
+/* For the few things that change shape, rather than just make room, while
+   the bar is on a phone screen: the home that grows a scroll, say. */
+@custom-variant with-bar {
+  @media (width < 64rem) {
+    :root[data-bottom-bar] & {
+      @slot;
+    }
+  }
+}
+
+/* pb-bar goes on a page's scrolling area, so its last row can scroll clear
+   of the screen's edge, or of the bottom bar. bottom-bar goes on something
+   pinned to a page's foot - a floating button, a selection bar. The bar's
+   space already includes the safe area, so the larger of the two is taken
+   rather than both. */
 @utility pb-bar {
   @media (width < 64rem) {
-    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(1.5rem + max(env(safe-area-inset-bottom), var(--bottom-bar-space)));
   }
 }
 
 @utility bottom-bar {
   @media (width < 64rem) {
-    bottom: calc(1rem + env(safe-area-inset-bottom));
+    bottom: calc(1rem + max(env(safe-area-inset-bottom), var(--bottom-bar-space)));
   }
 }
 
@@ -175,13 +203,9 @@ body {
       -webkit-touch-callout: none;
     }
 
-    /* Whatever is under a finger gives a little, as well as changing colour.
-       The `scale` property rather than `transform`, so it composes with the
-       translate a positioned element already has instead of replacing it.
-       In the base layer, so an element with its own press scale keeps it. */
-    .is-pressed {
-      scale: 0.97;
-    }
+    /* Whatever is under a finger changes colour (the hover variant above),
+       and that is all: it used to shrink a little too, and nothing in Ekkly
+       scales or moves when it is pressed any more. */
 
     input,
     textarea,
@@ -612,9 +636,9 @@ body {
    back arrow. These are the motions that make it feel like one.
    ------------------------------------------------------------------------ */
 
-/* A press, on its own: the shrink a card gives under a finger. `hover:` here
-   already carries .is-pressed (above), but a shrink on mouse hover would be
-   wrong, so it gets a variant of its own. */
+/* A press, on its own: what changes under a finger but not under a mouse.
+   `hover:` already carries .is-pressed (above), so this is for the rare
+   style a mouse should not get. Never a shrink: nothing scales on a press. */
 @custom-variant pressed {
   &:is(.is-pressed) {
     @slot;
@@ -717,6 +741,114 @@ body {
 
 :root[data-nav='page']::view-transition-new(root) {
   animation: page-settle 220ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+/* A card turning over as it becomes the page it opens, and the page turning
+   back into its card (router/viewTransitions.js). The card's box grows from
+   where it sits until it is the page area, its corners rounding out into the
+   screen's edges, so the card looks to become the container rather than make
+   way for it. While it is still small it turns over about its upright: the
+   card's face turns away to its edge, and the page's face turns in from the
+   other edge. The turn is done early, while the box is card-sized, so it reads
+   as a card turning over and not as a screen tumbling; the growing carries on
+   after it.
+
+   Each face is drawn at its own size from its top-left corner and clipped to
+   the box, never stretched to fit it, so the page shows more of itself as the
+   box grows — its header first. The page is pictured as its shell, and its
+   contents rise in once it has arrived (page-arrive, below). The picture and
+   the name fly on top of it all (the morphs above).
+
+   Everything else on the screen only fades in under it, held still: one thing
+   moving, not a slide behind the card. After the rules above, which would
+   otherwise slide or lift it. */
+@keyframes card-turn-away {
+  to {
+    transform: rotateY(90deg);
+  }
+}
+
+@keyframes card-turn-toward {
+  from {
+    transform: rotateY(-90deg);
+  }
+}
+
+:root[data-nav='card']::view-transition-group(morph-card) {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.3, 0, 0, 1);
+  overflow: clip;
+  border-radius: 1rem;
+}
+
+:root[data-nav='card']::view-transition-image-pair(morph-card) {
+  perspective: 900px;
+}
+
+:root[data-nav='card']::view-transition-old(morph-card),
+:root[data-nav='card']::view-transition-new(morph-card) {
+  width: 100%;
+  height: 100%;
+  object-fit: none;
+  object-position: left top;
+  backface-visibility: hidden;
+  mix-blend-mode: normal;
+}
+
+:root[data-nav='card']::view-transition-old(morph-card) {
+  animation: card-turn-away 0.16s cubic-bezier(0.5, 0, 1, 1) both;
+}
+
+:root[data-nav='card']::view-transition-new(morph-card) {
+  animation: card-turn-toward 0.22s 0.15s cubic-bezier(0, 0, 0.2, 1) both;
+}
+
+:root[data-nav='card']::view-transition-old(root) {
+  animation: none;
+}
+
+:root[data-nav='card']::view-transition-new(root) {
+  animation: app-fade 240ms 120ms ease-out both;
+}
+
+/* The page's contents while the card becomes the page: not there yet, so
+   the page is pictured as its ground and its header. Only an app screen's
+   content area (AppScreen's <main>), never its header, which the name lands
+   in. */
+[data-morph-page].page-entering main {
+  opacity: 0;
+}
+
+/* Then they come in, one block after another: the deck, the tiles, each
+   group of rows. A screen whose content is one wrapper has its wrapper's
+   children brought in instead. */
+@keyframes page-item-in {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+}
+
+[data-morph-page].page-arrive main > :not(:only-child),
+[data-morph-page].page-arrive main > :only-child > * {
+  animation: page-item-in 0.36s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+[data-morph-page].page-arrive main > :nth-child(2),
+[data-morph-page].page-arrive main > :only-child > :nth-child(2) {
+  animation-delay: 50ms;
+}
+[data-morph-page].page-arrive main > :nth-child(3),
+[data-morph-page].page-arrive main > :only-child > :nth-child(3) {
+  animation-delay: 100ms;
+}
+[data-morph-page].page-arrive main > :nth-child(4),
+[data-morph-page].page-arrive main > :only-child > :nth-child(4) {
+  animation-delay: 150ms;
+}
+[data-morph-page].page-arrive main > :nth-child(n + 5),
+[data-morph-page].page-arrive main > :only-child > :nth-child(n + 5) {
+  animation-delay: 200ms;
 }
 
 @media (prefers-reduced-motion: reduce) {

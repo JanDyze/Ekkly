@@ -71,7 +71,7 @@ const progress = computed(() => `${props.written.length} of ${props.agenda.lengt
              that flies in from the opposite side of the thumb reads as a
              different thing arriving. -->
         <aside
-          class="nav-drawer-panel absolute inset-y-0 right-0 flex w-[min(20rem,85vw)] flex-col bg-white shadow-2xl dark:bg-gray-800"
+          class="nav-drawer-panel absolute inset-y-0 right-0 flex w-[min(20rem,85vw)] flex-col bg-white ring-1 ring-gray-200 dark:ring-gray-700 dark:bg-gray-800"
         >
           <header
             class="flex shrink-0 items-center justify-between gap-2 border-b border-gray-200 px-4 pb-3 pt-[max(0.875rem,env(safe-area-inset-top))] dark:border-gray-700"

@@ -96,12 +96,19 @@ defineExpose({ scroller })
 <template>
   <!-- An app's home (no header) is laid out to fit one screen, the way the
        home of all apps is, so it does not scroll: the bottom padding alone
-       used to tip it over and let it slide. Sections are lists and scroll. -->
+       used to tip it over and let it slide. Sections are lists and scroll.
+       With the bottom bar on, though, the bar takes the foot of the screen,
+       so a home that no longer fits above it scrolls rather than leave its
+       last tiles under the bar. -->
   <div
     ref="scroller"
     :class="[
       'h-full bg-gray-50 dark:bg-gray-900',
-      fill ? 'flex flex-col overflow-hidden' : hasHeader ? 'overflow-y-auto overscroll-contain' : 'overflow-hidden',
+      fill
+        ? 'flex flex-col overflow-hidden'
+        : hasHeader
+          ? 'overflow-y-auto overscroll-contain'
+          : 'overflow-hidden with-bar:overflow-y-auto with-bar:overscroll-contain',
     ]"
     @scroll.passive="onScroll"
   >
@@ -145,11 +152,17 @@ defineExpose({ scroller })
       </div>
     </header>
 
+    <!-- The screen runs to the foot of the phone, behind the bottom bar when
+         someone has it on, so the foot of the column clears the bar
+         (--bottom-bar-space, 0 without one): the last row of a list scrolls
+         up past it, and a screen that fills the height ends above it. -->
     <main
       :class="[
         'mx-auto w-full px-4',
         column,
-        fill ? 'flex min-h-0 flex-1 flex-col pb-[max(1rem,env(safe-area-inset-bottom))]' : 'pb-[max(3rem,env(safe-area-inset-bottom))]',
+        fill
+          ? 'flex min-h-0 flex-1 flex-col pb-[max(1rem,env(safe-area-inset-bottom),calc(var(--bottom-bar-space)+0.5rem))]'
+          : 'pb-[max(3rem,env(safe-area-inset-bottom),calc(var(--bottom-bar-space)+1.5rem))]',
         hasHeader ? 'pt-4' : 'pt-4 sm:pt-6',
       ]"
     >

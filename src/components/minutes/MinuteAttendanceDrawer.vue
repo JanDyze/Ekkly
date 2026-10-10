@@ -101,7 +101,7 @@ const initials = (member) =>
         <div class="absolute inset-0 bg-black/50" @click="emit('close')" />
 
         <aside
-          class="attend-drawer-panel absolute inset-y-0 right-0 flex w-[min(22rem,88vw)] flex-col bg-white shadow-2xl dark:bg-gray-800"
+          class="attend-drawer-panel absolute inset-y-0 right-0 flex w-[min(22rem,88vw)] flex-col bg-white ring-1 ring-gray-200 dark:ring-gray-700 dark:bg-gray-800"
         >
           <header
             class="shrink-0 border-b border-gray-200 px-4 pb-3 pt-[max(0.875rem,env(safe-area-inset-top))] dark:border-gray-700"

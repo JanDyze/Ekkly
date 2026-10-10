@@ -177,7 +177,7 @@ const label = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300'
         <button
           type="button"
           :aria-pressed="cycle === 'month'"
-          :class="['h-9 flex-1 rounded-md px-2.5 text-xs font-medium sm:text-sm', cycle === 'month' ? 'bg-white text-primary shadow-sm dark:bg-gray-800 dark:text-primary-light' : 'text-gray-500 dark:text-gray-400']"
+          :class="['h-9 flex-1 rounded-md px-2.5 text-xs font-medium sm:text-sm', cycle === 'month' ? 'bg-white text-primary dark:bg-gray-800 dark:text-primary-light ring-1 ring-gray-200 dark:ring-gray-700' : 'text-gray-500 dark:text-gray-400']"
           @click="cycle = 'month'"
         >
           Monthly · {{ price(plan.monthly) }}
@@ -185,7 +185,7 @@ const label = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300'
         <button
           type="button"
           :aria-pressed="cycle === 'year'"
-          :class="['h-9 flex-1 rounded-md px-2.5 text-xs font-medium sm:text-sm', cycle === 'year' ? 'bg-white text-primary shadow-sm dark:bg-gray-800 dark:text-primary-light' : 'text-gray-500 dark:text-gray-400']"
+          :class="['h-9 flex-1 rounded-md px-2.5 text-xs font-medium sm:text-sm', cycle === 'year' ? 'bg-white text-primary dark:bg-gray-800 dark:text-primary-light ring-1 ring-gray-200 dark:ring-gray-700' : 'text-gray-500 dark:text-gray-400']"
           @click="cycle = 'year'"
         >
           Yearly · {{ price(plan.monthly * MONTHS_PER_YEAR_PAID) }}

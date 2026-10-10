@@ -123,7 +123,7 @@ const dashOffset = computed(() => RING * (1 - progress.value))
   height: 2.75rem;
   border-radius: 9999px;
   background: #ffffff;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.12);
   transition: opacity 0.2s ease;
 }
 
@@ -135,7 +135,7 @@ const dashOffset = computed(() => RING * (1 - progress.value))
 
 .dark .ptr-puck {
   background: #1f2937;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 
 .ptr-face {
@@ -192,14 +192,14 @@ const dashOffset = computed(() => RING * (1 - progress.value))
   line-height: 1.2;
   color: #334155;
   background: #ffffff;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.12);
   animation: ptr-hint-in 0.24s ease-out;
 }
 
 .dark .ptr-hint {
   color: #e2e8f0;
   background: #1f2937;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 
 /* Same rule as the puck: pinned to the finger during the drag, eased on the

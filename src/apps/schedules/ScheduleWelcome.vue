@@ -165,7 +165,7 @@ const STEP_STYLE = {
               :class="[
                 'h-9 flex-1 rounded-md px-2.5 text-xs font-medium sm:text-sm',
                 filter === option.key
-                  ? 'bg-white text-primary shadow-sm dark:bg-gray-800 dark:text-primary-light'
+                  ? 'bg-white text-primary dark:bg-gray-800 dark:text-primary-light ring-1 ring-gray-200 dark:ring-gray-700'
                   : 'text-gray-500 dark:text-gray-400',
               ]"
               @click="filter = option.key"

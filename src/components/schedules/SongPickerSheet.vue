@@ -91,7 +91,7 @@ const confirm = () => {
           aria-modal="true"
           aria-labelledby="song-picker-title"
           tabindex="-1"
-          class="relative z-10 w-full sm:max-w-lg max-h-[88dvh] sm:max-h-[80dvh] flex flex-col rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border-t sm:border border-gray-200 dark:border-gray-700"
+          class="relative z-10 w-full sm:max-w-lg max-h-[88dvh] sm:max-h-[80dvh] flex flex-col rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 border-t sm:border border-gray-200 dark:border-gray-700"
         >
           <div class="shrink-0 px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3">
             <div class="min-w-0">

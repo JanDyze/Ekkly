@@ -372,7 +372,7 @@ const rows = (list, key) =>
 }
 
 /* The one being edited. Solid outline, beats hover, and lifted off the page it
-   sits in by a shadow in its own accent. */
+   sits in by a in its own accent. */
 .lab-pick.lab-active,
 .lab-pick.lab-active:hover {
   outline: 2px solid var(--accent);
@@ -382,7 +382,6 @@ const rows = (list, key) =>
 .lab-focusing .lab-pick.lab-active {
   position: relative;
   z-index: 2;
-  box-shadow: 0 10px 34px -10px color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
 /* The dimmed sections are scenery: clicking one should still bring it forward,

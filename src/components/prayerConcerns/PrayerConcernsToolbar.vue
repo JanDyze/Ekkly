@@ -23,7 +23,7 @@ const mobileSearchOpen = ref(false)
 </script>
 
 <template>
-  <div class="sticky top-0 z-40 mb-4 shrink-0 rounded-xl border border-gray-200/80 bg-white/95 px-2 py-2 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/95 sm:px-3">
+  <div class="sticky top-0 z-40 mb-4 shrink-0 rounded-xl border border-gray-200/80 bg-white/95 px-2 py-2 backdrop-blur dark:border-gray-700 dark:bg-gray-900/95 sm:px-3">
     <div class="flex items-center justify-between gap-2 w-full flex-nowrap">
       <SearchBar
         :model-value="searchQuery"
@@ -37,7 +37,7 @@ const mobileSearchOpen = ref(false)
         <button
           v-if="canManage('prayer')"
           @click="emit('newConcern')"
-          class="flex h-10 items-center justify-center rounded-lg bg-primary text-white shadow-sm transition-colors hover:bg-primary-hover dark:bg-primary dark:hover:bg-primary-hover px-2.5 sm:px-4 gap-1 sm:gap-1.5 shrink-0"
+          class="flex h-10 items-center justify-center rounded-lg bg-primary text-white transition-colors hover:bg-primary-hover dark:bg-primary dark:hover:bg-primary-hover px-2.5 sm:px-4 gap-1 sm:gap-1.5 shrink-0"
           :class="{ 'bg-primary-hover dark:bg-primary-hover': showAddConcern }"
           :title="showAddConcern ? 'Close add prayer concern drawer' : 'Add new prayer concern'"
         >

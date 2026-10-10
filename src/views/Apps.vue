@@ -1,8 +1,9 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { CalendarDots, ClipboardCheck, KeyRound, ListChecks, MicrophoneStage } from '../icons'
+import { CalendarDots, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MicrophoneStage, Moon, Sun } from '../icons'
 import AppHeroDeck from '../components/appframe/AppHeroDeck.vue'
+import CardPanes from '../components/appframe/CardPanes.vue'
 import DeckCard from '../components/appframe/DeckCard.vue'
 import DeckFaces from '../components/appframe/DeckFaces.vue'
 import DeckChips from '../components/appframe/DeckChips.vue'
@@ -193,7 +194,7 @@ const cards = computed(() => {
       dismissible: true,
       kicker: late.length ? 'Overdue' : 'Due today',
       title: `${plural(tasks.length, 'task', 'tasks')} of yours ${late.length ? 'overdue' : 'due today'}`,
-      to: '/tasks',
+      to: { name: 'TasksMine' },
       dest: 'tasks',
       destLabel: 'Tasks',
       tasks,
@@ -261,14 +262,20 @@ const cards = computed(() => {
   // The card that is always there: the person greeted by name, the day, and
   // whose church this is. The day's verse used to run along its foot; it has
   // the foot of the page now, under the church (verseTo, below).
+  // The person is greeted first, large; the date is the label over it; the
+  // church sits at the foot by its logo; and the weather over the church
+  // (live sky), when there is a report, in the corner.
   const now = new Date()
   list.push({
     kind: 'day',
     key: 'day',
     tone: 'accent',
-    kicker: greeting.value,
-    title: now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }),
-    detail: church.value?.shortName || church.value?.fullName || '',
+    kicker: now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }),
+    title: greeting.value,
+    // The greeting in its two halves, for its two lines.
+    greetingTime: greeting.value.split(", ")[0],
+    greetingName: greeting.value.split(", ").slice(1).join(", "),
+    churchName: church.value?.shortName || church.value?.fullName || '',
     to: null,
   })
 
@@ -302,8 +309,23 @@ const hold = { start: startHold, still: holdStill, swallow: swallowClick }
 
 const { style: cardStyle } = useHomeCards()
 
+// Compact cards leave room under the apps, so the verse is set on the picture
+// itself, whole if it fits, rather than in a card (the verse, below).
+const openVerse = computed(() => cardStyle.value === "compact")
+
 // The time and weather over the church, for the picture (live sky).
-const { sky } = useLiveSky()
+const { sky, weather } = useLiveSky()
+
+// Day or night, the weather over the church as one small picture.
+const weatherIcon = computed(() => {
+  const w = weather.value
+  if (!w) return null
+  if (w.kind === 'storm') return CloudLightning
+  if (w.kind === 'rain') return CloudRain
+  if (w.kind === 'fog') return CloudFog
+  if (w.kind === 'cloudy') return w.night ? CloudMoon : CloudSun
+  return w.night ? Moon : Sun
+})
 
 const APP_LINES = Object.fromEntries(APPS.map((app) => [app.key, app.description]))
 
@@ -342,10 +364,14 @@ const lineOf = (item) => {
        bottom padding alone used to tip it over and let the page slide. -->
   <!-- The page stands in a picture (HomeScene): its sky behind everything,
        and its church on the hill in the room the apps leave at the foot. -->
-  <div class="home-scene relative h-full overflow-hidden bg-(--scene-sky-3)" v-bind="sky">
+  <!-- With the bottom bar on, the bar takes the foot of the screen, so the
+       home grows to fit rather than leave its apps under the bar: it still
+       fits one screen wherever there is room, and scrolls only where there is
+       not. -->
+  <div class="home-scene relative h-full overflow-hidden bg-(--scene-sky-3) with-bar:overflow-y-auto with-bar:overscroll-contain" v-bind="sky">
     <HomeScene part="sky" class="pointer-events-none absolute inset-0 size-full" />
 
-    <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6">
+    <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full">
       <!-- 1. Today, most important on top -->
       <AppHeroDeck :cards="cards" scope="home" label="Today">
         <template #card="{ card }">
@@ -401,25 +427,41 @@ const lineOf = (item) => {
             tone="accent"
             :kicker="card.kicker"
             :title="card.title"
-            :detail="card.detail"
             :to="card.to"
           >
             <template #art>
-              <!-- An arched window in outline, the shape of Ekkly's mark
-                   (BRAND.md: the window is the motif), drawn as lines on the
-                   colour rather than as light glowing through it. -->
-              <svg class="absolute -bottom-10 right-5 h-60 w-36" viewBox="0 0 144 240" fill="none">
-                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" stroke="white" stroke-opacity="0.3" stroke-width="1.5" />
-                <path d="M20 72a52 52 0 0 1 104 0V240H20Z" stroke="white" stroke-opacity="0.15" stroke-width="1.5" />
-              </svg>
+              <!-- Ekkly's panes of light in the corner, the same shapes as the
+                   home's sky and the hold preview: not the arch that stood
+                   here, which ran off the card's foot and read as a door. -->
+              <CardPanes />
             </template>
-            <!-- The church's own logo, on white so any logo reads on any
-                 church colour. -->
-            <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-lg shadow-black/10">
-                <img :src="logoUrl" alt="" class="size-full object-contain" />
+
+            <!-- The greeting is this card's headline, a size up from the rest of
+                 the deck and on two lines: the time of day, then the name. -->
+            <template #title>
+              <span class="block text-[28px] leading-[1.1]">
+                {{ card.greetingTime }}<template v-if="card.greetingName">,<br />{{ card.greetingName }}</template>
               </span>
             </template>
+
+            <!-- The weather over the church right now (live sky), when there
+                 is a report: a glance out of the window before the day. -->
+            <template v-if="weather" #trailing>
+              <span class="flex shrink-0 items-center gap-1.5 rounded-full bg-white/18 px-2.5 py-1 text-[13px] font-semibold">
+                <component :is="weatherIcon" class="size-4" />
+                <span v-if="weather.temperature !== null" class="tabular-nums">{{ weather.temperature }}°</span>
+                <span class="hidden min-[380px]:inline">{{ weather.label }}</span>
+              </span>
+            </template>
+
+            <!-- Whose church this is: its own logo, on white so any logo reads
+                 on any church colour, and its name. -->
+            <div class="flex min-w-0 items-center gap-3">
+              <span class="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 ring-1 ring-gray-200 dark:ring-gray-700">
+                <img :src="logoUrl" alt="" class="size-full object-contain" />
+              </span>
+              <span class="min-w-0 truncate text-[15px] font-semibold text-white/90">{{ card.churchName }}</span>
+            </div>
           </DeckCard>
 
           <DeckCard
@@ -464,21 +506,51 @@ const lineOf = (item) => {
            it, in whatever room the apps leave at the foot of the screen. The
            home never scrolls, so the room decides: the verse steps aside
            before it would be cut off, and the church goes too where there is
-           no room at all (the container queries below). -->
-      <section class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1" aria-label="A verse for today">
+           no room at all (the container queries below).
+           With the bottom bar on, the hill runs on behind the bar - the room
+           is never shorter than the bar's space, which is what keeps the apps
+           above it - while the verse keeps to the part of the room above the
+           bar (verse-space), and steps aside by that part's height. -->
+      <section class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space)" aria-label="A verse for today">
         <HomeScene part="land" class="scene pointer-events-none absolute inset-0 size-full" />
 
-        <component
-          :is="verseTo ? 'RouterLink' : 'div'"
-          v-if="verse"
-          v-bind="verseTo ? { to: verseTo } : {}"
-          class="verse absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-4 block max-w-[58%] rounded-2xl bg-white/80 px-3.5 py-3 text-left shadow-sm ring-1 ring-white/70 backdrop-blur-md dark:bg-gray-900/70 dark:ring-white/10"
-        >
-          <blockquote class="line-clamp-3 text-[13px] italic leading-snug text-gray-700 dark:text-gray-200">{{ verse.text }}</blockquote>
-          <p class="mt-1.5 truncate text-[10px] font-bold uppercase tracking-[0.18em] text-primary dark:text-primary-light">
-            {{ verse.reference }} · {{ verse.version }}
-          </p>
-        </component>
+        <div class="verse-space pointer-events-none absolute inset-x-0 top-0 bottom-(--bottom-bar-space)">
+          <!-- With compact cards there is room under the apps, so the verse
+               needs no card: it is set on the picture itself, in the open sky
+               to the left of the church, whole if it fits (eight lines at
+               most), with a soft halo so it reads over cloud. With the other
+               styles the room is tighter and the verse keeps its frosted card
+               at the foot, three lines at most.
+               Either way the reference, then the translation under it,
+               smaller: the reference is what someone would look up.
+               The card stays clear of the home indicator without a bar; with
+               one, the bar's space has cleared it already, so the second term
+               goes negative and the card keeps a plain margin above the bar. -->
+          <component
+            :is="verseTo ? 'RouterLink' : 'div'"
+            v-if="verse"
+            v-bind="verseTo ? { to: verseTo } : {}"
+            :class="[
+              'verse pointer-events-auto absolute left-4 block text-left',
+              openVerse
+                ? 'verse-open top-3 max-w-[62%]'
+                : 'bottom-[max(0.75rem,calc(env(safe-area-inset-bottom)-var(--bottom-bar-space)))] max-w-[58%] rounded-2xl bg-white/80 px-3.5 py-3 ring-1 ring-white/70 backdrop-blur-md dark:bg-gray-900/70 dark:ring-white/10',
+            ]"
+          >
+            <blockquote
+              :class="[
+                'italic leading-snug',
+                openVerse ? 'line-clamp-8 text-[15px] text-gray-800 dark:text-white' : 'line-clamp-3 text-[13px] text-gray-700 dark:text-gray-200',
+              ]"
+            >
+              {{ verse.text }}
+            </blockquote>
+            <p class="mt-1.5 truncate text-[10px] font-bold uppercase tracking-[0.18em] text-primary dark:text-primary-light">
+              {{ verse.reference }}
+            </p>
+            <p class="truncate text-[9px] font-medium tracking-wide text-gray-500 dark:text-gray-300/80">{{ verse.version }}</p>
+          </component>
+        </div>
       </section>
     </main>
 
@@ -488,9 +560,29 @@ const lineOf = (item) => {
 </template>
 
 <style scoped>
+/* The verse set on the picture: a soft halo of the sky behind its letters, so
+   it reads over a cloud or a hill without a card behind it. */
+.verse-open {
+  text-shadow:
+    0 0 10px rgb(255 255 255 / 0.95),
+    0 0 2px rgb(255 255 255 / 0.9);
+}
+.dark .verse-open {
+  text-shadow:
+    0 0 12px rgb(0 0 0 / 0.75),
+    0 0 2px rgb(0 0 0 / 0.7);
+}
+
 /* The room under the apps measures itself, so what it holds can step aside
    rather than be cut off on a short screen. */
 .verse-room {
+  container-type: size;
+}
+
+/* The verse's own measure: the room above the bottom bar, or the whole room
+   without one. A query answers to the nearest container, so the verse asks
+   this and the church still asks the whole room. */
+.verse-space {
   container-type: size;
 }
 

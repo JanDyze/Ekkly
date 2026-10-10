@@ -17,6 +17,7 @@ import { churchAppsReady, isAppEnabled } from '../composables/useChurchApps'
 import { peopleRoutes } from '../apps/people/routes'
 import { attendanceRoutes } from '../apps/attendance/routes'
 import { financesRoutes } from '../apps/finances/routes'
+import { tasksRoutes } from '../apps/tasks/routes'
 import { eventsRoutes } from '../apps/events/routes'
 import { schedulesRoutes } from '../apps/schedules/routes'
 import { presentationRoutes } from '../apps/presentation/routes'
@@ -152,6 +153,14 @@ const churchRoutes = [
         component: () => import('../views/Links.vue')
       },
       {
+        // YUNIT, the assistant. No capability: everyone in a church that has
+        // the app may meet him, so the app alone decides.
+        path: 'yunit',
+        name: 'Yunit',
+        meta: { app: 'ai' },
+        component: () => import('../views/Yunit.vue')
+      },
+      {
         path: 'songs',
         name: 'SongList',
         meta: { capability: 'songs.view' },
@@ -227,14 +236,8 @@ const churchRoutes = [
       },
       // Attendance is an app of its own (src/apps/attendance).
       ...attendanceRoutes,
-      {
-        // Between the dashboard and the pages it summarises: what the church
-        // still has to do is the second thing anyone opens the app for.
-        path: 'tasks',
-        name: 'Tasks',
-        meta: { capability: 'tasks.view' },
-        component: () => import('../views/Tasks.vue')
-      },
+      // Tasks is an app of its own (src/apps/tasks).
+      ...tasksRoutes,
       {
         path: 'prayer-concerns',
         name: 'PrayerConcerns',

@@ -346,7 +346,7 @@ const barBtnMain =
       class="pp-top fixed inset-x-0 top-0 z-40 flex justify-center p-3"
     >
       <div
-        class="flex w-full max-w-md items-center gap-2 rounded-2xl border border-gray-200 bg-white/95 p-1.5 shadow-lg backdrop-blur dark:border-gray-700 dark:bg-gray-800/95"
+        class="flex w-full max-w-md items-center gap-2 rounded-2xl border border-gray-200 bg-white/95 p-1.5 backdrop-blur dark:border-gray-700 dark:bg-gray-800/95"
       >
         <button :class="barBtn" @pointerdown.prevent @click="cancelText">Cancel</button>
         <p class="min-w-0 flex-1 truncate text-center text-xs text-gray-500 dark:text-gray-400">
@@ -368,7 +368,7 @@ const barBtnMain =
       <!-- A part is chosen -->
       <div
         v-if="selected"
-        class="pointer-events-auto w-full max-w-md rounded-2xl border border-gray-200 bg-white/95 p-1.5 shadow-xl backdrop-blur dark:border-gray-700 dark:bg-gray-800/95"
+        class="pointer-events-auto w-full max-w-md rounded-2xl border border-gray-200 bg-white/95 p-1.5 backdrop-blur dark:border-gray-700 dark:bg-gray-800/95"
       >
         <div class="flex items-center gap-2 pb-1 pl-2.5">
           <p class="min-w-0 flex-1 truncate text-xs font-bold text-gray-900 dark:text-white">{{ partLabel }}</p>
@@ -417,7 +417,7 @@ const barBtnMain =
       <div v-else class="pointer-events-auto flex flex-col items-center gap-2">
         <div
           v-if="hidden"
-          class="flex items-center gap-3 rounded-full bg-gray-900 py-1.5 pl-4 pr-1.5 text-xs text-white shadow-lg dark:bg-gray-700"
+          class="flex items-center gap-3 rounded-full bg-gray-900 py-1.5 pl-4 pr-1.5 text-xs text-white dark:bg-gray-700"
         >
           {{ hidden.label }} hidden
           <button class="rounded-full bg-white/15 px-3 py-1.5 font-bold hover:bg-white/25" @click="undoHide">
@@ -425,7 +425,7 @@ const barBtnMain =
           </button>
         </div>
         <div
-          class="flex items-center gap-1 rounded-full border border-gray-200 bg-white/95 p-1 shadow-lg backdrop-blur dark:border-gray-700 dark:bg-gray-800/95"
+          class="flex items-center gap-1 rounded-full border border-gray-200 bg-white/95 p-1 backdrop-blur dark:border-gray-700 dark:bg-gray-800/95"
         >
           <RouterLink
             :to="backLink"
@@ -463,7 +463,7 @@ const barBtnMain =
             <Monitor class="h-4 w-4" />
           </button>
         </div>
-        <p class="rounded-full bg-white/90 px-3 py-1 text-[11px] text-gray-500 shadow-sm dark:bg-gray-800/90 dark:text-gray-400">
+        <p class="rounded-full bg-white/90 ring-1 ring-gray-200 dark:ring-gray-700 px-3 py-1 text-[11px] text-gray-500 dark:bg-gray-800/90 dark:text-gray-400">
           Tap any part of the page to change it
         </p>
       </div>
@@ -488,7 +488,7 @@ const barBtnMain =
     <div v-else class="pb-44 lg:px-3 lg:pb-32 lg:pt-6" @click="onPageClick">
       <div
         ref="page"
-        class="lg:mx-auto lg:max-w-sm lg:overflow-hidden lg:rounded-3xl lg:border lg:border-gray-300 lg:shadow-xl lg:dark:border-gray-600"
+        class="lg:mx-auto lg:max-w-sm lg:overflow-hidden lg:rounded-3xl lg:border lg:border-gray-300 lg:dark:border-gray-600"
       >
         <LabPreview
           :key="pageKey"

@@ -29,11 +29,23 @@ export const APP_HUES = {
   videos: RED,
   links: BLUE,
   finances: AMBER,
+  ai: BLUE,
   todos: TEAL,
   accounts: NAVY,
   audit: NAVY,
   settings: NAVY,
 }
+
+/**
+ * The colours a section's card takes inside an app, given out in this order
+ * down the grid. Sections used to share the church's one accent and wear
+ * their drawing flat in it, which made an app's home a page of one colour;
+ * each now gets its own, from the same palette as the apps, and the order
+ * keeps any two neighbours (side by side, or one above the other in two
+ * columns) apart.
+ */
+export const SECTION_HUES = [BLUE, ORANGE, TEAL, AMBER, RED]
+export const sectionHue = (index) => SECTION_HUES[index % SECTION_HUES.length]
 
 /** The circle's colour for an app, or a quiet grey for anything unlisted. */
 export const hueOf = (key) => APP_HUES[key] || '#64748b'

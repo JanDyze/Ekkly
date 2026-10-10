@@ -124,7 +124,7 @@ const facts = computed(() => {
         :class="[
           'flex flex-col min-h-0',
           isMobile
-            ? 'relative z-10 w-full max-h-[92dvh] overflow-hidden rounded-t-2xl bg-white dark:bg-gray-800 shadow-2xl border-t border-gray-200 dark:border-gray-700'
+            ? 'relative z-10 w-full max-h-[92dvh] overflow-hidden rounded-t-2xl bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700'
             : 'h-full w-full'
         ]"
       >
@@ -135,7 +135,7 @@ const facts = computed(() => {
       <div class="flex min-w-0 items-center gap-3">
         <div
           :class="[
-            'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-lg',
+            'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl',
             getEventTypeColor(event.type),
           ]"
         >

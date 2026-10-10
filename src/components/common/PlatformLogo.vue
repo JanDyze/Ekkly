@@ -23,7 +23,7 @@ const { branding } = usePlatformConfig()
 
 <template>
   <span class="inline-flex min-w-0 items-center gap-2.5">
-    <span v-if="chip" class="flex shrink-0 items-center justify-center rounded-xl bg-white p-1.5 shadow-sm">
+    <span v-if="chip" class="flex shrink-0 items-center justify-center rounded-xl bg-white p-1.5 ring-1 ring-gray-200 dark:ring-gray-700">
       <img :src="mark" alt="" :class="markClass" />
     </span>
     <img v-else :src="mark" alt="" :class="['shrink-0', markClass]" />

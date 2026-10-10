@@ -128,7 +128,7 @@ const upcomingEvents = computed(() => sortedEvents.value.filter((e) => !isPastEv
       <div class="relative flex min-w-0 items-center">
         <button
           @click="emit('navigateMonth', 'prev')"
-          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 active:scale-95 dark:text-gray-400 dark:hover:bg-gray-700"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
           aria-label="Previous month"
         >
           <ChevronLeft class="h-5 w-5" />
@@ -153,7 +153,7 @@ const upcomingEvents = computed(() => sortedEvents.value.filter((e) => !isPastEv
 
         <button
           @click="emit('navigateMonth', 'next')"
-          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 active:scale-95 dark:text-gray-400 dark:hover:bg-gray-700"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
           aria-label="Next month"
         >
           <ChevronRight class="h-5 w-5" />
@@ -167,7 +167,7 @@ const upcomingEvents = computed(() => sortedEvents.value.filter((e) => !isPastEv
         ></div>
         <div
           v-if="showMonthPicker"
-          class="absolute top-full left-0 z-50 mt-1 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 shadow-xl"
+          class="absolute top-full left-0 z-50 mt-1 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3"
         >
           <div class="flex items-center justify-between mb-2">
             <button
@@ -200,7 +200,7 @@ const upcomingEvents = computed(() => sortedEvents.value.filter((e) => !isPastEv
               :class="[
                 'h-10 rounded-lg text-xs font-medium transition-colors',
                 isSelectedMonth(index)
-                  ? 'bg-primary text-white shadow-sm'
+                  ? 'bg-primary text-white'
                   : isCurrentMonth(index)
                   ? 'text-primary ring-1 ring-inset ring-primary/40 hover:bg-primary/10'
                   : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700',

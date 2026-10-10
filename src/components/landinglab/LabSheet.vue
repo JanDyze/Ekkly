@@ -35,7 +35,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
         aria-modal="true"
         aria-labelledby="lab-sheet-title"
         tabindex="-1"
-        class="sheet-panel flex max-h-[58dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white shadow-2xl sm:max-h-[80dvh] sm:max-w-md sm:rounded-2xl dark:border-gray-700 dark:bg-gray-800"
+        class="sheet-panel flex max-h-[58dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white sm:max-h-[80dvh] sm:max-w-md sm:rounded-2xl dark:border-gray-700 dark:bg-gray-800"
       >
         <div
           class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-700"

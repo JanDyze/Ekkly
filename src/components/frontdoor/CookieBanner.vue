@@ -20,7 +20,7 @@ const { answered, allow, refuse } = useFrontDoorConsent()
     >
       <!-- On a phone the question is one row and the answers the next, each
            half the width, so neither is the easier tap. -->
-      <div class="mx-auto flex max-w-2xl flex-wrap items-center gap-3 rounded-2xl border border-gray-200 bg-white/95 p-3 shadow-2xl backdrop-blur sm:flex-nowrap sm:gap-4 sm:p-4 dark:border-gray-800 dark:bg-gray-900/95">
+      <div class="mx-auto flex max-w-2xl flex-wrap items-center gap-3 rounded-2xl border border-gray-200 bg-white/95 p-3 backdrop-blur sm:flex-nowrap sm:gap-4 sm:p-4 dark:border-gray-800 dark:bg-gray-900/95">
         <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light">
           <Cookie class="h-4.5 w-4.5" />
         </span>

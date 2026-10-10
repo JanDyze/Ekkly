@@ -116,7 +116,7 @@ const visible = computed(() =>
   props.cards.filter((card) => !(card.remember && levelOf(card) <= 0) && !isPutAway(card))
 )
 
-// The card on its way out: it lifts and fades first, and only then leaves the
+// The card on its way out: it fades where it is first, and only then leaves the
 // deck, so the one under it rises into a space that has visibly been made.
 const leaving = ref(null)
 
@@ -310,7 +310,8 @@ const styleOf = (card, i) => {
     : { transition: 'transform 380ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease' }
 
   if (card.key === leaving.value) {
-    return { ...motion, zIndex: 60, opacity: 0, transform: 'translateY(-12px) scale(0.96)' }
+    // Put away, it fades where it is: a card never rises or shrinks.
+    return { ...motion, zIndex: 60, opacity: 0, transform: 'translateX(0px) rotate(0deg)' }
   }
 
   // Off to the side it was pushed, above everything until it is clear. Once
@@ -355,7 +356,8 @@ const styleOf = (card, i) => {
 // their foot like a hand of cards: the next one to the left, the one after it
 // to the right. Measured by depth, which slides between whole cards as the
 // top one is pulled away, so the next card swings up into place under the
-// finger rather than jumping there.
+// finger rather than jumping there. Turned and shifted only, never scaled:
+// a smaller card behind would fake distance, and the deck is flat.
 const FAN = [
   { turn: 0, shift: 0 },
   { turn: -4, shift: -6 },
@@ -367,7 +369,7 @@ const fanned = (depth) => {
   const t = depth - Math.floor(depth)
   const turn = from.turn + (to.turn - from.turn) * t
   const shift = from.shift + (to.shift - from.shift) * t
-  return `translateX(${shift}px) rotate(${turn}deg) scale(${1 - depth * 0.02})`
+  return `translateX(${shift}px) rotate(${turn}deg)`
 }
 </script>
 

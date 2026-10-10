@@ -517,7 +517,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
                 :class="[
                   'h-9 flex-1 rounded-md px-2.5 text-xs font-medium sm:text-sm',
                   style.transition === kind.key
-                    ? 'bg-white text-primary shadow-sm dark:bg-gray-800 dark:text-primary-light'
+                    ? 'bg-white text-primary dark:bg-gray-800 dark:text-primary-light ring-1 ring-gray-200 dark:ring-gray-700'
                     : 'text-gray-500 dark:text-gray-400',
                 ]"
                 @click="setStyle({ transition: kind.key })"
@@ -629,7 +629,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
                 :class="[
                   'h-9 flex-1 rounded-md px-2.5 text-xs font-medium sm:text-sm',
                   settings.split[option.key] === mode.key
-                    ? 'bg-white text-primary shadow-sm dark:bg-gray-800 dark:text-primary-light'
+                    ? 'bg-white text-primary dark:bg-gray-800 dark:text-primary-light ring-1 ring-gray-200 dark:ring-gray-700'
                     : 'text-gray-500 dark:text-gray-400',
                 ]"
                 @click="save('split', { [option.key]: mode.key })"

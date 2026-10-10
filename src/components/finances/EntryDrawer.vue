@@ -143,7 +143,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
           aria-modal="true"
           aria-labelledby="entry-drawer-title"
           tabindex="-1"
-          class="flex max-h-[92dvh] w-full flex-col rounded-t-2xl bg-white shadow-xl dark:bg-gray-800 sm:max-w-lg sm:rounded-2xl"
+          class="flex max-h-[92dvh] w-full flex-col rounded-t-2xl bg-white dark:bg-gray-800 sm:max-w-lg sm:rounded-2xl ring-1 ring-gray-200 dark:ring-gray-700"
           @click.stop
         >
           <div
@@ -175,10 +175,10 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
                     'rounded-md px-2 py-1.5 text-sm font-medium transition-colors',
                     direction === option.key
                       ? option.key === 'in'
-                        ? 'bg-white text-green-700 shadow-sm dark:bg-gray-800 dark:text-green-400'
+                        ? 'bg-white text-green-700 dark:bg-gray-800 dark:text-green-400 ring-1 ring-gray-200 dark:ring-gray-700'
                         : option.key === 'out'
-                          ? 'bg-white text-red-700 shadow-sm dark:bg-gray-800 dark:text-red-400'
-                          : 'bg-white text-gray-800 shadow-sm dark:bg-gray-800 dark:text-gray-100'
+                          ? 'bg-white text-red-700 dark:bg-gray-800 dark:text-red-400 ring-1 ring-gray-200 dark:ring-gray-700'
+                          : 'bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-100 ring-1 ring-gray-200 dark:ring-gray-700'
                       : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
                   ]"
                 >

@@ -14,19 +14,20 @@
     </linearGradient>
   </defs>
 
-  <path d="M12 40a20 20 0 0 1 40 0" fill="none" stroke="url(#b)" stroke-width="3.5" stroke-linecap="round"/>
-  <rect x="7" y="34" width="9" height="15" rx="4.5" fill="url(#o)"/>
-  <rect x="48" y="34" width="9" height="15" rx="4.5" fill="url(#o)"/>
-  <rect x="13" y="24" width="38" height="33" rx="16.5" fill="#fff" stroke="#C9D8EE" stroke-width="1.8"/>
-  <rect x="18" y="31" width="28" height="19" rx="9.5" fill="#0B2A6B"/>
-  <ellipse class="a-blink" cx="26.5" cy="40.5" rx="3.2" ry="4.2" fill="#3D9DFF"/>
-  <ellipse class="a-blink" cx="37.5" cy="40.5" rx="3.2" ry="4.2" fill="#3D9DFF"/>
-  <path d="M11.5 48.5c0 6.5 3.8 10 10 10h3" fill="none" stroke="url(#o)" stroke-width="2.6" stroke-linecap="round"/>
-  <circle cx="25.5" cy="58.5" r="2.4" fill="#EC4319"/>
-  <g class="a-bubble">
-    <path d="M40 4h18a5 5 0 0 1 5 5v8a5 5 0 0 1-5 5h-9l-6 5v-5h-3a5 5 0 0 1-5-5V9a5 5 0 0 1 5-5z" fill="#fff" stroke="#1467E8" stroke-width="1.6"/>
-    <circle class="a-dot" style="--i:0" cx="44.5" cy="13" r="1.9" fill="#0B2A6B"/>
-    <circle class="a-dot" style="--i:1" cx="50" cy="13" r="1.9" fill="#0B2A6B"/>
-    <circle class="a-dot" style="--i:2" cx="55.5" cy="13" r="1.9" fill="#0B2A6B"/>
+  <g transform="translate(.5 2) scale(.252)">
+    <ellipse cx="82" cy="211" rx="16" ry="10" fill="#0B2A6B"/>
+    <ellipse cx="142" cy="211" rx="16" ry="10" fill="#0B2A6B"/>
+    <circle cx="110" cy="122" r="60" fill="#fff" stroke="#DCE3EE" stroke-width="5"/>
+    <path d="M93 40C92 29 86 21 79 24C54 33 21 58 15 95C12 116 22 134 37 131L53 127C55 106 70 89 88 77C96 68 96 55 93 40Z" fill="#FFB21E"/>
+    <path d="M103 22C130 12 166 18 183 40C196 57 197 79 176 88C168 75 156 67 140 67H115C106 67 102 59 101 48C99 36 98 26 103 22Z" fill="url(#o)"/>
+    <path d="M176 99C188 90 200 98 202 118C205 150 186 182 152 196C138 201 128 189 127 169C126 156 130 148 140 141C152 131 165 113 176 99Z" fill="url(#t)"/>
+    <path d="M34 142C46 134 60 134 70 140C82 146 96 147 108 150C120 154 122 170 120 188C118 204 108 214 92 210C66 206 40 196 30 172C26 160 26 148 34 142Z" fill="url(#b)"/>
+    <g transform="rotate(-16 118 110)">
+      <g class="a-blink"><ellipse cx="91" cy="110" rx="11.5" ry="16" fill="#0B2A6B"/><ellipse cx="95" cy="103" rx="3" ry="4" fill="#fff"/></g>
+      <g class="a-blink"><ellipse cx="145" cy="110" rx="11.5" ry="16" fill="#0B2A6B"/><ellipse cx="149" cy="103" rx="3" ry="4" fill="#fff"/></g>
+    </g>
+    <path class="a-dot" style="--i:0" d="M207 14L196 31" stroke="#1467E8" stroke-width="11" stroke-linecap="round"/>
+    <path class="a-dot" style="--i:1" d="M236 43L212 52" stroke="#1467E8" stroke-width="11" stroke-linecap="round"/>
+    <path class="a-dot" style="--i:2" d="M233 77L214 73" stroke="#1467E8" stroke-width="11" stroke-linecap="round"/>
   </g>
 </svg>

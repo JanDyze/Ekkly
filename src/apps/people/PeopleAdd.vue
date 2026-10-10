@@ -396,8 +396,10 @@ const COLUMNS = [
       </button>
     </div>
 
-    <!-- What will happen, and the one button that does it. -->
-    <div class="fixed inset-x-0 bottom-0 z-20 border-t border-gray-200 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur dark:border-gray-700 dark:bg-gray-900/95">
+    <!-- What will happen, and the one button that does it. With the bottom
+         bar on it stands on top of the bar instead of under it, and the bar's
+         space has already cleared the home indicator. -->
+    <div class="fixed inset-x-0 bottom-(--bottom-bar-space) z-20 border-t border-gray-200 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur with-bar:pb-3 dark:border-gray-700 dark:bg-gray-900/95">
       <div class="mx-auto flex max-w-5xl items-center gap-3">
         <p class="min-w-0 flex-1 truncate text-sm text-gray-600 dark:text-gray-300">{{ summary }}</p>
         <button

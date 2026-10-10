@@ -127,11 +127,11 @@ defineProps({
       <clipPath id="scene-mark-br"><path d="M59.5 61Q59.5 56 65 54.8C70 53.5 80 53.8 88 56Q92.5 57.5 92.5 62V89Q92.5 96 86 96H63Q59.5 96 59.5 92.5Z" /></clipPath>
       <!-- The light a lit window gives at night: a halo round it, and what
            falls from it down the front and onto the hill. Off by day. -->
-      <radialGradient id="scene-window-halo" cx="648" cy="1525" r="170" gradientUnits="userSpaceOnUse">
+      <radialGradient id="scene-window-halo" cx="638.2" cy="1531.1" r="170" gradientUnits="userSpaceOnUse">
         <stop offset="0" style="stop-color: var(--scene-window-light); stop-opacity: var(--scene-window-glow)" />
         <stop offset="1" style="stop-color: var(--scene-window-light); stop-opacity: 0" />
       </radialGradient>
-      <linearGradient id="scene-window-fall" x1="0" y1="1583" x2="0" y2="1774" gradientUnits="userSpaceOnUse">
+      <linearGradient id="scene-window-fall" x1="0" y1="1575.5" x2="0" y2="1774" gradientUnits="userSpaceOnUse">
         <stop offset="0" style="stop-color: var(--scene-window-light); stop-opacity: var(--scene-window-glow)" />
         <stop offset="1" style="stop-color: var(--scene-window-light); stop-opacity: 0" />
       </linearGradient>
@@ -152,41 +152,55 @@ defineProps({
       style="fill: var(--scene-hill-mid)"
     />
 
-    <!-- The church. The nave's side and its roof first, then the front. -->
-    <rect x="742" y="1470" width="124" height="230" style="fill: var(--scene-church-side)" />
-    <path d="M770 1625V1572Q770 1560 780 1556Q790 1560 790 1572V1625Z" style="fill: var(--scene-glass)" />
-    <path d="M742 1458L866 1512V1534L742 1484Z" style="fill: var(--scene-roof-under)" />
-    <path d="M672 1370L790 1445L866 1505V1514L742 1460L672 1404Z" style="fill: var(--scene-roof)" />
-    <path d="M672 1370L790 1445L780 1452L672 1384Z" style="fill: var(--scene-roof-light)" />
+    <!-- The church, drawn in two-point perspective: its front faces down the
+         hill to the left and its side runs back to the right, every level
+         line on each face heading for that face's vanishing point. The eye
+         is low, on the hill (horizon at y 1650); the front's lines meet at
+         x -308 and the side's at x 1230, and the near corner is x 742. Keep
+         any new piece on those lines, and anything set into a wall (a
+         window, a door) in a matrix() fitted to that wall, so it reads as
+         part of it. The nave's side and its roof first, then the front. -->
+    <path d="M742 1440L866 1493.4L866 1717.1L742 1740Z" style="fill: var(--scene-church-side)" />
+    <path transform="matrix(0.55 0.0817 0 1.3639 780.8 1631)" d="M0 0V-54Q0 -66 10 -70Q20 -66 20 -54V0Z" style="fill: var(--scene-glass)" />
+    <path d="M742 1440L866 1493.4L866 1505.3L742 1456Z" style="fill: var(--scene-roof-under)" />
+    <path d="M638.2 1356.2L777.2 1425.2L866 1493.4L742 1440Z" style="fill: var(--scene-roof)" />
+    <path d="M638.2 1356.2L777.2 1425.2L790.5 1435.4L653.4 1368.5Z" style="fill: var(--scene-roof-light)" />
 
-    <!-- The cross, its upright standing on the gable. -->
-    <rect x="664" y="1258" width="11" height="118" rx="1.5" style="fill: var(--scene-cross)" />
-    <path d="M638 1293L700 1297V1309L638 1305Z" style="fill: var(--scene-cross)" />
+    <!-- The cross on the gable, square to the front, so its arms lean
+         toward the front's vanishing point as the eaves do. -->
+    <path d="M633.8 1364.8L633.8 1258.9L642.5 1255.3L642.5 1362.1Z" style="fill: var(--scene-cross)" />
+    <path d="M614.2 1291.7L663.4 1272.5L663.4 1283.6L614.2 1302.2Z" style="fill: var(--scene-cross)" />
 
     <!-- The front, its gable trimmed in light along the left. -->
-    <path d="M553 1478L668 1372L742 1440V1700H553Z" style="fill: var(--scene-church)" />
-    <path d="M557 1470L650 1385V1400L566 1481Z" style="fill: var(--scene-trim)" />
+    <path d="M553 1723.8L553 1477.8L638.2 1356.2L742 1440L742 1740Z" style="fill: var(--scene-church)" />
+    <path d="M553 1477.8L638.2 1356.2L645.6 1362.2L553 1492.8Z" style="fill: var(--scene-trim)" />
 
 
     <!-- The great window is Ekkly's mark, in its own colours, which never
          change (BRAND.md): blue, teal, yellow and orange panes round a cross
-         of wall. Its light at night is in the halo behind and over it. -->
-    <circle cx="648" cy="1525" r="170" fill="url(#scene-window-halo)" />
-    <g transform="translate(579.9 1465.3) scale(1.2267)">
+         of wall. It is set into the front, so it takes the front's slant: each
+         column of panes carries the wall's own slope and foreshortening at
+         that column (the near, right column a little taller than the far
+         one), worked out from the same two vanishing points as the walls.
+         Its light at night is in the halo behind and over it. -->
+    <circle cx="638.2" cy="1531.1" r="170" fill="url(#scene-window-halo)" />
+    <g transform="matrix(0.946 -0.1189 0 1.1004 585.5 1478.2)">
       <g clip-path="url(#scene-mark-tl)">
         <rect x="10" y="8" width="45" height="50" fill="#fdc24b" />
         <path d="M10 31H36L35 46L31 56H10Z" fill="#fdcf5c" />
         <path d="M50 10H56V48L33 54L35 46L36 31Z" fill="#f7b63b" />
       </g>
-      <g clip-path="url(#scene-mark-tr)">
-        <rect x="56" y="8" width="45" height="50" fill="#f19140" />
-        <path d="M82 17L96 34.5H73Z" fill="#dc5a31" />
-        <path d="M72 34.5H96V58L57 48Z" fill="#cc6d3d" />
-      </g>
       <g clip-path="url(#scene-mark-bl)">
         <rect x="10" y="50" width="45" height="50" fill="#0270dc" />
         <path d="M35 50H56V100H46L35 75Z" fill="#0b6fe3" />
         <path d="M10 50H35V75L10 76Z" fill="#48bcf0" />
+      </g>
+    </g>
+    <g transform="matrix(1.0407 -0.1308 0 1.1543 580.3 1476)">
+      <g clip-path="url(#scene-mark-tr)">
+        <rect x="56" y="8" width="45" height="50" fill="#f19140" />
+        <path d="M82 17L96 34.5H73Z" fill="#dc5a31" />
+        <path d="M72 34.5H96V58L57 48Z" fill="#cc6d3d" />
       </g>
       <g clip-path="url(#scene-mark-br)">
         <rect x="56" y="50" width="45" height="50" fill="#09a4c6" />
@@ -196,13 +210,14 @@ defineProps({
     </g>
     <!-- The front door, under the window, and the light spilling from it all
          down the front and onto the hill at night. -->
-    <path d="M630 1700V1636Q630 1614 648 1610Q666 1614 666 1636V1700Z" style="fill: var(--scene-door)" />
-    <path d="M598 1583H698L760 1774H536Z" fill="url(#scene-window-fall)" />
+    <path transform="matrix(0.7935 0.0038 0 0.9013 624 1695)" d="M0 0V-64Q0 -86 18 -90Q36 -86 36 -64V0Z" style="fill: var(--scene-door)" />
+    <path d="M602.8 1581L676.3 1575.5L746.3 1774L532.8 1774Z" fill="url(#scene-window-fall)" />
 
-    <!-- The side wing, its lean-to roof and arched door. -->
-    <path d="M466 1584H553V1700H466Z" style="fill: var(--scene-wing)" />
-    <path d="M458 1578L553 1490V1548L470 1588Z" style="fill: var(--scene-roof-wing)" />
-    <path d="M505 1700V1652Q505 1628 529 1624Q553 1628 553 1652V1700Z" style="fill: var(--scene-door)" />
+    <!-- The side wing, in line with the front, its lean-to roof and arched
+         door. -->
+    <path d="M494.8 1718.8L494.8 1630.8L553 1552.8L553 1723.8Z" style="fill: var(--scene-wing)" />
+    <path d="M489.7 1609.9L553 1522.9L553 1552.8L489.7 1637.6Z" style="fill: var(--scene-roof-wing)" />
+    <path transform="matrix(0.628 0.0072 0 0.8019 519.5 1689.9)" d="M0 0V-50Q0 -72 23 -76Q46 -72 46 -50V0Z" style="fill: var(--scene-door)" />
 
     <!-- The mound the church stands on, and the bushes around it. -->
     <path d="M380 1662C460 1652 530 1660 566 1672C624 1612 724 1600 806 1632V1774H380Z" style="fill: var(--scene-hill-near)" />

@@ -20,7 +20,7 @@ const emit = defineEmits(['choose', 'hover'])
   <Teleport to="body">
     <div
       v-if="open && matches.length"
-      class="fixed z-90 w-60 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-600 dark:bg-gray-800"
+      class="fixed z-90 w-60 overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800"
       :style="{
         top: `${anchor.top}px`,
         left: `${anchor.left}px`,

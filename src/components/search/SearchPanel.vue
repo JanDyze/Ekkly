@@ -71,7 +71,7 @@ const openFirst = () => {
     aria-modal="true"
     aria-label="Search"
     tabindex="-1"
-    class="relative flex h-dvh w-full flex-col overflow-hidden bg-white shadow-2xl sm:h-auto sm:max-h-[75dvh] sm:max-w-xl sm:rounded-3xl dark:bg-gray-900"
+    class="relative flex h-dvh w-full flex-col overflow-hidden bg-white sm:h-auto sm:max-h-[75dvh] sm:max-w-xl sm:rounded-3xl dark:bg-gray-900 ring-1 ring-gray-200 dark:ring-gray-700"
   >
     <!-- The box. -->
     <div class="flex shrink-0 items-center gap-2 border-b border-gray-100 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] dark:border-gray-800">

@@ -361,7 +361,7 @@ const input =
       <!-- The guide -->
       <div
         v-if="!done"
-        class="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6 dark:border-gray-700 dark:bg-gray-800"
+        class="mt-6 rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 dark:border-gray-700 dark:bg-gray-800"
       >
         <h1 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
           Let's set up your page
@@ -459,7 +459,7 @@ const input =
                       :aria-label="`Use this colour from your logo`"
                       :aria-pressed="chosenColour === hex"
                       :class="[
-                        'h-10 w-10 rounded-full border transition-transform hover:scale-105',
+                        'h-10 w-10 rounded-full border transition-transform',
                         chosenColour === hex
                           ? 'border-transparent ring-2 ring-primary ring-offset-2 dark:ring-offset-gray-800'
                           : 'border-black/10 dark:border-white/20',
@@ -652,7 +652,7 @@ const input =
       <!-- Finished. -->
       <div
         v-else
-        class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm dark:border-gray-700 dark:bg-gray-800"
+        class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 text-center dark:border-gray-700 dark:bg-gray-800"
       >
         <div
           class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 dark:bg-primary-light/15"

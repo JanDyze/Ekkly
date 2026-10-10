@@ -139,7 +139,7 @@ let fetching = null
 const fetchSky = async (church) => {
   try {
     const kept = JSON.parse(sessionStorage.getItem(SKY_STORE) || 'null')
-    if (kept && Date.now() - kept.at < FRESH_MS) {
+    if (kept && 'temperature' in kept && Date.now() - kept.at < FRESH_MS) {
       report.value = kept
       return
     }
@@ -152,12 +152,13 @@ const fetchSky = async (church) => {
       const { latitude, longitude } = await placeOf(church)
       const res = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
-          '&current=weather_code&daily=sunrise,sunset&timezone=auto&forecast_days=1&timeformat=unixtime'
+          '&current=weather_code,temperature_2m&daily=sunrise,sunset&timezone=auto&forecast_days=1&timeformat=unixtime'
       )
       const data = await res.json()
       const next = {
         at: Date.now(),
         weather: weatherOf(Number(data?.current?.weather_code)),
+        temperature: Number.isFinite(data?.current?.temperature_2m) ? Math.round(data.current.temperature_2m) : null,
         sunrise: Number(data?.daily?.sunrise?.[0]) * 1000 || null,
         sunset: Number(data?.daily?.sunset?.[0]) * 1000 || null,
       }
@@ -220,6 +221,21 @@ export function useLiveSky() {
     }
   })
 
+  // The weather in words, for the home's day card: what it is like over the
+  // church right now. Nothing while live sky is off, or before it has
+  // reported; an older report kept on the device may lack a temperature.
+  const LABELS = { clear: 'Clear', cloudy: 'Cloudy', rain: 'Rain', storm: 'Storm', fog: 'Fog' }
+  const weather = computed(() => {
+    if (!enabled.value || !report.value) return null
+    const phase = sky.value['data-sky']
+    return {
+      kind: report.value.weather,
+      night: phase === 'night',
+      label: report.value.weather === 'clear' && phase === 'night' ? 'Clear night' : LABELS[report.value.weather] || '',
+      temperature: report.value.temperature ?? null,
+    }
+  })
+
   /** Turns live sky on or off for this person, everywhere they sign in. */
   const setLiveSky = async (value) => {
     enabled.value = Boolean(value)
@@ -234,5 +250,5 @@ export function useLiveSky() {
     else await saveUserPrefs(uid.value, { [PREF_KEY]: false })
   }
 
-  return { liveSky: enabled, sky, setLiveSky }
+  return { liveSky: enabled, sky, weather, setLiveSky }
 }

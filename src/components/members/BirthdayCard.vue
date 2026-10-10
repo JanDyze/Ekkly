@@ -53,7 +53,7 @@ defineProps({
     <template #leading>
       <span class="relative shrink-0">
         <MemberAvatar :member="card.member" alt="" size="h-[72px] w-[72px]" plain-class="ring-4 ring-white/35" />
-        <span class="absolute -bottom-1.5 -right-1.5 flex size-8 items-center justify-center rounded-full bg-white shadow-md shadow-black/15">
+        <span class="absolute -bottom-1.5 -right-1.5 flex size-8 items-center justify-center rounded-full bg-white ring-1 ring-gray-200 dark:ring-gray-700">
           <AppArt app-key="people-birthdays" :play="1" class="size-6" />
         </span>
       </span>

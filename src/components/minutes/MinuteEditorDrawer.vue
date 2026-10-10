@@ -181,7 +181,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('update:show', false))
       :class="[
         isMobile
           ? 'fixed inset-0 z-80 flex flex-col justify-end'
-          : 'minute-editor-drawer m-3 rounded-2xl border-2 border-primary/30 dark:border-primary-light/30 bg-green-50/20 dark:bg-gray-800 w-[calc(50%-1.5rem)] h-[calc(100%-1.5rem)] flex flex-col shrink-0 overflow-hidden shadow-xl'
+          : 'minute-editor-drawer m-3 rounded-2xl border-2 border-primary/30 dark:border-primary-light/30 bg-green-50/20 dark:bg-gray-800 w-[calc(50%-1.5rem)] h-[calc(100%-1.5rem)] flex flex-col shrink-0 overflow-hidden'
       ]"
     >
       <div
@@ -198,7 +198,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('update:show', false))
         :class="[
           'flex flex-col min-h-0',
           isMobile
-            ? 'relative z-10 w-full max-h-[92dvh] rounded-t-2xl bg-green-50/20 dark:bg-gray-800 shadow-2xl border-t border-gray-200 dark:border-gray-700'
+            ? 'relative z-10 w-full max-h-[92dvh] rounded-t-2xl bg-green-50/20 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700'
             : 'h-full w-full'
         ]"
       >
@@ -322,7 +322,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('update:show', false))
               <Transition name="dropdown">
                 <div
                   v-if="showAttendeeDropdown"
-                  class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-64 overflow-hidden flex flex-col"
+                  class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg max-h-64 overflow-hidden flex flex-col"
                 >
                   <!-- Search Input -->
                   <div class="p-2 border-b border-gray-200 dark:border-gray-700">

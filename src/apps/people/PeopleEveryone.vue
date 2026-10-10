@@ -734,10 +734,12 @@ const showFab = computed(
     />
 
     <!-- Picking mode. One bar for the whole selection, sitting where the FAB
-         would be so the thumb does not have to travel. -->
+         would be so the thumb does not have to travel. With the bottom bar
+         on it stands on top of the bar instead of under it, and the bar's
+         space has already cleared the home indicator. -->
     <div
       v-if="picking"
-      class="absolute inset-x-0 bottom-0 z-50 border-t border-gray-200 bg-white/95 px-3 py-3 backdrop-blur pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-gray-700 dark:bg-gray-900/95"
+      class="absolute inset-x-0 bottom-(--bottom-bar-space) z-50 border-t border-gray-200 bg-white/95 px-3 py-3 backdrop-blur pb-[max(0.75rem,env(safe-area-inset-bottom))] with-bar:pb-3 dark:border-gray-700 dark:bg-gray-900/95"
     >
       <div class="mx-auto flex max-w-xl items-center gap-3">
         <button

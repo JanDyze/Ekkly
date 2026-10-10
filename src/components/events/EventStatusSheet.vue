@@ -123,7 +123,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
           aria-modal="true"
           aria-labelledby="event-status-title"
           tabindex="-1"
-          class="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-gray-200 bg-white shadow-2xl sm:max-w-md sm:rounded-2xl dark:border-gray-700 dark:bg-gray-800"
+          class="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-gray-200 bg-white sm:max-w-md sm:rounded-2xl dark:border-gray-700 dark:bg-gray-800"
           @click.stop
         >
           <!-- The People page's sheet header: a tinted strip, the action's

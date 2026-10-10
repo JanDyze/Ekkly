@@ -109,7 +109,7 @@ useFocusTrap(dialogRef, showModal, closeModal)
           aria-modal="true"
           aria-labelledby="icon-selector-title"
           tabindex="-1"
-          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col"
+          class="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col ring-1 ring-gray-200 dark:ring-gray-700"
         >
           <!-- Header -->
           <div class="shrink-0 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">

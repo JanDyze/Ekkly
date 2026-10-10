@@ -254,7 +254,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
           aria-modal="true"
           aria-labelledby="preaching-sheet-title"
           tabindex="-1"
-          class="relative z-10 flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-w-xl sm:rounded-2xl dark:bg-gray-800"
+          class="relative z-10 flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 sm:max-w-xl sm:rounded-2xl dark:bg-gray-800"
         >
           <div class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-4 py-4 sm:px-6 dark:border-gray-700">
             <div class="min-w-0">

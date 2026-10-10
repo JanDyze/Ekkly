@@ -426,7 +426,7 @@ const handleCancelMinute = () => {
     <Teleport to="body">
       <div v-if="rowMenu.show" class="fixed inset-0 z-90" @click="closeRowMenu">
         <div
-          class="absolute w-44 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl dark:border-gray-600 dark:bg-gray-800"
+          class="absolute w-44 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 dark:border-gray-600 dark:bg-gray-800"
           :style="{ top: `${rowMenu.top}px`, left: `${rowMenu.left}px` }"
           @click.stop
         >

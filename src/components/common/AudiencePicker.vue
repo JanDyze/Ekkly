@@ -132,7 +132,7 @@ const overlaps = computed(
         :class="[
           'px-3 py-1.5 text-xs font-medium rounded-full transition-all',
           selected.length === 0
-            ? 'bg-primary dark:bg-primary-light text-white shadow-sm'
+            ? 'bg-primary dark:bg-primary-light text-white'
             : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600',
         ]"
       >
@@ -149,7 +149,7 @@ const overlaps = computed(
         :class="[
           'px-3 py-1.5 text-xs font-medium rounded-full transition-all',
           isSelected(tag)
-            ? 'bg-primary dark:bg-primary-light text-white shadow-sm'
+            ? 'bg-primary dark:bg-primary-light text-white'
             : isExcluded(tag)
               ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 line-through dark:text-gray-500'
               : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600',
@@ -192,7 +192,7 @@ const overlaps = computed(
           :class="[
             'px-3 py-1.5 text-xs font-medium rounded-full transition-all',
             isExcluded(tag)
-              ? 'bg-red-500 text-white shadow-sm dark:bg-red-500/80'
+              ? 'bg-red-500 text-white dark:bg-red-500/80'
               : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600',
           ]"
         >

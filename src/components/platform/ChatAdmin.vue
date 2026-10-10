@@ -179,7 +179,7 @@ watch(
           aria-modal="true"
           aria-labelledby="chat-title"
           tabindex="-1"
-          class="relative z-10 flex max-h-[92dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl sm:m-3 sm:max-h-none sm:max-w-lg sm:rounded-2xl sm:border-2 sm:border-primary/30 dark:border-gray-700 dark:bg-gray-800"
+          class="relative z-10 flex max-h-[92dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white sm:m-3 sm:max-h-none sm:max-w-lg sm:rounded-2xl sm:border-2 sm:border-primary/30 dark:border-gray-700 dark:bg-gray-800"
         >
           <div class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-4 py-4 sm:px-6 dark:border-gray-700">
             <div class="min-w-0">

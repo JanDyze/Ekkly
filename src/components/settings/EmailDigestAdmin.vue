@@ -269,7 +269,7 @@ const kindLabel = (kind) =>
           <button
             @click="prepare(kind.key)"
             :disabled="Boolean(busy)"
-            class="shrink-0 flex h-10 items-center gap-1.5 rounded-lg bg-primary px-3 text-white shadow-sm transition-transform active:scale-95 disabled:opacity-50"
+            class="shrink-0 flex h-10 items-center gap-1.5 rounded-lg bg-primary px-3 text-white transition-transform disabled:opacity-50"
           >
             <Loader2 v-if="busy === kind.key" class="h-4 w-4 animate-spin" />
             <Send v-else class="h-4 w-4" />
@@ -310,7 +310,7 @@ const kindLabel = (kind) =>
               :class="[
                 'h-11 flex-1 rounded-lg text-xs font-medium transition-colors',
                 activityRange === range.key
-                  ? 'bg-primary text-white shadow-sm'
+                  ? 'bg-primary text-white'
                   : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
               ]"
             >
@@ -322,7 +322,7 @@ const kindLabel = (kind) =>
         <button
           @click="prepare('activity')"
           :disabled="Boolean(busy)"
-          class="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-primary text-white text-sm font-semibold shadow-sm transition-transform active:scale-95 disabled:opacity-50"
+          class="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-primary text-white text-sm font-semibold transition-transform disabled:opacity-50"
         >
           <Loader2 v-if="busy === 'activity'" class="h-4 w-4 animate-spin" />
           <Mail v-else class="h-4 w-4" />

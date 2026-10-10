@@ -40,13 +40,13 @@ improves on it, consider changing the front door too.
 | Song List | Plan worship from songs you know | Find a song by any line · Key and lyrics always at hand · No more lost song sheets |
 | Schedules & Presentation | Sunday without the scramble | Everyone knows their role · Songs go straight to the screen · No more rosters in group chats |
 | Bible | Tagalog and English, always open | Find a verse by a word you remember · Pick up where you left off · Show a passage on the screen |
-| Minutes | Minutes done before you get home | Just type notes in the meeting · Written up for you by EKRIS · Print or export to file |
+| Minutes | Minutes done before you get home | Just type notes in the meeting · Written up for you by YUNIT · Print or export to file |
 | Prayer Concerns | No prayer request forgotten | Every request in one list · Mark prayers answered · Celebrate answers together |
 | Gallery | Every service's photos in one place | An album for each gathering · Upload straight from a phone · Show the best on your public page |
 | Links | Stop re-sending the same links | Forms, giving and livestream together · Copy a link in one tap · One place your people can always find |
 | Finances | The treasurer's report, done | Know what's in hand on any day · A monthly statement made for you · Export it for the council |
 | Tasks | Nothing from the meeting slips | Give each job to a person · See what's overdue · Tick it off when it's done |
-| EKRIS | Hours of typing, done for you | Minutes from rough notes · Lyrics laid out for slides · Ask about your church in plain words |
+| YUNIT | Hours of typing, done for you | Minutes from rough notes · Lyrics laid out for slides · Ask about your church in plain words |
 
 App artwork for each is `src/assets/app-icons/<key>.svg`, where the key is
 `members`, `smallgroups`, `attendance`, `events`, `songs`, `lineups`, `bible`,
@@ -57,7 +57,7 @@ App artwork for each is `src/assets/app-icons/<key>.svg`, where the key is
 - **The Bible ships in Tagalog (MBBTAG) and English (KJV, WEB)** and reads
   offline. The ESV and NIV appear only where their licence key is set — don't
   promise them.
-- **EKRIS** writes minutes from rough notes, finds songs, lays out lyrics for
+- **YUNIT** writes minutes from rough notes, finds songs, lays out lyrics for
   the screen, and answers questions about the church's own records. It is a
   paid app, not part of every church.
 - **The presentation screen** shows lyrics, verses and slides on the big

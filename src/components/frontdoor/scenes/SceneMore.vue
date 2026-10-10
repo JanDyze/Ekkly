@@ -56,7 +56,7 @@ const rest = computed(() => {
           <div
             v-for="(app, i) in rest"
             :key="app.key"
-            class="fd-pop flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl bg-white p-1 text-center shadow-sm dark:bg-gray-800"
+            class="fd-pop flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl bg-white p-1 text-center dark:bg-gray-800 ring-1 ring-gray-200 dark:ring-gray-700"
             :style="{ '--d': `${120 + i * 80}ms` }"
           >
             <AppArt :app-key="app.key" class="h-8 w-8" />
@@ -85,7 +85,7 @@ const rest = computed(() => {
         <div
           v-for="(app, i) in rest"
           :key="app.key"
-          class="fd-pop flex h-15 items-center gap-2 rounded-xl bg-white p-2.5 shadow-sm dark:bg-gray-800"
+          class="fd-pop flex h-15 items-center gap-2 rounded-xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 p-2.5 dark:bg-gray-800"
           :style="{ '--d': `${120 + i * 70}ms` }"
         >
           <AppArt :app-key="app.key" class="h-8 w-8 shrink-0" />

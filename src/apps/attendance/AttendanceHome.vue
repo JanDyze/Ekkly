@@ -3,9 +3,10 @@ import { computed } from 'vue'
 import { ClipboardCheck, HandWaving } from '../../icons'
 import AppScreen from '../../components/appframe/AppScreen.vue'
 import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
+import CardPanes from '../../components/appframe/CardPanes.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DateTile from '../../components/appframe/DateTile.vue'
-import AppShortcut from '../../components/appframe/AppShortcut.vue'
+import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
 import DeckChips from '../../components/appframe/DeckChips.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
@@ -215,18 +216,12 @@ const FACES = 6
             :to="card.to"
           >
             <template #art>
-              <!-- An arched window in outline, the shape of Ekkly's mark
-                   (BRAND.md: the window is the motif), drawn as lines on the
-                   colour rather than as light glowing through it. -->
-              <svg class="absolute -bottom-10 right-5 h-60 w-36" viewBox="0 0 144 240" fill="none">
-                <path d="M4 72a68 68 0 0 1 136 0V240H4Z" stroke="white" stroke-opacity="0.3" stroke-width="1.5" />
-                <path d="M20 72a52 52 0 0 1 104 0V240H20Z" stroke="white" stroke-opacity="0.15" stroke-width="1.5" />
-              </svg>
+              <CardPanes />
             </template>
             <!-- The Attendance artwork, on white because its orange and blue
                  are Ekkly's and need a white ground on a coloured card. -->
             <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-lg shadow-black/10">
+              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
                 <AppArt app-key="attendance" :play="1" class="size-10" />
               </span>
             </template>
@@ -253,19 +248,7 @@ const FACES = 6
       </AppHeroDeck>
 
       <!-- 2. The doors -->
-      <nav class="grid grid-cols-2 gap-2.5" aria-label="Attendance">
-        <AppShortcut
-          v-for="(door, index) in doors"
-          :key="door.key"
-          :to="door.to"
-          :title="door.title"
-          :detail="door.detail"
-          :art="door.art"
-          :badge="door.badge"
-          :urgent="door.urgent"
-          :delay="120 + index * 30"
-        />
-      </nav>
+      <AppShortcuts :doors="doors" label="Attendance" />
     </div>
   </AppScreen>
 </template>

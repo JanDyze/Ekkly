@@ -288,7 +288,7 @@ const confirmDelete = async () => {
             :class="[
               'flex items-start gap-2 border-l-4 bg-white py-3 pl-2 pr-2 dark:bg-gray-800',
               kindBorder(ticket.kind),
-              draggingIndex === index ? 'shadow-lg ring-2 ring-primary/40' : '',
+              draggingIndex === index ? ' ring-2 ring-primary/40' : '',
             ]"
           >
             <!-- Only the grip starts a drag, so the row's buttons stay buttons. -->

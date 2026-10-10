@@ -41,8 +41,14 @@ CHANGELOG.md.
   bar's mark is a back arrow to it from every other screen. On a phone, the
   bottom bar is there for whoever turns it on in Preferences: a floating
   island with the first four apps on their home, two either side of Ekkly's
-  round mark, which opens every app. The column leaves room under the page
-  for it, so nothing ends up behind it. The top bar's magnifying glass (and Ctrl+K)
+  round mark, which opens every app. It floats a clear gap above the foot of
+  the screen, held in from the sides, flat (its surface and a hairline, no
+  shadow). While it is on, `--bottom-bar-space` is the room it takes (0
+  otherwise; `style.css`): the shell pads an ordinary page by it, and the
+  home, an app's screens, floating buttons and anything pinned to the foot
+  add it themselves (`pb-bar`, `bottom-bar`, or the variable directly), so
+  nothing ends up behind it. `with-bar:` styles what changes shape while it
+  is on. The top bar's magnifying glass (and Ctrl+K)
   opens one search over everything (`SearchSheet`, `useGlobalSearch`): words
   first, meaning too once the person lets the small model onto their device.
 - **The home of all apps** leads with a Today deck (`AppHeroDeck`, fed by
@@ -65,11 +71,12 @@ CHANGELOG.md.
   theme: dawn, day, dusk or night from that day's sunrise and sunset, and
   clouds, rain, a storm or fog from Open-Meteo, all as `data-sky` and
   `data-weather` on its wrapper. The
-  verse steps aside on a screen too short for it, so the home never scrolls and a More apps tile. A section's tile inside an app shows
-  its drawing flat in the church's accent instead, so an app and a section are
-  never mistaken for each other (BRAND.md). A section's tile is its name alone,
-  on a wash of the church's colour with its drawing large in the bottom
-  corner, cropped by the edge, and a badge only when something in it is
+  verse steps aside on a screen too short for it, so the home never scrolls and a More apps tile. A section's tile inside an app is the
+  same card in the same style (`HomeCard`, laid out by `AppShortcuts`),
+  its artwork in full colour and a colour of its own given out in turn
+  (`SECTION_HUES` in appHues.js), so an app's home is as lively as the home
+  of all apps (BRAND.md). It is flat — a hairline ring and a fill, never a
+  shadow — carries no arrow, and shows a badge only when something in it is
   waiting on you; what is inside is the section's to show and the deck's to
   point out. Holding one of the five shows
   what that app is, full screen, for as long as the finger stays down
@@ -241,9 +248,9 @@ ending on what the tour left out. It lives in
   it scrolls (`lit-heading`) is where the colour goes. Anything decorative
   earns its place by being a church's — the window, the mark, the app artwork.
 - **An icon says what a thing does.** Nothing on the front door wears a sparkle
-  or a wand to mean "this part is clever": EKRIS writes minutes up, so it wears
+  or a wand to mean "this part is clever": YUNIT writes minutes up, so it wears
   a pencil, and it answers questions, so it wears a speech bubble. The button
-  that runs it names it ("Write up with EKRIS"), not the category.
+  that runs it names it ("Write up with YUNIT"), not the category.
 - **Motion shows something happening.** Nothing idles: no breathing, no
   bobbing, and no button that lifts or grows under the pointer. Every scene
   also has a finished state for `prefers-reduced-motion`.

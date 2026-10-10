@@ -54,7 +54,7 @@ at(4300, () => (reminded.value = true))
           <div
             v-for="(person, i) in TEAM"
             :key="person.name"
-            class="fd-pop flex flex-col items-center rounded-2xl bg-white px-1 py-2.5 shadow-sm dark:bg-gray-800"
+            class="fd-pop flex flex-col items-center rounded-2xl bg-white px-1 py-2.5 dark:bg-gray-800 ring-1 ring-gray-200 dark:ring-gray-700"
             :style="{ '--d': `${150 + i * 110}ms` }"
           >
             <span :class="['flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-bold', person.tone]">{{ person.initials }}</span>
@@ -63,7 +63,7 @@ at(4300, () => (reminded.value = true))
           </div>
         </div>
 
-        <div class="fd-rise mt-3 space-y-1 rounded-2xl bg-white p-2 shadow-sm dark:bg-gray-800" style="--d: 500ms">
+        <div class="fd-rise mt-3 space-y-1 rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 p-2 dark:bg-gray-800" style="--d: 500ms">
           <p class="px-1.5 pb-1 pt-1 text-xs font-semibold text-gray-900 dark:text-white">Songs</p>
           <div
             v-for="(song, i) in SONGS"
@@ -83,7 +83,7 @@ at(4300, () => (reminded.value = true))
           </div>
         </div>
 
-        <div class="fd-rise mt-3 flex items-center gap-2 rounded-2xl bg-white px-3.5 py-3 shadow-sm dark:bg-gray-800" style="--d: 650ms">
+        <div class="fd-rise mt-3 flex items-center gap-2 rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 px-3.5 py-3 dark:bg-gray-800" style="--d: 650ms">
           <MicrophoneStage class="h-4 w-4 text-primary dark:text-primary-light" />
           <span class="flex-1 text-xs text-gray-600 dark:text-gray-300">12 serving</span>
           <Transition name="fade" mode="out-in">
@@ -99,7 +99,7 @@ at(4300, () => (reminded.value = true))
     <!-- --------------------------------------------------------- computer -->
     <AppWindow v-else page="Schedules" :subtitle="`Sunday ${SUNDAY} · Worship Service`" active="lineups" :church="props.church">
       <div class="grid h-full grid-cols-[150px_1fr] gap-2.5">
-        <div class="fd-rise flex flex-col rounded-xl bg-white p-2.5 shadow-sm dark:bg-gray-800">
+        <div class="fd-rise flex flex-col rounded-xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 p-2.5 dark:bg-gray-800">
           <p class="px-1 text-[10px] font-semibold text-gray-900 dark:text-white">Serving</p>
           <div
             v-for="(person, i) in TEAM"
@@ -123,7 +123,7 @@ at(4300, () => (reminded.value = true))
           </div>
         </div>
 
-        <div class="fd-rise rounded-xl bg-white p-2.5 shadow-sm dark:bg-gray-800" style="--d: 150ms">
+        <div class="fd-rise rounded-xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 p-2.5 dark:bg-gray-800" style="--d: 150ms">
           <div class="grid grid-cols-[36px_1fr_60px] px-2 pb-1.5 text-[8px] font-bold uppercase tracking-wider text-gray-400">
             <span>Key</span><span>Song</span><span>Leads</span>
           </div>

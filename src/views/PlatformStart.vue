@@ -346,7 +346,7 @@ const input =
           </div>
 
           <!-- Signed out -->
-          <div v-else-if="!isAuthenticated" class="rounded-2xl bg-gray-900 p-6 text-white shadow-xl sm:p-8 dark:ring-1 dark:ring-gray-800">
+          <div v-else-if="!isAuthenticated" class="rounded-2xl bg-gray-900 p-6 text-white sm:p-8 dark:ring-1 dark:ring-gray-800">
             <h2 class="text-2xl font-black tracking-tight">Sign in to ask</h2>
             <p class="mt-2 text-sm leading-relaxed text-white/70">
               Use the Google account you will run the church with. You become its first administrator once the request is
@@ -455,7 +455,7 @@ const input =
             </div>
 
             <!-- The form -->
-            <div v-if="showForm" class="rounded-2xl border border-gray-200 bg-white p-6 shadow-xl shadow-gray-900/5 sm:p-8 dark:border-gray-800 dark:bg-gray-900">
+            <div v-if="showForm" class="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 dark:border-gray-800 dark:bg-gray-900">
               <h2 class="text-2xl font-black tracking-tight">About your church</h2>
               <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">We will look it over and let you know.</p>
 

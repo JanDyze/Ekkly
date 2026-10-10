@@ -123,8 +123,10 @@ canvas from the calendar, engine in `src/utils/video/`) the third, People
 (`src/apps/people/`, the roll at `/members`, a record at `/members/:id`) the
 fourth, Attendance (`src/apps/attendance/`, the recorder still at
 `/attendance/record`) the fifth, Finances (`src/apps/finances/`, the book
-at `/finances/book/:month`) the sixth, and Events (`src/apps/events/`, the
-month grid at `/events/calendar`, `?date=` to open a day) the seventh. A
+at `/finances/book/:month`) the sixth, Events (`src/apps/events/`, the
+month grid at `/events/calendar`, `?date=` to open a day) the seventh, and Tasks
+(`src/apps/tasks/`, every list one screen, `TasksList`, told by its route
+which tasks; `?q=` opens one already searched) the eighth. A
 screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
 `wide` for two panes side by side).
 
@@ -146,9 +148,9 @@ screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
      church's colour, the app's artwork on a white tile, faces along its foot.
    - Then the sections as `AppShortcut` tiles, two across, each with its own
      artwork (`art`, drawn with the app icons by
-     `brand/ekkly/make-app-icons.mjs` as `<app>-<section>`, and shown flat in
-     the church's accent — only an app wears the glossy artwork on a plate,
-     `level="app"`; see BRAND.md), and its name. Nothing else, unless
+     `brand/ekkly/make-app-icons.mjs` as `<app>-<section>`, and shown in full
+     colour on the same card as the home's apps, each in a colour of its own
+     from `SECTION_HUES`; see BRAND.md), and its name. Nothing else, unless
      something behind it is waiting on you: then a `badge` with how many
      (`urgent` when it is overdue). Totals, faces, dates and charts are what
      the section shows once opened, and the deck already says what matters,

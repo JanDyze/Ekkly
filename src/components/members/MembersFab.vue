@@ -88,10 +88,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <!-- Above the bottom bar when someone has it on (--bottom-bar-space),
+       rather than under it. -->
   <div
     ref="fabRef"
     tabindex="-1"
-    class="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 flex flex-col items-end gap-2.5 focus:outline-none"
+    class="absolute bottom-[max(1rem,env(safe-area-inset-bottom),calc(var(--bottom-bar-space)+0.75rem))] right-4 z-50 flex flex-col items-end gap-2.5 focus:outline-none"
   >
     <Transition name="fab-actions">
       <div v-if="open" role="menu" class="flex flex-col items-end gap-2.5">
@@ -100,7 +102,7 @@ onBeforeUnmount(() => {
           :key="action.key"
           role="menuitem"
           @click="run(action)"
-          class="flex items-center gap-2.5 rounded-full bg-white/80 py-1.5 pl-4 pr-1.5 shadow-lg ring-1 ring-gray-200/70 backdrop-blur-xl transition-transform active:scale-95 hover:bg-white dark:bg-gray-800/80 dark:ring-white/10 dark:hover:bg-gray-800"
+          class="flex items-center gap-2.5 rounded-full bg-white/80 py-1.5 pl-4 pr-1.5 ring-1 ring-gray-200/70 backdrop-blur-xl transition-transform hover:bg-white dark:bg-gray-800/80 dark:ring-white/10 dark:hover:bg-gray-800"
         >
           <span class="flex flex-col items-end leading-tight">
             <span class="whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
@@ -127,7 +129,7 @@ onBeforeUnmount(() => {
       :aria-expanded="isSingleAction ? undefined : open"
       :aria-haspopup="isSingleAction ? undefined : 'menu'"
       :aria-label="isSingleAction ? 'Export members' : open ? 'Close actions' : 'Member actions'"
-      class="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform active:scale-95 hover:bg-primary-hover"
+      class="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white transition-transform hover:bg-primary-hover"
     >
       <component
         :is="fabIcon"

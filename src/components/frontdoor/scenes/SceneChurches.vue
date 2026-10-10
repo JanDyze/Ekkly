@@ -97,7 +97,7 @@ if (still) {
 onUnmounted(() => emit('tint', null))
 
 const swatchClass = (c, i) => [
-  'swatch rounded-full ring-offset-2 ring-offset-white transition-shadow duration-300 dark:ring-offset-gray-800',
+  'swatch rounded-full ring-offset-2 ring-offset-white transition-colors duration-300 dark:ring-offset-gray-800',
   c.tint ? '' : 'swatch-own',
   i === church.value ? 'ring-2 ring-gray-900 dark:ring-white' : '',
 ]
@@ -121,7 +121,7 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
           </div>
         </div>
 
-        <div class="fd-rise mt-4 rounded-2xl bg-linear-to-br from-primary to-primary-hover p-3.5 text-white shadow-lg shadow-primary/30" style="--d: 120ms">
+        <div class="fd-rise mt-4 rounded-2xl bg-linear-to-br from-primary to-primary-hover p-3.5 text-white" style="--d: 120ms">
           <p class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/75">
             <Calendar class="h-3.5 w-3.5" /> This Sunday
           </p>
@@ -138,7 +138,7 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
           <div
             v-for="(tile, i) in TILES"
             :key="tile.key"
-            class="fd-pop flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl bg-white shadow-sm dark:bg-gray-800"
+            class="fd-pop flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 dark:bg-gray-800"
             :style="{ '--d': `${260 + i * 60}ms` }"
           >
             <AppArt :app-key="tile.key" class="h-8 w-8" />
@@ -146,7 +146,7 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
           </div>
         </div>
 
-        <div class="fd-rise mt-3 flex items-center justify-between rounded-2xl bg-white px-3.5 py-3 shadow-sm dark:bg-gray-800" style="--d: 700ms">
+        <div class="fd-rise mt-3 flex items-center justify-between rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 px-3.5 py-3 dark:bg-gray-800" style="--d: 700ms">
           <span class="flex items-center gap-1.5 text-xs font-semibold text-gray-900 dark:text-white">
             <Palette class="h-4 w-4 text-primary dark:text-primary-light" /> Church colour
           </span>
@@ -160,7 +160,7 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
     <!-- --------------------------------------------------------- computer -->
     <AppWindow v-else page="Home" :subtitle="`${current.name} · Good morning, Ana`" :logo="logo" :initial="current.name[0]" active="home">
       <div class="grid grid-cols-[1.35fr_1fr] gap-2.5">
-        <div class="fd-rise rounded-xl bg-linear-to-br from-primary to-primary-hover p-3 text-white shadow-md shadow-primary/30">
+        <div class="fd-rise rounded-xl bg-linear-to-br from-primary to-primary-hover p-3 text-white">
           <p class="flex items-center gap-1 text-[8px] font-semibold uppercase tracking-wider text-white/75">
             <Calendar class="h-3 w-3" /> This Sunday
           </p>
@@ -172,7 +172,7 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
             <span class="text-[9px] font-medium text-white/85">12 serving</span>
           </div>
         </div>
-        <div class="fd-rise rounded-xl bg-white p-3 shadow-sm dark:bg-gray-800" style="--d: 100ms">
+        <div class="fd-rise rounded-xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 p-3 dark:bg-gray-800" style="--d: 100ms">
           <p class="flex items-center gap-1 text-[10px] font-semibold text-gray-900 dark:text-white">
             <Palette class="h-3.5 w-3.5 text-primary dark:text-primary-light" /> Church colour
           </p>
@@ -187,7 +187,7 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
         <div
           v-for="(tile, i) in TILES"
           :key="tile.key"
-          class="fd-pop flex h-15 flex-col items-center justify-center gap-1 rounded-xl bg-white shadow-sm dark:bg-gray-800"
+          class="fd-pop flex h-15 flex-col items-center justify-center gap-1 rounded-xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 dark:bg-gray-800"
           :style="{ '--d': `${200 + i * 50}ms` }"
         >
           <AppArt :app-key="tile.key" class="h-7 w-7" />
@@ -195,7 +195,7 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
         </div>
       </div>
 
-      <div class="fd-rise mt-2.5 rounded-xl bg-white p-3 shadow-sm dark:bg-gray-800" style="--d: 550ms">
+      <div class="fd-rise mt-2.5 rounded-xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 p-3 dark:bg-gray-800" style="--d: 550ms">
         <p class="text-[10px] font-semibold text-gray-900 dark:text-white">This week</p>
         <div v-for="item in WEEK" :key="item.day" class="mt-1.5 flex items-center gap-2 text-[10px]">
           <span class="w-7 rounded bg-primary/10 py-0.5 text-center text-[8px] font-bold text-primary dark:bg-primary/20 dark:text-primary-light">{{ item.day }}</span>
@@ -205,7 +205,7 @@ const swatchStyle = (c) => (c.tint ? { '--light': c.tint.light, '--dark': c.tint
     </AppWindow>
 
     <!-- The address bar, over the top of the device. -->
-    <div class="fd-pop absolute -top-6 left-1/2 z-30 flex h-10 w-60 -translate-x-1/2 items-center gap-2 rounded-full bg-white px-3.5 text-sm shadow-xl ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10" style="--d: 250ms">
+    <div class="fd-pop absolute -top-6 left-1/2 z-30 flex h-10 w-60 -translate-x-1/2 items-center gap-2 rounded-full bg-white px-3.5 text-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10" style="--d: 250ms">
       <LockSimple class="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
       <span class="min-w-0 truncate font-mono text-[13px] text-gray-500 dark:text-gray-400">
         <span class="fd-caret font-semibold text-primary dark:text-primary-light">{{ shownAddress }}</span>.{{ domain }}

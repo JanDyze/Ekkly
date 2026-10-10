@@ -411,7 +411,7 @@ useFocusTrap(dialogRef, () => props.show, close);
           aria-modal="true"
           aria-labelledby="image-cropper-title"
           tabindex="-1"
-          class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full max-h-[90dvh] flex flex-col overflow-hidden"
+          class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full max-h-[90dvh] flex flex-col overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700"
         >
           <!-- Header -->
           <div class="shrink-0 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">

@@ -55,7 +55,7 @@ const start = () => {
           role="dialog"
           aria-modal="true"
           aria-label="Your plan"
-          class="sheet absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-3xl bg-gray-900 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 text-white shadow-2xl dark:bg-gray-800"
+          class="sheet absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-3xl bg-gray-900 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 text-white dark:bg-gray-800"
         >
           <div class="flex items-center justify-between gap-3">
             <p class="text-xs font-semibold uppercase tracking-wider text-white/60">Your plan</p>
@@ -69,7 +69,7 @@ const start = () => {
               <button
                 type="button"
                 :aria-pressed="!yearly"
-                :class="['h-9 flex-1 rounded-md px-2.5 transition-colors', !yearly ? 'bg-white text-gray-900 shadow-sm' : 'text-white/70']"
+                :class="['h-9 flex-1 rounded-md px-2.5 transition-colors', !yearly ? 'bg-white text-gray-900 ring-1 ring-gray-200 dark:ring-gray-700' : 'text-white/70']"
                 @click="yearly = false"
               >
                 Monthly
@@ -77,7 +77,7 @@ const start = () => {
               <button
                 type="button"
                 :aria-pressed="yearly"
-                :class="['h-9 flex-1 rounded-md px-2.5 transition-colors', yearly ? 'bg-white text-gray-900 shadow-sm' : 'text-white/70']"
+                :class="['h-9 flex-1 rounded-md px-2.5 transition-colors', yearly ? 'bg-white text-gray-900 ring-1 ring-gray-200 dark:ring-gray-700' : 'text-white/70']"
                 @click="yearly = true"
               >
                 Yearly <span :class="yearly ? 'text-emerald-600' : 'text-emerald-400'">· {{ monthsFree }} months free</span>

@@ -240,7 +240,7 @@ const MODES = [
           :class="[
             'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors',
             mode === option.value
-              ? 'bg-white dark:bg-gray-700 text-primary dark:text-primary-light shadow-sm'
+              ? 'bg-white dark:bg-gray-700 text-primary dark:text-primary-light ring-1 ring-gray-200 dark:ring-gray-700'
               : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
           ]"
         >
@@ -300,7 +300,7 @@ const MODES = [
           type="button"
           @click="togglePlay"
           :aria-label="isPlaying ? 'Pause' : 'Play'"
-          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-gray-900 transition-transform hover:scale-105 active:scale-95"
+          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-gray-900 transition-transform"
         >
           <Loader2 v-if="isBusy && !isPlaying" class="h-5 w-5 animate-spin" />
           <Pause v-else-if="isPlaying" class="h-5 w-5 fill-current" />
@@ -324,7 +324,7 @@ const MODES = [
           @error="artFailed = true"
         />
         <span class="absolute inset-0 bg-black/25 transition-colors group-hover:bg-black/40"></span>
-        <span class="relative flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-lg transition-transform group-hover:scale-110">
+        <span class="relative flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white transition-colors group-hover:bg-red-700">
           <Play class="h-6 w-6 translate-x-0.5 fill-current" />
         </span>
       </button>

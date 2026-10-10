@@ -44,7 +44,7 @@ const current = computed(() => VERSIONS[version.value])
           :aria-pressed="version === key"
           :class="[
             'h-9 flex-1 rounded-md px-2.5 text-sm font-medium transition-colors',
-            version === key ? 'bg-white text-primary shadow-sm dark:bg-gray-700 dark:text-primary-light' : 'text-gray-500 dark:text-gray-400',
+            version === key ? 'bg-white text-primary dark:bg-gray-700 dark:text-primary-light ring-1 ring-gray-200 dark:ring-gray-700' : 'text-gray-500 dark:text-gray-400',
           ]"
           @click="version = key"
         >
@@ -53,7 +53,7 @@ const current = computed(() => VERSIONS[version.value])
       </div>
 
       <!-- Shown on white whatever the page's theme: a code is printed on white. -->
-      <div class="mt-4 overflow-hidden rounded-3xl bg-white p-3 shadow-xl shadow-gray-900/5 ring-1 ring-gray-200 dark:ring-gray-800">
+      <div class="mt-4 overflow-hidden rounded-3xl bg-white p-3 ring-1 ring-gray-200 dark:ring-gray-800">
         <img :src="current.svg" :alt="`QR code that opens ${TARGET}`" class="mx-auto h-auto w-full" />
       </div>
 

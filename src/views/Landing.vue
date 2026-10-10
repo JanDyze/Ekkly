@@ -804,7 +804,7 @@ const year = new Date().getFullYear()
           <button
             v-if="canPlanVisit"
             @click="scrollToVisit"
-            class="mt-8 inline-flex h-12 items-center gap-2 bg-primary-light px-5 text-sm font-bold text-[#062832] transition-transform active:scale-95"
+            class="mt-8 inline-flex h-12 items-center gap-2 bg-primary-light px-5 text-sm font-bold text-[#062832] transition-transform"
           >
             Dumalaw sa amin
             <ArrowDown class="h-4 w-4" />
@@ -1133,7 +1133,7 @@ const year = new Date().getFullYear()
               v-for="(photo, index) in gallery"
               :key="photo.id"
               :data-deck-card="index"
-              class="deck-card absolute inset-y-0 left-[15%] w-[70%] overflow-hidden rounded-2xl bg-stone-200 shadow-[0_24px_50px_-28px_rgba(6,40,50,0.75)] ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/10"
+              class="deck-card absolute inset-y-0 left-[15%] w-[70%] overflow-hidden rounded-2xl bg-stone-200 ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/10"
               :class="{ 'is-jumping': jumping.includes(index) }"
               :style="cardStyle(index)"
               :aria-hidden="deckRel(index) !== 0"
@@ -1381,7 +1381,7 @@ const year = new Date().getFullYear()
               :href="mapHref"
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex h-12 items-center gap-2 bg-primary-light px-5 text-sm font-bold text-[#062832] transition-transform active:scale-95"
+              class="inline-flex h-12 items-center gap-2 bg-primary-light px-5 text-sm font-bold text-[#062832] transition-transform"
             >
               <MapPin class="h-4 w-4" />
               Get directions

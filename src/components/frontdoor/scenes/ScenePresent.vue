@@ -52,7 +52,7 @@ const itemClass = (i) => (slide.value && slide.value.item === i ? 'bg-primary/10
 const iconClass = (i) =>
   slide.value && slide.value.item === i ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
 const thumbClass = (s, i) => [
-  'aspect-video overflow-hidden rounded-md p-1 ring-2 transition-shadow duration-300',
+  'aspect-video overflow-hidden rounded-md p-1 ring-2 transition-colors duration-300',
   s.kind === 'deck' ? 'bg-linear-to-br from-orange-500 via-rose-500 to-violet-600' : 'bg-gray-800',
   i === live.value ? 'ring-primary' : 'ring-transparent',
 ]
@@ -73,7 +73,7 @@ const thumbClass = (s, i) => [
           </span>
         </div>
 
-        <div class="fd-rise mt-3 space-y-1 rounded-2xl bg-white p-2 shadow-sm dark:bg-gray-800" style="--d: 100ms">
+        <div class="fd-rise mt-3 space-y-1 rounded-2xl bg-white p-2 dark:bg-gray-800 ring-1 ring-gray-200 dark:ring-gray-700" style="--d: 100ms">
           <div v-for="(item, i) in ITEMS" :key="item.title" :class="['flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition-colors duration-300', itemClass(i)]">
             <span :class="['flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-300', iconClass(i)]">
               <component :is="item.icon" class="h-3.5 w-3.5" />
@@ -160,7 +160,7 @@ const thumbClass = (s, i) => [
       ]"
       style="--d: 500ms"
     >
-      <div class="relative aspect-video overflow-hidden rounded-md shadow-2xl ring-2 ring-gray-800 sm:rounded-lg sm:ring-4 dark:ring-gray-700">
+      <div class="relative aspect-video overflow-hidden rounded-md ring-2 ring-gray-800 sm:rounded-lg sm:ring-4 dark:ring-gray-700">
         <SlideView :slide="slide" size="wall" />
       </div>
     </div>

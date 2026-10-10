@@ -194,7 +194,7 @@ const onSignInError = (text) => {
             <button
               type="button"
               :disabled="sending"
-              class="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-white text-[11px] font-black uppercase tracking-[0.15em] text-gray-800 transition-transform active:scale-[0.98] disabled:opacity-60"
+              class="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-white text-[11px] font-black uppercase tracking-[0.15em] text-gray-800 transition-transform disabled:opacity-60"
               @click="ask"
             >
               <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />

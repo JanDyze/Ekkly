@@ -54,7 +54,7 @@ at(typed + 3000, () => (filed.value = true))
           <FileText class="h-5 w-5 text-gray-400" />
         </div>
 
-        <div class="relative mt-3 overflow-hidden rounded-2xl bg-white p-3.5 shadow-sm dark:bg-gray-800">
+        <div class="relative mt-3 overflow-hidden rounded-2xl bg-white p-3.5 dark:bg-gray-800 ring-1 ring-gray-200 dark:ring-gray-700">
           <Transition name="write" mode="out-in">
             <div v-if="!written" key="notes">
               <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Notes</p>
@@ -66,7 +66,7 @@ at(typed + 3000, () => (filed.value = true))
                 ]"
               >
                 <NotePencil class="h-4 w-4" />
-                Write up with EKRIS
+                Write up with YUNIT
               </div>
             </div>
 
@@ -85,7 +85,7 @@ at(typed + 3000, () => (filed.value = true))
         </div>
 
         <Transition name="write">
-          <div v-if="filed" class="fd-rise mt-3 flex items-center gap-2 rounded-2xl bg-white px-3.5 py-3 text-xs text-gray-600 shadow-sm dark:bg-gray-800 dark:text-gray-300">
+          <div v-if="filed" class="fd-rise mt-3 flex items-center gap-2 rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 px-3.5 py-3 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">
             <CheckCircle class="h-4 w-4 text-emerald-500" />
             Filed to Minutes · shared with the board
           </div>
@@ -96,7 +96,7 @@ at(typed + 3000, () => (filed.value = true))
     <!-- --------------------------------------------------------- computer -->
     <AppWindow v-else page="Minutes" :subtitle="`Church board meeting · ${BOARD_MET}`" active="minutes" :church="props.church">
       <div class="grid h-full grid-cols-2 gap-2.5">
-        <div class="flex flex-col rounded-xl bg-white p-3 shadow-sm dark:bg-gray-800">
+        <div class="flex flex-col rounded-xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 p-3 dark:bg-gray-800">
           <p class="text-[9px] font-semibold uppercase tracking-wider text-gray-400">Notes</p>
           <p class="fd-caret mt-2 flex-1 whitespace-pre-line font-mono text-[10px] leading-relaxed text-gray-700 dark:text-gray-300">{{ notes }}</p>
           <div
@@ -106,11 +106,11 @@ at(typed + 3000, () => (filed.value = true))
             ]"
           >
             <NotePencil class="h-3.5 w-3.5" />
-            Write up with EKRIS
+            Write up with YUNIT
           </div>
         </div>
 
-        <div class="relative overflow-hidden rounded-xl bg-white p-3 shadow-sm dark:bg-gray-800">
+        <div class="relative overflow-hidden rounded-xl bg-white ring-1 ring-gray-200 dark:ring-gray-700 p-3 dark:bg-gray-800">
           <div class="flex items-center justify-between">
             <p class="text-[9px] font-semibold uppercase tracking-wider text-gray-400">Minutes</p>
             <Transition name="write">

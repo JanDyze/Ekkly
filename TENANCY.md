@@ -114,7 +114,7 @@ typed in — and is fetched by an `@import` inside the same style element, so th
 remembered theme in `index.html` starts its download before the app boots.
 
 **AI.** Minutes write-up, song lookup and lyrics layout run only when the AI
-switch in the console is on *and* the church has the EKRIS app. Each call
+switch in the console is on *and* the church has the YUNIT app. Each call
 is counted in the church's `usage` for the month.
 
 ### A new church

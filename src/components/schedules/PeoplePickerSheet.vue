@@ -117,7 +117,7 @@ const clearSingle = () => {
           aria-modal="true"
           aria-labelledby="people-picker-title"
           tabindex="-1"
-          class="relative z-10 flex max-h-[88dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl sm:max-h-[80dvh] sm:max-w-lg sm:rounded-2xl sm:border dark:border-gray-700 dark:bg-gray-800"
+          class="relative z-10 flex max-h-[88dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white sm:max-h-[80dvh] sm:max-w-lg sm:rounded-2xl sm:border dark:border-gray-700 dark:bg-gray-800"
         >
           <div
             class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-4 py-3 dark:border-gray-700"

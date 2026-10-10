@@ -8,6 +8,18 @@
 
 export const versionHistory = [
   {
+    version: '0.33.4',
+    date: '2026-10-10',
+    title: 'Meet YUNIT',
+    summary: 'Ask YUNIT anything about your church on his own page — and Tasks is now an app of its own.',
+    highlights: [
+      'YUNIT looks things up for you and suggests changes; nothing changes until you press Confirm.',
+      'Tasks opens on what is late, what is due today, and what is yours this week.',
+      'Opening an app now turns its card over into the page. Turn it down under Preferences › Transitions.',
+      'Ministries and Small groups are two tabs in People.',
+    ],
+  },
+  {
     version: '0.33.3',
     date: '2026-10-10',
     title: 'Find anything',

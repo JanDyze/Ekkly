@@ -62,7 +62,7 @@ useFocusTrap(dialogRef, () => props.show, handleCancel)
           aria-modal="true"
           aria-labelledby="confirmation-modal-title"
           tabindex="-1"
-          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full"
+          class="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full ring-1 ring-gray-200 dark:ring-gray-700"
           @click.stop
         >
         <!-- Header -->

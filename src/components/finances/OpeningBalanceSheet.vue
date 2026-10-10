@@ -66,7 +66,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
           aria-modal="true"
           aria-labelledby="opening-title"
           tabindex="-1"
-          class="flex w-full flex-col rounded-t-2xl bg-white shadow-xl dark:bg-gray-800 sm:max-w-md sm:rounded-2xl"
+          class="flex w-full flex-col rounded-t-2xl bg-white dark:bg-gray-800 sm:max-w-md sm:rounded-2xl ring-1 ring-gray-200 dark:ring-gray-700"
           @click.stop
         >
           <div

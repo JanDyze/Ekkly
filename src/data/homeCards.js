@@ -10,7 +10,7 @@ export const HOME_CARD_STYLES = [
   {
     key: 'accent',
     name: 'Accent lines',
-    note: 'Cards with depth and a stripe of each app’s colour.',
+    note: 'Flat cards with a stripe of each app’s colour.',
   },
   {
     key: 'illustrated',
@@ -46,3 +46,20 @@ export const homeCardStyle = (key) =>
   HOME_CARD_STYLES.some((style) => style.key === key) ? key : DEFAULT_HOME_CARDS
 
 export const homeCardName = (key) => HOME_CARD_STYLES.find((style) => style.key === homeCardStyle(key)).name
+
+// How the styles lay their cards out, shared by the home of all apps
+// (HomeAppCards) and the sections inside an app (AppShortcuts), so a section
+// grid is drawn the way the home is.
+
+// Masonry alternates a wide tile and a narrow one, then the other way round.
+export const MASONRY_SPANS = ['col-span-3', 'col-span-2', 'col-span-2', 'col-span-3', 'col-span-3', 'col-span-2']
+
+// Orbit: the cards evenly round a circle, the first at the top. Placed by
+// their corner, half a node's width (13%) back from the point on the circle,
+// rather than shifted by half: the entrance animation owns the transform, and
+// would undo a shift once it finished. The box is square, so the same
+// percentage works both ways.
+export const orbitPlace = (index, count) => {
+  const angle = (-90 + (index * 360) / count) * (Math.PI / 180)
+  return { left: `${37 + 37 * Math.cos(angle)}%`, top: `${37 + 37 * Math.sin(angle)}%` }
+}

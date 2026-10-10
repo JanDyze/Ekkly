@@ -369,7 +369,7 @@ const formatTime = (time) => {
         </div>
         <button
           @click="openAdd"
-          class="shrink-0 flex h-10 items-center gap-1.5 rounded-lg bg-primary px-3 text-white shadow-sm transition-transform active:scale-95"
+          class="shrink-0 flex h-10 items-center gap-1.5 rounded-lg bg-primary px-3 text-white transition-transform"
         >
           <Plus class="h-5 w-5" />
           <span class="text-sm font-medium">Add</span>
@@ -397,7 +397,7 @@ const formatTime = (time) => {
         </p>
         <button
           @click="openAdd"
-          class="mt-4 inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-white shadow-sm transition-transform active:scale-95"
+          class="mt-4 inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-white transition-transform"
         >
           <Plus class="h-5 w-5" />
           <span class="text-sm font-medium">Add recurring event</span>
@@ -476,7 +476,7 @@ const formatTime = (time) => {
           <div class="absolute inset-0 bg-black/50" @click="closeEditor" />
 
           <div
-            class="sheet-panel relative z-10 w-full sm:max-w-lg max-h-[92dvh] flex flex-col rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border-t sm:border border-gray-200 dark:border-gray-700"
+            class="sheet-panel relative z-10 w-full sm:max-w-lg max-h-[92dvh] flex flex-col rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 border-t sm:border border-gray-200 dark:border-gray-700"
           >
             <div
               class="shrink-0 flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700"
@@ -518,7 +518,7 @@ const formatTime = (time) => {
                     :class="[
                       'h-11 rounded-lg text-xs font-medium transition-colors',
                       form.weekday === day.value
-                        ? 'bg-primary text-white shadow-sm'
+                        ? 'bg-primary text-white'
                         : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
                     ]"
                   >
@@ -537,7 +537,7 @@ const formatTime = (time) => {
                     :class="[
                       'h-11 flex-1 rounded-lg text-xs font-medium transition-colors',
                       !form.occurrences.length
-                        ? 'bg-primary text-white shadow-sm'
+                        ? 'bg-primary text-white'
                         : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
                     ]"
                   >
@@ -550,7 +550,7 @@ const formatTime = (time) => {
                     :class="[
                       'h-11 flex-1 rounded-lg text-xs font-medium transition-colors',
                       form.occurrences.includes(occurrence.value)
-                        ? 'bg-primary text-white shadow-sm'
+                        ? 'bg-primary text-white'
                         : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
                     ]"
                   >
@@ -617,7 +617,7 @@ const formatTime = (time) => {
                       :class="[
                         'h-10 flex-1 rounded-lg text-xs font-medium transition-colors',
                         occasionDraft.occurrences.includes(occurrence.value)
-                          ? 'bg-primary text-white shadow-sm'
+                          ? 'bg-primary text-white'
                           : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
                       ]"
                     >
@@ -832,7 +832,7 @@ const formatTime = (time) => {
                 :class="[
                   'flex-1 h-11 rounded-lg text-sm font-semibold transition-colors',
                   isFormValid && !saving
-                    ? 'bg-primary text-white shadow-sm hover:bg-primary-hover'
+                    ? 'bg-primary text-white hover:bg-primary-hover'
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed',
                 ]"
               >

@@ -172,7 +172,7 @@ const handleConfirmation = async () => {
 
         <div
           v-else
-          class="mx-auto w-full max-w-3xl mb-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden sg-paper"
+          class="mx-auto w-full max-w-3xl mb-6 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden sg-paper"
         >
           <SessionFormPrintable
             :group="group"

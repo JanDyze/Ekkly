@@ -155,7 +155,7 @@ const run = (event) => {
             <div
               v-if="showMenu"
               role="menu"
-              class="absolute right-0 top-full mt-1 w-48 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 text-gray-700 shadow-xl dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+              class="absolute right-0 top-full mt-1 w-48 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
             >
               <button
                 role="menuitem"

@@ -92,7 +92,7 @@ const moreCount = computed(() => Math.max(0, thisCount.value - preview.value.len
 
       <RouterLink
         :to="{ name: 'VideosMonth', params: { month: thisMonth } }"
-        class="animate-rise flex h-13 items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-white transition-transform duration-200 ease-out hover:bg-primary-hover pressed:scale-[0.98]"
+        class="animate-rise flex h-13 items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-white transition-transform duration-200 ease-out hover:bg-primary-hover"
         style="animation-delay: 210ms"
       >
         <PlayFill class="size-5" />
@@ -104,7 +104,7 @@ const moreCount = computed(() => Math.max(0, thisCount.value - preview.value.len
         <h2 class="mb-2 px-0.5 text-sm font-medium text-gray-500 dark:text-gray-400">In {{ thisName }}’s video</h2>
         <RouterLink
           :to="{ name: 'VideosMonth', params: { month: thisMonth } }"
-          class="group block rounded-2xl border border-gray-200 bg-white p-4 transition-[transform,border-color] duration-200 ease-out hover:border-gray-300 pressed:scale-[0.99] dark:border-gray-700/80 dark:bg-gray-800 dark:hover:border-gray-600"
+          class="group block rounded-2xl border border-gray-200 bg-white p-4 transition-[transform,border-color] duration-200 ease-out hover:border-gray-300 dark:border-gray-700/80 dark:bg-gray-800 dark:hover:border-gray-600"
         >
           <div class="flex items-start gap-3">
             <ol class="min-w-0 flex-1 space-y-1.5">

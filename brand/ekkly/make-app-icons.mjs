@@ -353,22 +353,25 @@ const ICONS = {
     )
     .join('')}`),
 
-  // EKRIS: a blink, and something to say.
+  // YUNIT, the assistant, drawn after his mascot: a white face held by four
+  // petals, two feet, and a burst of "!" beside him. He blinks, and the burst
+  // goes off one stroke at a time. Drawn at 250×240 and scaled into the tile.
   ai: svg(`
-  <path d="M12 40a20 20 0 0 1 40 0" fill="none" stroke="url(#b)" stroke-width="3.5" stroke-linecap="round"/>
-  <rect x="7" y="34" width="9" height="15" rx="4.5" fill="url(#o)"/>
-  <rect x="48" y="34" width="9" height="15" rx="4.5" fill="url(#o)"/>
-  <rect x="13" y="24" width="38" height="33" rx="16.5" fill="#fff" stroke="#C9D8EE" stroke-width="1.8"/>
-  <rect x="18" y="31" width="28" height="19" rx="9.5" fill="${NAVY}"/>
-  <ellipse class="a-blink" cx="26.5" cy="40.5" rx="3.2" ry="4.2" fill="${B1}"/>
-  <ellipse class="a-blink" cx="37.5" cy="40.5" rx="3.2" ry="4.2" fill="${B1}"/>
-  <path d="M11.5 48.5c0 6.5 3.8 10 10 10h3" fill="none" stroke="url(#o)" stroke-width="2.6" stroke-linecap="round"/>
-  <circle cx="25.5" cy="58.5" r="2.4" fill="${O3}"/>
-  <g class="a-bubble">
-    <path d="M40 4h18a5 5 0 0 1 5 5v8a5 5 0 0 1-5 5h-9l-6 5v-5h-3a5 5 0 0 1-5-5V9a5 5 0 0 1 5-5z" fill="#fff" stroke="${B2}" stroke-width="1.6"/>
-    <circle class="a-dot" style="--i:0" cx="44.5" cy="13" r="1.9" fill="${NAVY}"/>
-    <circle class="a-dot" style="--i:1" cx="50" cy="13" r="1.9" fill="${NAVY}"/>
-    <circle class="a-dot" style="--i:2" cx="55.5" cy="13" r="1.9" fill="${NAVY}"/>
+  <g transform="translate(.5 2) scale(.252)">
+    <ellipse cx="82" cy="211" rx="16" ry="10" fill="${NAVY}"/>
+    <ellipse cx="142" cy="211" rx="16" ry="10" fill="${NAVY}"/>
+    <circle cx="110" cy="122" r="60" fill="#fff" stroke="#DCE3EE" stroke-width="5"/>
+    <path d="M93 40C92 29 86 21 79 24C54 33 21 58 15 95C12 116 22 134 37 131L53 127C55 106 70 89 88 77C96 68 96 55 93 40Z" fill="${O1}"/>
+    <path d="M103 22C130 12 166 18 183 40C196 57 197 79 176 88C168 75 156 67 140 67H115C106 67 102 59 101 48C99 36 98 26 103 22Z" fill="url(#o)"/>
+    <path d="M176 99C188 90 200 98 202 118C205 150 186 182 152 196C138 201 128 189 127 169C126 156 130 148 140 141C152 131 165 113 176 99Z" fill="url(#t)"/>
+    <path d="M34 142C46 134 60 134 70 140C82 146 96 147 108 150C120 154 122 170 120 188C118 204 108 214 92 210C66 206 40 196 30 172C26 160 26 148 34 142Z" fill="url(#b)"/>
+    <g transform="rotate(-16 118 110)">
+      <g class="a-blink"><ellipse cx="91" cy="110" rx="11.5" ry="16" fill="${NAVY}"/><ellipse cx="95" cy="103" rx="3" ry="4" fill="#fff"/></g>
+      <g class="a-blink"><ellipse cx="145" cy="110" rx="11.5" ry="16" fill="${NAVY}"/><ellipse cx="149" cy="103" rx="3" ry="4" fill="#fff"/></g>
+    </g>
+    <path class="a-dot" style="--i:0" d="M207 14L196 31" stroke="${B2}" stroke-width="11" stroke-linecap="round"/>
+    <path class="a-dot" style="--i:1" d="M236 43L212 52" stroke="${B2}" stroke-width="11" stroke-linecap="round"/>
+    <path class="a-dot" style="--i:2" d="M233 77L214 73" stroke="${B2}" stroke-width="11" stroke-linecap="round"/>
   </g>`),
   // The six below are pages rather than apps a church can buy, but they sit in
   // the same sidebar as the fourteen above, so they are drawn from the same
@@ -831,6 +834,54 @@ const ICONS = {
     .join('')}
   <rect x="13" y="47" width="39" height="2" rx="1" fill="#DCE3EE"/>`),
 
+
+  // ---- Sections of the Tasks app (src/apps/tasks), drawn like People's.
+  // Named `tasks-<section>`; rooms of one app, not apps.
+
+  // Mine: a checklist card with somebody standing at its corner.
+  'tasks-mine': svg(`
+  ${splitTile(4, 6, 46, 46, 9, 'c')}
+  <rect x="9" y="11" width="36" height="36" rx="4" fill="#fff"/>
+  ${[0, 1]
+    .map(
+      (i) => `${check(13, 15 + i * 13, 6.5, B2, 2.6, i * 2)}
+  <rect class="a-line" style="--i:${i * 2 + 1}" x="24" y="${18 + i * 13}" width="${i ? 12 : 16}" height="3.6" rx="1.8" fill="${LINE}"/>`
+    )
+    .join('')}
+  <circle cx="48" cy="48" r="13" fill="#fff"/>
+  <g class="a-pop" style="--i:4">${person(48, 43, 4.4, 15, 58, 'url(#o)')}</g>`),
+
+  // Everyone's: three people over a ticked strip.
+  'tasks-everyone': svg(`
+  ${[
+    ['url(#t)', 16, 17, 5, 17],
+    ['url(#b)', 48, 17, 5, 17],
+    ['url(#o)', 32, 14, 6, 20],
+  ]
+    .map(([fill, x, headY, headR, w], i) => `<g class="a-pop" style="--i:${i}">${person(x, headY, headR, w, 40, fill)}</g>`)
+    .join('')}
+  ${splitTile(6, 38, 52, 20, 7, 'c')}
+  <rect x="11" y="42.5" width="42" height="11" rx="3.5" fill="#fff"/>
+  ${check(15, 44.5, 6.5, B2, 2.6, 3)}
+  <rect class="a-line" style="--i:4" x="26" y="46.6" width="22" height="3.6" rx="1.8" fill="${LINE}"/>`),
+
+  // By ministry: the list filed under three tabs.
+  'tasks-ministries': svg(`
+  ${['url(#t)', 'url(#b)', 'url(#o)']
+    .map(
+      (fill, i) => `
+  <g class="a-pop" style="--i:${i}">
+    <path d="M${13 + i * 3} ${14 + i * 12}h9l4 4h${26 - i * 6}a5 5 0 0 1 5 5v${18 - i * 4}a5 5 0 0 1-5 5H${13 + i * 3}a5 5 0 0 1-5-5V${19 + i * 12}a5 5 0 0 1 5-5z" fill="${fill}"/>
+    <rect x="${14 + i * 3}" y="${26 + i * 12}" width="${20 - i * 4}" height="3.4" rx="1.7" fill="#fff" opacity=".85"/>
+  </g>`
+    )
+    .join('')}`),
+
+  // Done: one big tick, drawing itself in.
+  'tasks-done': svg(`
+  <circle cx="32" cy="32" r="25" fill="url(#t)"/>
+  <circle cx="32" cy="32" r="25" fill="url(#shine)"/>
+  ${check(19, 21, 26, '#fff', 5.5, 0)}`),
 }
 
 for (const [key, text] of Object.entries(ICONS)) writeFileSync(join(outDir, `${key}.svg`), text)

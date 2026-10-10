@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
-import { Bell, Sun, Moon, X, Users, LogOut, UserCheck, UserPlus, Clock3, ChevronLeft, ChevronRight, SpeakerHigh, SpeakerSlash, Settings, SquaresFour, CloudSun, MagnifyingGlass } from '../icons';
+import { Bell, Sun, Moon, X, Users, LogOut, UserCheck, UserPlus, Clock3, ChevronLeft, ChevronRight, SpeakerHigh, SpeakerSlash, Settings, SquaresFour, CloudSun, MagnifyingGlass, Swap } from '../icons';
 import { useSounds } from "../composables/useSounds";
 import { useRouter } from "vue-router";
 import { useTheme } from "../composables/useTheme";
@@ -30,6 +30,7 @@ import { NAV_ITEMS } from "../data/navigation";
 import { homeCardName } from "../data/homeCards";
 import { useHomeCards } from "../composables/useHomeCards";
 import { useLiveSky } from "../composables/useLiveSky";
+import { useMotion } from "../composables/useMotion";
 import CardStyleSheet from "./home/CardStyleSheet.vue";
 import SearchSheet from "./search/SearchSheet.vue";
 
@@ -172,6 +173,8 @@ const { style: cardStyle, myChoice: myCardStyle } = useHomeCards()
 const showCardStyles = ref(false)
 // The home's sky following the time and weather over the church.
 const { liveSky, setLiveSky } = useLiveSky()
+// How much moves between pages: full, simple or off, a click at a time.
+const { motionLabel, nextMotion } = useMotion()
 
 // User account menu
 const isUserMenuOpen = ref(false)
@@ -379,7 +382,7 @@ const openMyProfile = () => {
                 role="dialog"
                 aria-labelledby="user-menu-title"
                 tabindex="-1"
-                class="absolute top-full right-0 mt-3 w-64 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 border-2 border-primary/20 dark:border-primary-light/20 rounded-2xl shadow-2xl z-100 overflow-hidden"
+                class="absolute top-full right-0 mt-3 w-64 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 border-2 border-primary/20 dark:border-primary-light/20 rounded-2xl z-100 overflow-hidden"
               >
                 <div class="flex items-center gap-3 p-4">
                   <MemberAvatar
@@ -491,6 +494,15 @@ const openMyProfile = () => {
                     <span class="text-[10px] text-gray-400 dark:text-gray-500">{{ liveSky ? 'On' : 'Off' }}</span>
                   </button>
                   <button
+                    @click="nextMotion"
+                    :aria-label="`Transitions: ${motionLabel}. Click to change.`"
+                    class="w-full flex items-center gap-2.5 p-2.5 rounded-xl text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <Swap class="w-4 h-4 shrink-0 text-primary dark:text-primary-light" />
+                    <span class="flex-1 text-[11px] font-bold text-gray-900 dark:text-white">Transitions</span>
+                    <span class="text-[10px] text-gray-400 dark:text-gray-500">{{ motionLabel }}</span>
+                  </button>
+                  <button
                     @click="toggleSounds"
                     :aria-pressed="soundsOn"
                     class="w-full flex items-center gap-2.5 p-2.5 rounded-xl text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -536,7 +548,7 @@ const openMyProfile = () => {
                 tabindex="-1"
                 v-bind="notifSwipe"
                 :style="notifStyle()"
-                class="notif-panel absolute inset-y-0 right-0 flex w-[21rem] max-w-[85vw] flex-col bg-white dark:bg-gray-900 shadow-2xl border-l border-gray-200 dark:border-gray-800"
+                class="notif-panel absolute inset-y-0 right-0 flex w-[21rem] max-w-[85vw] flex-col bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800"
               >
                 <div
                   class="shrink-0 flex items-center justify-between px-4 pb-2 pt-[calc(1rem+env(safe-area-inset-top))]"
@@ -558,7 +570,7 @@ const openMyProfile = () => {
                   <button
                     @click="enable"
                     :disabled="enabling"
-                    class="w-full py-2.5 bg-primary text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-primary-hover transition-all active:scale-95 disabled:opacity-50"
+                    class="w-full py-2.5 bg-primary text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-primary-hover transition-all disabled:opacity-50"
                   >
                     {{ enabling ? "Enabling..." : "Enable on this device" }}
                   </button>

@@ -70,8 +70,8 @@ const monthsFree = 12 - MONTHS_PER_YEAR_PAID
           :class="[
             'group flex h-full w-full flex-col items-start gap-2 rounded-2xl border p-3 text-left transition-all sm:flex-row sm:gap-3 sm:p-3.5',
             isOn(app)
-              ? 'border-primary/40 bg-primary/5 shadow-sm dark:border-primary-light/40 dark:bg-primary-light/10'
-              : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600',
+              ? 'border-primary/40 bg-primary/5 dark:border-primary-light/40 dark:bg-primary-light/10'
+              : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600',
           ]"
         >
           <AppArt :app-key="app.key" :play="plays[app.key] || 0" :class="['plan-art h-10 w-10 shrink-0 sm:h-11 sm:w-11', { 'is-off': !isOn(app) }]" />
@@ -101,7 +101,7 @@ const monthsFree = 12 - MONTHS_PER_YEAR_PAID
     <!-- The running total, kept in view on a wide screen. A phone has it at
          the foot of the page instead (PlanBar), where it is always in reach. -->
     <aside class="hidden lg:sticky lg:top-24 lg:block lg:self-start">
-      <div class="overflow-hidden rounded-2xl bg-gray-900 p-6 text-white shadow-2xl dark:bg-gray-800">
+      <div class="overflow-hidden rounded-2xl bg-gray-900 p-6 text-white dark:bg-gray-800">
         <p class="text-xs font-semibold uppercase tracking-wider text-white/60">Your plan</p>
         <template v-if="hasPrices">
           <!-- Monthly or yearly: two choices, so a segment control. -->
@@ -109,7 +109,7 @@ const monthsFree = 12 - MONTHS_PER_YEAR_PAID
             <button
               type="button"
               :aria-pressed="!yearly"
-              :class="['h-9 flex-1 rounded-md px-2.5 transition-colors', !yearly ? 'bg-white text-gray-900 shadow-sm' : 'text-white/70 hover:text-white']"
+              :class="['h-9 flex-1 rounded-md px-2.5 transition-colors', !yearly ? 'bg-white text-gray-900 ring-1 ring-gray-200 dark:ring-gray-700' : 'text-white/70 hover:text-white']"
               @click="yearly = false"
             >
               Monthly
@@ -117,7 +117,7 @@ const monthsFree = 12 - MONTHS_PER_YEAR_PAID
             <button
               type="button"
               :aria-pressed="yearly"
-              :class="['h-9 flex-1 rounded-md px-2.5 transition-colors', yearly ? 'bg-white text-gray-900 shadow-sm' : 'text-white/70 hover:text-white']"
+              :class="['h-9 flex-1 rounded-md px-2.5 transition-colors', yearly ? 'bg-white text-gray-900 ring-1 ring-gray-200 dark:ring-gray-700' : 'text-white/70 hover:text-white']"
               @click="yearly = true"
             >
               Yearly <span :class="yearly ? 'text-emerald-600' : 'text-emerald-400'">· {{ monthsFree }} months free</span>

@@ -13,6 +13,7 @@ import {
   SquaresFour,
   Rows,
   CloudSun,
+  Swap,
   CaretDown,
   Sun,
   SpeakerHigh,
@@ -39,6 +40,7 @@ import { usePermissions } from '../composables/usePermissions'
 import { useHomeCards } from '../composables/useHomeCards'
 import { useBottomBar } from '../composables/useBottomBar'
 import { useLiveSky } from '../composables/useLiveSky'
+import { useMotion } from '../composables/useMotion'
 import { homeCardName } from '../data/homeCards'
 import CardStyleSheet from './home/CardStyleSheet.vue'
 
@@ -75,6 +77,9 @@ const { bottomBar, setBottomBar } = useBottomBar()
 
 // The home's sky following the time and weather over the church.
 const { liveSky, setLiveSky } = useLiveSky()
+
+// How much moves between pages: full, simple or off, a tap at a time.
+const { motionLabel, nextMotion } = useMotion()
 
 const openSettings = () => {
   showPeoplePanel.value = false
@@ -284,7 +289,7 @@ watch(railIsVisible, (visible) => {
           tabindex="-1"
           v-bind="drawerSwipe"
           :style="drawerStyle()"
-          class="people-panel absolute inset-y-0 right-0 w-92 max-w-[90vw] flex flex-col bg-white dark:bg-slate-950 shadow-2xl border-l border-gray-200 dark:border-slate-800"
+          class="people-panel absolute inset-y-0 right-0 w-92 max-w-[90vw] flex flex-col bg-white dark:bg-slate-950 border-l border-gray-200 dark:border-slate-800"
         >
           <!-- Who you are, first: this drawer is the account surface on a
                phone, not only the list of who else is here. The name is the
@@ -452,6 +457,15 @@ watch(railIsVisible, (visible) => {
                 <CloudSun class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
                 <span class="flex-1 text-sm text-gray-700 dark:text-slate-200">Live sky</span>
                 <span class="text-xs text-gray-400 dark:text-slate-500">{{ liveSky ? 'On' : 'Off' }}</span>
+              </button>
+              <button
+                @click="nextMotion"
+                :aria-label="`Transitions: ${motionLabel}. Tap to change.`"
+                class="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
+              >
+                <Swap class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
+                <span class="flex-1 text-sm text-gray-700 dark:text-slate-200">Transitions</span>
+                <span class="text-xs text-gray-400 dark:text-slate-500">{{ motionLabel }}</span>
               </button>
             </div>
           </div>

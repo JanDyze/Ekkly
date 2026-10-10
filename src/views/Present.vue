@@ -1140,7 +1140,7 @@ onUnmounted(() => {
               liveSlide && liveSlide.itemId === item.id
                 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
                 : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
-              draggingItem === index ? 'opacity-80 shadow-lg ring-2 ring-primary/40' : '',
+              draggingItem === index ? 'opacity-80 ring-2 ring-primary/40' : '',
             ]"
           >
             <span

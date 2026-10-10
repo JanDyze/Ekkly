@@ -70,7 +70,7 @@ useFocusTrap(dialogRef, () => props.show, close)
           aria-modal="true"
           aria-labelledby="ticket-drawer-title"
           tabindex="-1"
-          class="flex max-h-[92dvh] w-full flex-col rounded-t-2xl bg-white shadow-xl dark:bg-gray-800 sm:max-w-lg sm:rounded-2xl"
+          class="flex max-h-[92dvh] w-full flex-col rounded-t-2xl bg-white dark:bg-gray-800 sm:max-w-lg sm:rounded-2xl ring-1 ring-gray-200 dark:ring-gray-700"
           @click.stop
         >
           <!-- Header -->

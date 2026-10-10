@@ -178,7 +178,7 @@ const handleSave = async (groupData) => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="sg-print-picker-title"
-            class="relative z-10 w-full sm:max-w-sm max-h-[80dvh] flex flex-col bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl border-t sm:border border-gray-200 dark:border-gray-700"
+            class="relative z-10 w-full sm:max-w-sm max-h-[80dvh] flex flex-col bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl border-t sm:border border-gray-200 dark:border-gray-700"
           >
             <div
               class="shrink-0 flex items-start justify-between gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"

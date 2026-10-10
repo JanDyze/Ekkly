@@ -81,7 +81,7 @@ const handleInstall = async () => {
         role="dialog"
         aria-modal="false"
         :aria-label="copy.title"
-        class="pointer-events-auto mx-auto max-w-md rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl shadow-gray-900/10 dark:shadow-black/40 overflow-hidden"
+        class="pointer-events-auto mx-auto max-w-md rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden"
       >
         <div class="flex items-start gap-3 p-3.5 pb-2.5">
           <!-- The church's own mark, not a generic install glyph: this is the
@@ -134,7 +134,7 @@ const handleInstall = async () => {
               v-if="canPromptDirectly"
               type="button"
               :disabled="busy"
-              class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-primary text-white text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+              class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-primary text-white text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
               @click="handleInstall"
             >
               <Download class="w-3.5 h-3.5" />
@@ -143,7 +143,7 @@ const handleInstall = async () => {
             <button
               type="button"
               :class="[
-                'py-2.5 rounded-xl border-2 border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-[9px] font-black uppercase tracking-widest transition-all active:scale-95',
+                'py-2.5 rounded-xl border-2 border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-[9px] font-black uppercase tracking-widest transition-all',
                 canPromptDirectly ? 'px-4' : 'flex-1',
               ]"
               @click="handleClose"

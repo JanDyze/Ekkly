@@ -11,6 +11,49 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.33.4] — 2026-10-10
+
+Meet YUNIT, the assistant, on a page of his own; Tasks becomes an app; and
+opening an app now turns its card over into the page.
+
+### Added
+
+- **YUNIT,** the assistant (the new name for EKRIS), has his own page. Ask him
+  anything about the church's records: he looks them up and answers with a
+  short reply and cards for what he found, and reacts as you talk — listening
+  while you type, thinking, pleased, puzzled or sorry. He can suggest
+  changes, removing a record included, but nothing happens until you read
+  his card and press Confirm.
+- **Tasks is an app of its own.** It opens on what needs doing — what is
+  late (yours first), what is due today, yours this week, and what nobody
+  has been given — with Mine, Everyone's, By ministry and Done one tap away.
+  A task added under Mine is yours; one added under a ministry is filed
+  there.
+- **Opening an app or a section, its card turns over as it grows into the
+  page,** its picture and name flying into the header, and the page's
+  contents rising in after it. Coming back, the page turns back into its
+  card.
+- **Preferences › Transitions:** Full, Simple (plain slides) or Off, for
+  anyone who would rather less moved.
+- **The weather where the church is** on the Good morning card, when Live
+  sky is on.
+- **Ministries and Small groups** are two tabs in People, rather than one
+  long page.
+
+### Changed
+
+- **The Good morning card** leads with the greeting, large, with the date
+  above it and the church's logo and name at its foot.
+- **The sections inside an app are drawn in your card style,** the same way
+  the apps on your home are.
+- **A flatter look:** cards and sheets are set off by a fine edge rather than
+  a shadow.
+- **The apps drawer fills the screen.**
+- **With compact cards, the verse sits on the picture** beside the church,
+  whole where it fits, with its translation in small under the reference.
+- **Holding an app** shows Ekkly's panes of light behind it, and the arched
+  outline that read as a door is gone from every card.
+
 ## [0.33.3] — 2026-10-10
 
 Search everything by what you mean, a sky over the home that follows the

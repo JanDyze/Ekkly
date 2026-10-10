@@ -46,7 +46,7 @@ const ICONS = {
   links: Link2,
   finances: Wallet,
   tasks: ListChecks,
-  // EKRIS types things up for a church; a sparkle only says "this bit is AI",
+  // YUNIT types things up for a church; a sparkle only says "this bit is AI",
   // which is the badge every product wears and tells a pastor nothing.
   ai: NotePencil,
 }
