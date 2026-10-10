@@ -11,6 +11,7 @@ import {
   ListChecks,
   Mail,
   Palette,
+  SquaresFour,
   Receipt,
   Repeat,
   ShieldCheck,
@@ -28,6 +29,8 @@ import ChurchListsAdmin from '../components/settings/ChurchListsAdmin.vue'
 import EmailDigestAdmin from '../components/settings/EmailDigestAdmin.vue'
 import LandingPageAdmin from '../components/settings/LandingPageAdmin.vue'
 import ChurchColoursAdmin from '../components/settings/ChurchColoursAdmin.vue'
+import HomeCardsAdmin from '../components/settings/HomeCardsAdmin.vue'
+import { homeCardName } from '../data/homeCards'
 import PlanAdmin from '../components/settings/PlanAdmin.vue'
 import { useAppSettings } from '../composables/useAppSettings'
 import { usePlatformConfig } from '../composables/usePlatformConfig'
@@ -58,7 +61,7 @@ const route = useRoute()
 const router = useRouter()
 const isDesktop = useMediaQuery('(min-width: 1024px)')
 
-const { church, categories, theme: churchTheme } = useAppSettings()
+const { church, categories, theme: churchTheme, homeCards } = useAppSettings()
 const { branding } = usePlatformConfig()
 const { schedules } = useRecurringSchedules()
 const { ministries } = useMinistries()
@@ -122,6 +125,14 @@ const GROUPS = computed(() => [
         icon: Palette,
         status: Object.keys(churchTheme.value || {}).length ? 'Your church’s own' : `${branding.value.name}’s look`,
         component: ChurchColoursAdmin,
+      },
+      {
+        // Beside the colours: both are how the church's app looks.
+        key: 'home',
+        label: 'Home',
+        icon: SquaresFour,
+        status: `Apps drawn as ${homeCardName(homeCards.value)}`,
+        component: HomeCardsAdmin,
       },
     ],
   },

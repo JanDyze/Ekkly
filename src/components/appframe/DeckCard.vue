@@ -57,13 +57,12 @@ const hasFoot = () => (slots.default?.() || []).some((node) => node.type !== Com
 // in 216px the same way, by what it puts in, not by being clipped.
 const HEIGHT = 'h-[26dvh] min-h-54 max-h-64'
 
-// Every card has an edge rather than a glow: a solid border, thicker along
-// the foot, in a deeper shade of the card's own colour, so it reads as a
-// card with some thickness to it, standing on the page. On the church's
-// colour the border is black laid thin over it, which is a deeper shade of
-// whatever colour the church chose. The border (1px, 4px along the foot)
-// comes out of the padding, so a card's content keeps the room it was
-// measured against above.
+// Every card is a rounded card in a hand of them (AppHeroDeck fans the ones
+// underneath out to either side): a fine edge in a deeper shade of its own
+// colour and a soft shadow under it, so the top card stands clear of the
+// ones behind. On the church's colour the edge is black laid thin over it,
+// which is a deeper shade of whatever colour the church chose. The edge used
+// to be 4px along the foot; at 1px all round the card keeps that room.
 const TONES = {
   accent: 'deck-filled text-white border-black/15 dark:border-black/40',
   celebrate: 'deck-filled text-white border-black/15 dark:border-black/40',
@@ -71,11 +70,13 @@ const TONES = {
   plain: 'bg-white text-gray-900 border-gray-200 dark:bg-gray-800 dark:text-white dark:border-gray-700',
 }
 
+// The label is a pill in the card's own tone: the church's colour on a white
+// card, white on the church's colour, amber on amber.
 const KICKERS = {
-  accent: 'text-white/75',
-  celebrate: 'text-white/80',
-  warn: 'text-amber-700 dark:text-amber-400',
-  plain: 'text-primary dark:text-primary-light',
+  accent: 'bg-white/18 text-white',
+  celebrate: 'bg-white/18 text-white',
+  warn: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
+  plain: 'bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light',
 }
 
 // The destination's artwork, beside the chevron, in its own colours: it is
@@ -102,7 +103,7 @@ const DETAILS = {
     :type="action && !to ? 'button' : undefined"
     draggable="false"
     :class="[
-      'group relative isolate flex flex-col rounded-3xl border border-b-4 px-4 pb-3 pt-[15px]',
+      'group relative isolate flex flex-col rounded-[28px] border px-4 pb-3 pt-[15px] shadow-[0_18px_34px_-18px_rgb(15_23_42/0.35)] dark:shadow-black/50',
       HEIGHT,
       TONES[tone] || TONES.plain,
       tappable ? 'transition-transform duration-200 ease-out pressed:scale-[0.99]' : '',
@@ -118,7 +119,7 @@ const DETAILS = {
     <div :class="['flex items-start gap-4', inset ? 'pr-9' : '']">
       <slot name="leading" />
       <div class="min-w-0 flex-1">
-        <p v-if="kicker" :class="['flex items-center gap-1.5 text-[13px] font-semibold', KICKERS[tone] || KICKERS.plain]">
+        <p v-if="kicker" :class="['inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-semibold', KICKERS[tone] || KICKERS.plain]">
           <component :is="icon" v-if="icon" class="size-4 shrink-0" />
           <span class="truncate">{{ kicker }}</span>
         </p>
@@ -170,7 +171,7 @@ const DETAILS = {
 /* On a dark page the accent token is its lighter shade, made to be read as
    text on dark, and white words on it all but disappear. The card goes deeper
    instead: the same hue, mixed down toward black (as AppHero does). */
-:global(.dark) .deck-filled {
+.dark .deck-filled {
   background-color: color-mix(in oklab, var(--color-primary) 55%, black);
 }
 </style>

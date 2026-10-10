@@ -11,7 +11,7 @@
 export const peopleRoutes = [
   {
     path: 'members',
-    meta: { capability: 'members.view', app: 'members', frame: 'app' },
+    meta: { capability: 'members.view', app: 'members', frame: 'app', art: 'members' },
     children: [
       {
         path: '',
@@ -24,19 +24,19 @@ export const peopleRoutes = [
         // into a record and the add sheet's ?add=true both look for it.
         path: 'everyone',
         name: 'Members',
-        meta: { depth: 1 },
+        meta: { art: 'people-everyone', depth: 1 },
         component: () => import('./PeopleEveryone.vue'),
       },
       {
         path: 'birthdays',
         name: 'PeopleBirthdays',
-        meta: { depth: 1 },
+        meta: { art: 'people-birthdays', depth: 1 },
         component: () => import('./PeopleBirthdays.vue'),
       },
       {
         path: 'ministries',
         name: 'PeopleMinistries',
-        meta: { depth: 1 },
+        meta: { art: 'people-ministries', depth: 1 },
         component: () => import('./PeopleMinistries.vue'),
       },
       {
@@ -44,26 +44,26 @@ export const peopleRoutes = [
         // it is the same question asked of the ones left over.
         path: 'not-serving',
         name: 'PeopleUnplaced',
-        meta: { depth: 2 },
+        meta: { art: 'people-ministries', depth: 2 },
         component: () => import('./PeopleMinistry.vue'),
       },
       {
         path: 'ministries/:name',
         name: 'PeopleMinistry',
-        meta: { depth: 2 },
+        meta: { art: 'people-ministries', depth: 2 },
         component: () => import('./PeopleMinistry.vue'),
       },
       {
         path: 'glance',
         name: 'PeopleGlance',
-        meta: { depth: 1 },
+        meta: { art: 'people-glance', depth: 1 },
         component: () => import('./PeopleGlance.vue'),
       },
       {
         // Filling in other people's records is for whoever may edit them.
         path: 'missing',
         name: 'PeopleMissing',
-        meta: { depth: 1, capability: 'members.manage' },
+        meta: { art: 'people-missing', depth: 1, capability: 'members.manage' },
         component: () => import('./PeopleMissing.vue'),
       },
       {
@@ -76,7 +76,7 @@ export const peopleRoutes = [
       {
         path: ':id',
         name: 'MemberDetails',
-        meta: { depth: 2 },
+        meta: { art: 'people-everyone', depth: 2 },
         component: () => import('./PersonRecord.vue'),
       },
     ],

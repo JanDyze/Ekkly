@@ -61,6 +61,9 @@ import videosArt from '../assets/app-icons/videos.svg'
  * was a sidebar and a bottom bar reading it too; every app is a screen of its
  * own now, and the home is the way between them.
  *
+ * `tagline` is a few words on what the app is for, under its name on the
+ * home's card styles that have room for one (src/data/homeCards.js).
+ *
  * `short` is a name for anywhere narrow, where "Prayer Concerns" would be cut
  * off. Everywhere with room uses `name`.
  *
@@ -71,6 +74,11 @@ import videosArt from '../assets/app-icons/videos.svg'
  * Access is per item, never per group — `capability`, or `adminOnly` for the
  * few that no role can be granted. A group whose items are all filtered out
  * disappears with them, so nobody sees an empty heading.
+ *
+ * `account` marks a page that is not an app. Settings is where the church is
+ * looked after rather than where its work is done, so it opens from the
+ * drawer behind the avatar. It stays listed here so the top bar can still name
+ * it, and allowedGroups leaves it out of the home and the All apps drawer.
  */
 export const NAV_GROUPS = [
   {
@@ -79,6 +87,7 @@ export const NAV_GROUPS = [
     items: [
       {
         name: 'Tasks',
+        tagline: 'What is on you',
         path: '/tasks',
         image: tasksArt,
         art: 'tasks',
@@ -94,6 +103,7 @@ export const NAV_GROUPS = [
     items: [
       {
         name: 'People',
+        tagline: 'Our church family',
         path: '/members',
         image: peopleArt,
         art: 'members',
@@ -103,6 +113,7 @@ export const NAV_GROUPS = [
       },
       {
         name: 'Small Groups',
+        tagline: 'Groups that meet',
         path: '/small-groups',
         short: 'Groups',
         image: smallGroupsArt,
@@ -113,6 +124,7 @@ export const NAV_GROUPS = [
       },
       {
         name: 'Attendance',
+        tagline: 'Who came, and when',
         path: '/attendance',
         image: attendanceArt,
         art: 'attendance',
@@ -128,6 +140,7 @@ export const NAV_GROUPS = [
     items: [
       {
         name: 'Events',
+        tagline: 'What is on',
         path: '/events',
         image: eventsArt,
         art: 'events',
@@ -137,6 +150,7 @@ export const NAV_GROUPS = [
       },
       {
         name: 'Song List',
+        tagline: 'Worship together',
         path: '/songs',
         short: 'Songs',
         image: songsArt,
@@ -147,6 +161,7 @@ export const NAV_GROUPS = [
       },
       {
         name: 'Schedules',
+        tagline: 'Sundays and teams',
         path: '/schedules',
         image: lineupsArt,
         art: 'lineups',
@@ -160,6 +175,7 @@ export const NAV_GROUPS = [
       // is concerned.
       {
         name: 'Presentation',
+        tagline: 'Words on the screen',
         path: '/presentation',
         short: 'Present',
         image: presentationArt,
@@ -172,6 +188,7 @@ export const NAV_GROUPS = [
       // the one entry the ministry tags have nothing to say about.
       {
         name: 'Bible',
+        tagline: 'Read and search',
         path: '/bible',
         // Its own app, so a church can leave it out; with no capability to
         // carry that, it is named here.
@@ -184,6 +201,7 @@ export const NAV_GROUPS = [
       },
       {
         name: 'Minutes',
+        tagline: 'What was decided',
         path: '/minutes',
         image: minutesArt,
         art: 'minutes',
@@ -193,6 +211,7 @@ export const NAV_GROUPS = [
       },
       {
         name: 'Prayer Concerns',
+        tagline: 'Praying for each other',
         path: '/prayer-concerns',
         short: 'Prayer',
         image: prayerArt,
@@ -209,6 +228,7 @@ export const NAV_GROUPS = [
     items: [
       {
         name: 'Gallery',
+        tagline: 'Photos and moments',
         path: '/gallery',
         image: galleryArt,
         art: 'gallery',
@@ -220,6 +240,7 @@ export const NAV_GROUPS = [
       // from the calendar, and live beside the photos as the church's media.
       {
         name: 'Videos',
+        tagline: 'Announcements to play',
         path: '/videos',
         image: videosArt,
         art: 'videos',
@@ -229,6 +250,7 @@ export const NAV_GROUPS = [
       },
       {
         name: 'Links',
+        tagline: 'Pages worth keeping',
         path: '/links',
         image: linksArt,
         art: 'links',
@@ -244,6 +266,7 @@ export const NAV_GROUPS = [
     items: [
       {
         name: 'Finances',
+        tagline: 'Tithes and funds',
         path: '/finances',
         image: financesArt,
         art: 'finances',
@@ -253,6 +276,7 @@ export const NAV_GROUPS = [
       },
       {
         name: 'To-do',
+        tagline: 'Building this app',
         path: '/todo',
         image: todosArt,
         art: 'todos',
@@ -262,6 +286,7 @@ export const NAV_GROUPS = [
       },
       {
         name: 'Accounts',
+        tagline: 'Who signs in',
         path: '/accounts',
         image: accountsArt,
         art: 'accounts',
@@ -271,6 +296,7 @@ export const NAV_GROUPS = [
       },
       {
         name: 'Audit log',
+        tagline: 'Every change made',
         path: '/audit',
         image: auditArt,
         art: 'audit',
@@ -280,11 +306,13 @@ export const NAV_GROUPS = [
       },
       {
         name: 'Settings',
+        tagline: 'Looking after the church',
         path: '/settings',
         image: settingsArt,
         art: 'settings',
         icon: Settings,
         adminOnly: true,
+        account: true,
         description: 'Church details, ministries, roles, and what the public page shows.',
       },
     ],
@@ -306,11 +334,14 @@ export const navItemAllowed = (item, can, isAdmin) => {
   return item.adminOnly ? isAdmin : can(item.capability)
 }
 
-/** Groups with their forbidden items removed, and empty groups dropped. */
+/**
+ * Groups with their forbidden items removed, and empty groups dropped. Account
+ * pages are left out too: these are the app lists, and those are not apps.
+ */
 export const allowedGroups = (can, isAdmin, groups = NAV_GROUPS) =>
   groups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => navItemAllowed(item, can, isAdmin)),
+      items: group.items.filter((item) => !item.account && navItemAllowed(item, can, isAdmin)),
     }))
     .filter((group) => group.items.length > 0)

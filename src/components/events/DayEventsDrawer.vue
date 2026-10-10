@@ -577,7 +577,7 @@ const open = (event) => {
 
 /* White on the dark page's lighter accent all but disappears, so the pill
    goes deeper there, as DateTile's filled tile does. */
-:global(.dark) .day-pill-fill {
+.dark .day-pill-fill {
   background-color: color-mix(in oklab, var(--color-primary) 55%, black);
 }
 

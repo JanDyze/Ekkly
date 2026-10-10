@@ -204,7 +204,7 @@ const onLeave = (el, done) => {
     radial-gradient(90% 70% at 0% 100%, color-mix(in oklab, black 24%, transparent), transparent 60%);
 }
 
-:global(.dark) .app-peek {
+.dark .app-peek {
   background-color: color-mix(in oklab, var(--color-primary) 55%, black);
 }
 

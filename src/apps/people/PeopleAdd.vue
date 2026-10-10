@@ -9,6 +9,7 @@ import { useToast } from '../../composables/useToast'
 import { addMembers } from '../../api/membersService'
 import { CIVIL_STATUS_OPTIONS, OCCUPATION_OPTIONS, calculateAgeFromDate } from '../../utils/memberUtils'
 import { SHEET_COLUMNS, cellsFromFile, cellsFromPaste, downloadTemplate, rowsFromCells } from '../../utils/memberImport'
+import { samplePerson } from '../../data/samplePeople'
 
 // Adding a whole roll at once: a sheet with a row for each person, filled in
 // by hand, pasted from Excel or Google Sheets, or read from a file.
@@ -294,7 +295,7 @@ const COLUMNS = [
                       data-cell="firstName"
                       :data-row="r"
                       autocomplete="off"
-                      placeholder="Juan"
+                      :placeholder="samplePerson(row.sex, r).firstName"
                       :aria-label="`Row ${r + 1}, first name`"
                       :class="[cell, problemOf(row) === 'name' && !row.firstName.trim() ? 'ring-1 ring-red-400' : '']"
                     />
@@ -308,13 +309,13 @@ const COLUMNS = [
                   data-cell="lastName"
                   :data-row="r"
                   autocomplete="off"
-                  placeholder="Bautista"
+                  :placeholder="samplePerson(row.sex, r).lastName"
                   :aria-label="`Row ${r + 1}, last name`"
                   :class="[cell, problemOf(row) === 'name' && !row.lastName.trim() ? 'ring-1 ring-red-400' : '']"
                 />
               </td>
               <td class="border-b border-gray-100 px-1 py-1 dark:border-gray-700/60">
-                <input v-model="row.nickname" data-cell="nickname" :data-row="r" autocomplete="off" placeholder="Jun" :aria-label="`Row ${r + 1}, nickname`" :class="cell" />
+                <input v-model="row.nickname" data-cell="nickname" :data-row="r" autocomplete="off" :placeholder="samplePerson(row.sex, r).nickname" :aria-label="`Row ${r + 1}, nickname`" :class="cell" />
               </td>
               <td class="border-b border-gray-100 px-1 py-1 dark:border-gray-700/60">
                 <select v-model="row.sex" data-cell="sex" :data-row="r" :aria-label="`Row ${r + 1}, sex`" :class="cell">

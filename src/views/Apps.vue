@@ -4,13 +4,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { CalendarDots, ClipboardCheck, KeyRound, ListChecks, MicrophoneStage } from '../icons'
 import AppHeroDeck from '../components/appframe/AppHeroDeck.vue'
 import DeckCard from '../components/appframe/DeckCard.vue'
-import AppShortcut from '../components/appframe/AppShortcut.vue'
 import DeckFaces from '../components/appframe/DeckFaces.vue'
 import DeckChips from '../components/appframe/DeckChips.vue'
 import DeckWeek from '../components/appframe/DeckWeek.vue'
 import AppsDrawer from '../components/appframe/AppsDrawer.vue'
 import AppPeek from '../components/appframe/AppPeek.vue'
-import AppArt from '../components/common/AppArt.vue'
+import HomeScene from '../components/home/HomeScene.vue'
+import HomeAppCards from '../components/home/HomeAppCards.vue'
+import { useHomeCards } from '../composables/useHomeCards'
 import { useAppOrder } from '../composables/useAppOrder'
 import { usePressAndHold } from '../composables/usePressAndHold'
 import BirthdayCard from '../components/members/BirthdayCard.vue'
@@ -39,8 +40,8 @@ import { peopleOnService } from '../data/scheduleRoles'
 //      Under them all, the card that is always true: the day, and the church.
 //      This is what the dashboard was, asked as a deck rather than a page of
 //      tiles.
-//   2. The apps this person keeps on their home — five, as tiles with their
-//      artwork and one line of what is true inside each — and More apps, which
+//   2. The apps this person keeps on their home — five, as cards that are
+//      their artwork and their name, nothing more — and More apps, which
 //      opens every app (AppsDrawer), where they can open any of them or press
 //      and hold to choose which five are here. The bottom bar's drawer did
 //      the same; the five it kept on the bar are the five kept here.
@@ -257,13 +258,9 @@ const cards = computed(() => {
   }
 
   // The card that is always there: the person greeted by name, the day, and
-  // whose church this is — with a short verse to start the day along its
-  // foot. The verse opens its chapter in the Bible, for whoever has the Bible
-  // app; until it has loaded, or where it cannot (offline, before the book
-  // was ever fetched), the foot is simply empty.
+  // whose church this is. The day's verse used to run along its foot; it has
+  // the foot of the page now, under the church (verseTo, below).
   const now = new Date()
-  const v = verse.value
-  const canRead = allApps.value.some((item) => item.path === '/bible')
   list.push({
     kind: 'day',
     key: 'day',
@@ -271,13 +268,21 @@ const cards = computed(() => {
     kicker: greeting.value,
     title: now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }),
     detail: church.value?.shortName || church.value?.fullName || '',
-    to: v && canRead ? { name: 'Bible', params: { slug: v.slug, chapter: v.chapter } } : null,
-    dest: 'bible',
-    destLabel: 'the chapter in the Bible',
-    verse: v,
+    to: null,
   })
 
   return list
+})
+
+/* ------------------------------------------------------------- the verse */
+
+// The verse opens its chapter in the Bible, for whoever has the Bible app.
+// Until it has loaded, or where it cannot (offline, before the book was ever
+// fetched), the church stands alone.
+const verseTo = computed(() => {
+  const v = verse.value
+  const canRead = allApps.value.some((item) => item.path === '/bible')
+  return v && canRead ? { name: 'Bible', params: { slug: v.slug, chapter: v.chapter } } : null
 })
 
 /* -------------------------------------------------------------- the apps */
@@ -292,6 +297,9 @@ const showDrawer = ref(false)
 
 // Holding an app's tile shows what it is; letting go puts it away.
 const { held, start: startHold, holdStill, swallowClick } = usePressAndHold()
+const hold = { start: startHold, still: holdStill, swallow: swallowClick }
+
+const { style: cardStyle } = useHomeCards()
 
 const APP_LINES = Object.fromEntries(APPS.map((app) => [app.key, app.description]))
 
@@ -326,8 +334,14 @@ const lineOf = (item) => {
 </script>
 
 <template>
-  <div class="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
-    <main class="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pb-[max(3rem,env(safe-area-inset-bottom))] pt-4 sm:pt-6">
+  <!-- The home is laid out to fit one screen, so it does not scroll: its
+       bottom padding alone used to tip it over and let the page slide. -->
+  <!-- The page stands in a picture (HomeScene): its sky behind everything,
+       and its church on the hill in the room the apps leave at the foot. -->
+  <div class="home-scene relative h-full overflow-hidden bg-(--scene-sky-3)">
+    <HomeScene part="sky" class="pointer-events-none absolute inset-0 size-full" />
+
+    <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6">
       <!-- 1. Today, most important on top -->
       <AppHeroDeck :cards="cards" scope="home" label="Today">
         <template #card="{ card }">
@@ -385,8 +399,6 @@ const lineOf = (item) => {
             :title="card.title"
             :detail="card.detail"
             :to="card.to"
-            :dest="card.dest"
-            :dest-label="card.destLabel"
           >
             <template #art>
               <!-- An arched window in outline, the shape of Ekkly's mark
@@ -404,15 +416,6 @@ const lineOf = (item) => {
                 <img :src="logoUrl" alt="" class="size-full object-contain" />
               </span>
             </template>
-            <!-- A verse for the day, small, under the day itself: three lines at
-                 most, and its reference under it. Three still fits the
-                 deck's shortest card (216px) beside a one-line date. -->
-            <figure v-if="card.verse" class="border-l-2 border-white/40 pl-3">
-              <blockquote class="line-clamp-3 text-sm leading-snug text-white/90">{{ card.verse.text }}</blockquote>
-              <figcaption class="mt-1 truncate text-xs font-medium text-white/70">
-                {{ card.verse.reference }} · {{ card.verse.version }}
-              </figcaption>
-            </figure>
           </DeckCard>
 
           <DeckCard
@@ -442,42 +445,60 @@ const lineOf = (item) => {
         <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">An administrator grants access by ministry in Settings.</p>
       </div>
 
-      <nav v-else class="grid grid-cols-2 gap-2.5 sm:grid-cols-3" aria-label="Your apps">
-        <AppShortcut
-          v-for="(item, index) in primary"
-          :key="item.path"
-          :to="item.path"
-          :title="item.name"
-          :art="item.art"
-          level="app"
-          :detail="lineOf(item)"
-          :delay="120 + index * 30"
-          @pointerdown="startHold($event, item)"
-          @touchmove="holdStill"
-          @click.capture="swallowClick"
-        />
+      <!-- Drawn in the style the church chose, or the one this person chose for
+           themselves (HomeAppCards, useHomeCards). -->
+      <HomeAppCards
+        v-else
+        :variant="cardStyle"
+        :apps="primary"
+        :others="others"
+        :hold="hold"
+        @more="showDrawer = true"
+      />
 
-        <!-- More apps: a peek at four of the rest, the way a phone shows a
-             folder, so it reads as more of the same rather than a setting. -->
-        <button
-          v-if="others.length"
-          type="button"
-          :style="{ animationDelay: `${120 + primary.length * 30}ms` }"
-          class="animate-rise group flex min-w-0 flex-col gap-3 rounded-2xl bg-white p-3.5 text-left ring-1 ring-gray-200/80 transition duration-200 ease-out hover:ring-gray-300 pressed:scale-[0.97] dark:bg-gray-800 dark:ring-gray-700/80 dark:hover:ring-gray-600"
-          @click="showDrawer = true"
+      <!-- 3. The church on its hill, and the day's verse on a card beside
+           it, in whatever room the apps leave at the foot of the screen. The
+           home never scrolls, so the room decides: the verse steps aside
+           before it would be cut off, and the church goes too where there is
+           no room at all (the container queries below). -->
+      <section class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1" aria-label="A verse for today">
+        <HomeScene part="land" class="scene pointer-events-none absolute inset-0 size-full" />
+
+        <component
+          :is="verseTo ? 'RouterLink' : 'div'"
+          v-if="verse"
+          v-bind="verseTo ? { to: verseTo } : {}"
+          class="verse absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-4 block max-w-[58%] rounded-2xl bg-white/80 px-3.5 py-3 text-left shadow-sm ring-1 ring-white/70 backdrop-blur-md dark:bg-gray-900/70 dark:ring-white/10"
         >
-          <span class="grid size-12 grid-cols-2 gap-0.5 rounded-[14px] bg-linear-to-b from-white to-gray-50 p-1.5 shadow-md shadow-gray-900/10 ring-1 ring-gray-200/90 dark:from-gray-600 dark:to-gray-700 dark:shadow-black/30 dark:ring-gray-500/40">
-            <AppArt v-for="item in others.slice(0, 4)" :key="item.path" :app-key="item.art" class="size-full" />
-          </span>
-          <span class="mt-auto min-w-0">
-            <span class="block truncate text-[15px] font-semibold leading-snug text-gray-900 dark:text-white">More apps</span>
-            <span class="mt-0.5 block truncate text-xs text-gray-500 dark:text-gray-400">{{ others.length }} more · arrange yours</span>
-          </span>
-        </button>
-      </nav>
+          <blockquote class="line-clamp-3 text-[13px] italic leading-snug text-gray-700 dark:text-gray-200">{{ verse.text }}</blockquote>
+          <p class="mt-1.5 truncate text-[10px] font-bold uppercase tracking-[0.18em] text-primary dark:text-primary-light">
+            {{ verse.reference }} · {{ verse.version }}
+          </p>
+        </component>
+      </section>
     </main>
 
     <AppsDrawer :show="showDrawer" :apps="allApps" @close="showDrawer = false" />
     <AppPeek :app="held?.item" :from="held?.el" :line="held ? lineOf(held.item) : ''" />
   </div>
 </template>
+
+<style scoped>
+/* The room under the apps measures itself, so what it holds can step aside
+   rather than be cut off on a short screen. */
+.verse-room {
+  container-type: size;
+}
+
+@container (max-height: 7.5rem) {
+  .verse {
+    display: none;
+  }
+}
+
+@container (max-height: 3.5rem) {
+  .scene {
+    display: none;
+  }
+}
+</style>

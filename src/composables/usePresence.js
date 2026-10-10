@@ -142,6 +142,18 @@ const dedupeByAccount = (records) => {
   return [...byAccount.values()]
 }
 
+// TEMPORARY: pretend company, so the people drawer can be judged with a few
+// faces in it rather than only your own. Only on a development server: a
+// church using the app never sees people who are not there. Delete this and
+// its spread below when the drawer is settled.
+const MOCK_VISITORS = [
+  { id: 'mock-1', name: 'Grace Santos', sessionCount: 1 },
+  { id: 'mock-2', name: 'Paolo Reyes', sessionCount: 2 },
+  { id: 'mock-3', name: 'Ana Villanueva', sessionCount: 1 },
+  { id: 'mock-4', name: 'Mark Dela Cruz', sessionCount: 1 },
+  { id: 'mock-5', name: 'Joy Bautista', sessionCount: 1 },
+]
+
 export function usePresence() {
   // Everyone but you — by account, not by tab. Your own other devices belong
   // under "You", not in the list of other people online.
@@ -149,9 +161,12 @@ export function usePresence() {
     const { user } = useAuth()
     const myUid = user.value?.uid || ''
 
-    return dedupeByAccount(everyone.value).filter((v) =>
-      myUid && v.uid ? v.uid !== myUid : v.id !== sessionId.value
-    )
+    return [
+      ...dedupeByAccount(everyone.value).filter((v) =>
+        myUid && v.uid ? v.uid !== myUid : v.id !== sessionId.value
+      ),
+      ...(import.meta.env.DEV ? MOCK_VISITORS : []),
+    ]
   })
 
   /** Distinct people online besides you. */

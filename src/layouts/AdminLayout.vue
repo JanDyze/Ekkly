@@ -3,6 +3,8 @@ import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import Topbar from '../components/Topbar.vue'
 import RightSidebar from '../components/RightSidebar.vue'
+import BottomBar from '../components/BottomBar.vue'
+import { useBottomBar } from '../composables/useBottomBar'
 import { initPresence, stopPresence } from '../composables/usePresence'
 import { useFocusModeValue } from '../composables/useFocusMode'
 
@@ -23,6 +25,7 @@ onUnmounted(stopPresence)
 // still wants its navigation. A focus route must carry its own way back, or
 // it strands whoever opens it.
 const route = useRoute()
+const { bottomBar } = useBottomBar()
 
 // Either the whole route is a focus route, or the page on it has asked for the
 // screen while it shows a record of its own (useFocusMode) - Settings does
@@ -62,9 +65,10 @@ const KEPT_ALIVE = ['PeopleEveryone']
 
 <template>
   <div class="flex h-dvh bg-gray-50 dark:bg-gray-900 print-root">
-    <!-- No sidebar and no bottom bar: every app is a screen of its own, and
-         the home of all apps (/home, Apps.vue) is the way between them. The
-         top bar's mark leads back to it from everywhere else. -->
+    <!-- No sidebar: every app is a screen of its own, and the home of all
+         apps (/home, Apps.vue) is the way between them. The top bar's mark
+         leads back to it from everywhere else. A bottom bar is there only for
+         whoever turned it on in Preferences (useBottomBar). -->
     <!-- Main content area -->
     <div class="flex-1 min-w-0 flex flex-col overflow-hidden lg:ml-0 print-main">
       <!-- Topbar. Hidden, not removed, on a focus route (and the rail below
@@ -94,6 +98,11 @@ const KEPT_ALIVE = ['PeopleEveryone']
           </router-view>
         </div>
       </main>
+
+      <!-- At the foot of the column rather than floating over it, so every
+           page simply ends above it and nothing is hidden behind it. Not on
+           a focus route: that is a task, with its own way out. -->
+      <BottomBar v-if="bottomBar && !isFocus" />
     </div>
 
     <!-- People rail - wide screens; a drawer everywhere else. A focus route

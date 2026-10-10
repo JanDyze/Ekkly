@@ -16,11 +16,12 @@
 // Given `glyph`, it wears a section's small flat picture in the church's own
 // colours (SectionGlyph): for the rooms inside an app, a step below the app.
 
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import AppArt from '../common/AppArt.vue'
 import SectionGlyph from './SectionGlyph.vue'
 
-defineProps({
+const props = defineProps({
   to: { type: [String, Object], required: true },
   title: { type: String, required: true },
   detail: { type: String, default: '' },
@@ -37,6 +38,11 @@ defineProps({
   // Its beat in the home's entrance, in milliseconds.
   delay: { type: Number, default: 0 },
 })
+
+// The path this tile opens, which the section's header carries too, so its
+// name can fly up into the header and back (router/viewTransitions.js).
+const router = useRouter()
+const morphKey = computed(() => router.resolve(props.to).path)
 
 // Bumped to play the drawing's animation again.
 const play = ref(0)
@@ -74,7 +80,7 @@ const play = ref(0)
       </span>
     </span>
     <span class="min-w-0">
-      <span class="block text-lg font-semibold leading-tight tracking-tight text-gray-900 dark:text-white">
+      <span :data-morph-label="morphKey" class="block text-lg font-semibold leading-tight tracking-tight text-gray-900 dark:text-white">
         {{ title }}
       </span>
       <span

@@ -144,7 +144,7 @@ const draftHtml = computed(() =>
   animation: shimmer 1.4s ease infinite;
 }
 
-:global(.dark) .skeleton {
+.dark .skeleton {
   background: linear-gradient(
     90deg,
     rgb(255 255 255 / 0.06) 25%,

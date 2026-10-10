@@ -123,6 +123,9 @@ export function useAppSettings() {
   // The church's own accent colours, if it chose any. Empty means the
   // platform's; useBrandTheme does the falling back.
   const theme = computed(() => stored.value?.theme || {})
+  // How the home draws its apps for everyone who has not chosen their own
+  // (useHomeCards). Empty means the default.
+  const homeCards = computed(() => stored.value?.homeCards || '')
 
   // True once the document exists; until then the views run on defaults.
   const isConfigured = computed(() => stored.value !== null)
@@ -169,6 +172,7 @@ export function useAppSettings() {
   // Written whole, so clearing a colour really clears it: a merge would keep
   // the old value underneath and the reset would do nothing.
   const saveTheme = (value) => replaceAppSettingsField('theme', themeForStorage(value))
+  const saveHomeCards = (key) => replaceAppSettingsField('homeCards', key)
 
   // The guide is over. Written whether every step was filled in or every one
   // was skipped: it records that the administrator has been shown the screen,
@@ -188,6 +192,7 @@ export function useAppSettings() {
     landing,
     scheduleRoles,
     theme,
+    homeCards,
     isConfigured,
     setupPending,
     saveChurch,
@@ -199,6 +204,7 @@ export function useAppSettings() {
     saveLanding,
     saveScheduleRoles,
     saveTheme,
+    saveHomeCards,
     finishSetup,
   }
 }

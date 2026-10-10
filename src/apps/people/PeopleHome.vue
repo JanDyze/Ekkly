@@ -10,7 +10,6 @@ import DeckFaces from '../../components/appframe/DeckFaces.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import { usePeopleOverview, whenOfBirthday } from '../../composables/usePeopleOverview'
-import { useMemberStats } from '../../composables/useMemberStats'
 import { getDisplayName, getFullName, listPhrase } from '../../utils/memberUtils'
 import { findRosterMember, todayIso } from '../../utils/lineupUtils'
 import { suggestMembers } from '../../utils/memberMatch'
@@ -43,7 +42,6 @@ const {
   counts,
   birthdays,
   birthdaysToday,
-  birthdaysThisWeek,
   incomplete,
   unplaced,
   unplacedToAsk,
@@ -160,8 +158,8 @@ const cards = computed(() => {
 
   // The birthdays still to come this week, together — near enough to buy a
   // card or plan a greeting. Not the next one when there are none this week:
-  // three weeks off is nothing to do yet, and the Birthdays tile already says
-  // who is next. Keyed by who, so a different set of names is news again.
+  // three weeks off is nothing to do yet, and Birthdays opens on who is
+  // next. Keyed by who, so a different set of names is news again.
   const soon = birthdays.value.filter((row) => row.days >= 1 && row.days <= 6)
   if (soon.length) {
     const first = soon[0]
@@ -257,47 +255,27 @@ const cards = computed(() => {
 
 /* -------------------------------------------------------------- the doors */
 
-// Each door says what is true behind it, in a few words, so the grid is
-// worth reading as well as tapping.
-const birthdaysLine = computed(() => {
-  const today = birthdaysToday.value
-  if (today.length === 1) return `${getDisplayName(today[0].member)} today`
-  if (today.length > 1) return `${today.length} today`
-  if (birthdaysThisWeek.value.length) return `${birthdaysThisWeek.value.length} this week`
-  const next = birthdays.value[0]
-  return next ? `Next: ${getDisplayName(next.member)}, ${whenOfBirthday(next.days)}` : 'None this month'
-})
-
-// What each tile shows of its own section, so no two tiles look alike and
-// each is worth a glance before it is tapped.
-const { stats, agedTotal } = useMemberStats(members)
-
 // People with a photo first: a face reads, a generated avatar is a pattern.
 const withPhotosFirst = computed(() =>
   [...members.value].sort((a, b) => Number(Boolean(b.image)) - Number(Boolean(a.image)))
 )
 
-/** A few faces for the roll's tile. */
-const rollFaces = computed(() => withPhotosFirst.value.slice(0, 3))
-
-/** More of them, larger, for the main card: the roll is its people. */
+/** Faces for the main card: the roll is its people. */
 const HERO_FACES = 6
 const heroFaces = computed(() => withPhotosFirst.value.slice(0, HERO_FACES))
 
-const nextBirthday = computed(() => birthdays.value.find((row) => row.days >= 1) || null)
-const servingShare = computed(() => (counts.value.total ? (counts.value.total - unplaced.value.length) / counts.value.total : 0))
-const completeShare = computed(() =>
-  counts.value.total ? (counts.value.total - incomplete.value.length) / counts.value.total : 1
-)
-
+// A door is its name and nothing more, unless something behind it is waiting
+// on you: then a badge says how many. Totals, faces and charts are what the
+// section itself shows the moment it opens, and today's birthdays already
+// have a card of their own above, so repeating them here only made the grid
+// harder to read.
 const doors = computed(() => {
   const ready = !loading.value
-  const serving = counts.value.total - unplaced.value.length
   return [
-    { key: 'everyone', title: 'Everyone', art: 'people-everyone', to: { name: 'Members' }, detail: ready ? plural(counts.value.total, 'person', 'people') : '' },
-    { key: 'birthdays', title: 'Birthdays', art: 'people-birthdays', to: { name: 'PeopleBirthdays' }, detail: ready ? birthdaysLine.value : '' },
-    { key: 'ministries', title: 'Ministries', art: 'people-ministries', to: { name: 'PeopleMinistries' }, detail: ready ? `${serving.toLocaleString()} serving` : '' },
-    { key: 'glance', title: 'Overview', art: 'people-glance', to: { name: 'PeopleGlance' }, detail: 'Ages, men and women' },
+    { key: 'everyone', title: 'Everyone', art: 'people-everyone', to: { name: 'Members' } },
+    { key: 'birthdays', title: 'Birthdays', art: 'people-birthdays', to: { name: 'PeopleBirthdays' } },
+    { key: 'ministries', title: 'Ministries', art: 'people-ministries', to: { name: 'PeopleMinistries' } },
+    { key: 'glance', title: 'Overview', art: 'people-glance', to: { name: 'PeopleGlance' } },
     ...(canEdit.value
       ? [
           {
@@ -305,7 +283,7 @@ const doors = computed(() => {
             title: 'Missing info',
             art: 'people-missing',
             to: { name: 'PeopleMissing' },
-            detail: ready ? (incomplete.value.length ? `${incomplete.value.length} to complete` : 'All complete') : '',
+            badge: ready ? incomplete.value.length : 0,
           },
         ]
       : []),
@@ -313,12 +291,9 @@ const doors = computed(() => {
     // scrolling. Adding people is not a tile: it is something you do, not a
     // place you go, and it is already on Everyone's + button ("Add several
     // people") and on the roll's card while the roll is empty.
-    ...(myMember.value ? [{ key: 'me', title: 'My record', art: 'people-me', to: recordOf(myMember.value), detail: 'Your own details' }] : []),
+    ...(myMember.value ? [{ key: 'me', title: 'My record', art: 'people-me', to: recordOf(myMember.value) }] : []),
   ]
 })
-
-// The ring on the records tile: how much of the roll is complete.
-const RING = 2 * Math.PI * 15
 </script>
 
 <template>
@@ -515,80 +490,10 @@ const RING = 2 * Math.PI * 15
           :detail="door.detail"
           :art="door.art"
           :glyph="door.glyph"
+          :badge="door.badge"
+          :urgent="door.urgent"
           :delay="120 + index * 30"
-        >
-          <template #aside>
-            <!-- The roll: a few of its faces. -->
-            <span v-if="door.key === 'everyone' && !loading" class="flex -space-x-2">
-              <MemberAvatar
-                v-for="member in rollFaces"
-                :key="keyOf(member)"
-                :member="member"
-                alt=""
-                size="h-7 w-7"
-                plain-class="ring-2 ring-white dark:ring-gray-800"
-              />
-            </span>
-
-            <!-- Birthdays: today's face, or the next one's date. -->
-            <MemberAvatar
-              v-else-if="door.key === 'birthdays' && birthdaysToday.length"
-              :member="birthdaysToday[0].member"
-              alt=""
-              size="h-8 w-8"
-              plain-class="ring-2 ring-primary/30"
-            />
-            <span
-              v-else-if="door.key === 'birthdays' && nextBirthday"
-              class="flex h-9 w-8 flex-col items-center justify-center rounded-lg bg-primary/10 leading-none text-primary dark:bg-primary-light/15 dark:text-primary-light"
-            >
-              <span class="text-[9px] font-bold uppercase">{{ dateParts(nextBirthday.days).month }}</span>
-              <span class="mt-0.5 text-sm font-bold tabular-nums">{{ dateParts(nextBirthday.days).day }}</span>
-            </span>
-
-            <!-- Records: how much of the roll is complete, as a ring. -->
-            <span v-else-if="door.key === 'missing' && !loading" class="relative flex size-9 items-center justify-center">
-              <svg class="absolute inset-0 -rotate-90" viewBox="0 0 36 36" aria-hidden="true">
-                <circle cx="18" cy="18" r="15" fill="none" stroke-width="3.5" class="stroke-gray-100 dark:stroke-gray-700" />
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="15"
-                  fill="none"
-                  stroke-width="3.5"
-                  stroke-linecap="round"
-                  :stroke-dasharray="`${RING * completeShare} ${RING}`"
-                  class="stroke-primary dark:stroke-primary-light"
-                />
-              </svg>
-              <span class="text-[10px] font-bold tabular-nums text-gray-700 dark:text-gray-200">{{ Math.round(completeShare * 100) }}%</span>
-            </span>
-
-            <!-- Your own record: you. -->
-            <MemberAvatar
-              v-else-if="door.key === 'me'"
-              :member="myMember"
-              alt=""
-              size="h-8 w-8"
-              plain-class="ring-2 ring-white dark:ring-gray-800"
-            />
-          </template>
-
-          <!-- Ministries: how much of the church serves. -->
-          <span v-if="door.key === 'ministries' && !loading && counts.total" class="block h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700" aria-hidden="true">
-            <span class="block h-full rounded-full bg-primary dark:bg-primary-light" :style="{ width: `${Math.round(servingShare * 100)}%` }" />
-          </span>
-
-          <!-- Overview: the church's shape by age, the roll's own bands. -->
-          <span v-else-if="door.key === 'glance' && !loading && agedTotal" class="flex h-1.5 gap-0.5 overflow-hidden rounded-full" aria-hidden="true">
-            <span
-              v-for="band in stats.bands.filter((b) => b.count)"
-              :key="band.key"
-              :class="['rounded-full', band.barClass]"
-              :style="{ flexGrow: band.count }"
-            />
-          </span>
-        </AppShortcut>
+        />
       </nav>
     </div>
   </AppScreen>

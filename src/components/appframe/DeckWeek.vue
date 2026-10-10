@@ -60,7 +60,7 @@ defineProps({
 <style scoped>
 /* White on the dark page's lighter accent all but disappears, so the marked
    day goes deeper there instead, as DateTile's does. */
-:global(.dark) .deck-week-on {
+.dark .deck-week-on {
   background-color: color-mix(in oklab, var(--color-primary) 55%, black);
 }
 </style>

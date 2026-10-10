@@ -710,7 +710,7 @@ const input =
   background-size: 12px 12px;
 }
 
-:global(.dark) .checkerboard {
+.dark .checkerboard {
   background-color: rgb(55 65 81);
 }
 

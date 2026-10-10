@@ -133,7 +133,7 @@ const dashOffset = computed(() => RING * (1 - progress.value))
   transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
 }
 
-:global(.dark) .ptr-puck {
+.dark .ptr-puck {
   background: #1f2937;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
@@ -161,7 +161,7 @@ const dashOffset = computed(() => RING * (1 - progress.value))
   color: rgba(15, 23, 42, 0.08);
 }
 
-:global(.dark) .ptr-track {
+.dark .ptr-track {
   color: rgba(255, 255, 255, 0.1);
 }
 
@@ -196,7 +196,7 @@ const dashOffset = computed(() => RING * (1 - progress.value))
   animation: ptr-hint-in 0.24s ease-out;
 }
 
-:global(.dark) .ptr-hint {
+.dark .ptr-hint {
   color: #e2e8f0;
   background: #1f2937;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);

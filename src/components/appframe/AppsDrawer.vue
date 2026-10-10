@@ -406,7 +406,7 @@ const addApp = () => {
                     @click="tapShelf(item)"
                   >
                     <span :class="[PLATED, 'relative size-12']">
-                      <AppArt :app-key="item.art" class="size-9" />
+                      <AppArt :app-key="item.art" :data-morph-icon="item.path" class="size-9" />
                       <span
                         v-if="swapping"
                         class="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-white ring-2 ring-white dark:bg-primary-light dark:ring-gray-800"
@@ -415,7 +415,7 @@ const addApp = () => {
                         <ArrowsLeftRight class="size-3" />
                       </span>
                     </span>
-                    <span class="line-clamp-2 w-full text-center text-[11px] font-medium leading-tight text-gray-800 dark:text-gray-200">{{ item.name }}</span>
+                    <span :data-morph-label="item.path" class="line-clamp-2 w-full text-center text-[11px] font-medium leading-tight text-gray-800 dark:text-gray-200">{{ item.name }}</span>
                   </button>
                 </div>
               </div>
@@ -437,10 +437,10 @@ const addApp = () => {
                     @click="open(item)"
                   >
                     <span :class="[PLATED, 'size-14']">
-                      <AppArt :app-key="item.art" class="size-10" />
+                      <AppArt :app-key="item.art" :data-morph-icon="item.path" class="size-10" />
                     </span>
                     <span class="min-w-0">
-                      <span class="block truncate text-[15px] font-semibold text-gray-900 dark:text-white">{{ item.name }}</span>
+                      <span :data-morph-label="item.path" class="block truncate text-[15px] font-semibold text-gray-900 dark:text-white">{{ item.name }}</span>
                       <span class="mt-0.5 line-clamp-2 text-xs leading-snug text-gray-500 dark:text-gray-400">{{ lineOf(item) }}</span>
                     </span>
                   </button>
@@ -551,7 +551,7 @@ const addApp = () => {
   background-color: var(--color-primary);
 }
 
-:global(.dark) .drawer-spotlight {
+.dark .drawer-spotlight {
   background-color: color-mix(in oklab, var(--color-primary) 55%, black);
 }
 

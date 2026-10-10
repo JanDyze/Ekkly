@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
-import { Bell, Sun, Moon, X, Users, LogOut, UserCheck, UserPlus, Clock3, ChevronLeft, ChevronRight, SpeakerHigh, SpeakerSlash } from '../icons';
+import { Bell, Sun, Moon, X, Users, LogOut, UserCheck, UserPlus, Clock3, ChevronLeft, ChevronRight, SpeakerHigh, SpeakerSlash, Settings, SquaresFour } from '../icons';
 import { useSounds } from "../composables/useSounds";
 import { useRouter } from "vue-router";
 import { useTheme } from "../composables/useTheme";
@@ -27,7 +27,9 @@ import ClaimMemberSheet from "./auth/ClaimMemberSheet.vue";
 import MemberAvatar from "./members/MemberAvatar.vue";
 import AppArt from "./common/AppArt.vue";
 import { NAV_ITEMS } from "../data/navigation";
-import { goBack } from "../router/back";
+import { homeCardName } from "../data/homeCards";
+import { useHomeCards } from "../composables/useHomeCards";
+import CardStyleSheet from "./home/CardStyleSheet.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -117,16 +119,6 @@ const inApp = computed(() => route.matched.some((record) => record.meta?.frame =
 // Only on the home itself is it the link to the church's public page.
 const onHome = computed(() => Boolean(route.meta?.root))
 
-// The arrow goes back one page, to wherever you were — Events, when Videos was
-// opened from it — and to the home of all apps only when there was nothing
-// before (a link opened cold, a refresh). It still carries /home as its link,
-// so it can be opened in a new tab.
-const leave = (event) => {
-  if (onHome.value || event.metaKey || event.ctrlKey || event.shiftKey || event.button) return
-  event.preventDefault()
-  goBack(router, '/home')
-}
-
 const pageTitle = computed(() => {
   if (inApp.value && currentApp.value) return currentApp.value.name
   // The home of all apps is the church's own front room, so it carries the
@@ -159,6 +151,10 @@ const { swipeTarget: notifSwipe, swipeStyle: notifStyle } = useSwipeDismiss({
 
 const notifPanelRef = ref(null)
 useFocusTrap(notifPanelRef, isNotifOpen, () => { isNotifOpen.value = false }, { trap: false })
+
+// How the home draws its apps, for this person (useHomeCards).
+const { style: cardStyle, myChoice: myCardStyle } = useHomeCards()
+const showCardStyles = ref(false)
 
 // User account menu
 const isUserMenuOpen = ref(false)
@@ -216,39 +212,43 @@ const openMyProfile = () => {
       <div class="flex items-center justify-between h-12">
         <div class="flex min-w-0 items-center gap-2.5">
           <router-link
-            v-slot="{ href, navigate }"
             :to="onHome ? '/' : '/home'"
-            custom
-          >
-          <a
-            :href="href"
-            :title="onHome ? `Go to the ${church.shortName} public page` : 'Back'"
-            :aria-label="onHome ? `Go to the ${church.shortName} public page` : 'Back'"
-            class="-ml-1 flex shrink-0 items-center gap-0.5 rounded-lg p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-            @click="onHome ? navigate($event) : leave($event)"
+            :title="onHome ? `Go to the ${church.shortName} public page` : 'Back to all apps'"
+            :aria-label="onHome ? `Go to the ${church.shortName} public page` : 'Back to all apps'"
+            class="relative -ml-1 flex shrink-0 items-center gap-0.5 rounded-lg p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             <ChevronLeft v-if="!onHome" class="h-5 w-5 shrink-0 text-gray-500 dark:text-gray-400" />
             <!-- Keyed by app, so moving between apps swaps one picture for the
-                 next with a small pop, and the new one plays as it arrives. -->
-            <Transition name="topbar-app" mode="out-in">
+                 next with a small pop, and the new one plays as it arrives.
+                 The two overlap rather than taking turns (out-in), so the new
+                 picture is there at once for an app's tile to fly into
+                 (router/viewTransitions.js); while one does, the pop steps
+                 aside (the data-morph rules below). -->
+            <Transition name="topbar-app">
               <AppArt
                 v-if="currentApp?.art"
                 :key="currentApp.path"
                 :app-key="currentApp.art"
                 :play="playTick"
+                :data-morph-icon="currentApp.path"
                 class="h-8 w-8"
               />
               <component
                 v-else-if="currentApp"
                 :key="currentApp.path"
                 :is="currentApp.icon"
+                :data-morph-icon="currentApp.path"
                 class="h-7 w-7 m-0.5 text-primary dark:text-primary-light"
               />
               <img v-else key="logo" :src="logoUrl" :alt="church.shortName" class="h-8 w-auto" />
             </Transition>
-          </a>
           </router-link>
-          <h1 class="min-w-0 truncate text-sm font-semibold text-gray-900 dark:text-white">
+          <!-- The app's tile's name lands here, but only when this says the
+               app's name rather than one of its pages'. -->
+          <h1
+            :data-morph-label="currentApp && pageTitle === currentApp.name ? currentApp.path : undefined"
+            class="min-w-0 truncate text-sm font-semibold text-gray-900 dark:text-white"
+          >
             {{ pageTitle }}
             <!-- Quiet beside the title: a fact about the page, not part of
                  its name. Set by the page itself (useTitleCount). -->
@@ -432,6 +432,25 @@ const openMyProfile = () => {
                 </div>
 
                 <div class="px-3 pb-3 border-t-2 border-gray-50 dark:border-gray-800 pt-3">
+                  <!-- Settings is not an app, so it opens from the account
+                       rather than from the home. -->
+                  <button
+                    v-if="isAdmin"
+                    @click="isUserMenuOpen = false; router.push('/settings')"
+                    class="w-full flex items-center gap-2.5 p-2.5 rounded-xl text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <Settings class="w-4 h-4 shrink-0 text-primary dark:text-primary-light" />
+                    <span class="flex-1 text-[11px] font-bold text-gray-900 dark:text-white">Settings</span>
+                    <ChevronRight class="w-4 h-4 shrink-0 text-gray-300 dark:text-gray-600" />
+                  </button>
+                  <button
+                    @click="isUserMenuOpen = false; showCardStyles = true"
+                    class="w-full flex items-center gap-2.5 p-2.5 rounded-xl text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <SquaresFour class="w-4 h-4 shrink-0 text-primary dark:text-primary-light" />
+                    <span class="flex-1 text-[11px] font-bold text-gray-900 dark:text-white">App cards</span>
+                    <span class="truncate text-[10px] text-gray-400 dark:text-gray-500">{{ myCardStyle ? homeCardName(cardStyle) : 'Church’s choice' }}</span>
+                  </button>
                   <button
                     @click="toggleSounds"
                     :aria-pressed="soundsOn"
@@ -557,6 +576,8 @@ const openMyProfile = () => {
       </Transition>
     </Teleport>
 
+    <CardStyleSheet :show="showCardStyles" @close="showCardStyles = false" />
+
     <ClaimMemberSheet
       v-model:show="showClaimSheet"
       :members="members"
@@ -598,10 +619,26 @@ const openMyProfile = () => {
     transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* Lifted out of the row as it goes, so the picture arriving takes its place
+   straight away instead of standing beside it. */
 .topbar-app-leave-active {
+  position: absolute;
   transition:
     opacity 0.12s ease,
     transform 0.12s ease;
+}
+
+/* An app's tile is flying into this spot (router/viewTransitions.js): the
+   flight is the arrival, so the new picture is simply there and the old one
+   simply gone. Done here rather than by turning the transition off, which
+   ended the leave in the middle of a render and broke the bar. */
+:root[data-morph] .topbar-app-enter-from {
+  opacity: 1;
+  transform: none;
+}
+
+:root[data-morph] .topbar-app-leave-active {
+  display: none;
 }
 
 .topbar-app-enter-from {

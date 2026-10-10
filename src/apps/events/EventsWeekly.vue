@@ -158,7 +158,7 @@ const note = computed(() => {
 <style scoped>
 /* White on the dark page's lighter accent all but disappears, so today's day
    goes deeper there instead, as DateTile's does. */
-:global(.dark) .weekly-today {
+.dark .weekly-today {
   background-color: color-mix(in oklab, var(--color-primary) 55%, black);
 }
 </style>

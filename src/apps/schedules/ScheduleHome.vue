@@ -30,10 +30,9 @@ import { getDisplayName, listPhrase } from '../../utils/memberUtils'
 //      next Sunday, with everyone serving on it. Anything that matters gets
 //      the main card rather than a line in a list behind a button; each can
 //      be put away until the app is next opened.
-//   2. The doors: each section as a tile with its own artwork and a line of
-//      what is true inside it — your next turn, how much of the month is
-//      planned, who leads and who preaches, who is on the door, who is still
-//      to be called.
+//   2. The doors: each section as a tile with its own artwork and its name,
+//      and a badge only when something behind it is waiting on you. What is
+//      true inside each is the deck's and the section's to say.
 //
 // It used to lead with a hero card and one button, "N things need you", that
 // opened the list in a sheet; the deck is that list, one card at a time, and
@@ -52,8 +51,6 @@ const {
   nextUnplanned,
   roles,
   comingSundays,
-  thisMonth,
-  thisMonthSundays,
   sundaysOf,
 } = useScheduleOverview()
 const { members } = useMembers()
@@ -323,66 +320,32 @@ const teamOn = (key) => {
 
 const leader = computed(() => (coming.value ? memberOf(assignmentsOf(coming.value)[SONG_LEADER_ROLE]?.[0]) : null))
 const preacher = computed(() => (coming.value ? memberOf(assignmentsOf(coming.value).preacher?.[0]) : null))
-const ushers = computed(() => teamOn('ushers'))
-const sermonTitle = computed(() => (coming.value ? sermonOn(coming.value.date)?.title || '' : ''))
 
-const plannedThisMonth = computed(() => thisMonthSundays.value.filter((s) => s.planned).length)
-
+// A door is its name and nothing more, unless something behind it is waiting
+// on you: then a badge says how many. Your next turn, the open roles, the
+// songs and the message still to write are all cards in the deck above, so a
+// line on the tile only said them twice.
 const doors = computed(() => {
   const ready = !loading.value
-  const comingDate = coming.value ? formatShortDate(coming.value.date) : ''
-  const mine = myUpcoming.value[0]
 
   const teamDoor = (key, door) =>
     // A team with no roles yet is only worth a door to someone who could set it up.
     rolesOfTeam(roles.value, key).length || canPlanTeam(key) || (key === 'welcome' && can('consolidation.view')) ? [door] : []
 
   return [
-    {
-      key: 'mine',
-      title: 'My turns',
-      art: 'schedules-mine',
-      to: { name: 'SchedulesMine' },
-      detail: !ready ? '' : !myMember.value ? 'Not linked to the roll' : mine ? `Next: ${formatShortDate(mine.date)}` : 'None coming up',
-    },
-    {
-      key: 'calendar',
-      title: 'Calendar',
-      art: 'schedules-calendar',
-      to: { name: 'SchedulesCalendar' },
-      detail: ready ? `${formatMonthLabel(thisMonth).split(' ')[0]}: ${plannedThisMonth.value} of ${thisMonthSundays.value.length} planned` : '',
-    },
-    ...teamDoor('worship', {
-      key: 'worship',
-      title: 'Worship',
-      art: 'schedules-worship',
-      to: { name: 'SchedulesWorship' },
-      detail: !ready || !coming.value ? '' : coming.value.songs?.length ? `${coming.value.songs.length} songs for ${comingDate}` : `No songs yet for ${comingDate}`,
-    }),
-    ...teamDoor('preaching', {
-      key: 'preaching',
-      title: 'Preaching',
-      art: 'schedules-preaching',
-      to: { name: 'SchedulesPreaching' },
-      detail: !ready || !coming.value ? '' : sermonTitle.value || `No message yet for ${comingDate}`,
-    }),
-    ...teamDoor('ushers', {
-      key: 'ushers',
-      title: 'Ushers',
-      art: 'schedules-ushers',
-      to: { name: 'SchedulesUshers' },
-      detail: !ready || !coming.value ? '' : ushers.value.length ? ushers.value.map(getDisplayName).join(', ') : `Nobody on the door ${comingDate}`,
-    }),
+    { key: 'mine', title: 'My turns', art: 'schedules-mine', to: { name: 'SchedulesMine' } },
+    { key: 'calendar', title: 'Calendar', art: 'schedules-calendar', to: { name: 'SchedulesCalendar' } },
+    ...teamDoor('worship', { key: 'worship', title: 'Worship', art: 'schedules-worship', to: { name: 'SchedulesWorship' } }),
+    ...teamDoor('preaching', { key: 'preaching', title: 'Preaching', art: 'schedules-preaching', to: { name: 'SchedulesPreaching' } }),
+    ...teamDoor('ushers', { key: 'ushers', title: 'Ushers', art: 'schedules-ushers', to: { name: 'SchedulesUshers' } }),
     ...teamDoor('welcome', {
       key: 'welcome',
       title: 'Welcome',
       art: 'schedules-welcome',
       to: { name: 'SchedulesWelcome' },
-      detail: !ready ? '' : newcomersWaiting.value ? `${newcomersWaiting.value} to follow up` : 'Everyone followed up',
+      badge: ready ? newcomersWaiting.value : 0,
     }),
-    ...(canPlan.value
-      ? [{ key: 'who', title: 'Who serves', art: 'schedules-who', to: { name: 'SchedulesTeam' }, detail: 'Who is on, and how often' }]
-      : []),
+    ...(canPlan.value ? [{ key: 'who', title: 'Who serves', art: 'schedules-who', to: { name: 'SchedulesTeam' } }] : []),
   ]
 })
 </script>
@@ -513,64 +476,10 @@ const doors = computed(() => {
           :title="door.title"
           :detail="door.detail"
           :art="door.art"
+          :badge="door.badge"
+          :urgent="door.urgent"
           :delay="120 + index * 30"
-        >
-          <template #aside>
-            <!-- My turns: the date of the next one. -->
-            <span
-              v-if="door.key === 'mine' && myUpcoming[0]"
-              class="flex h-9 w-8 flex-col items-center justify-center rounded-lg bg-primary/10 leading-none text-primary dark:bg-primary-light/15 dark:text-primary-light"
-            >
-              <span class="text-[9px] font-bold uppercase">{{ parseIso(myUpcoming[0].date)?.toLocaleDateString('en-US', { month: 'short' }) }}</span>
-              <span class="mt-0.5 text-sm font-bold tabular-nums">{{ parseIso(myUpcoming[0].date)?.getDate() }}</span>
-            </span>
-
-            <!-- Calendar: this month's Sundays, planned or not. -->
-            <span v-else-if="door.key === 'calendar' && !loading" class="mt-2 flex h-2 w-16 gap-1" aria-hidden="true">
-              <span
-                v-for="sunday in thisMonthSundays"
-                :key="sunday.date"
-                :class="['flex-1 rounded-full', sunday.planned ? 'bg-primary dark:bg-primary-light' : 'bg-gray-100 dark:bg-gray-700']"
-              />
-            </span>
-
-            <!-- Worship and Preaching: whoever leads and preaches next. -->
-            <MemberAvatar
-              v-else-if="door.key === 'worship' && leader"
-              :member="leader"
-              alt=""
-              size="h-8 w-8"
-              plain-class="ring-2 ring-white dark:ring-gray-800"
-            />
-            <MemberAvatar
-              v-else-if="door.key === 'preaching' && preacher"
-              :member="preacher"
-              alt=""
-              size="h-8 w-8"
-              plain-class="ring-2 ring-white dark:ring-gray-800"
-            />
-
-            <!-- Ushers: who is on the door. -->
-            <span v-else-if="door.key === 'ushers' && ushers.length" class="flex -space-x-2">
-              <MemberAvatar
-                v-for="member in ushers.slice(0, 3)"
-                :key="keyOf(member)"
-                :member="member"
-                alt=""
-                size="h-7 w-7"
-                plain-class="ring-2 ring-white dark:ring-gray-800"
-              />
-            </span>
-
-            <!-- Welcome: how many are still to be called. -->
-            <span
-              v-else-if="door.key === 'welcome' && newcomersWaiting"
-              class="flex h-7 min-w-7 items-center justify-center rounded-full bg-primary/10 px-2 text-xs font-bold tabular-nums text-primary dark:bg-primary-light/15 dark:text-primary-light"
-            >
-              {{ newcomersWaiting }}
-            </span>
-          </template>
-        </AppShortcut>
+        />
       </nav>
     </div>
   </AppScreen>

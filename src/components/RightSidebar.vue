@@ -8,6 +8,11 @@ import {
   Clock3,
   LogOut,
   Moon,
+  Settings as SettingsIcon,
+  SlidersHorizontal,
+  SquaresFour,
+  Rows,
+  CaretDown,
   Sun,
   SpeakerHigh,
   SpeakerSlash,
@@ -29,6 +34,11 @@ import { useToast } from '../composables/useToast'
 import { useMyMember } from '../composables/useMyMember'
 import { getFullName } from '../utils/memberUtils'
 import { useClaimFlow } from '../composables/useClaimFlow'
+import { usePermissions } from '../composables/usePermissions'
+import { useHomeCards } from '../composables/useHomeCards'
+import { useBottomBar } from '../composables/useBottomBar'
+import { homeCardName } from '../data/homeCards'
+import CardStyleSheet from './home/CardStyleSheet.vue'
 
 // The people rail. On a wide screen it is a permanent right-hand column, the
 // way Facebook keeps its contacts list; anywhere narrower it collapses into a
@@ -46,6 +56,25 @@ const { isDark, toggleTheme } = useTheme()
 // looks and sounds, which is the person's choice rather than the church's.
 const { soundsOn, toggleSounds } = useSounds()
 const { isLinked } = useMyMember()
+const { isAdmin } = usePermissions()
+
+// Folded each time the drawer opens, so it always opens to the short version.
+const showPreferences = ref(false)
+watch(showPeoplePanel, (open) => {
+  if (open) showPreferences.value = false
+})
+
+// How the home draws its apps, for this person; the sheet says the rest.
+const { style: cardStyle, myChoice: myCardStyle } = useHomeCards()
+const showCardStyles = ref(false)
+
+// The bottom bar, on or off for this person.
+const { bottomBar, setBottomBar } = useBottomBar()
+
+const openSettings = () => {
+  showPeoplePanel.value = false
+  router.push('/settings')
+}
 
 const { accountMember, accountAvatarUrl, myMember, myAvatarUrl } = useAvatars()
 
@@ -250,7 +279,7 @@ watch(railIsVisible, (visible) => {
           tabindex="-1"
           v-bind="drawerSwipe"
           :style="drawerStyle()"
-          class="people-panel absolute inset-y-0 right-0 w-[19rem] max-w-[85vw] flex flex-col bg-white dark:bg-slate-950 shadow-2xl border-l border-gray-200 dark:border-slate-800"
+          class="people-panel absolute inset-y-0 right-0 w-92 max-w-[90vw] flex flex-col bg-white dark:bg-slate-950 shadow-2xl border-l border-gray-200 dark:border-slate-800"
         >
           <!-- Who you are, first: this drawer is the account surface on a
                phone, not only the list of who else is here. The name is the
@@ -342,28 +371,74 @@ watch(railIsVisible, (visible) => {
           </div>
 
           <div class="shrink-0 border-b border-gray-100 px-3 py-2 dark:border-slate-900">
-            <!-- The toggle used to be its own button on the topbar. -->
+            <!-- Settings is not an app, so it is not on the home: it is
+                 looking after the church, which belongs with the account. -->
             <button
-              @click="toggleTheme($event)"
-              class="flex w-full items-center gap-2.5 rounded-xl p-2.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
+              v-if="isAdmin"
+              @click="openSettings"
+              class="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
             >
-              <Sun v-if="isDark" class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
-              <Moon v-else class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
-              <span class="flex-1 text-[11px] font-bold text-gray-900 dark:text-white">
-                {{ isDark ? 'Light mode' : 'Dark mode' }}
-              </span>
+              <SettingsIcon class="h-5 w-5 shrink-0 text-gray-500 dark:text-slate-400" />
+              <span class="flex-1 text-sm font-semibold text-gray-900 dark:text-white">Settings</span>
+              <Chevron class="h-4 w-4 shrink-0 text-gray-300 dark:text-slate-600" />
             </button>
+
+            <!-- The theme and sounds are set once and left, so they wait behind
+                 one row rather than each taking a line of the drawer. -->
             <button
-              @click="toggleSounds"
-              :aria-pressed="soundsOn"
-              class="flex w-full items-center gap-2.5 rounded-xl p-2.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
+              @click="showPreferences = !showPreferences"
+              :aria-expanded="showPreferences"
+              aria-controls="drawer-preferences"
+              class="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
             >
-              <SpeakerHigh v-if="soundsOn" class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
-              <SpeakerSlash v-else class="h-4 w-4 shrink-0 text-gray-400 dark:text-slate-500" />
-              <span class="flex-1 text-[11px] font-bold text-gray-900 dark:text-white">
-                {{ soundsOn ? 'Sounds on' : 'Sounds off' }}
-              </span>
+              <SlidersHorizontal class="h-5 w-5 shrink-0 text-gray-500 dark:text-slate-400" />
+              <span class="flex-1 text-sm font-semibold text-gray-900 dark:text-white">Preferences</span>
+              <CaretDown
+                :class="[
+                  'h-4 w-4 shrink-0 text-gray-300 transition-transform duration-200 dark:text-slate-600',
+                  showPreferences ? 'rotate-180' : '',
+                ]"
+              />
             </button>
+            <div v-if="showPreferences" id="drawer-preferences" class="pb-1 pl-8">
+              <button
+                @click="toggleTheme($event)"
+                class="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
+              >
+                <Moon v-if="isDark" class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
+                <Sun v-else class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
+                <span class="flex-1 text-sm text-gray-700 dark:text-slate-200">Appearance</span>
+                <span class="text-xs text-gray-400 dark:text-slate-500">{{ isDark ? 'Dark' : 'Light' }}</span>
+              </button>
+              <button
+                @click="toggleSounds"
+                :aria-pressed="soundsOn"
+                class="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
+              >
+                <SpeakerHigh v-if="soundsOn" class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
+                <SpeakerSlash v-else class="h-4 w-4 shrink-0 text-gray-400 dark:text-slate-500" />
+                <span class="flex-1 text-sm text-gray-700 dark:text-slate-200">Sounds</span>
+                <span class="text-xs text-gray-400 dark:text-slate-500">{{ soundsOn ? 'On' : 'Off' }}</span>
+              </button>
+              <button
+                @click="showCardStyles = true"
+                class="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
+              >
+                <SquaresFour class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
+                <span class="flex-1 text-sm text-gray-700 dark:text-slate-200">App cards</span>
+                <span class="truncate text-xs text-gray-400 dark:text-slate-500">{{ myCardStyle ? homeCardName(cardStyle) : 'Church’s choice' }}</span>
+              </button>
+              <button
+                @click="setBottomBar(!bottomBar)"
+                role="switch"
+                :aria-checked="bottomBar"
+                class="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
+              >
+                <Rows class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
+                <span class="flex-1 text-sm text-gray-700 dark:text-slate-200">Bottom bar</span>
+                <span class="text-xs text-gray-400 dark:text-slate-500">{{ bottomBar ? 'On' : 'Off' }}</span>
+              </button>
+            </div>
           </div>
 
           <div class="flex shrink-0 items-center gap-2 px-4 pt-3 pb-1.5">
@@ -402,6 +477,8 @@ watch(railIsVisible, (visible) => {
       </div>
     </Transition>
   </Teleport>
+
+  <CardStyleSheet :show="showCardStyles" @close="showCardStyles = false" />
 </template>
 
 <style scoped>

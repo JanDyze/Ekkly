@@ -36,15 +36,34 @@ CHANGELOG.md.
 `src/layouts/AdminLayout.vue` wraps every signed-in page:
 
 - **Every screen:** the top bar, and on a desktop the people rail on the
-  right. There is no sidebar or bottom bar: the home of all apps (`/home`,
+  right. There is no sidebar: the home of all apps (`/home`,
   `src/views/Apps.vue`, `meta.root`) is the way between apps, and the top
-  bar's mark is a back arrow to it from every other screen.
+  bar's mark is a back arrow to it from every other screen. On a phone, a
+  bottom bar is there for whoever turns it on in Preferences: Home, the first
+  three apps on their home in the same order, and More. It sits at the foot
+  of the column rather than floating, so pages end above it.
 - **The home of all apps** leads with a Today deck (`AppHeroDeck`, fed by
   `useToday`) drawn from every app, then the five apps the person keeps there
-  as `AppShortcut` tiles (`level="app"`: the glossy artwork on a raised plate,
-  and a live line) and a More apps tile. A section's tile inside an app shows
+  drawn by `HomeAppCards` (`src/components/home/`) in one of six styles —
+  accent lines, illustrated, compact, orbit, list, masonry
+  (`src/data/homeCards.js`). The church picks one in Settings > Home and
+  anyone can pick their own in Preferences (`useHomeCards`). Every style
+  wears each app's colour from its own drawing (`src/data/appHues.js`),
+  never the church's, so the day card above stays the one block of it; the
+  three with room show the app's `tagline` from navigation.js. The page stands
+  in a picture traced by hand (`src/components/home/HomeScene.vue`): its sky,
+  clouds and Ekkly's panes of light behind everything, and in the room left
+  under the apps the church on its hill, always whole, its window Ekkly's own
+  mark (lit and glowing at night), with the day's verse on a
+  frosted card beside it. Every colour in it is a `--scene-*` setting (a
+  night set for dark mode), so it can be recoloured without redrawing. The
+  verse steps aside on a screen too short for it, so the home never scrolls and a More apps tile. A section's tile inside an app shows
   its drawing flat in the church's accent instead, so an app and a section are
-  never mistaken for each other (BRAND.md). Holding one of the five shows
+  never mistaken for each other (BRAND.md). A section's tile is its name alone,
+  on a wash of the church's colour with its drawing large in the bottom
+  corner, cropped by the edge, and a badge only when something in it is
+  waiting on you; what is inside is the section's to show and the deck's to
+  point out. Holding one of the five shows
   what that app is, full screen, for as long as the finger stays down
   (`AppPeek`, `usePressAndHold`): the church's colour opens out of the tile's
   plate, the plate flies to the middle, then its name, its live line and its
@@ -397,6 +416,17 @@ secondary: text-sm text-gray-500 dark:text-gray-400 mt-0.5 truncate
   list so going back returns to the same scroll position.
 - **Small records you mostly edit** (a task, a prayer concern) open in the
   drawer.
+
+### Moving between screens
+
+The router animates each change of page (`src/router/viewTransitions.js`).
+What you tapped travels with you: an app tile's picture and name fly into the
+top bar, a section tile's name flies up into its screen's header, and both go
+back down when you return. An element takes part by naming the path it opens
+or heads, as `data-morph-icon="/path"` or `data-morph-label="/path"`. The
+tile and the header carry the same path, and that is the whole pairing. A
+new kind of tile or header gets the attribute; don't add a `<Transition>`
+around the router view.
 
 ### Drawer: adding or editing
 

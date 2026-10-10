@@ -39,7 +39,6 @@ const {
   calendar,
   next,
   week,
-  thisWeek,
   ahead,
   changes,
   different,
@@ -252,44 +251,14 @@ const cards = computed(() => {
 
 /* -------------------------------------------------------------- the doors */
 
-const doors = computed(() => {
-  const ready = !loading.value
-  const firstWeekly = weekly.value[0]
-  return [
-    {
-      key: 'calendar',
-      title: 'Calendar',
-      art: 'events-calendar',
-      to: { name: 'Events' },
-      detail: !ready ? '' : thisWeek.value.length ? `${thisWeek.value.length} this week` : 'Nothing this week',
-    },
-    {
-      key: 'upcoming',
-      title: 'Coming up',
-      art: 'events-upcoming',
-      to: { name: 'EventsUpcoming' },
-      detail: !ready ? '' : next.value ? `Next: ${next.value.title}` : 'Nothing coming up',
-    },
-    {
-      key: 'weekly',
-      title: 'Every week',
-      art: 'events-weekly',
-      to: { name: 'EventsWeekly' },
-      detail: firstWeekly
-        ? `${firstWeekly.title}, ${clockLabel(firstWeekly.time)}`
-        : 'When we meet',
-    },
-    {
-      key: 'videos',
-      title: 'Videos',
-      art: 'videos',
-      to: { name: 'VideosHome' },
-      detail: `${monthName(today.slice(0, 7))}'s announcement video`,
-    },
-  ]
-})
-
-const aheadCount = computed(() => ahead.value.filter((e) => e.date <= today.slice(0, 7) + '-31').length)
+// A door is its name and nothing more. What is on this week and what comes
+// next are the deck's to say, and each section opens on the rest.
+const doors = computed(() => [
+  { key: 'calendar', title: 'Calendar', art: 'events-calendar', to: { name: 'Events' } },
+  { key: 'upcoming', title: 'Coming up', art: 'events-upcoming', to: { name: 'EventsUpcoming' } },
+  { key: 'weekly', title: 'Every week', art: 'events-weekly', to: { name: 'EventsWeekly' } },
+  { key: 'videos', title: 'Videos', art: 'videos', to: { name: 'VideosHome' } },
+])
 </script>
 
 <template>
@@ -371,27 +340,10 @@ const aheadCount = computed(() => ahead.value.filter((e) => e.date <= today.slic
           :title="door.title"
           :detail="door.detail"
           :art="door.art"
+          :badge="door.badge"
+          :urgent="door.urgent"
           :delay="120 + index * 30"
-        >
-          <template #aside>
-            <!-- Calendar: today, the way the grid marks it. -->
-            <span
-              v-if="door.key === 'calendar'"
-              class="flex h-9 w-8 flex-col items-center justify-center rounded-lg bg-primary text-white leading-none dark:bg-primary-light dark:text-gray-900"
-            >
-              <span class="text-[9px] font-bold uppercase">{{ dateOf(today).toLocaleDateString(undefined, { month: 'short' }) }}</span>
-              <span class="mt-0.5 text-sm font-bold tabular-nums">{{ dateOf(today).getDate() }}</span>
-            </span>
-
-            <!-- Coming up: how many are on the rest of this month. -->
-            <span
-              v-else-if="door.key === 'upcoming' && aheadCount"
-              class="flex h-7 min-w-7 items-center justify-center rounded-full bg-primary/10 px-2 text-xs font-bold tabular-nums text-primary dark:bg-primary-light/15 dark:text-primary-light"
-            >
-              {{ aheadCount }}
-            </span>
-          </template>
-        </AppShortcut>
+        />
       </nav>
     </div>
   </AppScreen>

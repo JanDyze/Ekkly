@@ -35,6 +35,7 @@ import {
   getSexIconColor,
   isYearless,
 } from '../../utils/memberUtils'
+import { samplePerson } from '../../data/samplePeople'
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -442,7 +443,7 @@ const chip = (on) => [
                       enterkeyhint="next"
                       autocomplete="off"
                       autocapitalize="words"
-                      placeholder="Juan"
+                      :placeholder="samplePerson(draft.sex).firstName"
                       :class="[input, nameError && nameMissing === 'first' ? 'border-red-400 dark:border-red-500' : '']"
                     />
                     <p v-if="nameError && nameMissing === 'first'" class="mt-1 text-xs text-red-600 dark:text-red-400">
@@ -461,7 +462,7 @@ const chip = (on) => [
                       enterkeyhint="next"
                       autocomplete="off"
                       autocapitalize="words"
-                      placeholder="Bautista"
+                      :placeholder="samplePerson(draft.sex).lastName"
                       :class="[input, nameError && nameMissing === 'last' ? 'border-red-400 dark:border-red-500' : '']"
                     />
                     <p v-if="nameError && nameMissing === 'last'" class="mt-1 text-xs text-red-600 dark:text-red-400">
@@ -476,7 +477,7 @@ const chip = (on) => [
                       @keydown.enter="onEnter"
                       enterkeyhint="next"
                       autocomplete="off"
-                      placeholder="Jun"
+                      :placeholder="samplePerson(draft.sex).nickname"
                       :class="input"
                     />
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">What people call them at church.</p>

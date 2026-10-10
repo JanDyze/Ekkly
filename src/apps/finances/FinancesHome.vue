@@ -25,7 +25,7 @@ import { formatMonthLabel, monthKeyOf } from '../../utils/ledgerUtils'
 //      Under them, the card that is always there: what the church has, today,
 //      and how this month is going.
 //   2. The doors: the book, the statement, the accounts and the months, each
-//      with a line and a picture of what is in it.
+//      its name alone. The figures are the deck's and the sections' to show.
 //
 // It used to be the book itself, with the balances in three boxes above it and
 // a Book/Statement switch. The book and the statement are sections now, and
@@ -42,7 +42,6 @@ const {
   missedSundays,
   lastMonth,
   unclassified,
-  latestEntry,
 } = useFinanceOverview()
 const { myMember } = usePermissions()
 
@@ -177,54 +176,15 @@ const monthBars = computed(() => {
 
 /* -------------------------------------------------------------- the doors */
 
-const doors = computed(() => {
-  const ready = !loading.value
-  const last = latestEntry.value
-  const net = current.value.net
-  return [
-    {
-      key: 'book',
-      title: 'Book',
-      art: 'finances-book',
-      to: { name: 'Finances' },
-      detail: !ready ? '' : last ? `Last: ${shortDate(last.date)}, ${last.description}` : 'Nothing entered yet',
-    },
-    {
-      key: 'statement',
-      title: 'Statement',
-      art: 'finances-statement',
-      to: { name: 'FinancesStatement' },
-      detail: !ready ? '' : current.value.count ? `${monthName(current.value.key)}: ${net >= 0 ? 'up' : 'down'} ${peso(Math.abs(net))}` : `${monthName(current.value.key)}: nothing yet`,
-    },
-    {
-      key: 'accounts',
-      title: 'Accounts',
-      art: 'finances-accounts',
-      to: { name: 'FinancesAccounts' },
-      detail: !ready ? '' : `${peso(balancesToday.value.cash)} on hand`,
-    },
-    {
-      key: 'months',
-      title: 'By month',
-      art: 'finances-months',
-      to: { name: 'FinancesMonths' },
-      detail: !ready ? '' : `${months.value.length} ${months.value.length === 1 ? 'month' : 'months'} side by side`,
-    },
-  ]
-})
-
-/** The last four months' result, oldest first, for the months tile. */
-const netBars = computed(() => {
-  const shown = months.value.slice(0, 4).reverse()
-  const largest = Math.max(...shown.map((m) => Math.abs(m.net)), 1)
-  return shown.map((m) => ({ key: m.key, up: m.net >= 0, height: Math.max(15, Math.round((Math.abs(m.net) / largest) * 100)) }))
-})
-
-const cashShare = computed(() => {
-  const { cash, bank } = balancesToday.value
-  const total = Math.max(cash, 0) + Math.max(bank, 0)
-  return total ? Math.round((Math.max(cash, 0) / total) * 100) : 50
-})
+// A door is its name and nothing more. The month's result, the balances and
+// the bars are what each section shows the moment it opens, and the deck above
+// already carries whatever in them needs acting on this week.
+const doors = computed(() => [
+  { key: 'book', title: 'Book', art: 'finances-book', to: { name: 'Finances' } },
+  { key: 'statement', title: 'Statement', art: 'finances-statement', to: { name: 'FinancesStatement' } },
+  { key: 'accounts', title: 'Accounts', art: 'finances-accounts', to: { name: 'FinancesAccounts' } },
+  { key: 'months', title: 'By month', art: 'finances-months', to: { name: 'FinancesMonths' } },
+])
 </script>
 
 <template>
@@ -341,39 +301,10 @@ const cashShare = computed(() => {
           :title="door.title"
           :detail="door.detail"
           :art="door.art"
+          :badge="door.badge"
+          :urgent="door.urgent"
           :delay="120 + index * 30"
-        >
-          <template #aside>
-            <!-- Book: how many entries this month. -->
-            <span
-              v-if="door.key === 'book' && current.count"
-              class="flex h-7 min-w-7 items-center justify-center rounded-full bg-primary/10 px-2 text-xs font-bold tabular-nums text-primary dark:bg-primary-light/15 dark:text-primary-light"
-            >
-              {{ current.count }}
-            </span>
-
-            <!-- Statement: this month's in against out. -->
-            <span v-else-if="door.key === 'statement' && current.count" class="flex h-8 items-end gap-1" aria-hidden="true">
-              <span class="w-2 rounded-t-sm bg-green-500" :style="{ height: `${Math.max(monthBars.income, 10)}%` }" />
-              <span class="w-2 rounded-t-sm bg-red-400" :style="{ height: `${Math.max(monthBars.expenses, 10)}%` }" />
-            </span>
-
-            <!-- Accounts: how the money splits between the cash and the bank. -->
-            <span v-else-if="door.key === 'accounts' && !loading" class="mt-2 flex h-2 w-14 overflow-hidden rounded-full bg-primary/25 dark:bg-primary-light/25" aria-hidden="true">
-              <span class="h-full bg-primary dark:bg-primary-light" :style="{ width: `${cashShare}%` }" />
-            </span>
-
-            <!-- By month: the last few months' results, up in green, down in red. -->
-            <span v-else-if="door.key === 'months' && netBars.length" class="flex h-8 items-end gap-1" aria-hidden="true">
-              <span
-                v-for="bar in netBars"
-                :key="bar.key"
-                :class="['w-2 rounded-t-sm', bar.up ? 'bg-green-500' : 'bg-red-400']"
-                :style="{ height: `${bar.height}%` }"
-              />
-            </span>
-          </template>
-        </AppShortcut>
+        />
       </nav>
     </div>
   </AppScreen>

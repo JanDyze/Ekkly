@@ -17,6 +17,8 @@ installable PWA.
   linter, so a clean build is the check. Run it before saying a change works.
 - `/commit` and `/deploy` are project skills. Use them instead of committing,
   versioning or deploying by hand.
+- `/ad`, `/ad-plan` and `/ad-results` make, plan and learn from the Facebook
+  and Instagram ads in `marketing/`. Ads never bump the app version.
 
 ## Read first
 
@@ -27,6 +29,7 @@ installable PWA.
 | Churches, addresses, access, data layout, the platform console, apps & billing | [TENANCY.md](TENANCY.md) |
 | Routes in `api/` | [ENDPOINTS.md](ENDPOINTS.md) |
 | The Claude connector (`api/mcp.js`, `lib/mcp/`) | [MCP.md](MCP.md) |
+| Ads and posts for the Facebook page and Instagram | [marketing/CLAUDE.md](marketing/CLAUDE.md) |
 
 ## Rules the code depends on
 
@@ -40,9 +43,14 @@ installable PWA.
   (see `useTasks.js`). Views never touch Firestore.
 - **Navigation has one source: `src/data/navigation.js`.** The home of all
   apps (`/home`, `src/views/Apps.vue`) and its All apps drawer lay their
-  tiles out from it, and the top bar names the app you are in from it. There is no sidebar or bottom bar:
+  tiles out from it, and the top bar names the app you are in from it. There is no sidebar:
   every app is a screen of its own and the home is the way between them, the
-  top bar's mark leading back to it. Don't add links anywhere else.
+  top bar's mark leading back to it. A bottom bar (`src/components/BottomBar.vue`)
+  shows on phones only for whoever turns it on in Preferences (`useBottomBar`),
+  and holds the same apps in the same order as the home. Don't add links
+  anywhere else. The one
+  exception is a page marked `account: true` (Settings): it is not an app, so
+  the app lists leave it out and it opens from the avatar's drawer instead.
 - **Access is by capability.** Capabilities are `<area>.view` and
   `<area>.manage`, and the areas are listed in `lib/capabilities.js`. A route
   sets `meta.capability` (or `meta.adminOnly`). A component hides what
@@ -121,8 +129,11 @@ screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
 
 1. Put its screens in `src/apps/<app>/`, with a `routes.js` that the router
    spreads in under `AdminLayout`. The parent route sets
-   `meta: { capability, app, frame: 'app' }`, and each screen sets
-   `meta.depth`: 0 for the app's home, 1 for a section, 2 for a step further.
+   `meta: { capability, app, frame: 'app', art }` (`art` is the app's
+   drawing), and each screen sets `meta.depth`: 0 for the app's home, 1 for a
+   section, 2 for a step further. A section also sets `meta.art` to its
+   tile's drawing (a step further borrows its section's); `AppScreen` shows
+   it beside the header's title.
 2. The home is a launcher, built the way People's and Schedules' are:
    - `AppHeroDeck` first: whatever matters gets a `DeckCard` of its own, most
      important on top, in a swipeable, looping deck. A card has to be
@@ -136,9 +147,11 @@ screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
      artwork (`art`, drawn with the app icons by
      `brand/ekkly/make-app-icons.mjs` as `<app>-<section>`, and shown flat in
      the church's accent — only an app wears the glossy artwork on a plate,
-     `level="app"`; see BRAND.md), a live line of
-     what is true inside it, and a small preview of its data in the `aside`
-     slot (faces, a date, a bar) rather than a count badge.
+     `level="app"`; see BRAND.md), and its name. Nothing else, unless
+     something behind it is waiting on you: then a `badge` with how many
+     (`urgent` when it is overdue). Totals, faces, dates and charts are what
+     the section shows once opened, and the deck already says what matters,
+     so a tile that repeats them only makes the grid slower to read.
    Presentation and Videos still use the older `AppHero` with a waiting
    button (`AppActionsSheet`) and `SectionGlyph` tiles; move them to this when
    they are next touched. Every screen sits in `AppScreen`, which

@@ -8,6 +8,19 @@
 
 export const versionHistory = [
   {
+    version: '0.33.2',
+    date: '2026-10-10',
+    title: 'A home that is yours',
+    summary:
+      'A church on its hill behind your apps, a verse beside it, and the apps drawn the way you like them.',
+    highlights: [
+      'Choose how the apps on your home look under Preferences › App cards. Administrators set the church’s own in Settings › Home.',
+      'The cards at the top now fan out like a hand — swipe through them as before.',
+      'Want quick hops between apps? Turn on Preferences › Bottom bar.',
+      'Settings has moved to your account drawer, beside Preferences.',
+    ],
+  },
+  {
     version: '0.33.1',
     date: '2026-10-09',
     title: 'Your whole roll at once',
@@ -17,7 +30,7 @@ export const versionHistory = [
       'On Everyone, tap + then Add several people: type, paste from Excel or Google Sheets, or open a file. Anyone already on the roll is left out.',
       'Addresses are picked by province, city and barangay, so one place is spelt one way.',
       'Events puts what is out of the ordinary first — a moved service, an outreach — and folds the weekly routine away.',
-      'The home shows your church’s name and a verse for the day, and back now goes back to wherever you came from.',
+      'The home shows your church’s name and a verse for the day.',
     ],
   },
   {

@@ -113,6 +113,82 @@ const wantsMotion = () =>
   typeof document.startViewTransition === 'function' &&
   !window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+/* ------------------------------------------------------------ the morphs */
+
+// The way into a screen and the screen itself name the same thing twice: an
+// app's tile on the home has its picture and its name, and the app, opened,
+// has the same picture and name in the top bar; a section's tile has its name,
+// and the section's header says it again. So on the way in the tapped tile's
+// picture and name travel up into the header, and on the way back they travel
+// down into the tile, and the eye follows what it tapped instead of losing it
+// in a slide.
+//
+// Anything can take part by saying what it stands for: `data-morph-icon` or
+// `data-morph-label`, set to the path it opens or the path it heads. The tile
+// for /schedules/sundays and the header of /schedules/sundays carry the same
+// path, and that is the whole pairing — no list of routes to keep in step.
+
+// While a morph is under way <html> carries data-morph, for anything on
+// screen that would otherwise play its own animation in the middle of it
+// (the top bar's picture, which pops as it changes). An attribute for CSS to
+// read rather than state for a component to react to: changing a component's
+// transition mid-render is what once broke the top bar.
+export const MORPH_PARTS = ['icon', 'label']
+
+const onScreen = (el) => {
+  const box = el.getBoundingClientRect()
+  return box.width > 0 && box.bottom > 0 && box.top < window.innerHeight && box.right > 0 && box.left < window.innerWidth
+}
+
+/**
+ * The one element on screen showing this part of this path, if any, other
+ * than those in `skip`.
+ */
+const morphable = (part, key, skip = []) =>
+  [...document.querySelectorAll(`[data-morph-${part}="${CSS.escape(key)}"]`)].find(
+    (el) => !skip.includes(el) && onScreen(el)
+  ) || null
+
+/**
+ * What travels on this navigation. Going in, the screen being left has a tile
+ * for where you are going; coming back, it has the header of where you were.
+ * Either way the path is one of the two ends, the deeper one, and the tile is
+ * tried first so that a section's tile wins over the bar naming its app.
+ */
+const findMorph = (to, from) => {
+  for (const key of [to.path, from.path]) {
+    const parts = MORPH_PARTS.map((part) => ({ part, el: morphable(part, key) })).filter((each) => each.el)
+    if (parts.length) return { key, parts }
+  }
+  return null
+}
+
+const nameOf = (part) => `morph-${part}`
+
+/**
+ * Hands each part's name from the screen that left to the one that arrived.
+ * Each name may sit on one element at a time, and the top bar is on both
+ * screens, so the old ones are cleared before the new ones are set. What it
+ * flew from is never where it lands: on the way back to the home, the bar's
+ * old picture may still be on its way out when the tile is looked for.
+ */
+const landMorph = (morph) => {
+  const left = morph.parts.map(({ el }) => el)
+  left.forEach((el) => {
+    el.style.viewTransitionName = ''
+  })
+  morph.landed = morph.parts
+    .map(({ part }) => ({ part, el: morphable(part, morph.key, left) }))
+    .filter((each) => each.el)
+  morph.landed.forEach(({ part, el }) => {
+    el.style.viewTransitionName = nameOf(part)
+    // A tile landed on is already where it belongs. Its own entrance would
+    // start it lower and fainter, so the picture would arrive and then the
+    // tile would drift up under it.
+    el.closest('.animate-rise')?.style.setProperty('animation', 'none')
+  })
+}
+
 /** The row's photo for a record, only if it is on screen to fly from. */
 const rowAvatar = (id) => {
   if (!id) return null
@@ -138,6 +214,13 @@ export function installViewTransitions(router) {
     const named = tagged?.el || null
     if (named) named.style.viewTransitionName = tagged.name
 
+    // A record's photo has its own flight; the two are never both wanted.
+    const morph = named ? null : findMorph(to, from)
+    morph?.parts.forEach(({ part, el }) => {
+      el.style.viewTransitionName = nameOf(part)
+    })
+    if (morph) document.documentElement.dataset.morph = ''
+
     let markRendered
     rendered = new Promise((resolve) => {
       markRendered = resolve
@@ -155,10 +238,18 @@ export function installViewTransitions(router) {
         // taken a tick early would morph into it before it had arrived.
         await nextTick()
         await nextTick()
+        if (morph) landMorph(morph)
       })
 
       transition.finished.finally(() => {
         if (named) named.style.viewTransitionName = ''
+        morph?.parts.forEach(({ el }) => {
+          el.style.viewTransitionName = ''
+        })
+        morph?.landed?.forEach(({ el }) => {
+          el.style.viewTransitionName = ''
+        })
+        delete document.documentElement.dataset.morph
         delete document.documentElement.dataset.nav
       })
     })

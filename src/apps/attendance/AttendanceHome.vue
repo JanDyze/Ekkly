@@ -9,7 +9,6 @@ import AppShortcut from '../../components/appframe/AppShortcut.vue'
 import DeckChips from '../../components/appframe/DeckChips.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
-import TurnoutRing from '../../components/attendance/TurnoutRing.vue'
 import { useAttendanceOverview } from '../../composables/useAttendanceOverview'
 import { usePermissions } from '../../composables/usePermissions'
 import { getDisplayName, listPhrase } from '../../utils/memberUtils'
@@ -24,8 +23,8 @@ import { getDisplayName, listPhrase } from '../../utils/memberUtils'
 //      that is about the whole church rather than one service — with the last
 //      few turnouts drawn along its foot.
 //   2. The doors: every gathering, what is still to count, who has gone
-//      quiet, and the months side by side, each with a line and a picture of
-//      what is in it.
+//      quiet, and the months side by side. Each is its name alone, with a
+//      badge only when something behind it is waiting on you.
 //
 // It used to be the list of gatherings itself, with the backlog on the plus
 // button. The list is a section now; what it could not say — reach, and who
@@ -126,18 +125,13 @@ const cards = computed(() => {
 
 /* -------------------------------------------------------------- the doors */
 
+// A door is its name and nothing more, unless something behind it is waiting
+// on you: then a badge says how many. Turnout, faces and month bars are what
+// each section shows the moment it opens, so the grid stays one glance.
 const doors = computed(() => {
   const ready = !loading.value
-  const last = latest.value
-  const owedCount = awaiting.value.length
   return [
-    {
-      key: 'gatherings',
-      title: 'Gatherings',
-      art: 'attendance-gatherings',
-      to: { name: 'Attendance' },
-      detail: !ready ? '' : last ? `Last: ${last.count} on ${shortDate(last.row.date)}` : 'Every gathering, by month',
-    },
+    { key: 'gatherings', title: 'Gatherings', art: 'attendance-gatherings', to: { name: 'Attendance' } },
     ...(canRecord.value
       ? [
           {
@@ -145,32 +139,15 @@ const doors = computed(() => {
             title: 'To record',
             art: 'attendance-record',
             to: { name: 'AttendanceOwed' },
-            detail: !ready ? '' : owedCount ? `${owedCount} waiting` : 'All counted',
+            // Amber, because a count owed is overdue rather than new.
+            badge: ready ? awaiting.value.length : 0,
+            urgent: true,
           },
         ]
       : []),
-    {
-      key: 'quiet',
-      title: 'Not seen lately',
-      art: 'attendance-quiet',
-      to: { name: 'AttendanceQuiet' },
-      detail: !ready ? '' : quietPeople.value.length ? plural(quietPeople.value.length, 'person', 'people') : 'Everyone has been',
-    },
-    {
-      key: 'months',
-      title: 'By month',
-      art: 'attendance-months',
-      to: { name: 'AttendanceMonths' },
-      detail: !ready ? '' : reach.value ? `${reach.value.count} in ${reach.value.monthLabel}` : 'People seen, month by month',
-    },
+    { key: 'quiet', title: 'Not seen lately', art: 'attendance-quiet', to: { name: 'AttendanceQuiet' } },
+    { key: 'months', title: 'By month', art: 'attendance-months', to: { name: 'AttendanceMonths' } },
   ]
-})
-
-/** The last four months' reach, oldest first, as the tile's little columns. */
-const monthBars = computed(() => {
-  const shown = months.value.slice(0, 4).reverse()
-  const largest = Math.max(...shown.map((m) => m.count), 1)
-  return shown.map((m) => ({ key: m.key, height: Math.max(15, Math.round((m.count / largest) * 100)) }))
 })
 
 const FACES = 6
@@ -284,48 +261,10 @@ const FACES = 6
           :title="door.title"
           :detail="door.detail"
           :art="door.art"
+          :badge="door.badge"
+          :urgent="door.urgent"
           :delay="120 + index * 30"
-        >
-          <template #aside>
-            <!-- Gatherings: how full the last one was. -->
-            <TurnoutRing
-              v-if="door.key === 'gatherings' && latest"
-              :share="latest.share"
-              size="h-9 w-9"
-              text-class="text-[9px]"
-            />
-
-            <!-- To record: how many are owed, in amber while any are. -->
-            <span
-              v-else-if="door.key === 'owed' && awaiting.length"
-              class="flex h-7 min-w-7 items-center justify-center rounded-full bg-amber-100 px-2 text-xs font-bold tabular-nums text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
-            >
-              {{ awaiting.length }}
-            </span>
-
-            <!-- Not seen lately: a few of their faces. -->
-            <span v-else-if="door.key === 'quiet' && quietPeople.length" class="flex -space-x-2">
-              <MemberAvatar
-                v-for="row in quietPeople.slice(0, 3)"
-                :key="row.id"
-                :member="row.member"
-                alt=""
-                size="h-7 w-7"
-                plain-class="ring-2 ring-white dark:ring-gray-800"
-              />
-            </span>
-
-            <!-- By month: the last few months' reach, side by side. -->
-            <span v-else-if="door.key === 'months' && monthBars.length" class="flex h-8 items-end gap-1" aria-hidden="true">
-              <span
-                v-for="(bar, i) in monthBars"
-                :key="bar.key"
-                :class="['w-2 rounded-t-sm', i === monthBars.length - 1 ? 'bg-primary dark:bg-primary-light' : 'bg-primary/30 dark:bg-primary-light/30']"
-                :style="{ height: `${bar.height}%` }"
-              />
-            </span>
-          </template>
-        </AppShortcut>
+        />
       </nav>
     </div>
   </AppScreen>

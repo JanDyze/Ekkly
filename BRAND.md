@@ -124,7 +124,10 @@ and nothing sells them.
 **An app and a section never look alike.** An app is Ekkly's, so wherever it
 is offered as an app — the home of all apps, the All apps drawer, the top
 bar — it wears this artwork as drawn, glossy, on a raised plate like an icon
-on a phone. A section is a room in the church's app, so its tile shows the
+on a phone. On the home that plate is a circle, and each card style carries
+a colour from the app's own drawing
+([src/data/appHues.js](src/data/appHues.js)): Ekkly's colours, never the
+church's, which the day card above already wears. A section is a room in the church's app, so its tile shows the
 same drawing flat, in the church's accent (`AppArt`'s `flat`: blue full,
 orange at half, teal at a third, no shine), on a tinted chip with no lift.
 Colour, plate and depth all differ at once, and because the flat version is

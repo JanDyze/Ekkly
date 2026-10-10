@@ -1,8 +1,8 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft } from '../../icons'
-import { goBack as stepBack } from '../../router/back'
+import AppArt from '../common/AppArt.vue'
 
 // One screen of an app inside Ekkly: its home, or a section one step off it.
 //
@@ -28,9 +28,8 @@ const props = defineProps({
   subtitle: { type: String, default: '' },
   // Where back goes when there is nowhere earlier in this app to return to.
   back: { type: [String, Object], default: null },
-  // Every route inside this app starts with it. Back used to read it to stay
-  // inside the app; it goes to whatever came before now, and this is kept for
-  // the screens that still pass it.
+  // Every route inside this app starts with it, so back can tell a screen of
+  // this app's from one somewhere else in Ekkly.
   root: { type: String, default: '' },
   // A screen that scrolls itself — a month grid, with its day and its event
   // opening beside it — rather than one long page: the screen does not
@@ -39,20 +38,32 @@ const props = defineProps({
   // Room for two panes side by side on a desktop, where a phone's column
   // would squeeze them. Only for a screen that has two.
   wide: { type: Boolean, default: false },
+  // The drawing beside the title, by name in src/assets/app-icons. Left out,
+  // it is the route's own (meta.art): each section names the drawing its tile
+  // on the app's home wears, a screen further in borrows its section's, and
+  // the app's own drawing stands in for a section that has none.
+  art: { type: String, default: '' },
 })
 
 const column = computed(() => (props.wide ? 'max-w-5xl' : 'max-w-xl'))
 
 const router = useRouter()
+const route = useRoute()
 const hasHeader = computed(() => Boolean(props.title || props.back))
 
-// Back returns to the screen you came from — a Sunday opened from My turns
-// goes back to My turns, a month's video opened from the Events home goes back
-// to Events — and only with nothing before it to the screen above this one.
-// It used to go back only to a screen of this same app, so leaving one app for
-// another made the arrow skip the page you had just been on. See
-// router/back.js.
-const goBack = () => stepBack(router, props.back)
+// Flat, in the church's colour, the way a section's tile draws it (BRAND.md):
+// a room of the app, never mistaken for the app's own glossy picture.
+const headerArt = computed(() => props.art || route.meta?.art || '')
+
+// Back returns to the screen you came from when it was one of this app's — a
+// Sunday opened from My turns goes back to My turns — and otherwise to the
+// screen above this one. Never as a new entry in the history: a back button
+// that pushed would make the phone's own back step forward again.
+const goBack = () => {
+  const previous = window.history.state?.back
+  if (previous && props.root && String(previous).startsWith(props.root)) router.back()
+  else if (props.back) router.replace(props.back)
+}
 
 /* -------------------------------------------------------- hiding on scroll */
 
@@ -83,11 +94,14 @@ defineExpose({ scroller })
 </script>
 
 <template>
+  <!-- An app's home (no header) is laid out to fit one screen, the way the
+       home of all apps is, so it does not scroll: the bottom padding alone
+       used to tip it over and let it slide. Sections are lists and scroll. -->
   <div
     ref="scroller"
     :class="[
       'h-full bg-gray-50 dark:bg-gray-900',
-      fill ? 'flex flex-col overflow-hidden' : 'overflow-y-auto overscroll-contain',
+      fill ? 'flex flex-col overflow-hidden' : hasHeader ? 'overflow-y-auto overscroll-contain' : 'overflow-hidden',
     ]"
     @scroll.passive="onScroll"
   >
@@ -109,8 +123,20 @@ defineExpose({ scroller })
         >
           <ChevronLeft class="size-5" />
         </button>
+        <!-- The tile that opened this section flies its drawing here too
+             (router/viewTransitions.js). -->
+        <AppArt
+          v-if="headerArt"
+          :app-key="headerArt"
+          :play="1"
+          flat
+          :data-morph-icon="route.path"
+          class="size-9 shrink-0 text-primary dark:text-primary-light"
+        />
         <div class="min-w-0 flex-1">
-          <h1 class="truncate text-2xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white">
+          <!-- Named by its path, so the tile that opened this section can fly
+               its name up into this title (router/viewTransitions.js). -->
+          <h1 :data-morph-label="route.path" class="truncate text-2xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white">
             {{ title }}
           </h1>
           <p v-if="subtitle" class="truncate text-xs text-gray-500 dark:text-gray-400">{{ subtitle }}</p>

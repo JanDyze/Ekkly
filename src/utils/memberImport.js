@@ -223,15 +223,80 @@ export const cellsFromFile = async (file) => {
   return sheet ? XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true }) : []
 }
 
-/** An empty sheet with our column names, for somebody starting from nothing. */
+// How many empty, ruled rows the template offers under its examples: enough
+// for a small church's roll to go straight in without inserting rows.
+const TEMPLATE_ROWS = 40
+
+/**
+ * An empty sheet with our column names, for somebody starting from nothing.
+ *
+ * Dressed like the app's other exports (the church's name in its colour, a
+ * header in its accent) so it reads as a form from the church rather than a
+ * bare grid. Everything above the header is skipped on the way back in —
+ * rowsFromCells looks for the header in the first five rows — and the
+ * asterisks are squashed out of the names, so the dressing costs the import
+ * nothing.
+ */
 export const downloadTemplate = async () => {
-  const { default: XLSX } = await import('xlsx-js-style')
-  const sheet = XLSX.utils.aoa_to_sheet([
-    ['First name', 'Last name', 'Nickname', 'Sex', 'Birthday', 'Civil status', 'Occupation', 'Contact number', 'Address', 'Standing'],
-    ['Maria', 'Santos', 'Ria', 'Female', 'Oct 9, 1985', 'Married', 'Teacher', '0917 123 4567', 'Antipolo, Rizal', 'Member'],
-    ['Juan', 'Dela Cruz', '', 'Male', 'March 3', 'Single', 'Student', '', '', 'Attendee'],
+  const [{ default: XLSX }, { getChurchIdentity }, { accentCell }] = await Promise.all([
+    import('xlsx-js-style'),
+    import('../composables/useAppSettings'),
+    import('../composables/useBrandTheme'),
   ])
-  sheet['!cols'] = [14, 14, 12, 8, 14, 12, 16, 16, 28, 10].map((wch) => ({ wch }))
+  const { fullName, branch } = getChurchIdentity()
+  const headers = ['First name *', 'Last name *', 'Nickname', 'Sex', 'Birthday', 'Civil status', 'Occupation', 'Contact number', 'Address', 'Standing']
+  const examples = [
+    ['Juan', 'Bautista', 'Jun', 'Male', 'March 3', 'Single', 'Student', '0917 123 4567', 'Antipolo, Rizal', 'Attendee'],
+    ['Maria', 'Magdalena', 'Mae', 'Female', 'Oct 9, 1985', 'Married', 'Teacher', '', '', 'Member'],
+  ]
+  const width = headers.length
+  const blankRow = () => Array(width).fill('')
+
+  const rows = [
+    [[fullName, branch].filter(Boolean).join(' ') || 'Add people', ...blankRow().slice(1)],
+    ['One person per row. Only the names are needed; write over the two examples.', ...blankRow().slice(1)],
+    blankRow(),
+    headers,
+    ...examples,
+    ...Array.from({ length: TEMPLATE_ROWS }, blankRow),
+  ]
+  const sheet = XLSX.utils.aoa_to_sheet(rows)
+
+  const line = { style: 'thin', color: { rgb: 'E5E7EB' } }
+  const ruled = { top: line, bottom: line, left: line, right: line }
+  const accent = accentCell()
+  const styles = {
+    title: { font: { bold: true, sz: 14, color: accent } },
+    note: { font: { italic: true, sz: 10, color: { rgb: '6B7280' } } },
+    header: {
+      font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' } },
+      fill: { fgColor: accent },
+      alignment: { vertical: 'center' },
+      border: ruled,
+    },
+    // The examples are greyed so they read as something to write over.
+    example: { font: { italic: true, sz: 10, color: { rgb: '9CA3AF' } }, border: ruled },
+    cell: { font: { sz: 10 }, border: ruled, alignment: { vertical: 'center' } },
+    band: { font: { sz: 10 }, fill: { fgColor: { rgb: 'F9FAFB' } }, border: ruled, alignment: { vertical: 'center' } },
+  }
+
+  const headerAt = 3
+  rows.forEach((row, r) => {
+    row.forEach((_, c) => {
+      const ref = XLSX.utils.encode_cell({ r, c })
+      if (!sheet[ref]) sheet[ref] = { v: '', t: 's' }
+      if (r === 0) sheet[ref].s = styles.title
+      else if (r === 1) sheet[ref].s = styles.note
+      else if (r === headerAt) sheet[ref].s = styles.header
+      else if (r > headerAt && r <= headerAt + examples.length) sheet[ref].s = styles.example
+      else if (r > headerAt) sheet[ref].s = (r - headerAt) % 2 ? styles.cell : styles.band
+    })
+  })
+
+  sheet['!merges'] = [0, 1].map((r) => ({ s: { r, c: 0 }, e: { r, c: width - 1 } }))
+  sheet['!cols'] = [16, 16, 12, 9, 14, 13, 16, 17, 30, 11].map((wch) => ({ wch }))
+  sheet['!rows'] = rows.map((_, r) => ({ hpt: r === 0 ? 24 : r === headerAt ? 22 : r > headerAt ? 18 : 15 }))
+
   const book = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(book, sheet, 'People')
   XLSX.writeFile(book, 'Add people.xlsx')

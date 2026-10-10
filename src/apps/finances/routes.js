@@ -5,7 +5,7 @@
 export const financesRoutes = [
   {
     path: 'finances',
-    meta: { capability: 'finances.view', app: 'finances', frame: 'app' },
+    meta: { capability: 'finances.view', app: 'finances', frame: 'app', art: 'finances' },
     children: [
       {
         path: '',
@@ -18,26 +18,26 @@ export const financesRoutes = [
         // ?new=offering&date= opens a new Sunday offering already filled in.
         path: 'book/:month(\d{4}-\d{2})?',
         name: 'Finances',
-        meta: { depth: 1 },
+        meta: { art: 'finances-book', depth: 1 },
         component: () => import('./FinancesBook.vue'),
       },
       {
         path: 'statement/:month(\d{4}-\d{2})?',
         name: 'FinancesStatement',
-        meta: { depth: 1 },
+        meta: { art: 'finances-statement', depth: 1 },
         component: () => import('./FinancesStatement.vue'),
       },
       {
         // ?set=opening opens the opening balance to fill in.
         path: 'accounts',
         name: 'FinancesAccounts',
-        meta: { depth: 1 },
+        meta: { art: 'finances-accounts', depth: 1 },
         component: () => import('./FinancesAccounts.vue'),
       },
       {
         path: 'months',
         name: 'FinancesMonths',
-        meta: { depth: 1 },
+        meta: { art: 'finances-months', depth: 1 },
         component: () => import('./FinancesMonths.vue'),
       },
     ],

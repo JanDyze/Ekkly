@@ -10,7 +10,7 @@
 export const videosRoutes = [
   {
     path: 'videos',
-    meta: { capability: 'events.view', app: 'events', frame: 'app' },
+    meta: { capability: 'events.view', app: 'events', frame: 'app', art: 'videos' },
     children: [
       {
         path: '',

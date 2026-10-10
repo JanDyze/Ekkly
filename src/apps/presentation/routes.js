@@ -12,7 +12,7 @@
 export const presentationRoutes = [
   {
     path: 'presentation',
-    meta: { capability: 'lineups.view', app: 'lineups', frame: 'app' },
+    meta: { capability: 'lineups.view', app: 'lineups', frame: 'app', art: 'presentation' },
     children: [
       {
         path: '',

@@ -9,7 +9,8 @@ import { useSounds } from '../../composables/useSounds'
 // Whatever matters most today gets a card of its own — an account waiting to
 // be linked, somebody's birthday — stacked over the card that is always true
 // (how many people the church has, the next Sunday). The top card is the one
-// read; the ones under it peek out below, so it is plain there are more.
+// read; the ones under it fan out to either side of it, like a hand of cards,
+// so it is plain there are more.
 // A swipe either way sends the top card under the deck — it flies off the
 // side it was pushed and tucks in at the bottom — and the next one is on top.
 // So the deck is a loop, the way a real one is: keep going and the first card
@@ -346,8 +347,27 @@ const styleOf = (card, i) => {
     ...(dragging.value ? { transition: 'opacity 150ms ease' } : motion),
     zIndex: 50 - pos,
     opacity,
-    transform: `translateY(${depth * 9}px) scale(${1 - depth * 0.05})`,
+    transform: fanned(depth),
   }
+}
+
+// The cards underneath fan out to either side of the top one, turning on
+// their foot like a hand of cards: the next one to the left, the one after it
+// to the right. Measured by depth, which slides between whole cards as the
+// top one is pulled away, so the next card swings up into place under the
+// finger rather than jumping there.
+const FAN = [
+  { turn: 0, shift: 0 },
+  { turn: -4, shift: -6 },
+  { turn: 3.5, shift: 8 },
+]
+const fanned = (depth) => {
+  const from = FAN[Math.floor(depth)]
+  const to = FAN[Math.min(Math.ceil(depth), FAN.length - 1)]
+  const t = depth - Math.floor(depth)
+  const turn = from.turn + (to.turn - from.turn) * t
+  const shift = from.shift + (to.shift - from.shift) * t
+  return `translateX(${shift}px) rotate(${turn}deg) scale(${1 - depth * 0.02})`
 }
 </script>
 
@@ -371,7 +391,7 @@ const styleOf = (card, i) => {
          the page scrolling sideways under it. -->
     <div
       ref="deck"
-      :class="['grid grid-cols-1 touch-pan-y select-none', visible.length > 1 ? 'pb-[18px]' : '']"
+      :class="['grid grid-cols-1 touch-pan-y select-none', visible.length > 1 ? 'pb-2' : '']"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"

@@ -11,6 +11,61 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.33.2] — 2026-10-10
+
+The home becomes a picture: a church on its hill under the sky, its window
+Ekkly's own and lit at night, with the day's verse beside it. How the apps on
+it are drawn is now the church's choice, and anyone's own; the cards at the top
+fan out like a hand; and the bottom bar is back for whoever wants it.
+
+### Added
+
+- **Six ways to draw the apps on the home** — accent lines, illustrated,
+  compact, orbit, list and masonry. An administrator picks the church's in
+  Settings › Home; anyone can pick their own under Preferences › App cards,
+  and "Church's choice" puts them back on the church's. Each app wears its
+  own colour, and the styles with room give it a short line ("Our church
+  family", "Tithes and funds").
+- **A picture behind the home,** drawn by hand so every colour in it can be
+  changed: a sky with Ekkly's panes of light and clouds, and a church on its
+  hill in the room under the apps, always whole. Its window is Ekkly's mark;
+  in dark mode it glows, and its light falls down the front.
+- **The day's verse on a card beside the church.** A tap still opens the
+  chapter in the Bible.
+- **A bottom bar, if you want one.** Preferences › Bottom bar puts Home, the
+  first three apps on your home and More along the foot of every screen on a
+  phone. Off unless you turn it on.
+- **Settings in the account drawer.** Settings is no longer an app on the
+  home; administrators open it from the avatar, beside Preferences.
+- **A tapped app or section flies into the screen it opens** — its picture
+  and name travel up into the header, and back down on the way out.
+
+### Changed
+
+- **The cards at the top fan out like a hand of cards,** rounder, with a
+  soft shadow and their label in a pill. The next card swings up as you drag.
+- **The home and each app's home no longer scroll.** They were laid out to
+  fit one screen and a little room at the foot tipped them over.
+- **Sections inside an app are named and nothing else,** with a count on the
+  corner only when something in them is waiting on you. What used to be
+  repeated on the tiles is in the cards above or the section itself; each
+  tile now carries its drawing large in the corner on a wash of the church's
+  colour.
+- **The account drawer is simpler and wider.** Appearance and sounds wait
+  behind one Preferences row.
+- **The back arrow in the top bar goes back to all apps again,** and a
+  section's back arrow to the screen above it unless you came from inside
+  the same app. Following wherever you had been sent people round in circles.
+- **Add people suggests Maria Magdalena as well as Juan Bautista,** whichever
+  matches the person, and the downloadable sheet is laid out as a form in the
+  church's colours.
+
+### Fixed
+
+- Several parts of dark mode — the press-and-hold preview of an app, pulling
+  to refresh, the apps drawer and a few calendar details — had been drawn in
+  their light colours. They now go dark with everything else.
+
 ## [0.33.1] — 2026-10-09
 
 A whole roll can go in at once, an address is picked rather than typed, and a

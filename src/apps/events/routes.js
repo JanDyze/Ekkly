@@ -8,7 +8,7 @@
 export const eventsRoutes = [
   {
     path: 'events',
-    meta: { capability: 'events.view', app: 'events', frame: 'app' },
+    meta: { capability: 'events.view', app: 'events', frame: 'app', art: 'events' },
     children: [
       {
         path: '',
@@ -20,19 +20,19 @@ export const eventsRoutes = [
         // The month grid. ?date=YYYY-MM-DD opens that day.
         path: 'calendar',
         name: 'Events',
-        meta: { depth: 1 },
+        meta: { art: 'events-calendar', depth: 1 },
         component: () => import('./EventsCalendar.vue'),
       },
       {
         path: 'coming-up',
         name: 'EventsUpcoming',
-        meta: { depth: 1 },
+        meta: { art: 'events-upcoming', depth: 1 },
         component: () => import('./EventsUpcoming.vue'),
       },
       {
         path: 'weekly',
         name: 'EventsWeekly',
-        meta: { depth: 1 },
+        meta: { art: 'events-weekly', depth: 1 },
         component: () => import('./EventsWeekly.vue'),
       },
     ],

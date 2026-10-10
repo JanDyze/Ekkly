@@ -224,6 +224,30 @@ body {
   animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
 }
 
+/* A tile's picture and name flying into the header of what it opens, and back
+   (the morphs in router/viewTransitions.js). A touch longer than the slide
+   under them, so they are still arriving as the screen settles and read as
+   the thing that moved. */
+:root[data-nav]::view-transition-group(morph-icon),
+:root[data-nav]::view-transition-group(morph-label) {
+  animation-duration: 0.42s;
+  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* A name changes size on the way (a tile's 15px to a header's 24px) and its
+   box changes width too, which the browser would answer by stretching the
+   words. Sized by height alone, they grow evenly from where they start on the
+   left. The old words go first, so the two are seen together only briefly. */
+:root[data-nav]::view-transition-old(morph-label),
+:root[data-nav]::view-transition-new(morph-label) {
+  width: auto;
+  height: 100%;
+}
+
+:root[data-nav]::view-transition-old(morph-label) {
+  animation-duration: 0.2s;
+}
+
 /* A phone pushes: the record slides in over the list, opaque, while the list
    eases a little way left and dims beneath it. */
 @media (width < 64rem) {
