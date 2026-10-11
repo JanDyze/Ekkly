@@ -6,8 +6,19 @@ the team’s group chat.
 **The one idea:** the lineup in one place the whole team can see, so nobody
 has to ask.
 **Language:** Taglish
-**Placements:** Reels and Stories, FB + IG (`reel.html`, 1080×1920, 16s,
-silent; music added in Meta’s editor)
+**Placements:** Reels and Stories, FB + IG (`reel.html`, 1080×1920, 28s,
+voiced in Taglish, with sounds and the app's own *Uplift* track under it)
+
+**The voice is an English one reading Tagalog**, spelled out for it
+(`reel.html` has each line's spelling beside what it means). Transcribed back
+as Tagalog, most lines come out word for word (“Ako ba yung magbabasa”,
+“Alam nang lahat, ang role nila”, “Diretso sa screen, ang mga kanta”, “Libre
+ang unang buwan”); a few are close but accented (“Kita ng buong team” heard as
+“Kitana ang buwan team”). A Filipino listener will understand it and will hear
+that it is not a Filipino speaker. Before it runs paid, have someone listen;
+a recorded Filipino voice, or a Filipino one from a paid voice service, would
+replace it line for line.
+
 **Link:** `https://ekkly.online/start?utm_source=facebook&utm_medium=paid&utm_campaign=2026-10-11-sino-sa-linggo`
 
 Script 2 in [../../SCRIPTS.md](../../SCRIPTS.md). Made with

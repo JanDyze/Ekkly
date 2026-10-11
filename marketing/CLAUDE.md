@@ -65,9 +65,21 @@ A drawn video is a list of scenes handed to `film()` in `templates/video.js`
 `?t=12.5` to hold one moment, and give it `<meta name="ad-cover">` for the
 moment the folder render takes as its cover PNG. `video` draws every frame
 and encodes it in the same Chrome, as H.264 MP4, in about half the video's
-length; nothing is recorded in real time, so no frame is dropped. The videos
-are silent: music is added in Meta's editor from its licensed library. Before
-calling one done, look at frames of the MP4 itself, not only the page.
+length; nothing is recorded in real time, so no frame is dropped.
+
+A video has sound: a voice reading each scene's `voice` lines, sounds drawn
+for what happens on screen (a card set down, the panes lighting, an app
+arriving), and one of the app's own tracks (`src/utils/video/music.js`)
+turned down under the voice. Nothing in it is licensed from anyone. The voice
+is Kokoro, an open model (Apache 2.0) run in the same Chrome; each line takes
+ten seconds or more to make the first time and is kept in the ad's
+`out/voice/`, so only a changed line is made again. It reads English only: a
+Tagalog line is given a `say` spelled for an English reader, hyphenated by
+syllable, beside what it `means`. Scenes stretch to fit their lines.
+
+Before calling one done, look at frames of the MP4 itself, not only the
+page, and listen to it, or have it transcribed: a line the voice garbles
+reads fine on the page.
 
 ## Placements
 

@@ -252,7 +252,8 @@ const SCENES = {
    * The chores, as cards dropped on a table one at a time, a little askew.
    * In the last half-second they fall away: that is the mess clearing.
    *   cards: [{ icon: 'chats-circle', text: 'The roster in a group chat' }]
-   *   step: seconds between cards (1.1)
+   *   step: seconds between cards (1.1), unless each card has a line of
+   *   voice, when it lands as its line begins
    */
   pile: {
     icons: (s) => s.cards.map((c) => iconSrc(c.icon)),
@@ -261,7 +262,6 @@ const SCENES = {
       ctx.fillStyle = c.soft
       ctx.fillRect(0, 0, W, env.H)
 
-      const step = s.step ?? 1.1
       const cardW = W - PAD * 2
       const textW = cardW - 64 - 120 - 40
       const heights = s.cards.map((card) => Math.max(150, measure(ctx, card.text, { size: 58, weight: 800, width: textW, lh: 1.12 }) + 76))
@@ -274,7 +274,7 @@ const SCENES = {
         const h = heights[i]
         const top = y
         y += h + gap
-        const t0 = 0.15 + i * step
+        const t0 = cardAt(s, i)
         const p = span(t, t0, t0 + 0.5)
         if (!p) return
         const tilt = ((i % 2 ? 1 : -1) * (2.2 + (i % 3) * 0.6) * Math.PI) / 180
@@ -349,7 +349,8 @@ const SCENES = {
    * for the church, then it drops into a row along the foot - every app
    * landing in the same place is the point.
    *   apps: [{ art: 'members', name: 'People', line: 'Everyone’s details, one tap away' }]
-   *   each: seconds per app (1.6)
+   *   each: seconds per app (1.6), unless each app has a line of voice,
+   *   when it stays up for as long as its line is said
    *   after: a line once the row is full ('All in one app.')
    */
   apps: {
@@ -360,7 +361,6 @@ const SCENES = {
       ctx.fillStyle = c.ground
       ctx.fillRect(0, 0, W, env.H)
 
-      const each = s.each ?? 1.6
       const n = s.apps.length
       const big = 260
       const lineW = W - PAD * 2
@@ -384,8 +384,7 @@ const SCENES = {
       const fly = 0.42
       s.apps.forEach((app, i) => {
         const img = assets.get(`${ART}/${app.art}.svg`)
-        const t0 = i * each
-        const t1 = t0 + each
+        const [t0, t1] = appSpan(s, i)
         const local = t - t0
         if (local < 0) return
 
@@ -424,7 +423,8 @@ const SCENES = {
 
       // Once every app is in the row, the line that says what the row means.
       if (s.after) {
-        const ap = out(span(t, n * each + 0.05, n * each + 0.45))
+        const done = appSpan(s, n - 1)[1]
+        const ap = out(span(t, done + 0.05, done + 0.45))
         if (ap > 0) {
           ctx.save()
           ctx.globalAlpha = ap
@@ -528,7 +528,9 @@ const SCENES = {
       })
 
       if (s.sub) {
-        const up = out(span(t, s.subAt ?? 1.9, (s.subAt ?? 1.9) + 0.4))
+        // With a voice, the line under the link arrives as it is said.
+        const subAt = s.cues?.[1] ? s.cues[1].start - 0.1 : s.subAt ?? 1.9
+        const up = out(span(t, subAt, subAt + 0.4))
         ctx.save()
         ctx.globalAlpha = up
         words(ctx, s.sub, { x: W / 2, y: sy + 32 + 80 + lerp(20, 0, up), size: 50, weight: 500, color: c.muted, width: W - PAD * 2, lh: 1.25, align: 'center' })
@@ -555,7 +557,6 @@ const SCENES = {
       const kickerH = s.kicker ? 46 + 40 : 0
       const total = kickerH + hs.reduce((a, b) => a + b, 0) + gap * (items.length - 1)
       let y = area.mid - total / 2
-      const step = s.step ?? 0.7
 
       if (s.kicker) {
         const kp = out(span(t, 0.05, 0.4))
@@ -571,7 +572,8 @@ const SCENES = {
       }
 
       items.forEach((l, i) => {
-        const p = out(span(t, 0.15 + i * step, 0.15 + i * step + 0.45))
+        const at = lineAt(s, i)
+        const p = out(span(t, at, at + 0.45))
         ctx.save()
         ctx.globalAlpha = p
         words(ctx, l.text, {
@@ -666,6 +668,357 @@ const SCENES = {
   },
 }
 
+// ------------------------------------------------------------------ the voice
+//
+// A voice reads each scene's lines: `voice: ['Line one.', 'Line two.']`, or
+// `{ say, at }` where what is spoken has to be spelled differently from what
+// is meant - a Tagalog line spelled for an English voice to say right. Lines
+// in a scene follow one another; the scene grows to fit them, never cuts one
+// off. A pile's cards land as their lines begin.
+//
+// The voice is Kokoro (Apache 2.0, so free to use in an ad), run in this same
+// browser. It is slow - ten seconds or more a line - so each line is made once
+// and kept beside the ad, in out/voice/, named by what is said and by whom; a
+// line that has not changed is never made again.
+
+const KOKORO = 'https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm'
+const KOKORO_MODEL = 'onnx-community/Kokoro-82M-v1.0-ONNX'
+
+let speaker = null
+const loadSpeaker = async () => {
+  if (!speaker) {
+    speaker = import(KOKORO).then(({ KokoroTTS }) => KokoroTTS.from_pretrained(KOKORO_MODEL, { dtype: 'q8', device: 'wasm' }))
+  }
+  return speaker
+}
+
+const hash = (text) => {
+  let h = 2166136261
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619)
+  return (h >>> 0).toString(16).padStart(8, '0')
+}
+
+// Curly quotes read as noise to the voice ("Sunday’s" came out as three
+// made-up words), so it is handed straight ones.
+const speakable = (text) =>
+  String(text)
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/—/g, ', ')
+
+// 16-bit WAV, mono: what is kept on disk.
+function wav(samples, rate) {
+  const data = new DataView(new ArrayBuffer(44 + samples.length * 2))
+  const text = (at, s) => [...s].forEach((c, i) => data.setUint8(at + i, c.charCodeAt(0)))
+  text(0, 'RIFF')
+  data.setUint32(4, 36 + samples.length * 2, true)
+  text(8, 'WAVE')
+  text(12, 'fmt ')
+  data.setUint32(16, 16, true)
+  data.setUint16(20, 1, true)
+  data.setUint16(22, 1, true)
+  data.setUint32(24, rate, true)
+  data.setUint32(28, rate * 2, true)
+  data.setUint16(32, 2, true)
+  data.setUint16(34, 16, true)
+  text(36, 'data')
+  data.setUint32(40, samples.length * 2, true)
+  samples.forEach((v, i) => data.setInt16(44 + i * 2, Math.max(-1, Math.min(1, v)) * 0x7fff, true))
+  return new Blob([data.buffer], { type: 'audio/wav' })
+}
+
+// The voice leaves a breath of silence either end; the timing is ours to set,
+// so it is trimmed to a few hundredths of a second.
+function trim(samples, rate) {
+  const floor = 0.01
+  let a = samples.findIndex((v) => Math.abs(v) > floor)
+  if (a < 0) return samples
+  let b = samples.length - 1
+  while (b > a && Math.abs(samples[b]) < floor) b--
+  a = Math.max(0, a - Math.round(rate * 0.04))
+  b = Math.min(samples.length, b + Math.round(rate * 0.08))
+  return samples.slice(a, b)
+}
+
+const decoder = new OfflineAudioContext(1, 1, 48000)
+
+async function voiceLine(say, { voice, speed, keptOnly }) {
+  const folder = location.pathname.replace(/[^/]*$/, '')
+  const name = `${voice}-${hash(`${voice}|${speed}|${say}`)}.wav`
+  const kept = await fetch(`${folder}out/voice/${name}`)
+  if (kept.ok) {
+    const bytes = await kept.arrayBuffer()
+    // A still needs only how long each line is, and decoding audio never
+    // finishes under the frozen clock of a headless screenshot, so it is read
+    // off the file's own header instead: 16-bit mono, at the rate it states.
+    if (keptOnly) return { duration: (bytes.byteLength - 44) / (2 * new DataView(bytes).getUint32(24, true)) }
+    return decoder.decodeAudioData(bytes)
+  }
+  if (keptOnly) throw new Error(`No voice kept for: ${say}`)
+
+  const tts = await loadSpeaker()
+  const made = await tts.generate(speakable(say), { voice, speed })
+  const samples = trim(made.audio, made.sampling_rate)
+  const file = wav(samples, made.sampling_rate)
+  // Kept by the render server; a page opened some other way just makes it again.
+  await fetch(`/__voice?path=${encodeURIComponent(`${folder.slice(1)}out/voice/${name}`)}`, { method: 'POST', body: file }).catch(() => {})
+  return decoder.decodeAudioData(await file.arrayBuffer())
+}
+
+// Lays each scene's lines out in time and stretches the scene to hold them.
+async function cueVoices(scenes, opts, status) {
+  let made = 0
+  const total = scenes.reduce((n, s) => n + (s.voice?.length || 0), 0)
+  for (const s of scenes) {
+    if (!s.voice?.length) continue
+    s.cues = []
+    let at = s.voiceAt ?? 0.3
+    for (const line of s.voice) {
+      const { say, at: wanted } = typeof line === 'string' ? { say: line } : line
+      status(`Voice ${++made} of ${total}`)
+      const buffer = await voiceLine(say, opts)
+      const start = Math.max(at, wanted ?? 0)
+      s.cues.push({ start, end: start + buffer.duration, buffer })
+      at = start + buffer.duration + (s.voiceGap ?? 0.3)
+    }
+    s.dur = Math.max(s.dur, s.cues.at(-1).end + (s.tail ?? 0.6))
+  }
+}
+
+// ------------------------------------------------------------------ the sound
+//
+// Every sound is drawn here rather than recorded, like the app's own music
+// (src/utils/video/music.js), so there is nothing to license: a card set
+// down, the panes lighting as a rising chord, an app arriving and settling
+// into its row, the link being typed. Each scene type says when its sounds
+// fall; they follow what is on screen, never the other way round.
+
+const RATE = 48000
+
+const noise = (ctx, seconds) => {
+  const buffer = ctx.createBuffer(1, Math.ceil(RATE * seconds), RATE)
+  const data = buffer.getChannelData(0)
+  let seed = 7
+  for (let i = 0; i < data.length; i++) {
+    seed = (seed * 16807) % 2147483647
+    data[i] = (seed / 2147483647) * 2 - 1
+  }
+  return buffer
+}
+
+const envelope = (ctx, out, t, peak, attack, decay) => {
+  const g = ctx.createGain()
+  g.gain.setValueAtTime(0.0001, t)
+  g.gain.exponentialRampToValueAtTime(peak, t + attack)
+  g.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay)
+  g.connect(out)
+  return g
+}
+
+const SFX = {
+  // A card set down on a table: a short low thump with a little paper in it.
+  thud(ctx, out, t) {
+    const n = ctx.createBufferSource()
+    n.buffer = noise(ctx, 0.12)
+    const lp = ctx.createBiquadFilter()
+    lp.type = 'lowpass'
+    lp.frequency.value = 900
+    n.connect(lp).connect(envelope(ctx, out, t, 0.32, 0.004, 0.09))
+    n.start(t)
+    const o = ctx.createOscillator()
+    o.frequency.setValueAtTime(150, t)
+    o.frequency.exponentialRampToValueAtTime(70, t + 0.1)
+    o.connect(envelope(ctx, out, t, 0.3, 0.004, 0.12))
+    o.start(t)
+    o.stop(t + 0.2)
+  },
+  // The cards sliding off: air, falling in pitch.
+  whoosh(ctx, out, t, length = 0.6) {
+    const n = ctx.createBufferSource()
+    n.buffer = noise(ctx, length + 0.1)
+    const bp = ctx.createBiquadFilter()
+    bp.type = 'bandpass'
+    bp.Q.value = 0.9
+    bp.frequency.setValueAtTime(2400, t)
+    bp.frequency.exponentialRampToValueAtTime(300, t + length)
+    const g = ctx.createGain()
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(0.16, t + length * 0.35)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + length)
+    n.connect(bp).connect(g).connect(out)
+    n.start(t)
+  },
+  // A bell-like note: a fundamental and two quiet partials.
+  chime(ctx, out, t, freq, peak = 0.1) {
+    for (const [ratio, level] of [
+      [1, 1],
+      [2, 0.28],
+      [3.01, 0.1],
+    ]) {
+      const o = ctx.createOscillator()
+      o.frequency.value = freq * ratio
+      o.connect(envelope(ctx, out, t, peak * level, 0.005, 1.4 / ratio))
+      o.start(t)
+      o.stop(t + 1.6)
+    }
+  },
+  // An app arriving.
+  pop(ctx, out, t) {
+    const o = ctx.createOscillator()
+    o.frequency.setValueAtTime(420, t)
+    o.frequency.exponentialRampToValueAtTime(880, t + 0.06)
+    o.connect(envelope(ctx, out, t, 0.16, 0.004, 0.11))
+    o.start(t)
+    o.stop(t + 0.2)
+  },
+  // The same app settling into its place in the row.
+  tock(ctx, out, t) {
+    const o = ctx.createOscillator()
+    o.type = 'triangle'
+    o.frequency.setValueAtTime(1100, t)
+    o.frequency.exponentialRampToValueAtTime(700, t + 0.04)
+    o.connect(envelope(ctx, out, t, 0.08, 0.002, 0.07))
+    o.start(t)
+    o.stop(t + 0.12)
+  },
+  // One key of the link being typed.
+  key(ctx, out, t) {
+    const n = ctx.createBufferSource()
+    n.buffer = noise(ctx, 0.03)
+    const hp = ctx.createBiquadFilter()
+    hp.type = 'highpass'
+    hp.frequency.value = 2500
+    n.connect(hp).connect(envelope(ctx, out, t, 0.07, 0.001, 0.02))
+    n.start(t)
+  },
+  // A big line arriving: a soft low swell, felt more than heard.
+  swell(ctx, out, t) {
+    for (const f of [220, 330]) {
+      const o = ctx.createOscillator()
+      o.frequency.value = f
+      o.connect(envelope(ctx, out, t, 0.035, 0.25, 1.1))
+      o.start(t)
+      o.stop(t + 1.5)
+    }
+  },
+}
+
+// C, E, G and the C above: the four panes, lit in order.
+const PANE_NOTES = [523.25, 659.25, 783.99, 1046.5]
+
+// When an app is up, from arriving to settling in the row. Given a line of
+// voice each, an app arrives just before its line and stays until the next
+// one's, the last until the scene ends; otherwise every app gets `each`.
+function appSpan(s, i) {
+  const n = s.apps.length
+  if (s.cues?.length === n) {
+    const t0 = Math.max(0, s.cues[i].start - 0.3)
+    const t1 = i + 1 < n ? Math.max(t0 + 0.8, s.cues[i + 1].start - 0.3) : Math.max(t0 + 0.8, s.dur - 0.15)
+    return [t0, t1]
+  }
+  const each = s.each ?? 1.6
+  return [i * each, (i + 1) * each]
+}
+
+// A big line arrives as it is said, when the voice says each one.
+function lineAt(s, i) {
+  if (s.cues?.length === s.lines.length) return Math.max(0, s.cues[i].start - 0.1)
+  return 0.15 + i * (s.step ?? 0.7)
+}
+
+// A pile's card lands as its line begins, when it has one.
+function cardAt(s, i) {
+  if (s.cues?.length === s.cards.length) return Math.max(0, s.cues[i].start - 0.2)
+  return 0.15 + i * (s.step ?? 1.1)
+}
+
+// When each scene type makes its sounds, in seconds into the scene.
+const SOUNDS = {
+  pile: (s, play) => {
+    s.cards.forEach((_, i) => play('thud', cardAt(s, i) + 0.28))
+    play('whoosh', s.dur - 0.55)
+  },
+  mark: (s, play) => PANE_NOTES.forEach((f, i) => play('chime', 0.15 + i * 0.12, f)),
+  apps: (s, play) => {
+    s.apps.forEach((_, i) => {
+      const [t0, t1] = appSpan(s, i)
+      play('pop', t0)
+      play('tock', t1 - 0.02)
+    })
+    if (s.after) play('chime', appSpan(s, s.apps.length - 1)[1] + 0.05, 783.99, 0.07)
+  },
+  link: (s, play) => {
+    for (let k = 0; k < s.host.length; k++) play('key', 0.6 + k * 0.07)
+  },
+  lines: (s, play) => s.lines.forEach((_, i) => play('swell', lineAt(s, i))),
+  close: (s, play) => {
+    PANE_NOTES.forEach((f, i) => play('chime', 0.05 + i * 0.12, f, 0.08))
+    play('pop', 1.1)
+  },
+}
+
+/**
+ * The whole soundtrack, as one stereo AudioBuffer: music under everything,
+ * turned down while the voice speaks, the sounds, and the voice on top.
+ */
+async function score(items, duration, { music = 'morning', musicLevel = 0.32 } = {}) {
+  const ctx = new OfflineAudioContext(2, Math.ceil(RATE * duration), RATE)
+  // Kept from clipping when a chime, a thud and the voice land together.
+  const master = ctx.createDynamicsCompressor()
+  master.threshold.value = -10
+  master.ratio.value = 4
+  master.connect(ctx.destination)
+
+  if (music !== 'none') {
+    const { renderMusic } = await import('/src/utils/video/music.js')
+    const track = await renderMusic({ track: music, seconds: duration })
+    if (track) {
+      const src = ctx.createBufferSource()
+      src.buffer = track
+      const g = ctx.createGain()
+      g.gain.setValueAtTime(musicLevel, 0)
+      // Down under every line of voice, and up again after it.
+      for (const s of items) {
+        for (const cue of s.cues || []) {
+          const a = s.start + cue.start
+          const b = s.start + cue.end
+          g.gain.setValueAtTime(musicLevel, Math.max(0, a - 0.25))
+          g.gain.linearRampToValueAtTime(musicLevel * 0.4, a)
+          g.gain.setValueAtTime(musicLevel * 0.4, b)
+          g.gain.linearRampToValueAtTime(musicLevel, b + 0.4)
+        }
+      }
+      g.gain.setValueAtTime(musicLevel, Math.max(0, duration - 1.6))
+      g.gain.linearRampToValueAtTime(0.0001, duration)
+      src.connect(g).connect(master)
+      src.start(0)
+    }
+  }
+
+  const sfx = ctx.createGain()
+  sfx.connect(master)
+  for (const s of items) {
+    SOUNDS[s.type]?.(s, (name, at, ...args) => {
+      const t = s.start + at
+      if (t >= 0 && t < duration) SFX[name](ctx, sfx, t, ...args)
+    })
+  }
+
+  const voice = ctx.createGain()
+  voice.gain.value = 1.15
+  voice.connect(master)
+  for (const s of items) {
+    for (const cue of s.cues || []) {
+      const src = ctx.createBufferSource()
+      src.buffer = cue.buffer
+      src.connect(voice)
+      src.start(s.start + cue.start)
+    }
+  }
+
+  return ctx.startRendering()
+}
+
 // ------------------------------------------------------------------ the film
 
 function timeline(scenes) {
@@ -677,21 +1030,28 @@ function timeline(scenes) {
   })
 }
 
-export async function film({ size = 'reel', scenes, fps = 30 }) {
+/**
+ * Plays, holds a moment, or records the video.
+ *   voice: 'af_heart' - which of Kokoro's voices reads the lines
+ *   speed: 1          - how fast it reads
+ *   music: 'morning'  - a track from src/utils/video/music.js, or 'none'
+ */
+export async function film({ size = 'reel', scenes, fps = 30, voice = 'af_heart', speed = 1, music = 'morning' }) {
   const frame = SIZES[size]
   const W = frame.width
   const H = frame.height
   const top = frame.top + 60
   const bottom = H - frame.bottom - 40
   const area = { top, bottom, mid: (top + bottom) / 2 }
-  const items = timeline(scenes)
-  const duration = items.reduce((a, s) => a + s.dur, 0)
 
   const canvas = document.createElement('canvas')
   canvas.width = W
   canvas.height = H
   document.body.appendChild(canvas)
   const ctx = canvas.getContext('2d')
+  const status = document.createElement('p')
+  document.body.appendChild(status)
+  const say = (text) => (status.textContent = text)
 
   await Promise.all(['500', '600', '700', '800', '900'].map((w) => document.fonts.load(`${w} 64px Inter`)))
   await document.fonts.load('500 64px Poppins')
@@ -708,6 +1068,27 @@ export async function film({ size = 'reel', scenes, fps = 30 }) {
   const panes = await loadPanes()
   const env = { W, H, area, assets, panes, c: GROUNDS.soft }
 
+  const params = new URLSearchParams(location.search)
+  const still = params.has('t')
+  // The voice decides how long each scene is, so even a still picture waits
+  // on it - but only on the lines already kept; a still never makes one, and
+  // without them it is timed as if there were no voice at all.
+  const lengths = scenes.map((s) => s.dur)
+  try {
+    await cueVoices(scenes, { voice, speed, keptOnly: still }, say)
+  } catch (error) {
+    if (!still) throw error
+    scenes.forEach((s, i) => {
+      s.dur = lengths[i]
+      delete s.cues
+    })
+  }
+  const items = timeline(scenes)
+  const duration = items.reduce((a, s) => a + s.dur, 0)
+
+  const layer = document.createElement('canvas')
+  layer.width = W
+  layer.height = H
   const draw = (t) => {
     const i = Math.max(0, items.findLastIndex((s) => s.start <= t))
     const s = items[i]
@@ -717,10 +1098,8 @@ export async function film({ size = 'reel', scenes, fps = 30 }) {
       const prev = items[i - 1]
       ctx.globalAlpha = 1
       SCENES[prev.type].draw(ctx, t - prev.start, prev, env)
-      ctx.globalAlpha = 1
       ctx.save()
-      const p = inOut(local / FADE)
-      ctx.globalAlpha = p
+      ctx.globalAlpha = inOut(local / FADE)
       // Drawn into its own layer so its alpha covers the whole frame at once.
       layer.getContext('2d').clearRect(0, 0, W, H)
       SCENES[s.type].draw(layer.getContext('2d'), local, s, env)
@@ -731,32 +1110,46 @@ export async function film({ size = 'reel', scenes, fps = 30 }) {
       SCENES[s.type].draw(ctx, local, s, env)
     }
   }
-  const layer = document.createElement('canvas')
-  layer.width = W
-  layer.height = H
 
-  const params = new URLSearchParams(location.search)
-  if (params.has('record')) return record({ canvas, draw, duration, fps, out: params.get('record') })
-  if (params.has('t')) {
+  if (still) {
     draw(Number(params.get('t')))
+    say('')
     document.body.dataset.ready = '1'
     return
   }
 
-  // Watching: it loops, and a click pauses it on the frame showing.
-  let paused = false
-  let offset = 0
-  const begun = performance.now()
+  say('Mixing the sound')
+  const sound = await score(items, duration, { music })
+  if (params.has('record')) return record({ canvas, draw, duration, fps, sound, status })
+
+  // Watching: silent and looping until clicked, because a browser will not
+  // play sound before then; a click plays it from the top with the sound,
+  // and another stops it.
+  say('Click to play with sound')
+  let audio = null
+  let player = null
+  let startedAt = 0
   canvas.addEventListener('click', () => {
-    paused = !paused
-    if (!paused) offset = (performance.now() - begun) / 1000 - pausedAt
-  })
-  let pausedAt = 0
-  const tick = () => {
-    if (!paused) {
-      pausedAt = ((performance.now() - begun) / 1000 - offset) % duration
-      draw(pausedAt)
+    if (player) {
+      player.stop()
+      return
     }
+    audio ||= new AudioContext()
+    player = audio.createBufferSource()
+    player.buffer = sound
+    player.connect(audio.destination)
+    startedAt = audio.currentTime + 0.05
+    player.start(startedAt)
+    player.onended = () => {
+      player = null
+      say('Click to play with sound')
+    }
+    say('')
+  })
+  const begun = performance.now()
+  const tick = () => {
+    const t = player ? Math.max(0, audio.currentTime - startedAt) : ((performance.now() - begun) / 1000) % duration
+    draw(Math.min(t, duration - 1 / fps))
     requestAnimationFrame(tick)
   }
   tick()
@@ -768,7 +1161,21 @@ async function report(path, body) {
   await fetch(path, { method: 'POST', body })
 }
 
-async function record({ canvas, draw, duration, fps, out }) {
+// AAC first: what Meta and every phone take. Opus only if this browser
+// cannot write AAC.
+async function pickAudio(sampleRate, numberOfChannels) {
+  for (const choice of [
+    { codec: 'mp4a.40.2', mux: 'aac' },
+    { codec: 'opus', mux: 'opus' },
+  ]) {
+    const config = { codec: choice.codec, sampleRate, numberOfChannels, bitrate: 192_000 }
+    const { supported } = await AudioEncoder.isConfigSupported(config).catch(() => ({ supported: false }))
+    if (supported) return { ...choice, config }
+  }
+  return null
+}
+
+async function record({ canvas, draw, duration, fps, sound, status }) {
   try {
     const { Muxer, ArrayBufferTarget } = await import(MUXER)
     const W = canvas.width
@@ -791,19 +1198,51 @@ async function record({ canvas, draw, duration, fps, out }) {
       }
     }
     if (!chosen) throw new Error('This browser cannot encode H.264 or VP9 video')
+    const audio = sound ? await pickAudio(sound.sampleRate, sound.numberOfChannels) : null
+    if (sound && !audio) throw new Error('This browser cannot encode AAC or Opus audio')
 
     const target = new ArrayBufferTarget()
-    const muxer = new Muxer({ target, video: { codec: chosen.mux, width: W, height: H }, fastStart: 'in-memory' })
+    const muxer = new Muxer({
+      target,
+      video: { codec: chosen.mux, width: W, height: H },
+      ...(audio ? { audio: { codec: audio.mux, sampleRate: sound.sampleRate, numberOfChannels: sound.numberOfChannels } } : {}),
+      fastStart: 'in-memory',
+    })
     let failed = null
+
+    // The sound first, in blocks of 1024 samples, planar as the encoder wants.
+    if (audio) {
+      status.textContent = 'Encoding the sound'
+      const encoder = new AudioEncoder({ output: (chunk, meta) => muxer.addAudioChunk(chunk, meta), error: (e) => (failed = e) })
+      encoder.configure(audio.config)
+      const channels = [...Array(sound.numberOfChannels)].map((_, c) => sound.getChannelData(c))
+      const block = 1024
+      for (let at = 0; at < sound.length; at += block) {
+        const n = Math.min(block, sound.length - at)
+        const data = new Float32Array(n * channels.length)
+        channels.forEach((ch, c) => data.set(ch.subarray(at, at + n), c * n))
+        const piece = new AudioData({
+          format: 'f32-planar',
+          sampleRate: sound.sampleRate,
+          numberOfFrames: n,
+          numberOfChannels: channels.length,
+          timestamp: Math.round((at / sound.sampleRate) * 1e6),
+          data,
+        })
+        encoder.encode(piece)
+        piece.close()
+        if (encoder.encodeQueueSize > 32) await new Promise((r) => encoder.addEventListener('dequeue', r, { once: true }))
+      }
+      await encoder.flush()
+      if (failed) throw failed
+    }
+
     const encoder = new VideoEncoder({
       output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
       error: (e) => (failed = e),
     })
     encoder.configure(chosen.config)
-
     const frames = Math.round(duration * fps)
-    const status = document.createElement('p')
-    document.body.appendChild(status)
     for (let i = 0; i < frames; i++) {
       if (failed) throw failed
       draw(i / fps)
@@ -816,7 +1255,8 @@ async function record({ canvas, draw, duration, fps, out }) {
     await encoder.flush()
     if (failed) throw failed
     muxer.finalize()
-    await report(`/__video?out=${encodeURIComponent(out)}&codec=${chosen.codec}`, target.buffer)
+    const codecs = audio ? `${chosen.codec}, ${audio.codec}` : chosen.codec
+    await report(`/__video?codec=${encodeURIComponent(codecs)}&seconds=${duration.toFixed(1)}`, target.buffer)
   } catch (error) {
     await report('/__video-error', String(error?.stack || error))
   }

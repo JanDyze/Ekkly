@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="ad-size" content="1080x1920">
-  <meta name="ad-cover" content="4.3">
+  <meta name="ad-cover" content="8.6">
   <title>Sino sa Linggo?</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=Poppins:wght@500&display=block">
   <link rel="stylesheet" href="/marketing/templates/video.css">
@@ -13,8 +13,15 @@
     import { film } from '/marketing/templates/video.js'
 
     // Script 2 in marketing/SCRIPTS.md. Taglish throughout.
+    //
+    // The voice is an English one, so each line it says is spelled the way
+    // an English reader would say the Tagalog right (`say`), beside what it
+    // means. Each spelling was checked by having it transcribed back as
+    // Tagalog; the hyphens are what made the syllables come out whole.
     film({
       size: 'reel',
+      voice: 'af_heart',
+      music: 'uplift',
       scenes: [
         {
           type: 'pile',
@@ -26,8 +33,25 @@
             { icon: 'chat-circle-dots', text: 'Anong key nung pangalawang kanta?' },
             { icon: 'chat-circle-dots', text: 'Pa-send ulit ng lineup, please' },
           ],
+          voice: [
+            { means: 'Sino’ng naka-keys sa Linggo?', say: 'Seenong nakah keys, sah Ling-go?' },
+            { means: 'Ako ba yung magbabasa?', say: 'Ah-ko bah yoong mahg-bah-bah-sah?' },
+            { means: 'Anong key nung pangalawang kanta?', say: 'Ah-nong key, noong pahng-ah-lah-wahng kahn-tah?' },
+            { means: 'Pa-send ulit ng lineup, please.', say: 'Pah send oo-lit nahng lineup, please.' },
+          ],
+          tail: 0.9,
         },
-        { type: 'lines', dur: 2.8, ground: 'light', align: 'center', lines: ['Nasa Ekkly na ang lineup.', { text: 'Kita ng buong team.', accent: true }] },
+        {
+          type: 'lines',
+          dur: 2.8,
+          ground: 'light',
+          align: 'center',
+          lines: ['Nasa Ekkly na ang lineup.', { text: 'Kita ng buong team.', accent: true }],
+          voice: [
+            { means: 'Nasa Ekkly na ang lineup.', say: 'Nah-sah Eckly nah, ahng lineup.' },
+            { means: 'Kita ng buong team.', say: 'Kee-tah nahng boo-ong team.' },
+          ],
+        },
         {
           type: 'apps',
           dur: 4.2,
@@ -36,6 +60,10 @@
             { art: 'lineups', name: 'Schedules', line: 'Alam ng lahat ang role nila' },
             { art: 'presentation', name: 'Presentation', line: 'Diretso sa screen ang mga kanta' },
           ],
+          voice: [
+            { means: 'Alam ng lahat ang role nila.', say: 'Ah-lahm nahng lah-haht, ahng role nee-lah.', at: 0.3 },
+            { means: 'Diretso sa screen ang mga kanta.', say: 'Dee-ret-so sah screen, ahng mahng-ah kahn-tah.', at: 2.1 },
+          ],
         },
         {
           type: 'close',
@@ -43,6 +71,12 @@
           title: 'Linggo na walang gulo.',
           sub: 'Libre ang unang buwan.',
           cta: 'ekkly.online/start',
+          voice: [
+            { means: 'Linggo na walang gulo.', say: 'Ling-go nah, wah-lang goo-loh.' },
+            { means: 'Libre ang unang buwan, sa ekkly.online.', say: 'Lee-breh ahng oo-nahng boo-wahn. Sah Eckly dot online.' },
+          ],
+          voiceAt: 0.7,
+          tail: 1.4,
         },
       ],
     })

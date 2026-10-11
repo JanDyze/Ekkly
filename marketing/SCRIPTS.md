@@ -16,9 +16,10 @@ Three kinds, marked on each script:
   their church's written OK noted in the brief. Never an actor playing a
   church member.
 
-All of them read with the sound off: the words are on screen, and a voice, if
-there is one, says the same thing. Music is added in Meta's editor from its
-licensed library, not baked in.
+All of them read with the sound off: the words are on screen, and the voice
+says the same thing. A drawn video carries its own voice, sounds and music
+(CLAUDE.md → Rendering); for the others, music is added in Meta's editor from
+its licensed library.
 
 The first 2 seconds are the hook. Every script ends on the ask:
 `ekkly.online/start`, “ask for your church”, never “sign up free”.
@@ -30,7 +31,7 @@ heading here says where.
 
 ## 1. One place for the church's records
 
-*Made: `ads/2026-10-11-one-place/`.* Drawn · English · 32s · everyone
+*Made: `ads/2026-10-11-one-place/`.* Drawn · English · 46s with its voice · everyone
 
 The chores as cards (roster in the group chat, roll in three notebooks,
 offering in a spreadsheet, minutes typed twice) → the mark → seven apps
@@ -39,7 +40,7 @@ More for the ministry.” → ask. Full script in its brief.
 
 ## 2. Sino sa Linggo?
 
-*Made: `ads/2026-10-11-sino-sa-linggo/`.* Drawn · Taglish · 16s · worship leaders
+*Made: `ads/2026-10-11-sino-sa-linggo/`.* Drawn · Taglish · 28s with its voice · worship leaders
 
 | Time | On screen |
 |---|---|
@@ -47,6 +48,8 @@ More for the ministry.” → ask. Full script in its brief.
 | 5–8s | *Nasa Ekkly na ang lineup. Kita ng buong team.* |
 | 8–12s | Schedules, *Alam ng lahat ang role nila* · Presentation, *Diretso sa screen ang mga kanta* |
 | 12–16s | *Linggo na walang gulo.* *Libre ang unang buwan.* `ekkly.online/start` |
+
+Timed for the silent cut; with the voice, each beat runs as long as its line.
 
 ## 3. The tally sheet
 

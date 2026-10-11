@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="ad-size" content="1080x1920">
-  <meta name="ad-cover" content="4.1">
+  <meta name="ad-cover" content="9.8">
   <title>One place for the church's records</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=Poppins:wght@500&display=block">
   <link rel="stylesheet" href="/marketing/templates/video.css">
@@ -12,9 +12,12 @@
   <script type="module">
     import { film } from '/marketing/templates/video.js'
 
-    // The script is in brief.md; each scene below is one of its beats.
+    // The script is in brief.md; each scene below is one of its beats, and
+    // `voice` is what is said over it.
     film({
       size: 'reel',
+      voice: 'af_heart',
+      music: 'morning',
       scenes: [
         {
           type: 'pile',
@@ -26,13 +29,28 @@
             { icon: 'table', text: 'The offering in a spreadsheet nobody can open' },
             { icon: 'files', text: 'The minutes, typed up twice' },
           ],
+          voice: [
+            'Sunday’s roster, lost in the group chat.',
+            'The roll, kept in three notebooks.',
+            'The offering, in a spreadsheet nobody else can open.',
+            'And the minutes, typed up twice.',
+          ],
+          tail: 0.9,
         },
-        { type: 'mark', dur: 3.2, lines: ['Your church’s records,', 'in one app.'] },
+        { type: 'mark', dur: 3.2, lines: ['Your church’s records,', 'in one app.'], voice: ['Ekkly keeps your church’s records in one app.'], voiceAt: 1.2 },
         {
           type: 'apps',
           dur: 12,
           each: 1.5,
           after: 'All in one app.',
+          // Each line over the apps it names: People and Schedules, then
+          // Attendance, Songs and Minutes, then Finances and Prayer.
+          voice: [
+            { say: 'Everyone’s details, and Sunday’s lineup.', at: 0.3 },
+            { say: 'The head count, the songs, and the minutes.', at: 3.4 },
+            { say: 'The treasurer’s report, and every prayer request.', at: 8.1 },
+            { say: 'All in one app.', at: 10.6 },
+          ],
           apps: [
             { art: 'members', name: 'People', line: 'Everyone’s details, one tap away' },
             { art: 'lineups', name: 'Schedules', line: 'Sunday without the scramble' },
@@ -50,14 +68,25 @@
           host: 'yourchurch',
           sub: 'Opens in any phone’s browser. Nothing to install.',
           subAt: 2.3,
+          voice: ['Every church gets its own link, and its own colours.', 'It opens in any phone’s browser. There’s nothing to install.'],
+          voiceAt: 0.5,
         },
-        { type: 'lines', dur: 3, align: 'center', lines: ['Less time on the lists.', { text: 'More for the ministry.', accent: true }] },
+        {
+          type: 'lines',
+          dur: 3,
+          align: 'center',
+          lines: ['Less time on the lists.', { text: 'More for the ministry.', accent: true }],
+          voice: ['Less time on the lists.', 'More time for the ministry.'],
+        },
         {
           type: 'close',
           dur: 4.2,
           title: 'Ask for your church.',
           sub: 'Free for a month. Only the apps you need.',
           cta: 'ekkly.online/start',
+          voice: ['Ask for your church, at ekkly dot online.', 'Your first month is free.'],
+          voiceAt: 0.7,
+          tail: 1.4,
         },
       ],
     })

@@ -60,12 +60,29 @@ function findBrowser() {
 
 function serve(onPost) {
   const server = createServer(async (req, res) => {
-    // A video page hands its finished file back this way (templates/video.js).
-    if (req.method === 'POST' && onPost) {
+    if (req.method === 'POST') {
+      const url = new URL(req.url, 'http://x')
       const chunks = []
       for await (const chunk of req) chunks.push(chunk)
+      const body = Buffer.concat(chunks)
+      // A video's voice lines, kept once made (templates/video.js), so the
+      // next render or preview does not wait on the voice again. Only into an
+      // ad's own out/voice/ folder, and only as .wav.
+      if (url.pathname === '/__voice') {
+        const path = url.searchParams.get('path') || ''
+        const file = resolve(ROOT, path)
+        if (!/^marketing\/ads\/[^/]+\/out\/voice\/[\w-]+\.wav$/.test(path) || !file.startsWith(ROOT + sep)) {
+          res.writeHead(403).end()
+          return
+        }
+        mkdirSync(dirname(file), { recursive: true })
+        writeFileSync(file, body)
+        res.writeHead(204).end()
+        return
+      }
+      // A video page hands its finished file back this way.
       res.writeHead(204).end()
-      onPost(new URL(req.url, 'http://x'), Buffer.concat(chunks))
+      onPost?.(url, body)
       return
     }
     const path = decodeURIComponent(new URL(req.url, 'http://x').pathname)
