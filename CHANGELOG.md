@@ -11,6 +11,24 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.2] — 2026-10-11
+
+A clicker for the usher at the back, and a check that the room and the roll
+agree.
+
+### Added
+
+- **Tap to count,** on the attendance screen's button: a clicker for counting
+  heads in the room. Every tap counts one more, with a person popping up where
+  your finger landed, a short sound and a buzz. "One fewer" takes back a
+  mistake and "Start again" sets it to 0 after asking. The sound can be turned
+  off, and the phone remembers.
+- **The head count is checked against the names.** Under the count it says
+  whether the two agree, or how many more or fewer are in the room than are
+  marked, so visitors nobody has added, or a name ticked by mistake, stand
+  out. The count is saved with the attendance, beside the names, and shows on
+  the line under the gathering's title.
+
 ## [0.35.1] — 2026-10-11
 
 A fix for a strip that could sit across the foot of the screen.

@@ -8,6 +8,17 @@
 
 export const versionHistory = [
   {
+    version: '0.35.2',
+    date: '2026-10-11',
+    title: 'Count the room',
+    summary: 'A clicker for counting heads, checked against the names you marked.',
+    highlights: [
+      'In attendance, open the button and choose Tap to count. Tap once for each person in the room.',
+      'It tells you if the count and the names marked agree, or how far apart they are.',
+      'One fewer takes back a mistake, and Start again sets it to 0.',
+    ],
+  },
+  {
     version: '0.35.0',
     date: '2026-10-11',
     title: 'Know what you have',

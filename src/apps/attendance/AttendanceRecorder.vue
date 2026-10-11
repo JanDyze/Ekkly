@@ -155,6 +155,7 @@ const blank = () => ({
   time: '',
   location: '',
   attendees: [],
+  headCount: 0,
   notes: '',
   expectedAttendees: 0,
   // A one-off tied to nothing is for everyone until somebody says otherwise.
@@ -217,6 +218,7 @@ watch(
         time: row.time || '',
         location: row.location || '',
         attendees: [...(row.attendees || [])],
+        headCount: row.headCount || 0,
         notes: row.notes || '',
         // Both already recounted off the live event or schedule's tags, so
         // reopening a record refreshes the audience it was saved with rather
@@ -241,6 +243,7 @@ watch(
       location: row.location || '',
       // A meeting already knows who was there; everything else starts empty.
       attendees: row.rowType === 'minute' ? [...(row.attendees || [])] : [],
+      headCount: 0,
       notes: '',
       expectedAttendees: row.expectedAttendees || row.attendees?.length || 0,
       // Copied off the event or schedule at the moment of recording, so the

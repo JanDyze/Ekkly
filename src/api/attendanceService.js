@@ -27,6 +27,9 @@ const normalizeAttendance = (doc) => {
     attendees: data.attendees || [],
     totalAttendees: data.totalAttendees || 0,
     expectedAttendees: data.expectedAttendees || 0,
+    // Heads counted in the room with the clicker (AttendanceTally), kept
+    // beside the names rather than instead of them: 0 means nobody counted.
+    headCount: Number(data.headCount) || 0,
     // Who the gathering was for, copied off the event or schedule when the
     // record was written. The live source is asked first (useAttendance.js),
     // so this is the fallback that keeps a choir practice reading out of ten

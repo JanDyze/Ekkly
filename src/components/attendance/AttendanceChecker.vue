@@ -1,7 +1,8 @@
 <script setup>
 import { computed, nextTick, ref } from 'vue'
-import { X, ArrowLeft, Search, Check, Trash2, List, Cards, ArrowUpDown, SquaresFour } from '../../icons'
+import { X, ArrowLeft, Search, Check, Trash2, List, Cards, ArrowUpDown, SquaresFour, HandTap } from '../../icons'
 import AttendanceSwipe from './AttendanceSwipe.vue'
+import AttendanceTally from './AttendanceTally.vue'
 import { useMembers } from '../../composables/useMembers'
 import { useMediaQuery } from '../../composables/useMediaQuery'
 import { getFullName } from '../../utils/memberUtils'
@@ -132,6 +133,7 @@ const formData = computed({
         time: props.eventData.time || '',
         location: props.eventData.location || '',
         attendees: props.attendanceData.attendees || [],
+        headCount: props.attendanceData.headCount || 0,
         notes: props.attendanceData.notes || '',
         expectedAttendees: expectedFor(props.eventData),
         // Copied off the event or schedule, so the saved record still knows
@@ -325,7 +327,8 @@ const orderedMembers = computed(() => [...audienceRoster.value].sort(byBandThenN
 // order. Swipe is the better tool while the service is filling up; browsing is
 // better for fixing one person afterwards. Neither replaces the other, so both
 // are on the button rather than one being a tab strip taking a row of the
-// screen on every visit.
+// screen on every visit. 'tally' is the clicker (AttendanceTally): heads
+// counted in the room, held up against the names marked here.
 const mode = ref('browse')
 
 // One column or a grid of cards, remembered on this device - the same choice
@@ -405,10 +408,11 @@ const deleteSourceHint = computed(() =>
 // screen.
 const actions = computed(() => {
   const list = []
-  if (mode.value === 'swipe') {
+  if (mode.value !== 'browse') {
     list.push({ key: 'browse', label: 'Back to the list', icon: List })
   } else {
     list.push({ key: 'swipe', label: 'Swipe through', hint: 'One face at a time', icon: Cards })
+    list.push({ key: 'tally', label: 'Tap to count', hint: 'Count heads, then check the names', icon: HandTap })
     if (!searchOpen.value) list.push({ key: 'search', label: 'Search', icon: Search })
     list.push({
       key: 'sort',
@@ -448,8 +452,8 @@ const actions = computed(() => {
 })
 
 const runAction = (key) => {
-  if (key === 'swipe' || key === 'browse') {
-    mode.value = key === 'swipe' ? 'swipe' : 'browse'
+  if (key === 'swipe' || key === 'browse' || key === 'tally') {
+    mode.value = key
     return
   }
   if (key === 'search') return openSearch()
@@ -494,8 +498,15 @@ const dateLabel = computed(() => {
   })
 })
 
+// The head count joins the line once someone has counted, so a mismatch with
+// the names is visible from the list too, not only from the clicker.
+const headCount = computed(() => Number(formData.value.headCount) || 0)
+const setHeadCount = (count) => updateField('headCount', count)
+
 const contextLine = computed(() =>
-  [dateLabel.value, `${presentCount.value} of ${totalCount.value}`].filter(Boolean).join(' · ')
+  [dateLabel.value, `${presentCount.value} of ${totalCount.value}`, headCount.value ? `${headCount.value} counted` : '']
+    .filter(Boolean)
+    .join(' · ')
 )
 
 /* --------------------------------------------------------------- chrome */
@@ -610,6 +621,15 @@ const panelClass = computed(() => {
         v-model:presentIds="presentIds"
         :members="orderedMembers"
         @done="mode = 'browse'"
+        class="flex-1 min-h-0"
+      />
+
+      <!-- The clicker, when the button asked for it. -->
+      <AttendanceTally
+        v-else-if="mode === 'tally'"
+        :count="headCount"
+        :marked="presentCount"
+        @update:count="setHeadCount"
         class="flex-1 min-h-0"
       />
 
