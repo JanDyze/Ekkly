@@ -75,7 +75,12 @@ const KEPT_ALIVE = ['PeopleEveryone', 'SongsAll']
 </script>
 
 <template>
-  <div class="flex h-dvh bg-gray-50 dark:bg-gray-900 print-root">
+  <!-- Pinned to the screen's edges rather than sized by 100dvh. A phone can
+       measure dvh short as an installed app opens and keep that stale height
+       until something makes it restyle the whole page, which left a strip
+       across the foot of the screen until the bottom bar was turned on and
+       off again. A fixed box is laid out against the screen as it is now. -->
+  <div class="fixed inset-0 flex bg-gray-50 dark:bg-gray-900 print-root">
     <!-- No sidebar: every app is a screen of its own, and the home of all
          apps (/home, Apps.vue) is the way between them. The top bar's mark
          leads back to it from everywhere else. A bottom bar is there only for

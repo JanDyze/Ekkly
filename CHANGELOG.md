@@ -11,6 +11,17 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.1] — 2026-10-11
+
+A fix for a strip that could sit across the foot of the screen.
+
+### Fixed
+
+- **No more empty band along the bottom of the screen** when Ekkly opens on
+  a phone. It came from the phone measuring the screen a little short as the
+  app opened, and only went away after the bottom bar had been turned on and
+  off again in Preferences. Every screen now reaches the foot from the start.
+
 ## [0.35.0] — 2026-10-11
 
 Inventory joins the apps, every app now shows what it does when held, and a

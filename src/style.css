@@ -131,6 +131,7 @@
 
   .print-root,
   .print-main {
+    position: static !important;
     display: block !important;
     height: auto !important;
     max-height: none !important;
