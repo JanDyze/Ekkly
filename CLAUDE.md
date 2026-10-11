@@ -5,6 +5,13 @@ has its own address (`<id>.<root domain>`) and its own records under
 `churches/{id}/` in Firestore. It started as the UEC church app at v0.22.0;
 CHANGELOG.md has the history.
 
+**What it is for:** a tool that takes the redundant, messy work off a
+church — the lists kept twice, the spreadsheets, the notes nobody can find —
+so its people have more time for the ministry itself. It is never a
+replacement for a person's job or a ministry: it does not shepherd, pray,
+preach, welcome or decide. Nothing it says, and no card it shows, should
+suggest otherwise (BRAND.md, "What Ekkly is for").
+
 **Stack:** Vue 3 (`<script setup>`), Vite 7, Tailwind CSS 4, vue-router 4,
 Firebase (Auth + Firestore), Vercel (static app + serverless routes in `api/`),
 installable PWA.
@@ -137,7 +144,11 @@ twelfth, and the Gallery (`src/apps/gallery/`, an album at `/gallery/:id`, a
 photo at `/gallery/:id/v/:photoId`, the addresses share links carry) the
 thirteenth, and Teaching (`src/apps/teaching/`: sermon notes on the same
 `sermons` record Schedules' preaching sheet plans, Sunday school classes,
-and lessons, a lesson with no date being a plan to reuse) the fourteenth.
+and lessons, a lesson with no date being a plan to reuse) the fourteenth, and
+Inventory (`src/apps/inventory/`, a thing at `/inventory/:id`; its photo's
+background is taken out on the phone by a self-hosted Apache-2.0 model,
+`public/models/u2netp/`, in a worker, `src/utils/removeBackground.js`) the
+fifteenth.
 People is the standard the rest are measured against. A
 screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
 `wide` for two panes side by side).

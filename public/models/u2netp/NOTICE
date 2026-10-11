@@ -1,0 +1,13 @@
+U²-Netp (the small U²-Net), used by the Inventory app to cut an item out of
+its photograph on the device (src/utils/removeBackgroundWorker.js).
+
+  Model:   U²-Net / U²-Netp, Xuebin Qin et al.
+           https://github.com/xuebinqin/U-2-Net  (Apache License 2.0)
+  ONNX:    exported by rembg (https://github.com/danielgatis/rembg), as
+           republished at https://huggingface.co/BritishWerewolf/U-2-Netp
+           under the Apache License 2.0.
+  File:    onnx/model.onnx, 4,574,861 bytes,
+           sha256 309c8469258dda742793dce0ebea8e6dd393174f89934733ecc8b14c76f4ddd8
+
+The weights are unchanged. config.json is Ekkly's own, written so
+transformers.js can open the file. The licence is in LICENSE beside this.

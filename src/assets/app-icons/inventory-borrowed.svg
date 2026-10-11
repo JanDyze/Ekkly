@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="o" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB21E"/><stop offset=".5" stop-color="#FF7417"/><stop offset="1" stop-color="#EC4319"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D9DFF"/><stop offset=".55" stop-color="#1467E8"/><stop offset="1" stop-color="#0A4FC4"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BD4C0"/><stop offset="1" stop-color="#0B93AB"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <g class="a-pop" style="--i:0">
+    <rect x="4" y="32" width="24" height="24" rx="4.32" fill="url(#o)"/>
+    <rect x="4" y="32" width="24" height="24" rx="4.32" fill="url(#shine)"/>
+    <rect x="13.120000000000001" y="32" width="5.76" height="10.8" fill="#fff" opacity=".55"/></g>
+  <path class="a-draw" style="--i:1" pathLength="1" d="M15 27C17 12 34 7 43 15" fill="none" stroke="url(#b)" stroke-width="4" stroke-linecap="round"/>
+  <path class="a-pop" style="--i:2" d="M38.5 9.5l7.5 3.8-3.6 7.4" fill="none" stroke="#0A4FC4" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <g class="a-pop" style="--i:3">
+  <circle cx="47" cy="33" r="6.5" fill="url(#t)"/>
+  <path d="M36 58 C36 47.3 40.84 43.075 47 43.075 C53.16 43.075 58 47.3 58 58 Z" fill="url(#t)"/></g>
+</svg>

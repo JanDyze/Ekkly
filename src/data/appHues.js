@@ -30,6 +30,7 @@ export const APP_HUES = {
   videos: RED,
   links: BLUE,
   finances: AMBER,
+  inventory: ORANGE,
   ai: BLUE,
   todos: TEAL,
   accounts: NAVY,

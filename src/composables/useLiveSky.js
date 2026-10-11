@@ -136,6 +136,20 @@ const weatherOf = (code) => {
   return 'clear'
 }
 
+/**
+ * Whether the rain has just stopped: none falling now, but some (a tenth of a
+ * millimetre or more) in the last two hours. Then the picture puts a rainbow
+ * over the church — after the rain, not instead of it, and only while the
+ * sun is up to make one (the sky's phase decides that, in useLiveSky). Each
+ * hour's figure is the rain that fell in the hour up to it.
+ */
+const afterRain = (weather, hourly) => {
+  if (weather === 'rain' || weather === 'storm' || weather === 'fog') return false
+  const now = Date.now() / 1000
+  const times = Array.isArray(hourly?.time) ? hourly.time : []
+  return times.some((time, i) => time <= now && time > now - 2 * 3600 && Number(hourly.precipitation?.[i]) >= 0.1)
+}
+
 const SKY_STORE = 'ekkly:sky'
 const FRESH_MS = 30 * 60 * 1000
 
@@ -160,15 +174,19 @@ const fetchSky = async (church) => {
   fetching = (async () => {
     try {
       const { latitude, longitude } = await placeOf(church)
+      // The last few hours' rain as well as now, for the rainbow below.
       const res = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
-          '&current=weather_code,temperature_2m&daily=sunrise,sunset&timezone=auto&forecast_days=1&timeformat=unixtime'
+          '&current=weather_code,temperature_2m&hourly=precipitation&past_hours=3&forecast_hours=1' +
+          '&daily=sunrise,sunset&timezone=auto&forecast_days=1&timeformat=unixtime'
       )
       const data = await res.json()
+      const weather = weatherOf(Number(data?.current?.weather_code))
       const next = {
         at: Date.now(),
         where,
-        weather: weatherOf(Number(data?.current?.weather_code)),
+        weather,
+        rainbow: afterRain(weather, data?.hourly),
         temperature: Number.isFinite(data?.current?.temperature_2m) ? Math.round(data.current.temperature_2m) : null,
         sunrise: Number(data?.daily?.sunrise?.[0]) * 1000 || null,
         sunset: Number(data?.daily?.sunset?.[0]) * 1000 || null,
@@ -226,9 +244,12 @@ export function useLiveSky() {
   /** What the scene's wrapper carries: nothing when live sky is off. */
   const sky = computed(() => {
     if (!enabled.value) return {}
+    const phase = phaseAt(now.value, report.value?.sunrise, report.value?.sunset)
     return {
-      'data-sky': phaseAt(now.value, report.value?.sunrise, report.value?.sunset),
+      'data-sky': phase,
       'data-weather': report.value?.weather || 'clear',
+      // A rainbow needs the sun: just after the rain, and not at night.
+      'data-rainbow': report.value?.rainbow && phase !== 'night' ? '' : undefined,
     }
   })
 
@@ -242,7 +263,12 @@ export function useLiveSky() {
     return {
       kind: report.value.weather,
       night: phase === 'night',
-      label: report.value.weather === 'clear' && phase === 'night' ? 'Clear night' : LABELS[report.value.weather] || '',
+      label:
+        sky.value['data-rainbow'] !== undefined
+          ? 'After the rain'
+          : report.value.weather === 'clear' && phase === 'night'
+            ? 'Clear night'
+            : LABELS[report.value.weather] || '',
       temperature: report.value.temperature ?? null,
     }
   })

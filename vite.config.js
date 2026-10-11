@@ -186,8 +186,15 @@ export default defineConfig(({ mode }) => ({
         // never for the app itself, which draws Phosphor SVG components.
         // Precaching 44 images nothing in the app requests is pure payload.
         // The search-by-meaning worker is for whoever turns it on, not for
-        // every install: cached the first time it runs (below) instead.
-        globIgnores: ['**/firebase-messaging-sw.js', 'icons/events/**', '**/embedWorker-*.js'],
+        // every install: cached the first time it runs (below) instead. The
+        // same for Inventory's cut-out worker (870 KB), for whoever photographs
+        // an item.
+        globIgnores: [
+          '**/firebase-messaging-sw.js',
+          'icons/events/**',
+          '**/embedWorker-*.js',
+          '**/removeBackgroundWorker-*.js',
+        ],
         navigateFallback: '/index.html',
         // /__/auth/ is Firebase's sign-in handler, reverse-proxied onto this
         // domain (see vercel.json) so the iOS redirect flow stays first-party.
@@ -204,6 +211,18 @@ export default defineConfig(({ mode }) => ({
         // a verse is not going to be revised, and the service a passage was
         // looked up for has to survive the hall's wifi giving out mid-reading.
         runtimeCaching: [
+          {
+            // Inventory's background removal: its worker and the 4.6 MB model
+            // it runs (public/models/u2netp), kept once fetched so the second
+            // item photographed does not download them again, offline too.
+            urlPattern: /\/(assets\/removeBackgroundWorker-[^/]+\.js|models\/u2netp\/.+)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'inventory-cutout',
+              expiration: { maxEntries: 6 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           {
             // Gallery photos and the logo on the public page. Each is a base64
             // blob decoded out of Firestore on every cache miss, and a photo is

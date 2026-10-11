@@ -15,6 +15,7 @@ import {
   ProjectorScreen,
   Robot,
   Settings,
+  Tray,
   UserCog,
   History,
   Users,
@@ -43,6 +44,7 @@ import bibleArt from '../assets/app-icons/bible.svg'
 import eventsArt from '../assets/app-icons/events.svg'
 import financesArt from '../assets/app-icons/finances.svg'
 import galleryArt from '../assets/app-icons/gallery.svg'
+import inventoryArt from '../assets/app-icons/inventory.svg'
 import lineupsArt from '../assets/app-icons/lineups.svg'
 import presentationArt from '../assets/app-icons/presentation.svg'
 import linksArt from '../assets/app-icons/links.svg'
@@ -305,6 +307,16 @@ export const NAV_GROUPS = [
         icon: Wallet,
         capability: 'finances.view',
         description: 'What comes in and goes out, and the statement for the month.',
+      },
+      {
+        name: 'Inventory',
+        tagline: 'What the church owns',
+        path: '/inventory',
+        image: inventoryArt,
+        art: 'inventory',
+        icon: Tray,
+        capability: 'inventory.view',
+        description: 'Everything the church owns — where it is kept, who has borrowed it, and what needs fixing.',
       },
       {
         name: 'To-do',

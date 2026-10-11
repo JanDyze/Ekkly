@@ -59,6 +59,10 @@ const RAIN = [
   },
 ]
 
+// The rainbow's bands, outermost first, softened from the pure hues so it
+// reads as light in the sky rather than a sticker on it.
+const RAINBOW = ['#ef8a80', '#f5b062', '#f6dc6a', '#8fcf8a', '#6fb3e8', '#8a8fd8', '#b58ad0']
+
 // One repeat of a sheet, down the rain's slant of 14°, and how long it takes
 // to fall that far: what the sheet moves by before it starts again, seamless.
 const SLANT = (14 * Math.PI) / 180
@@ -120,10 +124,32 @@ defineProps({
         <stop offset="0" style="stop-color: var(--scene-glow); stop-opacity: 0.9" />
         <stop offset="1" style="stop-color: var(--scene-glow); stop-opacity: 0" />
       </radialGradient>
+      <!-- The rainbow's feet fade into the haze over the hills. -->
+      <linearGradient id="scene-rainbow-fade-g" x1="0" y1="1000" x2="0" y2="1560" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#fff" />
+        <stop offset="0.6" stop-color="#fff" stop-opacity="0.7" />
+        <stop offset="1" stop-color="#fff" stop-opacity="0" />
+      </linearGradient>
+      <mask id="scene-rainbow-fade" maskUnits="userSpaceOnUse" x="0" y="900" width="887" height="700">
+        <rect x="0" y="900" width="887" height="700" fill="url(#scene-rainbow-fade-g)" />
+      </mask>
     </defs>
 
     <rect width="887" height="1774" fill="url(#scene-sky)" />
     <rect width="887" height="1774" fill="url(#scene-glow)" />
+
+    <!-- A rainbow, when the rain has just stopped and the sun is up
+         (useLiveSky's data-rainbow): seven soft bands, red outermost, rising
+         from behind the hills, so the promise sits over the church. Faint, as
+         the rest of the weather is: the picture stays behind the apps. -->
+    <g class="scene-rainbow" mask="url(#scene-rainbow-fade)" fill="none" stroke-width="9">
+      <path
+        v-for="(colour, i) in RAINBOW"
+        :key="colour"
+        :d="`M${480 - (520 - i * 9)} 1560 A${520 - i * 9} ${520 - i * 9} 0 0 1 ${480 + (520 - i * 9)} 1560`"
+        :stroke="colour"
+      />
+    </g>
 
     <!-- Ekkly's window in the corner, its light falling in toward the page
          (WindowLight), in the sky's own pane colour. On a phone the deck
@@ -501,6 +527,27 @@ defineProps({
   --window-glass-opacity: 0.75;
   --window-beam-opacity: 0.5;
   --window-cast-opacity: 0.4;
+}
+
+/* After the rain, the rainbow comes in slowly, the way one does, and stays
+   faint. Asked for less motion, it is simply there. */
+.scene-rainbow {
+  display: none;
+}
+.home-scene[data-rainbow] .scene-rainbow {
+  display: inline;
+  opacity: 0.42;
+  animation: scene-rainbow-in 4s ease-out both;
+}
+@keyframes scene-rainbow-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-scene[data-rainbow] .scene-rainbow {
+    animation: none;
+  }
 }
 
 .scene-extra-clouds,

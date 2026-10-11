@@ -8,6 +8,17 @@
 
 export const versionHistory = [
   {
+    version: '0.35.0',
+    date: '2026-10-11',
+    title: 'Know what you have',
+    summary: 'Inventory is new — and every app now shows what it does when you hold it.',
+    highlights: [
+      'Inventory: snap a photo of anything the church owns and the background comes off. Lend it with a return date.',
+      'Hold any app on your home to watch what it does. Slide up to keep it open.',
+      'After the rain, look for a rainbow over the church on your home.',
+    ],
+  },
+  {
     version: '0.34.0',
     date: '2026-10-11',
     title: 'Every app, ready for the week',

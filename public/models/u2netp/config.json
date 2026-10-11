@@ -1,0 +1,5 @@
+{
+  "model_type": "u2net",
+  "architectures": ["U2NetModel"],
+  "transformers.js_config": { "dtype": "fp32" }
+}

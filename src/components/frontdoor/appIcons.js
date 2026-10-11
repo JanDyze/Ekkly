@@ -14,6 +14,7 @@ import {
   SquaresFour,
   Users,
   UsersRound,
+  Tray,
   Wallet,
 } from '../../icons'
 import membersArt from '../../assets/app-icons/members.svg'
@@ -24,6 +25,7 @@ import songsArt from '../../assets/app-icons/songs.svg'
 import lineupsArt from '../../assets/app-icons/lineups.svg'
 import bibleArt from '../../assets/app-icons/bible.svg'
 import minutesArt from '../../assets/app-icons/minutes.svg'
+import inventoryArt from '../../assets/app-icons/inventory.svg'
 import teachingArt from '../../assets/app-icons/teaching.svg'
 import prayerArt from '../../assets/app-icons/prayer.svg'
 import galleryArt from '../../assets/app-icons/gallery.svg'
@@ -49,6 +51,7 @@ const ICONS = {
   links: Link2,
   finances: Wallet,
   tasks: ListChecks,
+  inventory: Tray,
   // YUNIT types things up for a church; a sparkle only says "this bit is AI",
   // which is the badge every product wears and tells a pastor nothing.
   ai: NotePencil,
@@ -76,6 +79,7 @@ const ART = {
   links: linksArt,
   finances: financesArt,
   tasks: tasksArt,
+  inventory: inventoryArt,
   ai: aiArt,
 }
 

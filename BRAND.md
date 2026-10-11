@@ -127,7 +127,8 @@ sung, the missing lyrics) and `gallery-…` (the albums, the recent photos,
 the kinds, the albums still to fill) and `presentation-…` (the services, the
 lyrics, the readings) and `videos-…` (this month, next month, look and
 sound) and `teaching-…` (the sermons, Sunday school, the plans, what is
-taught when). Since the Minutes and Small groups rooms, each app's are drawn in a
+taught when) and `inventory-…` (everything, what is out on loan, what needs
+repair, the places, what still needs a photo). Since the Minutes and Small groups rooms, each app's are drawn in a
 file of its own, `brand/ekkly/sections/<app>.mjs`, which the generator picks
 up. They are rooms of an app, not apps,
 and nothing sells them.
@@ -225,6 +226,21 @@ now and then glances round or hops; he never breathes or bobs.
 - **Motion shows something happening.** Nothing idles: no breathing, no
   bobbing, no button that lifts or grows under the pointer. Everything has a
   finished state for `prefers-reduced-motion`.
+
+## What Ekkly is for
+
+A tool, not a replacement. Ekkly takes the redundant and messy work off a
+church — the roll kept in three notebooks, the offering counted into a
+spreadsheet nobody else can open, the minutes typed up twice, the "who has
+the projector?" — so the people doing the ministry spend their hours on the
+ministry. It never replaces a person's job or a ministry, and never talks as
+if it could: no "automate your ministry", no "never need a secretary again",
+no YUNIT that pastors. The usher still welcomes, the treasurer still answers
+for the money, the pastor still shepherds; Ekkly keeps their records straight.
+
+A card, an advert, a release note or YUNIT's reply that reads as doing
+someone's calling for them is wrong, however clever. Say what it saves —
+the second copy, the lost list, the hour of tidying — not whom it replaces.
 
 ## Voice
 

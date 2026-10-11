@@ -3,7 +3,9 @@ import {
   BellRinging,
   BookmarkSimple,
   BookOpenText,
+  ArrowsLeftRight,
   CalendarX,
+  Camera,
   Cake,
   ChatCircleText,
   ChatsCircle,
@@ -38,6 +40,7 @@ import {
   UserFocus,
   UsersFour,
   UsersThree,
+  Warning,
 } from '../../icons'
 
 // What a church gets from an app, for "What's inside" once a visitor opens it.
@@ -110,6 +113,14 @@ export const APP_DETAILS = {
       { icon: Keyboard, text: 'Just type notes in the meeting' },
       { icon: NotePencil, text: 'Written up for you by YUNIT' },
       { icon: Printer, text: 'Print or export to file' },
+    ],
+  },
+  inventory: {
+    headline: 'Know what you have, and who has it',
+    wins: [
+      { icon: Camera, text: 'Snap it, background removed' },
+      { icon: ArrowsLeftRight, text: 'Lend with a return date' },
+      { icon: Warning, text: 'See what needs repair' },
     ],
   },
   teaching: {

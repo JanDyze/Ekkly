@@ -11,6 +11,13 @@ gatherings, songs, schedules, money and meetings. It opens in any phone's
 browser and can be added to the home screen in a tap; nobody installs
 anything from a store.
 
+**A tool, never a replacement.** Ekkly takes the redundant, messy record-
+keeping off a church's volunteers so they have more time for the ministry.
+It does not replace any person's job or any ministry, and an ad must never
+say or imply it does — no "automate your ministry", no "no more secretary",
+no "YUNIT will pastor your people". Sell the hours and the tidiness it gives
+back, not the people it stands in for. (BRAND.md, "What Ekkly is for")
+
 - **Its own link and colours.** Each church gets `<name>.ekkly.online`, its own
   logo, and its own colours and typeface. (TENANCY.md, `useBrandTheme`)
 - **Kept apart and private.** Each church's records are separate, and only the

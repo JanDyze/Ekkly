@@ -11,6 +11,34 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.0] — 2026-10-11
+
+Inventory joins the apps, every app now shows what it does when held, and a
+rainbow follows the rain.
+
+### Added
+
+- **Inventory,** a new app for what the church owns. Photograph a thing and
+  its background is taken out on the phone itself — no photo leaves for
+  anywhere but the church's own storage — with the photo as taken beside it
+  to keep instead. Lend it with a date it is due back, see what is out and
+  what is late, mark what needs repair, and find anything by where it is
+  kept. Members can see what they have borrowed.
+- **Every app shows what it does when held:** Small groups, Attendance,
+  Events, Songs, Schedules, Finances, Tasks, YUNIT, Presentation, Videos and
+  Inventory join People, Teaching, the Bible, Minutes, Prayer, the Gallery
+  and Links. Each story is a minute of the app at work, with made-up people
+  and drawn photos.
+- **A rainbow after the rain.** When the rain over the church has just
+  stopped and the sun is up, a soft rainbow rises behind the church on the
+  home, and the weather on the Good morning card says "After the rain".
+
+### Changed
+
+- **YUNIT is told plainly what he is for:** the church's records and
+  busywork, never anyone's ministry. Brought a burden rather than a task, he
+  answers kindly and points to the person's pastor or small group leader.
+
 ## [0.34.1] — 2026-10-11
 
 Five more apps show what they do when held.

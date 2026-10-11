@@ -28,6 +28,7 @@ import { prayerRoutes } from '../apps/prayer/routes'
 import { galleryRoutes } from '../apps/gallery/routes'
 import { songsRoutes } from '../apps/songs/routes'
 import { teachingRoutes } from '../apps/teaching/routes'
+import { inventoryRoutes } from '../apps/inventory/routes'
 
 const HOME = '/home'
 
@@ -225,6 +226,9 @@ const churchRoutes = [
       },
       // Finances is an app of its own (src/apps/finances).
       ...financesRoutes,
+      // Inventory is an app of its own (src/apps/inventory): what the church
+      // owns, photographed with the background taken out on the phone.
+      ...inventoryRoutes,
       {
         path: 'todo',
         name: 'Todo',
