@@ -11,6 +11,18 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.34.1] — 2026-10-11
+
+Five more apps show what they do when held.
+
+### Added
+
+- **Holding the Bible, Minutes, Prayer concerns, the Gallery or Links**
+  plays its short story, as People and Teaching do: choosing a translation
+  and finding a verse by its words; notes typed in the meeting and written up
+  by YUNIT; a request written down, prayed for and answered; a Sunday's
+  photos put up in one go; a link saved and shared in a tap.
+
 ## [0.34.0] — 2026-10-11
 
 Every app now opens the same way — on what needs doing this week, then its
