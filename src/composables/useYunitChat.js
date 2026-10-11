@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { askYunit, confirmAction } from '../api/yunitService'
+import { feel } from '../utils/yunitFeedback'
 
 // A conversation with YUNIT, and what his face should be doing because of it.
 //
@@ -126,6 +127,7 @@ const ask = async (text) => {
   phase.value = 'thinking'
   doing.value = ''
   gesture('nod')
+  feel('send')
 
   const history = messages.value
     .slice(0, -1)
@@ -138,6 +140,7 @@ const ask = async (text) => {
     })
     doing.value = ''
     phase.value = 'talking'
+    feel('reply')
     Object.assign(messages.value[at], { pending: false })
     await reveal(at, answer.message)
     Object.assign(messages.value[at], {
@@ -149,6 +152,7 @@ const ask = async (text) => {
   } catch (error) {
     doing.value = ''
     Object.assign(messages.value[at], { text: error.message || 'YUNIT could not answer just now. Try again.', pending: false, error: true })
+    feel('sorry')
     phase.value = 'sad'
     settleIn(4000)
   } finally {
@@ -169,11 +173,13 @@ const confirm = async (messageIndex, actionIndex) => {
     const result = await confirmAction(action)
     action.state = 'done'
     action.note = result?.title || ''
+    feel('done')
     phase.value = 'idle'
     react(action.destructive ? 'happy' : 'celebrate')
   } catch (error) {
     action.state = 'failed'
     action.note = error.message || 'It could not be done.'
+    feel('sorry')
     phase.value = 'idle'
     react('sorry')
   }
@@ -184,6 +190,7 @@ const cancel = (messageIndex, actionIndex) => {
   if (!action || action.state !== 'waiting') return
   stir()
   action.state = 'cancelled'
+  feel('cancel')
   gesture('shake')
 }
 
@@ -192,6 +199,7 @@ const clear = () => {
   if (sending.value) return
   messages.value = []
   phase.value = 'idle'
+  feel('clear')
   gesture('wave')
   stir()
 }

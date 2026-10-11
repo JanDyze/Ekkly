@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { ArrowCounterClockwise, Check, Minus, SpeakerHigh, SpeakerSlash, Warning } from '../../icons'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
+import TallyCrowd from './TallyCrowd.vue'
 
 // A clicker, for the usher at the back who counts heads rather than names.
 // One tap for each person in the room; the count is then held up against the
@@ -11,8 +12,9 @@ import ConfirmationModal from '../common/ConfirmationModal.vue'
 // the names (headCount on the record), never in place of them.
 //
 // Each tap answers three ways at once, because the usher is looking at the
-// room, not at the phone: a person pops up where the finger landed, a short
-// note plays, and the phone buzzes. The sound can be turned off, and is
+// room, not at the phone: a person drops from where the finger landed into the
+// crowd piling up behind the count (TallyCrowd), a short note plays, and the
+// phone buzzes. The sound can be turned off, and is
 // remembered on this device - a phone clicking through a quiet prayer is not
 // what anyone wants.
 
@@ -81,42 +83,26 @@ const play = (kind) => {
   }
 }
 
-onBeforeUnmount(() => {
-  audio?.close?.()
-  pops.value.forEach((pop) => clearTimeout(pop.timer))
-})
+onBeforeUnmount(() => audio?.close?.())
 
-/* ---------------------------------------------------------------- the pops */
+/* ---------------------------------------------------------------- counting */
 
-// The people that pop up, each where its tap landed, gone again in under a
-// second. Several can be on screen at once when the counting is quick.
-const pops = ref([])
-let nextPop = 0
-const POP_MS = 900
-
-const popAt = (x, y, kind = 'up') => {
-  const id = nextPop++
-  const timer = setTimeout(() => {
-    pops.value = pops.value.filter((pop) => pop.id !== id)
-  }, POP_MS)
-  // Four shades of the church's colour, in turn, so a quick run of taps reads
-  // as several people rather than the same one blinking.
-  pops.value.push({ id, x, y, kind, shade: id % 4, timer })
-}
+// Where the last tap landed, for the newest person to drop from.
+const tapAt = ref(null)
 
 // Pressed, not clicked: the count should move as the finger comes down, which
 // is what a mechanical clicker does, and what keeps up with a fast usher.
 const tap = (event) => {
   if (event.button > 0) return
   const box = event.currentTarget.getBoundingClientRect()
-  popAt(event.clientX - box.left, event.clientY - box.top)
+  tapAt.value = { x: event.clientX - box.left, y: event.clientY - box.top }
   add()
 }
 
 // The keyboard counts too, from the middle of the box.
 const tapKey = (event) => {
   const box = event.currentTarget.getBoundingClientRect()
-  popAt(box.width / 2, box.height / 2)
+  tapAt.value = { x: box.width / 2, y: box.height / 3 }
   add()
 }
 
@@ -126,12 +112,8 @@ const add = () => {
   navigator.vibrate?.(8)
 }
 
-const boxRef = ref(null)
-
 const takeOne = () => {
   if (props.count <= 0) return
-  const box = boxRef.value?.getBoundingClientRect()
-  if (box) popAt(box.width / 2, box.height / 2, 'down')
   emit('update:count', props.count - 1)
   play('down')
   navigator.vibrate?.(15)
@@ -170,41 +152,31 @@ const verdict = computed(() => {
     hint: 'Someone still to count, or marked by mistake.',
   }
 })
-
-const SHADES = ['text-primary', 'text-primary-light', 'text-primary-hover', 'text-primary/70']
 </script>
 
 <template>
   <div class="flex min-h-0 flex-col gap-3 px-4 pt-3 pb-[calc(5.5rem+max(env(safe-area-inset-bottom),var(--bottom-bar-space)))]">
-    <!-- The box is the clicker: anywhere in it counts one more. -->
+    <!-- The box is the clicker: anywhere in it counts one more. Behind the
+         count, the room fills with everyone counted. -->
     <button
-      ref="boxRef"
       type="button"
-      class="tally-box relative flex min-h-0 flex-1 select-none flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 dark:border-primary-light/30 dark:bg-primary-light/10"
+      class="tally-box relative flex min-h-0 flex-1 select-none flex-col items-center overflow-hidden rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 pt-5 hover:bg-primary/10 dark:border-primary-light/30 dark:bg-primary-light/10"
       aria-label="Count one more person"
       @pointerdown="tap"
       @keydown.enter.prevent="tapKey"
       @keydown.space.prevent="tapKey"
       @contextmenu.prevent
     >
-      <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">In the room</span>
-      <span class="mt-1 text-8xl font-black leading-none tabular-nums text-gray-900 dark:text-white" aria-live="polite">{{ count }}</span>
-      <span class="mt-3 max-w-[16rem] text-center text-sm text-gray-500 dark:text-gray-400">
-        {{ count ? 'Tap for each person' : 'Tap anywhere in this box once for each person you see' }}
-      </span>
+      <TallyCrowd :count="count" :tap-at="tapAt" />
 
-      <!-- Each tap's person, popping up where it landed. -->
-      <span
-        v-for="pop in pops"
-        :key="pop.id"
-        :class="['pop pointer-events-none absolute', pop.kind === 'down' ? 'pop-down text-gray-400 dark:text-gray-500' : SHADES[pop.shade]]"
-        :style="{ left: `${pop.x}px`, top: `${pop.y}px` }"
-        aria-hidden="true"
-      >
-        <svg viewBox="0 0 40 44" class="size-11" fill="currentColor">
-          <circle cx="20" cy="11" r="9" />
-          <path d="M3 44c0-10.5 7.6-18 17-18s17 7.5 17 18Z" />
-        </svg>
+      <!-- On a card of its own, so the number reads over however full the
+           room gets. -->
+      <span class="relative flex flex-col items-center rounded-2xl bg-white px-7 py-3 ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-700">
+        <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">In the room</span>
+        <span class="mt-1 text-7xl font-black leading-none tabular-nums text-gray-900 dark:text-white" aria-live="polite">{{ count }}</span>
+        <span class="mt-2 max-w-[14rem] text-center text-xs text-gray-500 dark:text-gray-400">
+          {{ count ? 'Tap for each person' : 'Tap anywhere in this box once for each person you see' }}
+        </span>
       </span>
     </button>
 
@@ -277,54 +249,5 @@ const SHADES = ['text-primary', 'text-primary-light', 'text-primary-hover', 'tex
 .tally-box {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-}
-
-/* A person popping up out of the tap, then drifting off upward as the next
-   one comes - the count moving, shown. */
-.pop {
-  translate: -50% -50%;
-  animation: pop-up 0.9s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
-}
-
-@keyframes pop-up {
-  0% {
-    transform: translateY(18px) scale(0.4);
-    opacity: 0;
-  }
-  22% {
-    transform: translateY(-8px) scale(1.08);
-    opacity: 1;
-  }
-  38% {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-56px) scale(0.9);
-    opacity: 0;
-  }
-}
-
-/* One fewer: a grey person sinks away instead. */
-.pop-down {
-  animation-name: pop-out;
-}
-
-@keyframes pop-out {
-  0% {
-    transform: translateY(0) scale(1);
-    opacity: 0.9;
-  }
-  100% {
-    transform: translateY(40px) scale(0.6);
-    opacity: 0;
-  }
-}
-
-/* The count and the note still answer; nothing moves. */
-@media (prefers-reduced-motion: reduce) {
-  .pop {
-    display: none;
-  }
 }
 </style>

@@ -8,6 +8,16 @@
 
 export const versionHistory = [
   {
+    version: '0.35.3',
+    date: '2026-10-11',
+    title: 'Watch the room fill',
+    summary: 'Every tap in Tap to count adds a person to a crowd behind the number.',
+    highlights: [
+      'Men, women, children and grandparents pile up as you count, each one different.',
+      'YUNIT now makes a sound and a small buzz when he answers and when a change is done.',
+    ],
+  },
+  {
     version: '0.35.2',
     date: '2026-10-11',
     title: 'Count the room',

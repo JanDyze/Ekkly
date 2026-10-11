@@ -11,6 +11,24 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.3] — 2026-10-11
+
+The room fills up as you count it, and YUNIT can be heard and felt.
+
+### Changed
+
+- **Counting heads fills the room.** Each tap in Tap to count drops a person
+  from where your finger landed into a crowd that piles up behind the number:
+  men, women, boys, girls, toddlers and grandparents, every one different. The
+  crowd shrinks to fit as it grows, "One fewer" lifts the last one away, and
+  "Start again" lets everyone drop out of the room.
+
+### Added
+
+- **YUNIT makes a sound and a small buzz** when you send him a message, when
+  his answer arrives, when a change is done or turned down, when something
+  fails, and when you start over.
+
 ## [0.35.2] — 2026-10-11
 
 A clicker for the usher at the back, and a check that the room and the roll
