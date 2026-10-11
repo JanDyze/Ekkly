@@ -92,18 +92,42 @@ explicit `replace: true`.
 ## YUNIT uses the same tools
 
 YUNIT, the assistant inside the app (`/yunit`, [lib/yunit.js](lib/yunit.js)),
-works the records through these same tools, run as the signed-in person: the
-tools their access and the church's apps allow, writes included, audited in
-their name ("YUNIT (for Ana Reyes)"). He reads on his own, but never runs a
-write himself — each one comes back to the page as a card, and happens only
-when the person presses Confirm, which goes back through `/api/enhance` and
-is checked again there.
+works the records through these same tools, run as the signed-in person,
+writes included, audited in their name ("YUNIT (for Ana Reyes)"). He reads on
+his own, but never runs a write himself — each one comes back to the page as a
+card, and happens only when the person presses Confirm, which goes back
+through `/api/enhance` and is checked again there.
+
+How far he reaches is `YUNIT_ACCESS` in lib/yunit.js. It is `"everything"`
+for now: anyone signed in to the church gets every tool the church's apps
+allow, whatever they could open in the app themselves. `"person"` holds him to
+that person's capabilities, as the connector is held. It is a constant until
+a panel for choosing it exists; the panel replaces it.
 
 Because a person confirms every change in the app, YUNIT also offers a few
 deletes the connector does not ([lib/mcp/deletes.js](lib/mcp/deletes.js)):
-tasks, prayer concerns, one-off events, songs and ledger entries, each needing
-`.manage` on its area. They are never in `TOOLS`, so the connector above
-still deletes nothing. The roll and minutes have no delete even there.
+tasks, prayer concerns, one-off events, songs and ledger entries. And he reads
+every other record the church keeps through three generic tools
+([lib/mcp/records.js](lib/mcp/records.js)): `list_collections`,
+`list_records` and `get_record`, over any collection under the church found
+as Firestore has it, so a new one is readable the day it exists. Credentials
+are never read (a collection or field named for a token or secret), pictures
+come back as `[picture]`, and a collection belonging to a switched-off app
+stays closed.
+
+He changes them too ([lib/mcp/changes.js](lib/mcp/changes.js)):
+`update_church_profile` writes the church's own details where Settings →
+Church details does, and `update_record`, `add_record` and `delete_record`
+reach any other record, each a card to confirm like every YUNIT write. The
+dedicated tools still come first where one fits, since they check what the
+app checks. Closed to writing whatever `YUNIT_ACCESS` says: billing
+(`subscription`, `payments`, `usage`, `platform`, which are the platform's),
+who may do what (`appAdmins`, `access`, `rolePermissions`, for the
+permissions panel to come) and the logs (`auditLog`, `mailLog`). The roll and
+minutes have no delete even in YUNIT.
+
+None of these are in `TOOLS`, so the connector above still deletes nothing,
+changes only through its own tools, and reads only what its tools shape.
 
 ## Whose link it is
 

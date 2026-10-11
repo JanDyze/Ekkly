@@ -1,7 +1,8 @@
 <script setup>
 import { computed } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import HomeCard from './HomeCard.vue'
+import { prefetchRoute } from '../../router/prefetch'
 import { hueOf } from '../../data/appHues'
 import { MASONRY_SPANS, orbitPlace } from '../../data/homeCards'
 
@@ -9,7 +10,7 @@ import { MASONRY_SPANS, orbitPlace } from '../../data/homeCards'
 // person sees (src/data/homeCards.js, useHomeCards). Every style holds the
 // same six things — the five apps kept on the home, then More apps — and
 // behaves the same: a tap opens the app, holding one shows what it is
-// (AppPeek, through `hold`), and More apps opens the drawer of every app.
+// (AppPeek, through `hold`), and More apps opens every app (/apps).
 //
 // Each card carries its app's colour as --hue (data/appHues.js): Ekkly's
 // colours, from the app's own drawing, never the church's, which the day card
@@ -24,7 +25,7 @@ const props = defineProps({
   hold: { type: Object, default: null },
 })
 
-const emit = defineEmits(['more'])
+const router = useRouter()
 
 const GREY = '#64748b'
 
@@ -51,11 +52,17 @@ const cards = computed(() => {
   return list
 })
 
-/** What a card is: a link to its app, or the button that opens every app. */
-const tagOf = (card) => (card.more ? 'button' : RouterLink)
+/** Every card is a link: to its app, or for More apps to every app (/apps). */
 const attrsOf = (card, index, place = {}) => {
   const style = { '--hue': card.hue, animationDelay: `${120 + index * 30}ms`, ...place }
-  if (card.more) return { type: 'button', style, 'aria-label': `More apps, ${props.others.length} more`, onClick: () => emit('more') }
+  if (card.more) {
+    return {
+      to: '/apps',
+      style,
+      'aria-label': `More apps, ${props.others.length} more`,
+      onPointerdown: () => prefetchRoute(router, '/apps'),
+    }
+  }
   return {
     to: card.path,
     style,
@@ -78,7 +85,7 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
       v-for="(card, index) in orbitApps"
       :key="card.key"
       variant="orbit"
-      :as="tagOf(card)"
+      :as="RouterLink"
       :card="card"
       v-bind="attrsOf(card, index, orbitPlace(index, orbitApps.length))"
       class="w-[26%]"
@@ -86,7 +93,7 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
     <HomeCard
       v-if="orbitMore"
       variant="orbit"
-      :as="tagOf(orbitMore)"
+      :as="RouterLink"
       :card="orbitMore"
       v-bind="attrsOf(orbitMore, orbitApps.length)"
       class="left-[38%] top-[38%] w-[24%]"
@@ -99,7 +106,7 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
       v-for="(card, index) in cards"
       :key="card.key"
       variant="list"
-      :as="tagOf(card)"
+      :as="RouterLink"
       :card="card"
       v-bind="attrsOf(card, index)"
     />
@@ -111,7 +118,7 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
       v-for="(card, index) in cards"
       :key="card.key"
       variant="masonry"
-      :as="tagOf(card)"
+      :as="RouterLink"
       :card="card"
       v-bind="attrsOf(card, index)"
       :class="MASONRY_SPANS[index % MASONRY_SPANS.length]"
@@ -124,7 +131,7 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
       v-for="(card, index) in cards"
       :key="card.key"
       :variant="variant"
-      :as="tagOf(card)"
+      :as="RouterLink"
       :card="card"
       v-bind="attrsOf(card, index)"
     />

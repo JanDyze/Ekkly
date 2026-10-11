@@ -30,7 +30,12 @@ const canEdit = computed(() => canManage('events'))
 const monthKey = computed(() => (isValidMonthKey(route.params.month) ? route.params.month : monthKeyOf()))
 const monthLabel = computed(() => formatMonthLabel(monthKey.value))
 
-const { settings, monthOf, saveMonth, resetMonth, scenesFor, announcements, lengthOf, loading } = useVideoOverview()
+const { settings, monthOf, saveMonth, resetMonth, scenesFor, announcements, lengthOf, loading, nextMonth } =
+  useVideoOverview()
+
+// The drawing beside the title is the tile's that opened it: both months
+// share this screen, and next month's tile wears a drawing of its own.
+const art = computed(() => (monthKey.value === nextMonth ? 'videos-next' : 'videos-month'))
 
 const scenes = computed(() => scenesFor(monthKey.value))
 const { video, music, volume, preparing, musicNote, trackLabel } = useVideoBuild(scenes, settings)
@@ -190,7 +195,7 @@ const exporting = ref(false)
 </script>
 
 <template>
-  <AppScreen :title="monthLabel" :subtitle="subtitle" :back="{ name: 'VideosHome' }" root="/videos">
+  <AppScreen :title="monthLabel" :subtitle="subtitle" :art="art" :back="{ name: 'VideosHome' }" root="/videos">
     <template v-if="canEdit" #action>
       <RouterLink
         :to="{ name: 'VideosLook' }"

@@ -6,6 +6,10 @@
 // nothing to announce. Anyone who can see the calendar can watch and save a
 // month's video; changing what it says, or how it looks, is for whoever
 // manages events.
+//
+// Each section names the drawing its tile wears on the home (meta.art). Both
+// months open the one screen, so the studio picks next month's drawing for
+// itself when that is the month it shows.
 
 export const videosRoutes = [
   {
@@ -22,13 +26,13 @@ export const videosRoutes = [
         // Before the month, so "look" is never read as one.
         path: 'look',
         name: 'VideosLook',
-        meta: { depth: 1, capability: 'events.manage' },
+        meta: { art: 'videos-look', depth: 1, capability: 'events.manage' },
         component: () => import('./VideoLook.vue'),
       },
       {
         path: ':month(\\d{4}-\\d{2})',
         name: 'VideosMonth',
-        meta: { depth: 1 },
+        meta: { art: 'videos-month', depth: 1 },
         component: () => import('./VideoStudio.vue'),
       },
     ],

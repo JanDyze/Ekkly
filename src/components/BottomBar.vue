@@ -1,11 +1,12 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AppArt from './common/AppArt.vue'
-import AppsDrawer from './appframe/AppsDrawer.vue'
 import { allowedGroups } from '../data/navigation'
 import { usePermissions } from '../composables/usePermissions'
 import { useAppOrder } from '../composables/useAppOrder'
+import { usePressAndHold } from '../composables/usePressAndHold'
+import AppPeek from './appframe/AppPeek.vue'
 
 // The bottom bar, back from v0.31 for whoever turns it on in Preferences
 // (useBottomBar): a floating island along the foot of every screen on a
@@ -13,8 +14,9 @@ import { useAppOrder } from '../composables/useAppOrder'
 // which opens every app.
 //
 // It is the bar that was taken out when the home became the way between apps,
-// with its drawer swapped for the one the home already uses (AppsDrawer), so
-// there is one drawer of every app rather than two. Its four are the first
+// with its drawer swapped for the page of every app the home already opens
+// (/apps, AllApps.vue), so there is one list of every app rather than two.
+// Its four are the first
 // four the person keeps on their home (useAppOrder), so rearranging the home
 // rearranges the bar too.
 //
@@ -33,11 +35,23 @@ const allApps = computed(() => allowedGroups(can, isAdmin.value).flatMap((group)
 const { ordered } = useAppOrder(allApps)
 const primaryNav = computed(() => ordered.value.slice(0, BAR_SLOTS))
 
-const showDrawer = ref(false)
-
 // The centre button sits between the halves rather than at one end, so the
 // split has to survive a shorter nav: with three tabs the spare one goes left,
 // with one it is the only thing on that side.
+// Holding a tab shows what its app is, full screen (AppPeek) — its commercial,
+// where it has one — as holding its tile on the home does; sliding up keeps it
+// open, and a tap still just opens the app.
+const { held, drag, start: startHold, holdStill, swallowClick, keep, release } = usePressAndHold()
+const holdTab = (event, item) => {
+  prefetchRoute(item.path)
+  startHold(event, item)
+}
+const openHeld = () => {
+  const path = held.value?.item?.path
+  release()
+  if (path) router.push(path)
+}
+
 const splitAt = computed(() => Math.ceil(primaryNav.value.length / 2))
 const leftNav = computed(() => primaryNav.value.slice(0, splitAt.value))
 const rightNav = computed(() => primaryNav.value.slice(splitAt.value))
@@ -276,7 +290,7 @@ watch([activeTabPath, primaryNav], () => nextTick(placeIndicator))
         aria-hidden="true"
       />
 
-      <div class="flex flex-1 justify-around">
+      <div class="flex flex-1 justify-around" @click.capture="swallowClick">
         <button
           v-for="item in leftNav"
           :key="item.path"
@@ -286,7 +300,9 @@ watch([activeTabPath, primaryNav], () => nextTick(placeIndicator))
           :aria-label="item.name"
           :aria-current="isTabActive(item.path) ? 'page' : undefined"
           class="relative z-10 flex h-full min-w-0 flex-1 items-center justify-center px-0.5"
-          @pointerdown="prefetchRoute(item.path)"
+          @pointerdown="holdTab($event, item)"
+          @touchmove="holdStill"
+          @contextmenu.prevent
           @click="tapTab(item.path)"
         >
           <AppArt
@@ -302,7 +318,7 @@ watch([activeTabPath, primaryNav], () => nextTick(placeIndicator))
            gap so it can break the top edge of the bar. -->
       <div class="pointer-events-none h-full w-24 shrink-0" aria-hidden="true" />
 
-      <div class="flex flex-1 justify-around">
+      <div class="flex flex-1 justify-around" @click.capture="swallowClick">
         <button
           v-for="item in rightNav"
           :key="item.path"
@@ -312,7 +328,9 @@ watch([activeTabPath, primaryNav], () => nextTick(placeIndicator))
           :aria-label="item.name"
           :aria-current="isTabActive(item.path) ? 'page' : undefined"
           class="relative z-10 flex h-full min-w-0 flex-1 items-center justify-center px-0.5"
-          @pointerdown="prefetchRoute(item.path)"
+          @pointerdown="holdTab($event, item)"
+          @touchmove="holdStill"
+          @contextmenu.prevent
           @click="tapTab(item.path)"
         >
           <AppArt
@@ -327,28 +345,34 @@ watch([activeTabPath, primaryNav], () => nextTick(placeIndicator))
       <!-- Every other app is behind this one. Ekkly's round mark - the round
            window rather than the arch, because a circle reads as a button to
            press - raised out of the bar so it is plainly not a tab: it opens
-           the drawer of every app rather than going anywhere. Ringed in the
+           the page of every app rather than one of them. Ringed in the
            church's colour, the one touch of the church on a mark that is
            otherwise Ekkly's, and backed in the bar's own surface so the page
            scrolling under it does not show through the gaps of its cross.
            68px across, its centre 12px below the bar's top edge, in the dip
            barPath leaves for it. -->
-      <button
-        type="button"
+      <RouterLink
+        to="/apps"
         class="absolute -top-6.5 left-1/2 z-10 flex size-19 -translate-x-1/2 items-center justify-center"
         aria-label="All apps"
-        aria-haspopup="dialog"
-        :aria-expanded="showDrawer"
-        @click="showDrawer = true"
+        @pointerdown="prefetchRoute('/apps')"
       >
         <span class="grid size-17 place-items-center rounded-full bg-white ring-2 ring-primary dark:bg-gray-800 dark:ring-primary-light">
           <img src="/ekkly-mark-round.svg" alt="" class="size-17 object-contain" />
         </span>
-      </button>
+      </RouterLink>
     </div>
-  </nav>
 
-  <AppsDrawer :show="showDrawer" :apps="allApps" @close="showDrawer = false" />
+    <AppPeek
+      :app="held?.item"
+      :from="held?.el"
+      :line="held?.item?.description || ''"
+      :drag="drag"
+      @keep="keep"
+      @close="release"
+      @open="openHeld"
+    />
+  </nav>
 </template>
 
 <style scoped>

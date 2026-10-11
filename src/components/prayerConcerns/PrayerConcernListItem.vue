@@ -1,140 +1,89 @@
 <script setup>
-import { Heart, User, Calendar, AlertCircle, CheckCircle2, Clock, ArrowUpCircle, Trash2 } from '../../icons'
+import { computed } from 'vue'
+import { CheckCircle, Heart } from '../../icons'
+import ListRow from '../appframe/ListRow.vue'
+import MemberAvatar from '../members/MemberAvatar.vue'
+import { dayLabel, daysQuiet, isQuiet, lastNewsOn, quietLabel, raisedOn } from '../../composables/usePrayerOverview'
+
+// One prayer concern in a list of them (PrayerList): who it is for, what it
+// is, and one quiet line. The face of the person it is about when they are on
+// the roll, a heart when it is for a family, a missionary, the nation.
+//
+// It used to carry a coloured pill for its status and another for its
+// priority, the first two lines of its description, and a bin. A list of
+// concerns is read through in prayer, so the row says what to pray for and no
+// more: the whole of it is a tap away, in the drawer, and so is deleting it.
 
 const props = defineProps({
-  concern: {
-    type: Object,
-    required: true
-  },
-  selected: {
-    type: Boolean,
-    default: false
-  }
+  concern: { type: Object, required: true },
+  // The person it is about, already found on the roll, or null.
+  person: { type: Object, default: null },
+  today: { type: String, required: true },
+  selected: { type: Boolean, default: false },
+  // Said on the row only where the list mixes them (every concern); a list of
+  // answered prayers need not say "answered" on each one.
+  showStatus: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['click', 'delete'])
+const emit = defineEmits(['open'])
 
-const handleDelete = (e) => {
-  e.stopPropagation()
-  emit('delete', props.concern)
-}
+const answered = computed(() => props.concern.status === 'answered')
 
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  })
-}
+// When it was raised, or for an answered one when it was answered; and, for
+// one nobody has touched in a long while, how long — the words a search for
+// "no news" finds.
+const subtitle = computed(() => {
+  const c = props.concern
+  const day = dayLabel(answered.value ? lastNewsOn(c) : raisedOn(c), props.today)
+  const when = answered.value ? `Answered ${['Today', 'Yesterday'].includes(day) ? day.toLowerCase() : day}` : day
+  return [
+    c.memberName ? `For ${c.memberName}` : '',
+    isQuiet(c, props.today) ? quietLabel(daysQuiet(c, props.today)) : when,
+    props.showStatus && c.status === 'ongoing' ? 'Ongoing' : '',
+  ]
+    .filter(Boolean)
+    .join(' · ')
+})
 
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'answered':
-      return 'bg-green-500 text-white'
-    case 'ongoing':
-      return 'bg-blue-500 text-white'
-    case 'active':
-    default:
-      return 'bg-yellow-500 text-white'
-  }
-}
-
-const getStatusIcon = (status) => {
-  switch (status) {
-    case 'answered':
-      return CheckCircle2
-    case 'ongoing':
-      return Clock
-    case 'active':
-    default:
-      return Heart
-  }
-}
-
-const getPriorityColor = (priority) => {
-  switch (priority) {
-    case 'urgent':
-      return 'bg-red-500 text-white'
-    case 'high':
-      return 'bg-orange-500 text-white'
-    case 'normal':
-    default:
-      return 'bg-gray-500 text-white'
-  }
-}
-
-const getPriorityIcon = (priority) => {
-  if (priority === 'urgent' || priority === 'high') {
-    return ArrowUpCircle
-  }
-  return null
-}
+// Urgent and high are said in amber, which is "needs attention" here
+// (DESIGN.md): asked to be prayed for first. Red is kept for what is gone.
+const flag = computed(() =>
+  !answered.value && ['urgent', 'high'].includes(props.concern.priority)
+    ? props.concern.priority === 'urgent'
+      ? 'Urgent'
+      : 'High'
+    : ''
+)
 </script>
 
 <template>
-  <div 
-    @click="emit('click', concern)"
-    :class="[
-      'p-4 transition-all cursor-pointer border-l-4',
-      selected
-        ? 'bg-primary/10 dark:bg-primary/20 border-primary'
-        : 'hover:bg-gray-50 dark:hover:bg-gray-700 border-transparent'
-    ]"
+  <ListRow
+    :title="concern.title || 'Prayer concern'"
+    :subtitle="subtitle"
+    :class="selected ? 'bg-primary/10 dark:bg-primary/20' : ''"
+    @click="emit('open', concern)"
   >
-    <div class="flex items-start gap-4">
-      <div class="shrink-0 h-12 w-12 rounded-lg bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
-        <Heart class="h-6 w-6 text-red-600 dark:text-red-400" />
-      </div>
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2 flex-wrap mb-1">
-          <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
-            {{ concern.title || 'Untitled Prayer Concern' }}
-          </p>
-          <span 
-            v-if="concern.priority && (concern.priority === 'urgent' || concern.priority === 'high')"
-            :class="[
-              'px-2 py-0.5 text-xs rounded-full capitalize flex items-center gap-1',
-              getPriorityColor(concern.priority)
-            ]"
-          >
-            <ArrowUpCircle v-if="getPriorityIcon(concern.priority)" class="h-3 w-3" />
-            {{ concern.priority }}
-          </span>
-          <span 
-            :class="[
-              'px-2 py-0.5 text-xs rounded-full capitalize flex items-center gap-1',
-              getStatusColor(concern.status)
-            ]"
-          >
-            <component :is="getStatusIcon(concern.status)" class="h-3 w-3" />
-            {{ concern.status }}
-          </span>
-        </div>
-        <p v-if="concern.description" class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
-          {{ concern.description }}
-        </p>
-        <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-          <span v-if="concern.memberName" class="flex items-center gap-1">
-            <User class="h-3.5 w-3.5" />
-            {{ concern.memberName }}
-          </span>
-          <span v-if="concern.date" class="flex items-center gap-1">
-            <Calendar class="h-3.5 w-3.5" />
-            {{ formatDate(concern.date) }}
-          </span>
-        </div>
-      </div>
-      <button
-        @click="handleDelete"
-        class="shrink-0 p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-        title="Delete prayer concern"
-        aria-label="Delete prayer concern"
+    <template #leading>
+      <MemberAvatar v-if="person" :member="person" alt="" size="h-10 w-10" class="shrink-0" />
+      <span
+        v-else
+        class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light"
       >
-        <Trash2 class="h-4 w-4" />
-      </button>
-    </div>
-  </div>
+        <Heart class="size-5" />
+      </span>
+    </template>
+    <template #trailing>
+      <span
+        v-if="flag"
+        class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-500/15 dark:text-amber-300"
+      >
+        {{ flag }}
+      </span>
+      <CheckCircle
+        v-else-if="showStatus && answered"
+        class="size-5 shrink-0 text-primary dark:text-primary-light"
+        aria-label="Answered"
+      />
+    </template>
+  </ListRow>
 </template>
-

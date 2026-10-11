@@ -1,7 +1,8 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Pencil, Printer, FileSpreadsheet } from '../icons'
+import AppScreen from '../components/appframe/AppScreen.vue'
+import { Pencil, Printer, FileSpreadsheet } from '../icons'
 import { useSmallGroups } from '../composables/useSmallGroups'
 import { useSgSessions, useSessionPhotos } from '../composables/useSgSessions'
 import { useMembers } from '../composables/useMembers'
@@ -98,7 +99,7 @@ const handleConfirmation = async () => {
   try {
     await removeSession(sessionId.value)
     toast.success('Session deleted')
-    router.push(`/small-groups/${groupId.value}`)
+    router.replace({ name: 'SmallGroupDetails', params: { id: groupId.value } })
   } catch (error) {
     console.error('Error deleting SG session:', error)
     toast.error('Failed to delete the session.')
@@ -107,21 +108,19 @@ const handleConfirmation = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <!-- Action bar -->
-    <div class="shrink-0 flex items-center gap-2 pb-3 no-print">
-      <button
-        @click="router.push(`/small-groups/${groupId}`)"
-        class="shrink-0 p-2 -ml-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-        aria-label="Back"
-      >
-        <ArrowLeft class="h-5 w-5" />
-      </button>
-
-      <h1 class="flex-1 min-w-0 text-base font-bold text-gray-900 dark:text-white truncate">
-        {{ session?.lesson?.title || t('sessionReport') }}
-      </h1>
-
+  <div class="relative h-full">
+    <!-- A screen of the Small groups app (AppScreen): back is to wherever in
+         the app the session was opened from — its group, or Sessions. Marked
+         print-main so the report runs past one screen on paper: the screen
+         scrolls in a box of its own, and printing has to undo that. -->
+    <AppScreen
+      :title="session?.lesson?.title || t('sessionReport')"
+      :subtitle="group?.name || ''"
+      :back="{ name: 'SmallGroupDetails', params: { id: groupId } }"
+      root="/small-groups"
+      class="print-main"
+    >
+      <template #action>
       <button
         v-if="canManage('smallgroups')"
         @click="showEditor = true"
@@ -149,11 +148,10 @@ const handleConfirmation = async () => {
         <Printer class="h-4 w-4" />
         <span class="hidden sm:inline">{{ t('print') }}</span>
       </button>
-    </div>
+      </template>
 
-    <!-- The form itself -->
-    <div class="flex-1 overflow-y-auto pb-bar! flex relative">
-      <div class="flex-1 min-w-0 print-area">
+      <!-- The form itself -->
+      <div class="min-w-0 print-area">
         <div
           v-if="loading && !session"
           class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 space-y-3 no-print"
@@ -182,6 +180,7 @@ const handleConfirmation = async () => {
           />
         </div>
       </div>
+    </AppScreen>
 
       <SessionEditorDrawer
         v-if="group && session"
@@ -196,7 +195,6 @@ const handleConfirmation = async () => {
         @upload-photo="handlePhotoUpload"
         @delete-photo="handlePhotoDelete"
       />
-    </div>
 
     <ConfirmationModal
       v-model:show="showConfirmation"

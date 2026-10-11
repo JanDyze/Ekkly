@@ -49,9 +49,14 @@ const typeLabel = (type) =>
   type ? `${type.charAt(0).toUpperCase()}${type.slice(1)}` : 'General'
 
 /** A gathering, in the shape of an album that has not been created yet. */
-const derivedAlbum = ({ key, matchIds, title, type, date, location, description }) => ({
+const derivedAlbum = ({ key, matchIds, title, type, date, location, description, recurring = false }) => ({
   id: `ev-${key}`,
   derivedId: `ev-${key}`,
+  // A weekly service rather than something somebody typed into the calendar.
+  // The Gallery's home asks for photos of a one-off without question, and of
+  // a weekly service only once the church has shown it photographs that one
+  // (useGalleryOverview).
+  recurring,
   // What gets stored on the album once it is created, so it finds its way
   // back to this row.
   calendarEventId: key,
@@ -172,6 +177,7 @@ export function useGalleryAlbums() {
           date: occurrence.date,
           location: occurrence.location,
           description: occurrence.description,
+          recurring: true,
         })
       )
     }

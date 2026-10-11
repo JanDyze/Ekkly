@@ -1,9 +1,18 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { X, Save, Heart, User, Search, ChevronDown } from '../../icons'
+import { X, Save, Heart, User, Search, ChevronDown, Trash2 } from '../../icons'
 import { useMembers } from '../../composables/useMembers'
 import { useMediaQuery } from '../../composables/useMediaQuery'
 import { useFocusTrap } from '../../composables/useFocusTrap'
+import { PRAYER_PRIORITIES, PRAYER_STATUSES, dayLabel } from '../../composables/usePrayerOverview'
+import { getFullName } from '../../utils/memberUtils'
+import { memberKey } from '../../utils/sgUtils'
+import { todayKey } from '../../utils/taskUtils'
+
+// A prayer concern, beside its list on a computer and a sheet on a phone, the
+// way a task opens (DESIGN.md, Drawer). Whoever looks after the list adds and
+// edits here; everyone else who may see concerns reads the whole of one here
+// — the rows say only what to pray for — with nothing on it they cannot do.
 
 const isMobile = useMediaQuery('(max-width: 1023px)')
 
@@ -13,6 +22,16 @@ const props = defineProps({
     default: false
   },
   isEdit: {
+    type: Boolean,
+    default: false
+  },
+  // Read, not edited: for someone who may see concerns but not change them.
+  readOnly: {
+    type: Boolean,
+    default: false
+  },
+  /** Shown only while editing. */
+  canDelete: {
     type: Boolean,
     default: false
   },
@@ -31,50 +50,46 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:show', 'update:concernData', 'save', 'cancel'])
+const emit = defineEmits(['update:show', 'update:concernData', 'save', 'cancel', 'delete'])
 
 const { members } = useMembers()
 
-const isFormValid = computed(() => {
-  return props.concernData.title && props.concernData.title.trim().length > 0
-})
+const patch = (changes) => emit('update:concernData', { ...props.concernData, ...changes })
 
-const filteredMembers = computed(() => {
-  return members.value || []
-})
+const isFormValid = computed(() => Boolean(props.concernData.title?.trim()))
+
+const statusLabel = computed(() => PRAYER_STATUSES.find((s) => s.key === props.concernData.status)?.label || 'Praying now')
+const priorityLabel = computed(() => PRAYER_PRIORITIES.find((p) => p.key === props.concernData.priority)?.label || 'Normal')
+const dateLabel = computed(() => dayLabel(props.concernData.date))
 
 // Searchable dropdown state
 const showMemberDropdown = ref(false)
 const memberSearchQuery = ref('')
 
 const availableMembers = computed(() => {
-  if (!memberSearchQuery.value.trim()) {
-    return filteredMembers.value
-  }
-  const query = memberSearchQuery.value.toLowerCase()
-  return filteredMembers.value.filter(member => {
-    const fullName = `${member.firstName || ''} ${member.lastName || ''}`.trim().toLowerCase()
+  const all = members.value || []
+  const query = memberSearchQuery.value.trim().toLowerCase()
+  if (!query) return all
+  return all.filter((member) => {
+    const fullName = getFullName(member).toLowerCase()
     const nickname = (member.nickname || '').toLowerCase()
     return fullName.includes(query) || nickname.includes(query)
   })
 })
 
+// Kept by the same key every other record uses for a person (memberKey), so
+// the concern finds their face on the roll again.
 const selectMember = (member) => {
-  emit('update:concernData', {
-    ...props.concernData,
-    memberId: member.id || member.firestoreId,
-    memberName: `${member.firstName || ''} ${member.lastName || ''}`.trim() || member.nickname || 'Unknown'
+  patch({
+    memberId: memberKey(member),
+    memberName: getFullName(member).trim() || member.nickname || 'Unknown'
   })
   showMemberDropdown.value = false
   memberSearchQuery.value = ''
 }
 
 const clearMember = () => {
-  emit('update:concernData', {
-    ...props.concernData,
-    memberId: '',
-    memberName: ''
-  })
+  patch({ memberId: '', memberName: '' })
   showMemberDropdown.value = false
   memberSearchQuery.value = ''
 }
@@ -86,15 +101,12 @@ const handleClickOutside = (event) => {
   }
 }
 
-watch(() => props.show, (newVal) => {
-  if (newVal) {
+watch(() => props.show, (open) => {
+  if (open) {
     document.addEventListener('click', handleClickOutside)
-    if (!props.concernData.date) {
-      emit('update:concernData', {
-        ...props.concernData,
-        date: new Date().toISOString().split('T')[0]
-      })
-    }
+    // Today on this device, never toISOString(), which is tomorrow's date in
+    // Manila until eight in the morning.
+    if (!props.readOnly && !props.concernData.date) patch({ date: todayKey() })
   } else {
     document.removeEventListener('click', handleClickOutside)
     showMemberDropdown.value = false
@@ -114,6 +126,11 @@ const handleCancel = () => {
 
 const dialogRef = ref(null)
 useFocusTrap(dialogRef, () => props.show, handleCancel)
+
+const heading = computed(() => (props.readOnly ? 'Prayer concern' : props.isEdit ? 'Edit prayer concern' : 'New prayer concern'))
+
+const INPUT = 'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+const LABEL = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300'
 </script>
 
 <template>
@@ -148,8 +165,8 @@ useFocusTrap(dialogRef, () => props.show, handleCancel)
       <!-- Header -->
       <div class="shrink-0 bg-white dark:bg-gray-800 rounded-t-2xl border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 flex items-center justify-between">
         <h3 id="prayer-concern-drawer-title" class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-          <Heart class="h-5 w-5 text-red-600 dark:text-red-400" />
-          {{ isEdit ? 'Edit Prayer Concern' : 'Add Prayer Concern' }}
+          <Heart class="h-5 w-5 text-primary dark:text-primary-light" />
+          {{ heading }}
         </h3>
         <button
           @click="handleCancel"
@@ -160,42 +177,61 @@ useFocusTrap(dialogRef, () => props.show, handleCancel)
         </button>
       </div>
 
+      <!-- Read: the whole of it, for whoever is praying rather than editing. -->
+      <div v-if="readOnly" class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <p class="text-xl font-semibold leading-snug text-gray-900 dark:text-white">{{ concernData.title || 'Prayer concern' }}</p>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          {{ [concernData.memberName ? `For ${concernData.memberName}` : '', dateLabel].filter(Boolean).join(' · ') }}
+        </p>
+        <p class="mt-3 flex flex-wrap gap-1.5 text-xs font-semibold">
+          <span class="rounded-full bg-primary/10 px-2.5 py-1 text-primary dark:bg-primary-light/15 dark:text-primary-light">{{ statusLabel }}</span>
+          <span
+            v-if="['urgent', 'high'].includes(concernData.priority)"
+            class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300"
+          >
+            {{ priorityLabel }}
+          </span>
+        </p>
+        <p v-if="concernData.description" class="mt-5 whitespace-pre-line text-[15px] leading-relaxed text-gray-800 dark:text-gray-200">{{ concernData.description }}</p>
+        <template v-if="concernData.notes">
+          <h4 class="mt-6 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Notes</h4>
+          <p class="mt-1 whitespace-pre-line text-sm leading-relaxed text-gray-700 dark:text-gray-300">{{ concernData.notes }}</p>
+        </template>
+      </div>
+
       <!-- Scrollable Form Content -->
-      <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+      <div v-else class="flex-1 overflow-y-auto p-4 sm:p-6">
         <form @submit.prevent="handleSave" class="space-y-4">
-          <!-- Title -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Title <span class="text-red-500">*</span>
+            <label for="prayer-title" :class="LABEL">
+              What to pray for <span class="text-red-500">*</span>
             </label>
             <input
+              id="prayer-title"
               :value="concernData.title"
-              @input="$emit('update:concernData', { ...concernData, title: $event.target.value })"
+              @input="patch({ title: $event.target.value })"
               type="text"
               required
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Prayer concern title"
+              :class="INPUT"
+              placeholder="Healing after surgery"
             />
           </div>
 
-          <!-- Member Selection -->
           <div class="member-dropdown-container relative">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Member (Optional)
-            </label>
+            <label :class="LABEL">Who it is for</label>
             <div class="relative">
               <div
                 v-if="concernData.memberName"
                 class="flex items-center justify-between px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
               >
-                <div class="flex items-center gap-2">
-                  <User class="h-4 w-4 text-gray-400" />
-                  <span class="text-sm text-gray-900 dark:text-white">{{ concernData.memberName }}</span>
+                <div class="flex min-w-0 items-center gap-2">
+                  <User class="h-4 w-4 shrink-0 text-gray-400" />
+                  <span class="truncate text-sm text-gray-900 dark:text-white">{{ concernData.memberName }}</span>
                 </div>
                 <button
                   type="button"
                   @click="clearMember"
-                  aria-label="Clear selected member"
+                  aria-label="Clear who it is for"
                   class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   <X class="h-4 w-4" />
@@ -207,12 +243,12 @@ useFocusTrap(dialogRef, () => props.show, handleCancel)
                   v-model="memberSearchQuery"
                   @focus="showMemberDropdown = true"
                   type="text"
-                  placeholder="Search members..."
+                  placeholder="Search people..."
                   class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 <ChevronDown class="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
               </div>
-              
+
               <!-- Dropdown -->
               <Transition name="dropdown">
                 <div
@@ -221,97 +257,86 @@ useFocusTrap(dialogRef, () => props.show, handleCancel)
                 >
                   <button
                     v-for="member in availableMembers"
-                    :key="member.id || member.firestoreId"
+                    :key="memberKey(member)"
                     type="button"
                     @click="selectMember(member)"
                     class="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                   >
-                    <User class="h-4 w-4 text-gray-400" />
-                    <div>
-                      <p class="text-sm text-gray-900 dark:text-white">
-                        {{ `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Unknown' }}
-                      </p>
-                      <p v-if="member.nickname" class="text-xs text-gray-500 dark:text-gray-400">
+                    <User class="h-4 w-4 shrink-0 text-gray-400" />
+                    <span class="min-w-0">
+                      <span class="block truncate text-sm text-gray-900 dark:text-white">
+                        {{ getFullName(member).trim() || 'Unknown' }}
+                      </span>
+                      <span v-if="member.nickname" class="block truncate text-xs text-gray-500 dark:text-gray-400">
                         {{ member.nickname }}
-                      </p>
-                    </div>
+                      </span>
+                    </span>
                   </button>
                 </div>
               </Transition>
             </div>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Leave it empty for a family, a missionary, or the church itself.
+            </p>
           </div>
 
-          <!-- Description -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Description
-            </label>
+            <label for="prayer-description" :class="LABEL">What they asked</label>
             <textarea
+              id="prayer-description"
               :value="concernData.description"
-              @input="$emit('update:concernData', { ...concernData, description: $event.target.value })"
+              @input="patch({ description: $event.target.value })"
               rows="4"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-              placeholder="Details about the prayer concern..."
+              :class="[INPUT, 'resize-none']"
+              placeholder="What the person shared, in their words where you can..."
             ></textarea>
           </div>
 
-          <!-- Status -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Status
-            </label>
-            <select
-              :value="concernData.status"
-              @change="$emit('update:concernData', { ...concernData, status: $event.target.value })"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
-            >
-              <option value="active">Active</option>
-              <option value="ongoing">Ongoing</option>
-              <option value="answered">Answered</option>
-            </select>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label for="prayer-status" :class="LABEL">Status</label>
+              <select
+                id="prayer-status"
+                :value="concernData.status"
+                @change="patch({ status: $event.target.value })"
+                :class="INPUT"
+              >
+                <option v-for="option in PRAYER_STATUSES" :key="option.key" :value="option.key">{{ option.label }}</option>
+              </select>
+            </div>
+            <div>
+              <label for="prayer-priority" :class="LABEL">Priority</label>
+              <select
+                id="prayer-priority"
+                :value="concernData.priority"
+                @change="patch({ priority: $event.target.value })"
+                :class="INPUT"
+              >
+                <option v-for="option in PRAYER_PRIORITIES" :key="option.key" :value="option.key">{{ option.label }}</option>
+              </select>
+            </div>
           </div>
 
-          <!-- Priority -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Priority
-            </label>
-            <select
-              :value="concernData.priority"
-              @change="$emit('update:concernData', { ...concernData, priority: $event.target.value })"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
-            >
-              <option value="low">Low</option>
-              <option value="normal">Normal</option>
-              <option value="high">High</option>
-              <option value="urgent">Urgent</option>
-            </select>
-          </div>
-
-          <!-- Date -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Date
-            </label>
+            <label for="prayer-date" :class="LABEL">When it was shared</label>
             <input
+              id="prayer-date"
               :value="concernData.date"
-              @input="$emit('update:concernData', { ...concernData, date: $event.target.value })"
+              @input="patch({ date: $event.target.value })"
               type="date"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
+              :class="INPUT"
             />
           </div>
 
-          <!-- Notes -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Notes
-            </label>
+            <label for="prayer-notes" :class="LABEL">Notes</label>
             <textarea
+              id="prayer-notes"
               :value="concernData.notes"
-              @input="$emit('update:concernData', { ...concernData, notes: $event.target.value })"
+              @input="patch({ notes: $event.target.value })"
               rows="3"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-              placeholder="Additional notes..."
+              :class="[INPUT, 'resize-none']"
+              placeholder="How they are doing, what has changed..."
             ></textarea>
           </div>
         </form>
@@ -319,25 +344,43 @@ useFocusTrap(dialogRef, () => props.show, handleCancel)
 
       <!-- Footer -->
       <div class="shrink-0 border-t border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 flex items-center justify-end gap-3">
-        <button
-          @click="handleCancel"
-          class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          @click="handleSave"
-          :disabled="!isFormValid"
-          :class="[
-            'px-4 py-2 rounded-lg transition-colors flex items-center gap-2',
-            isFormValid
-              ? 'bg-primary text-white hover:bg-primary-hover'
-              : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-          ]"
-        >
-          <Save class="h-4 w-4" />
-          {{ isEdit ? 'Update' : 'Save' }}
-        </button>
+        <template v-if="readOnly">
+          <button
+            @click="handleCancel"
+            class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          >
+            Close
+          </button>
+        </template>
+        <template v-else>
+          <button
+            v-if="isEdit && canDelete"
+            @click="emit('delete')"
+            class="mr-auto flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+          >
+            <Trash2 class="h-4 w-4" />
+            Delete
+          </button>
+          <button
+            @click="handleCancel"
+            class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            @click="handleSave"
+            :disabled="!isFormValid"
+            :class="[
+              'px-4 py-2 rounded-lg transition-colors flex items-center gap-2',
+              isFormValid
+                ? 'bg-primary text-white hover:bg-primary-hover'
+                : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+            ]"
+          >
+            <Save class="h-4 w-4" />
+            {{ isEdit ? 'Update' : 'Save' }}
+          </button>
+        </template>
       </div>
       </div>
     </div>
@@ -390,4 +433,3 @@ useFocusTrap(dialogRef, () => props.show, handleCancel)
   transform: translateY(100%);
 }
 </style>
-

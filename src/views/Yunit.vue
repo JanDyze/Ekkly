@@ -21,7 +21,12 @@ import {
   X,
 } from '../icons'
 import YunitMascot from '../components/yunit/YunitMascot.vue'
+import AppArt from '../components/common/AppArt.vue'
+import MemberAvatar from '../components/members/MemberAvatar.vue'
 import { useYunitChat } from '../composables/useYunitChat'
+import { useMembers } from '../composables/useMembers'
+import { useAppSettings } from '../composables/useAppSettings'
+import { getFullName } from '../utils/memberUtils'
 import { markdownToHtml } from '../utils/markdownUtils'
 
 // YUNIT's page: a conversation with him, and him reacting to it.
@@ -45,13 +50,30 @@ const input = ref(null)
 const chatting = computed(() => messages.value.length > 0)
 
 // Ways to start, for someone who does not know what to ask. Each is a real
-// question he can answer from the records.
+// question he can answer from the records. The tile shows a short label so
+// all four fit two across on a phone; pressing it asks the full question.
 const STARTERS = [
-  { icon: CalendarBlank, text: 'What’s on this Sunday?' },
-  { icon: User, text: 'Who has a birthday this week?' },
-  { icon: CheckSquare, text: 'What tasks are overdue?' },
-  { icon: ClipboardText, text: 'How was attendance last month?' },
+  { icon: CalendarBlank, label: 'This Sunday', text: 'What’s on this Sunday?' },
+  { icon: User, label: 'Birthdays this week', text: 'Who has a birthday this week?' },
+  { icon: CheckSquare, label: 'Overdue tasks', text: 'What tasks are overdue?' },
+  { icon: ClipboardText, label: 'Last month’s attendance', text: 'How was attendance last month?' },
 ]
+
+// What a card wears, so it is recognised before it is read. A person wears
+// their own face, as everywhere else in the app; the church its logo; a
+// record the artwork of the app it lives in, the same picture as that app's
+// tile on the home. Only a card that is none of these keeps a plain glyph.
+const CARD_ART = {
+  person: 'members',
+  event: 'events',
+  task: 'tasks',
+  song: 'songs',
+  prayer: 'prayer',
+  group: 'smallgroups',
+  money: 'finances',
+  minute: 'minutes',
+  attendance: 'attendance',
+}
 
 const CARD_ICONS = {
   person: User,
@@ -65,6 +87,25 @@ const CARD_ICONS = {
   attendance: ClipboardText,
   church: Church,
   info: Info,
+}
+
+const { members } = useMembers()
+const { church, logoUrl } = useAppSettings()
+
+// The person a card is about, from the roll on this device rather than
+// anything YUNIT sends, so a photo is never one he made up. By the record
+// its link opens (either id the record page accepts), or else by the name on
+// the card, when exactly one person on the roll has it.
+const personFor = (card) => {
+  if (card.icon !== 'person') return null
+  const id = card.link?.match(/^\/members\/([\w-]+)$/)?.[1]
+  if (id) {
+    const found = members.value.find((m) => String(m.id) === id || String(m.firestoreId) === id)
+    if (found) return found
+  }
+  const name = card.title.trim().toLowerCase()
+  const named = members.value.filter((m) => getFullName(m).trim().toLowerCase() === name)
+  return named.length === 1 ? named[0] : null
 }
 
 // What kind of change a card is, from its tool's name.
@@ -131,7 +172,7 @@ onMounted(() => {
   <div class="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col">
     <!-- In conversation: him small, his name, and what he is doing. -->
     <header v-if="chatting" class="flex shrink-0 items-center gap-3 border-b border-gray-100 px-4 py-2.5 sm:px-6 dark:border-gray-800">
-      <YunitMascot ref="mascot" :mood="mood" :sparks="mood !== 'idle'" class="size-14 shrink-0" />
+      <YunitMascot ref="mascot" :mood="mood" :sparks="mood !== 'idle'" class="size-14 shrink-0" @wake="stir" />
       <div class="min-w-0 flex-1">
         <h1 class="text-lg font-black tracking-tight text-gray-900 dark:text-white" aria-label="YUNIT">YUN<span class="yunit-i" aria-hidden="true">ı</span>T</h1>
         <p class="truncate text-sm text-gray-500 dark:text-gray-400" aria-live="polite">{{ status }}</p>
@@ -149,28 +190,29 @@ onMounted(() => {
 
     <div ref="scroller" class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
       <!-- Before anything is said: him, large, and ways to start. -->
-      <section v-if="!chatting" class="flex min-h-full flex-col items-center justify-center px-5 py-8 text-center sm:px-6">
-        <YunitMascot ref="mascot" :mood="mood" class="size-[min(24dvh,14rem)]" />
-        <h1 class="mt-4 text-4xl font-black tracking-tight text-gray-900 sm:text-5xl dark:text-white" aria-label="YUNIT">
+      <section v-if="!chatting" class="flex min-h-full flex-col items-center justify-center px-4 py-4 text-center sm:px-6 sm:py-8">
+        <YunitMascot ref="mascot" :mood="mood" class="size-[min(17dvh,12rem)]" @wake="stir" />
+        <h1 class="mt-2 text-3xl font-black tracking-tight text-gray-900 sm:mt-4 sm:text-5xl dark:text-white" aria-label="YUNIT">
           YUN<span class="yunit-i" aria-hidden="true">ı</span>T
         </h1>
-        <p class="mt-1.5 text-sm text-gray-500 dark:text-gray-400">Yet another Useful Intelligence Tool</p>
-        <p class="mt-4 max-w-sm text-base text-gray-700 dark:text-gray-200">
-          Ask me about the church, or tell me what to add or change. I’ll check with you before I change anything.
+        <p class="mt-1 text-xs text-gray-500 sm:text-sm dark:text-gray-400">Yet another Useful Intelligence Tool</p>
+        <p class="mt-3 max-w-xs text-sm text-gray-700 sm:mt-4 sm:max-w-sm sm:text-base dark:text-gray-200">
+          Ask about the church, or tell me what to change. I’ll check with you first.
         </p>
 
-        <div class="mt-6 grid w-full max-w-lg grid-cols-1 gap-2.5 sm:grid-cols-2">
+        <div class="mt-5 grid w-full max-w-lg grid-cols-2 gap-2 sm:mt-6 sm:gap-2.5">
           <button
             v-for="starter in STARTERS"
             :key="starter.text"
             type="button"
-            class="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left text-[15px] text-gray-800 ring-1 ring-gray-200 transition-colors hover:bg-gray-50 hover:ring-primary/30 dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-700 dark:hover:bg-gray-700"
+            :title="starter.text"
+            class="flex items-center gap-2.5 rounded-2xl bg-white px-3 py-2.5 text-left text-sm leading-snug text-gray-800 ring-1 ring-gray-200 transition-colors hover:bg-gray-50 hover:ring-primary/30 sm:gap-3 sm:px-4 sm:py-3.5 sm:text-[15px] dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-700 dark:hover:bg-gray-700"
             @click="ask(starter.text)"
           >
-            <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light">
-              <component :is="starter.icon" class="size-5" />
+            <span class="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:size-9 dark:bg-primary-light/15 dark:text-primary-light">
+              <component :is="starter.icon" class="size-4.5 sm:size-5" />
             </span>
-            {{ starter.text }}
+            {{ starter.label }}
           </button>
         </div>
       </section>
@@ -201,12 +243,19 @@ onMounted(() => {
                 :key="cardIndex"
                 :to="card.link || undefined"
                 :class="[
-                  'yunit-card flex gap-3 rounded-2xl bg-white p-3.5 ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700',
+                  'flex gap-3 rounded-2xl bg-white p-3.5 ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700',
                   card.link ? 'transition-colors hover:bg-gray-50 hover:ring-primary/30 dark:hover:bg-gray-700' : '',
                 ]"
-                :style="{ animationDelay: `${cardIndex * 60}ms` }"
               >
-                <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light">
+                <MemberAvatar v-if="personFor(card)" :member="personFor(card)" alt="" size="size-10" />
+                <img
+                  v-else-if="card.icon === 'church' && logoUrl"
+                  :src="logoUrl"
+                  :alt="church.shortName || ''"
+                  class="size-10 shrink-0 object-contain"
+                />
+                <AppArt v-else-if="CARD_ART[card.icon]" :app-key="CARD_ART[card.icon]" class="size-10 shrink-0" />
+                <span v-else class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light">
                   <component :is="CARD_ICONS[card.icon] || Info" class="size-5" />
                 </span>
                 <span class="min-w-0 flex-1">
@@ -223,7 +272,7 @@ onMounted(() => {
             </div>
 
             <!-- Changes waiting on the person. -->
-            <div v-for="(action, actionIndex) in message.actions" :key="action.id" class="yunit-card rounded-2xl bg-white p-4 ring-1 dark:bg-gray-800" :class="action.destructive ? 'ring-red-200 dark:ring-red-500/30' : 'ring-primary/25 dark:ring-primary-light/30'">
+            <div v-for="(action, actionIndex) in message.actions" :key="action.id" class="rounded-2xl bg-white p-4 ring-1 dark:bg-gray-800" :class="action.destructive ? 'ring-red-200 dark:ring-red-500/30' : 'ring-primary/25 dark:ring-primary-light/30'">
               <div class="flex gap-3">
                 <span
                   :class="[
@@ -311,7 +360,7 @@ onMounted(() => {
           <PaperPlaneRight class="size-5" />
         </button>
       </div>
-      <p class="py-2.5 text-center text-xs text-gray-400 dark:text-gray-500">YUNIT can be wrong. Nothing changes until you confirm it.</p>
+      <p class="py-2 text-center text-xs text-gray-400 dark:text-gray-500">YUNIT can be wrong. Nothing changes until you confirm it.</p>
     </form>
   </div>
 </template>
@@ -341,19 +390,6 @@ onMounted(() => {
    on (the shell sets how much room that needs). */
 .yunit-composer {
   padding-bottom: calc(env(safe-area-inset-bottom) + var(--bottom-bar-space, 0px));
-}
-
-/* Cards come in one after another, fading up a little: the answer arriving,
-   not decoration. */
-.yunit-card {
-  animation: yunit-card-in 0.35s ease-out backwards;
-}
-
-@keyframes yunit-card-in {
-  from {
-    opacity: 0;
-    translate: 0 6px;
-  }
 }
 
 /* The reply's Markdown, kept to what a short answer needs. */
@@ -402,8 +438,7 @@ onMounted(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .yunit-typing i,
-  .yunit-card {
+  .yunit-typing i {
     animation: none;
   }
 }

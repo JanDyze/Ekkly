@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="o" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB21E"/><stop offset=".5" stop-color="#FF7417"/><stop offset="1" stop-color="#EC4319"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D9DFF"/><stop offset=".55" stop-color="#1467E8"/><stop offset="1" stop-color="#0A4FC4"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BD4C0"/><stop offset="1" stop-color="#0B93AB"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <mask id="teacher" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="#fff"/><g stroke="#000" stroke-width="4">
+  <circle cx="15" cy="36" r="5.6" fill="#000"/>
+  <path d="M5.5 62 C5.5 48.32 9.68 44.68 15 44.68 C20.32 44.68 24.5 48.32 24.5 62 Z" fill="#000"/></g></mask>
+  <g mask="url(#teacher)">
+    <path d="M24 46L17 60M44 46L51 60M34 46V60" stroke="#1467E8" stroke-width="3.6" stroke-linecap="round"/>
+    
+  <clipPath id="c"><rect x="10" y="4" width="50" height="42" rx="8"/></clipPath>
+  <g clip-path="url(#c)">
+    <rect x="10" y="4" width="50" height="42" fill="url(#b)"/>
+    <path d="M19 4 H60 V34.239999999999995 Z" fill="url(#o)"/>
+    <rect x="10" y="4" width="50" height="42" fill="url(#shine)"/>
+  </g>
+    <rect x="15" y="9" width="40" height="32" rx="4" fill="#fff"/>
+    <rect class="a-line" style="--i:0" x="20" y="15" width="22" height="3.6" rx="1.8" fill="#8E9CB3"/>
+    <rect class="a-line" style="--i:1" x="20" y="22.5" width="28" height="3.6" rx="1.8" fill="#8E9CB3"/>
+    <rect class="a-line" style="--i:2" x="20" y="30" width="16" height="3.6" rx="1.8" fill="#8E9CB3"/>
+    <path class="a-draw" style="--i:3" pathLength="1" d="M40 31.5 l3.15 3.42 l5.8500000000000005 -7.2" fill="none" stroke="#1467E8" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g class="a-pop" style="--i:1">
+  <circle cx="15" cy="36" r="5.6" fill="url(#o)"/>
+  <path d="M5.5 62 C5.5 48.32 9.68 44.68 15 44.68 C20.32 44.68 24.5 48.32 24.5 62 Z" fill="url(#o)"/></g>
+</svg>

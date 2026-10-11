@@ -7,8 +7,8 @@
 // It comes in two parts, because the home is full of cards and the church
 // must never stand behind them:
 //
-//   sky  — the sky, the panes of light in its corner (Ekkly's window, its
-//          panes and the cross between them) and the clouds. It fills the
+//   sky  — the sky, Ekkly's window in its corner with the light falling
+//          through it (WindowLight), and the clouds. It fills the
 //          whole page behind everything, from the top.
 //   land — the hills, the bushes and the church. It stands in the room left
 //          under the apps, sized to that room's height, so the church is
@@ -19,6 +19,54 @@
 //
 // Both draw in the painting's own coordinates (887 × 1774), so the two halves
 // line up as one picture however they are placed.
+
+import WindowLight from '../common/WindowLight.vue'
+
+// The rain, as three sheets of streaks at three depths. One small tile of
+// two streaks repeated in a grid read as rain marching in step — every streak
+// level with its neighbours. So each sheet's streaks sit at no pattern within
+// its tile, the tiles are three different sizes whose repeats never line up,
+// and the nearer the sheet, the longer, brighter and faster its streaks.
+// `drops` are [x, y, length] inside the tile, kept inside it so none is cut.
+// `speed` is in the picture's units a second.
+const RAIN = [
+  {
+    key: 'far',
+    w: 151,
+    h: 223,
+    width: 0.9,
+    opacity: 0.45,
+    speed: 150,
+    drops: [[12, 18, 8], [63, 0, 9], [118, 61, 7], [37, 104, 9], [96, 139, 8], [141, 182, 7], [21, 201, 8], [79, 88, 7]],
+  },
+  {
+    key: 'mid',
+    w: 127,
+    h: 197,
+    width: 1.2,
+    opacity: 0.7,
+    speed: 220,
+    drops: [[29, 9, 12], [101, 47, 11], [8, 83, 13], [66, 121, 12], [117, 158, 10], [44, 170, 11]],
+  },
+  {
+    key: 'near',
+    w: 97,
+    h: 163,
+    width: 1.6,
+    opacity: 1,
+    speed: 300,
+    drops: [[71, 4, 18], [19, 52, 16], [52, 98, 19], [88, 131, 15]],
+  },
+]
+
+// One repeat of a sheet, down the rain's slant of 14°, and how long it takes
+// to fall that far: what the sheet moves by before it starts again, seamless.
+const SLANT = (14 * Math.PI) / 180
+const fallOf = (layer) => ({
+  '--dx': `${(-layer.h * Math.sin(SLANT)).toFixed(2)}px`,
+  '--dy': `${(layer.h * Math.cos(SLANT)).toFixed(2)}px`,
+  '--fall': `${(layer.h / layer.speed).toFixed(3)}s`,
+})
 
 defineProps({
   part: { type: String, default: 'sky' },
@@ -42,9 +90,26 @@ defineProps({
         <stop offset="0.84" style="stop-color: var(--scene-horizon)" />
         <stop offset="1" style="stop-color: var(--scene-horizon)" />
       </linearGradient>
-      <pattern id="scene-rain-sky" width="34" height="58" patternUnits="userSpaceOnUse" patternTransform="rotate(14)">
-        <line x1="6" y1="0" x2="6" y2="22" stroke-width="2" stroke-linecap="round" style="stroke: var(--scene-rain)" />
-        <line x1="23" y1="30" x2="23" y2="50" stroke-width="2" stroke-linecap="round" style="stroke: var(--scene-rain)" />
+      <pattern
+        v-for="layer in RAIN"
+        :id="`scene-rain-sky-${layer.key}`"
+        :key="layer.key"
+        :width="layer.w"
+        :height="layer.h"
+        patternUnits="userSpaceOnUse"
+        patternTransform="rotate(14)"
+      >
+        <line
+          v-for="([x, y, length], i) in layer.drops"
+          :key="i"
+          :x1="x"
+          :y1="y"
+          :x2="x"
+          :y2="y + length"
+          :stroke-width="layer.width"
+          stroke-linecap="round"
+          :style="{ stroke: 'var(--scene-rain)', opacity: layer.opacity }"
+        />
       </pattern>
       <linearGradient id="scene-rain-sky-haze" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" style="stop-color: var(--scene-haze); stop-opacity: 0" />
@@ -60,10 +125,11 @@ defineProps({
     <rect width="887" height="1774" fill="url(#scene-sky)" />
     <rect width="887" height="1774" fill="url(#scene-glow)" />
 
-    <!-- Panes of light in the corner, like Ekkly's window seen up close. -->
-    <path d="M0 0H338V285C338 345 300 385 240 415L0 522Z" style="fill: var(--scene-pane-dim); opacity: 0.5" />
-    <path d="M123 163L297 0H338V285C338 345 300 385 240 415L123 468Z" style="fill: var(--scene-pane); opacity: 0.7" />
-    <path d="M0 0H113V165L0 232Z" style="fill: var(--scene-pane); opacity: 0.35" />
+    <!-- Ekkly's window in the corner, its light falling in toward the page
+         (WindowLight), in the sky's own pane colour. On a phone the deck
+         stands over most of it; beside a wide screen's column it shows
+         whole. -->
+    <WindowLight mirror x="0" y="0" width="640" height="576" class="scene-window" />
 
     <!-- Clouds drifting higher up, so some of the sky shows between the
          cards above as well as at the foot. -->
@@ -97,7 +163,21 @@ defineProps({
       <path d="M480 980C500 946 548 934 580 952C606 916 670 912 700 946C740 934 790 952 800 980Z" />
     </g>
     <rect class="scene-overcast" width="887" height="1774" style="fill: var(--scene-overcast)" />
-    <rect class="scene-rain" width="887" height="1774" fill="url(#scene-rain-sky)" />
+    <!-- Each sheet is drawn a repeat larger than the picture all round, so
+         moving it by one repeat never shows an edge. -->
+    <g class="scene-rain">
+      <rect
+        v-for="layer in RAIN"
+        :key="layer.key"
+        class="scene-rain-fall"
+        :style="fallOf(layer)"
+        x="-120"
+        y="-260"
+        width="1127"
+        height="2034"
+        :fill="`url(#scene-rain-sky-${layer.key})`"
+      />
+    </g>
     <rect class="scene-haze" y="1100" width="887" height="674" fill="url(#scene-rain-sky-haze)" />
   </svg>
 
@@ -109,9 +189,26 @@ defineProps({
     aria-hidden="true"
   >
     <defs>
-      <pattern id="scene-rain-land" width="34" height="58" patternUnits="userSpaceOnUse" patternTransform="rotate(14)">
-        <line x1="6" y1="0" x2="6" y2="22" stroke-width="2" stroke-linecap="round" style="stroke: var(--scene-rain)" />
-        <line x1="23" y1="30" x2="23" y2="50" stroke-width="2" stroke-linecap="round" style="stroke: var(--scene-rain)" />
+      <pattern
+        v-for="layer in RAIN"
+        :id="`scene-rain-land-${layer.key}`"
+        :key="layer.key"
+        :width="layer.w"
+        :height="layer.h"
+        patternUnits="userSpaceOnUse"
+        patternTransform="rotate(14)"
+      >
+        <line
+          v-for="([x, y, length], i) in layer.drops"
+          :key="i"
+          :x1="x"
+          :y1="y"
+          :x2="x"
+          :y2="y + length"
+          :stroke-width="layer.width"
+          stroke-linecap="round"
+          :style="{ stroke: 'var(--scene-rain)', opacity: layer.opacity }"
+        />
       </pattern>
       <linearGradient id="scene-rain-land-haze" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" style="stop-color: var(--scene-haze); stop-opacity: 0" />
@@ -243,7 +340,19 @@ defineProps({
     <!-- Rain and fog over the church as well (see the sky above). No grey
          veil here: this layer's top edge is in the middle of the sky, and a
          veil would draw it as a line; the sky's veil is behind the hills. -->
-    <rect class="scene-rain" x="-4000" y="1240" width="4887" height="534" fill="url(#scene-rain-land)" />
+    <g class="scene-rain">
+      <rect
+        v-for="layer in RAIN"
+        :key="layer.key"
+        class="scene-rain-fall"
+        :style="fallOf(layer)"
+        x="-4120"
+        y="1000"
+        width="5127"
+        height="774"
+        :fill="`url(#scene-rain-land-${layer.key})`"
+      />
+    </g>
     <rect class="scene-haze" x="-4000" y="1380" width="4887" height="394" fill="url(#scene-rain-land-haze)" />
   </svg>
 </template>
@@ -259,7 +368,6 @@ defineProps({
   --scene-horizon: #f8f5e6;
   --scene-glow: #fef6e3;
   --scene-pane: #a9d6f3;
-  --scene-pane-dim: #6cb0e2;
   --scene-cloud: #f2f7f6;
   --scene-cloud-shade: #def0f9;
   --scene-cloud-warm: #fdf9ee;
@@ -299,7 +407,6 @@ defineProps({
   --scene-horizon: #34364f;
   --scene-glow: #4a4152;
   --scene-pane: #2a4568;
-  --scene-pane-dim: #0a1526;
   --scene-cloud: #2c3d5a;
   --scene-cloud-shade: #24344f;
   --scene-cloud-warm: #383a54;
@@ -324,16 +431,38 @@ defineProps({
   --scene-glass: #ffcf6b;
   --scene-door: #143a52;
   --scene-window-light: #ffc861;
+  --scene-rain: rgb(255 255 255 / 0.4);
   /* A veil that darkens a night sky rather than lightening it. */
   --scene-overcast: #050a14;
   --scene-window-glow: 0.55;
+  /* Words on the night sky: white, with a dark glow. */
+  --scene-ink: white;
+  --scene-ink-soft: rgb(255 255 255 / 0.75);
+  --scene-ink-accent: var(--color-primary-light);
+  --scene-ink-halo: rgb(0 0 0 / 0.75);
 }
 
 /* The weather's own colours, the same day and night. */
 .home-scene {
-  --scene-rain: rgb(255 255 255 / 0.55);
+  /* Blue-grey on a light sky, where white would vanish; white at night. */
+  --scene-rain: rgb(45 75 115 / 0.45);
   --scene-haze: #eef2f4;
   --scene-overcast: #8c99aa;
+}
+
+/* What words set on the picture are written in — the home's verse. They
+   follow the sky, not the app's theme: live sky draws a day sky in dark mode
+   at noon, and white letters with a dark glow vanished into it. Dark ink with
+   a white glow on a light sky (day, and dawn and dusk, whose foot is pale),
+   white with a dark glow at night (above). Low in specificity, so the night
+   rule wins wherever it applies. */
+:where(.home-scene) {
+  --scene-ink: var(--color-gray-800);
+  --scene-ink-soft: var(--color-gray-500);
+  /* Deepened, because in dark mode the accent token is its light shade, and
+     that is pale on a light sky. */
+  --scene-ink-accent: color-mix(in oklab, var(--color-primary) 72%, black);
+  --scene-ink-halo: rgb(255 255 255 / 0.95);
 }
 
 /* Dawn and dusk (useLiveSky), over the day's land: the sky and its clouds
@@ -346,7 +475,6 @@ defineProps({
   --scene-horizon: #fde2c6;
   --scene-glow: #ffd8a8;
   --scene-pane: #c2cbf0;
-  --scene-pane-dim: #5f76c0;
   --scene-cloud: #fbe9e6;
   --scene-cloud-shade: #efd6da;
   --scene-cloud-warm: #fde9d8;
@@ -359,11 +487,20 @@ defineProps({
   --scene-horizon: #fbbf86;
   --scene-glow: #ffb36b;
   --scene-pane: #8b8fd0;
-  --scene-pane-dim: #34407f;
   --scene-cloud: #f6c9b8;
   --scene-cloud-shade: #e2a6a4;
   --scene-cloud-warm: #fbd2b0;
   --scene-window-glow: 0.3;
+}
+
+/* The window in the sky, in the sky's pane colour (whatever the time of day
+   makes it), stronger than on a card: it is the sky's own glass, not a tint
+   on someone's colour. */
+.scene-window {
+  --window-glass: var(--scene-pane);
+  --window-glass-opacity: 0.75;
+  --window-beam-opacity: 0.5;
+  --window-cast-opacity: 0.4;
 }
 
 .scene-extra-clouds,
@@ -383,19 +520,57 @@ defineProps({
 .home-scene[data-weather='fog'] .scene-haze {
   display: inline;
 }
+/* The picture is the ground the home stands on, never the thing to look at,
+   so the weather is told lightly: a veil that only takes the edge off the
+   sky, and rain as fine streaks barely there. It was heavier, and a rainy day
+   turned the whole page grey and striped, louder than the cards on it. */
 .home-scene[data-weather='cloudy'] .scene-overcast {
-  opacity: 0.22;
+  opacity: 0.1;
 }
 .home-scene[data-weather='rain'] .scene-overcast {
-  opacity: 0.34;
+  opacity: 0.14;
 }
 .home-scene[data-weather='storm'] .scene-overcast {
-  opacity: 0.5;
-}
-.home-scene[data-weather='storm'] .scene-rain {
-  opacity: 1;
+  opacity: 0.24;
 }
 .home-scene[data-weather='rain'] .scene-rain {
+  opacity: 0.45;
+}
+.home-scene[data-weather='storm'] .scene-rain {
   opacity: 0.7;
+}
+
+/* Rain falls. Each sheet is a pattern, so it moves by exactly one repeat of
+   its own tile down the slant (--dx, --dy, from RAIN above) in its own time
+   (--fall) and starts again, seamless: it reads as rain that keeps coming
+   rather than a picture of rain. The three sheets fall at three speeds, so
+   they are never in step. A storm comes down faster. Nothing else in the
+   picture moves; the rain is something happening. */
+.scene-rain-fall {
+  animation: scene-rain-fall var(--fall, 0.6s) linear infinite;
+}
+.home-scene[data-weather='storm'] .scene-rain-fall {
+  animation-duration: calc(var(--fall, 0.6s) * 0.7);
+}
+
+@keyframes scene-rain-fall {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(var(--dx), var(--dy));
+  }
+}
+
+/* Asked for less motion, the rain holds still, and fainter, so a still sheet
+   of streaks never reads as a pattern laid over the page. */
+@media (prefers-reduced-motion: reduce) {
+  .scene-rain-fall {
+    animation: none;
+  }
+  .home-scene[data-weather='rain'] .scene-rain,
+  .home-scene[data-weather='storm'] .scene-rain {
+    opacity: 0.3;
+  }
 }
 </style>

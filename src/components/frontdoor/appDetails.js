@@ -2,6 +2,7 @@ import {
   Alarm,
   BellRinging,
   BookmarkSimple,
+  BookOpenText,
   CalendarX,
   Cake,
   ChatCircleText,
@@ -23,6 +24,7 @@ import {
   LinkSimple,
   ListHeart,
   MagnifyingGlass,
+  MicrophoneStage,
   MusicNotes,
   NotePencil,
   Phone,
@@ -108,6 +110,14 @@ export const APP_DETAILS = {
       { icon: Keyboard, text: 'Just type notes in the meeting' },
       { icon: NotePencil, text: 'Written up for you by YUNIT' },
       { icon: Printer, text: 'Print or export to file' },
+    ],
+  },
+  teaching: {
+    headline: 'Sunday is ready before Sunday',
+    wins: [
+      { icon: MicrophoneStage, text: 'Sermon notes written ahead' },
+      { icon: BookOpenText, text: 'A lesson for every class' },
+      { icon: Copy, text: 'Teach a good plan again' },
     ],
   },
   prayer: {

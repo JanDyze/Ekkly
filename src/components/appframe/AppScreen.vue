@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft } from '../../icons'
 import AppArt from '../common/AppArt.vue'
+import { interiorVars } from './churchInterior'
 
 // One screen of an app inside Ekkly: its home, or a section one step off it.
 //
@@ -103,19 +104,22 @@ defineExpose({ scroller })
   <div
     ref="scroller"
     :class="[
-      'h-full bg-gray-50 dark:bg-gray-900',
+      'app-interior h-full bg-gray-50 dark:bg-gray-900',
       fill
         ? 'flex flex-col overflow-hidden'
         : hasHeader
           ? 'overflow-y-auto overscroll-contain'
           : 'overflow-hidden with-bar:overflow-y-auto with-bar:overscroll-contain',
     ]"
+    :style="interiorVars"
     @scroll.passive="onScroll"
   >
+    <!-- The way back and the screen's name are for the screen, never the
+         paper: a printed session report starts with the report. -->
     <header
       v-if="hasHeader"
       :class="[
-        'sticky top-0 z-30 border-b border-gray-200/70 bg-gray-50/85 pt-[env(safe-area-inset-top)] backdrop-blur-md transition-transform duration-300 ease-out dark:border-gray-800/70 dark:bg-gray-900/85',
+        'no-print sticky top-0 z-30 border-b border-gray-200/70 bg-gray-50/85 pt-[env(safe-area-inset-top)] backdrop-blur-md transition-transform duration-300 ease-out dark:border-gray-800/70 dark:bg-gray-900/85',
         hidden ? '-translate-y-full' : '',
       ]"
       @focusin="hidden = false"
@@ -131,14 +135,15 @@ defineExpose({ scroller })
           <ChevronLeft class="size-5" />
         </button>
         <!-- The tile that opened this section flies its drawing here too
-             (router/viewTransitions.js). -->
+             (router/viewTransitions.js), and it lands as the tile wore it: in
+             full colour. It used to be flattened into the accent here, so the
+             drawing changed colour on the way from the tile to the header. -->
         <AppArt
           v-if="headerArt"
           :app-key="headerArt"
           :play="1"
-          flat
           :data-morph-icon="route.path"
-          class="size-9 shrink-0 text-primary dark:text-primary-light"
+          class="size-9 shrink-0"
         />
         <div class="min-w-0 flex-1">
           <!-- Named by its path, so the tile that opened this section can fly
@@ -170,3 +175,32 @@ defineExpose({ scroller })
     </main>
   </div>
 </template>
+
+<style scoped>
+/* Inside the church (churchInterior.js): its windows high on the back wall,
+   a little below the top so a short list does not hide them, no wider than a
+   phone's column so a desktop does not blow them up, and its pews along the
+   foot. A scrolling element's own background stays where it is while the
+   list moves over it, so the room holds still under a scroll. */
+.app-interior {
+  background-image: var(--interior-windows), var(--interior-pews);
+  background-repeat: no-repeat;
+  background-position:
+    center 38%,
+    center bottom;
+  background-size:
+    min(100%, 30rem) auto,
+    min(100%, 42rem) auto;
+}
+
+.dark .app-interior {
+  background-image: var(--interior-windows-dark), var(--interior-pews-dark);
+}
+
+/* On paper a report is the page, with nothing behind it. */
+@media print {
+  .app-interior {
+    background-image: none;
+  }
+}
+</style>

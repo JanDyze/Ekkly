@@ -55,9 +55,17 @@ export function useHomeVerse() {
         text: passage.verses.map((v) => v.text).join(' ').replace(/[“”]/g, '').trim(),
         reference: passage.reference,
         version: passage.version,
-        // Where it is in the reader, for the card to open.
+        // Where it is in the reader, for the card to open — down to the
+        // verses, so the reader opens on them lit (Bible.vue, `?v=`). A
+        // passage running into the next chapter is lit to its chapter's end.
         slug: passage.ref.slug,
         chapter: passage.ref.startChapter,
+        verses:
+          passage.ref.startVerse == null
+            ? ''
+            : passage.ref.endChapter === passage.ref.startChapter && passage.ref.endVerse > passage.ref.startVerse
+              ? `${passage.ref.startVerse}-${passage.ref.endVerse}`
+              : String(passage.ref.startVerse),
       }
     },
     { immediate: true }

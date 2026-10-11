@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="o" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB21E"/><stop offset=".5" stop-color="#FF7417"/><stop offset="1" stop-color="#EC4319"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D9DFF"/><stop offset=".55" stop-color="#1467E8"/><stop offset="1" stop-color="#0A4FC4"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BD4C0"/><stop offset="1" stop-color="#0B93AB"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <path class="a-draw" style="--i:0" pathLength="1" d="M35.08 12.65A19 19 0 1 1 29.10 46.56" fill="none" stroke="url(#b)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M24.44 41.90A19 19 0 0 1 29.10 15.44" fill="none" stroke="#8E9CB3" stroke-width="3" stroke-linecap="round" stroke-dasharray="0 6.5"/>
+  <g class="a-pop" style="--i:1">
+    
+  <circle cx="35" cy="26" r="4.6" fill="url(#t)"/>
+  <path d="M27.5 45 C27.5 36.12 30.8 33.13 35 33.13 C39.2 33.13 42.5 36.12 42.5 45 Z" fill="url(#t)"/>
+    
+  <circle cx="47" cy="30" r="4" fill="url(#b)"/>
+  <path d="M40.5 45 C40.5 38.8 43.36 36.2 47 36.2 C50.64 36.2 53.5 38.8 53.5 45 Z" fill="url(#b)"/>
+  </g>
+  <g class="a-pop" style="--i:2">
+  <circle cx="11.5" cy="33" r="6" fill="url(#o)"/>
+  <path d="M2 57 C2 46.2 6.18 42.3 11.5 42.3 C16.82 42.3 21 46.2 21 57 Z" fill="url(#o)"/></g>
+</svg>

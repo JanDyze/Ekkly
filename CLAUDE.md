@@ -42,13 +42,13 @@ installable PWA.
   `src/composables/use<Things>.js` holds one shared, ref-counted live listener
   (see `useTasks.js`). Views never touch Firestore.
 - **Navigation has one source: `src/data/navigation.js`.** The home of all
-  apps (`/home`, `src/views/Apps.vue`) and its All apps drawer lay their
+  apps (`/home`, `src/views/Apps.vue`) and its All apps page (`/apps`) lay their
   tiles out from it, and the top bar names the app you are in from it. There is no sidebar:
   every app is a screen of its own and the home is the way between them, the
   top bar's mark leading back to it. A bottom bar (`src/components/BottomBar.vue`)
   shows on phones only for whoever turns it on in Preferences (`useBottomBar`):
   the first four apps on their home either side of Ekkly's round mark, which
-  opens the All apps drawer. Don't add links
+  opens the All apps page. Don't add links
   anywhere else. The one
   exception is a page marked `account: true` (Settings): it is not an app, so
   the app lists leave it out and it opens from the avatar's drawer instead.
@@ -124,9 +124,21 @@ canvas from the calendar, engine in `src/utils/video/`) the third, People
 fourth, Attendance (`src/apps/attendance/`, the recorder still at
 `/attendance/record`) the fifth, Finances (`src/apps/finances/`, the book
 at `/finances/book/:month`) the sixth, Events (`src/apps/events/`, the
-month grid at `/events/calendar`, `?date=` to open a day) the seventh, and Tasks
+month grid at `/events/calendar`, `?date=` to open a day) the seventh, Tasks
 (`src/apps/tasks/`, every list one screen, `TasksList`, told by its route
-which tasks; `?q=` opens one already searched) the eighth. A
+which tasks; `?q=` opens one already searched) the eighth, Minutes
+(`src/apps/minutes/`, a meeting still at `/minutes/:id` as a focus route;
+action items and decisions are read out of the write-ups) the ninth,
+Small groups (`src/apps/smallgroups/`, a group at `/small-groups/:id`, a
+session under it) the tenth, Prayer (`src/apps/prayer/`, still at
+`/prayer-concerns`; every list one screen, `PrayerList`) the eleventh, Songs
+(`src/apps/songs/`, a song still at `/songs/:id` as a focus route) the
+twelfth, and the Gallery (`src/apps/gallery/`, an album at `/gallery/:id`, a
+photo at `/gallery/:id/v/:photoId`, the addresses share links carry) the
+thirteenth, and Teaching (`src/apps/teaching/`: sermon notes on the same
+`sermons` record Schedules' preaching sheet plans, Sunday school classes,
+and lessons, a lesson with no date being a plan to reuse) the fourteenth.
+People is the standard the rest are measured against. A
 screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
 `wide` for two panes side by side).
 
@@ -147,19 +159,30 @@ screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
      true (People's roll, Schedules' next Sunday) and the richest: the
      church's colour, the app's artwork on a white tile, faces along its foot.
    - Then the sections as `AppShortcut` tiles, two across, each with its own
-     artwork (`art`, drawn with the app icons by
-     `brand/ekkly/make-app-icons.mjs` as `<app>-<section>`, and shown in full
+     artwork (`art`, drawn as `<app>-<section>` in a file of the app's own,
+     `brand/ekkly/sections/<app>.mjs`, which `make-app-icons.mjs` picks up
+     and hands its drawing kit; run it to regenerate), and shown in full
      colour on the same card as the home's apps, each in a colour of its own
      from `SECTION_HUES`; see BRAND.md), and its name. Nothing else, unless
      something behind it is waiting on you: then a `badge` with how many
      (`urgent` when it is overdue). Totals, faces, dates and charts are what
      the section shows once opened, and the deck already says what matters,
      so a tile that repeats them only makes the grid slower to read.
-   Presentation and Videos still use the older `AppHero` with a waiting
-   button (`AppActionsSheet`) and `SectionGlyph` tiles; move them to this when
-   they are next touched. Every screen sits in `AppScreen`, which
-   gives a section its back arrow and hide-on-scroll header; Ekkly's top bar
-   shows only on the app's home. They live in `src/components/appframe/`.
+   Every app's home is built this way now, Presentation and Videos included
+   (the older `AppHero`, `AppActionsSheet` and `SectionGlyph` are no longer
+   on any home). Every screen sits in `AppScreen`, which gives a section its
+   back arrow and hide-on-scroll header, shows the section's artwork in full
+   colour beside its title, and stands the screen inside a church
+   (`churchInterior.js`: windows, light, pews, all barely there); Ekkly's top
+   bar shows only on the app's home. They live in `src/components/appframe/`.
+   - Last, its commercial: holding the app's tile anywhere (the home, the All
+     apps page, the bottom bar) plays a story of what it does (`AppPeek`). It
+     is a folder in `src/components/appframe/stories/<app>/` with an
+     `index.js` exporting `{ art, scenes }`, found by a glob, so nothing else
+     is edited; copy `stories/people/`. Made-up people only, nothing may
+     overflow the 300×460 screen at any moment, and where a scene shows a
+     photo it uses the drawn ones in `src/assets/mock-photos/`
+     (`brand/ekkly/make-mock-photos.mjs`).
 3. Data still flows view → composable → service. An app's summary of its own
    data goes in one composable (`useScheduleOverview.js`), so its hero and
    tiles cannot disagree.

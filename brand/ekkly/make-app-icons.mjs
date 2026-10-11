@@ -7,8 +7,9 @@
 // Optionally, a contact sheet to judge them side by side, on light and dark:
 //
 //   node brand/ekkly/make-app-icons.mjs src/assets/app-icons /tmp/sheet node_modules/sharp
-import { mkdirSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { mkdirSync, readdirSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
 
 const [outDir, sheetPath, sharpPath] = process.argv.slice(2)
@@ -882,6 +883,184 @@ const ICONS = {
   <circle cx="32" cy="32" r="25" fill="url(#t)"/>
   <circle cx="32" cy="32" r="25" fill="url(#shine)"/>
   ${check(19, 21, 26, '#fff', 5.5, 0)}`),
+
+  // ---- Sections of the Minutes app (src/apps/minutes), named
+  // `minutes-<section>`. Each is written on the app's own sheet, with its
+  // folded corner, so they read as rooms of Minutes.
+
+  // Meetings: the minutes filed one on another, a month's worth, the newest
+  // on top with its date chip.
+  'minutes-meetings': svg(`
+  ${gapMask('front', `<rect x="6" y="11" width="44" height="49" rx="9" fill="#000"/>`)}
+  <g mask="url(#front)">
+    <rect x="18" y="4" width="40" height="48" rx="8" fill="url(#t)"/>
+    <rect x="18" y="4" width="40" height="48" rx="8" fill="url(#shine)"/>
+  </g>
+  ${splitTile(6, 11, 44, 49, 9, 'c')}
+  <path d="M11.5 19.5a3 3 0 0 1 3-3h19l8.5 8.5v26.5a3 3 0 0 1-3 3H14.5a3 3 0 0 1-3-3z" fill="#fff"/>
+  <path d="M33.5 16.5v6a2.5 2.5 0 0 0 2.5 2.5H42" fill="#DCE3EE"/>
+  <rect class="a-cell" style="--i:0" x="16" y="21.5" width="11" height="7" rx="2" fill="url(#o)"/>
+  <rect class="a-line" style="--i:1" x="16" y="33" width="21" height="3.6" rx="1.8" fill="${LINE}"/>
+  <rect class="a-line" style="--i:2" x="16" y="40.5" width="16" height="3.6" rx="1.8" fill="${LINE}"/>`),
+
+  // To write up: a notepad of rough notes, scribbled rather than written,
+  // and the pencil still on it.
+  'minutes-writeup': svg(`
+  ${splitTile(4, 9, 46, 50, 9, 'c')}
+  <rect x="9.5" y="16" width="35" height="37" rx="4" fill="#fff"/>
+  ${[15, 27, 39].map((x) => `<rect x="${x - 2}" y="4" width="4" height="11" rx="2" fill="${NAVY}" stroke="#fff" stroke-width="1.5"/>`).join('')}
+  ${[6, 5, 3]
+    .map(
+      // A line of handwriting too quick to read: a run of little waves.
+      (waves, i) =>
+        `<path class="a-draw" style="--i:${i}" pathLength="1" d="M14 ${25 + i * 8}${Array.from({ length: waves }, (_, k) => ` q2 ${k % 2 ? 3 : -3} 4 0`).join('')}" fill="none" stroke="${LINE}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`
+    )
+    .join('')}
+  <g transform="translate(0 4) rotate(45 46 44)">
+    <g class="a-write">
+      <rect x="41" y="22" width="10" height="30" rx="2" fill="url(#o)" stroke="#fff" stroke-width="2.4" paint-order="stroke"/>
+      <path d="M41 52h10l-5 9z" fill="#FFD9A6" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" paint-order="stroke"/>
+      <path d="M44.4 58.3L46 61l1.6-2.7z" fill="${NAVY}"/>
+      <rect x="41" y="22" width="10" height="5" rx="2" fill="${O3}"/>
+    </g>
+  </g>`),
+
+  // Action items: a table of who does what — each row ticked or not, the
+  // job, and the face of whoever has it.
+  'minutes-actions': svg(`
+  ${splitTile(4, 6, 56, 52, 10, 'c')}
+  <rect x="9.5" y="12" width="45" height="40" rx="5" fill="#fff"/>
+  <rect x="9.5" y="12" width="45" height="7" rx="3" fill="#DCE3EE"/>
+  <rect x="9.5" y="16" width="45" height="3" fill="#DCE3EE"/>
+  <rect x="21" y="19" width="1.6" height="33" fill="#DCE3EE"/>
+  ${[0, 1, 2]
+    .map(
+      (i) => `
+  <rect x="9.5" y="${29 + i * 11}" width="45" height="1.6" fill="#DCE3EE"/>`
+    )
+    .slice(0, 2)
+    .join('')}
+  ${[0, 1, 2]
+    .map(
+      (i) => `${i < 2 ? check(12.4, 20.4 + i * 11, 6, B2, 2.4, i * 2) : `<rect x="12.8" y="${21.5 + i * 11}" width="5.6" height="5.6" rx="1.6" fill="none" stroke="${LINE}" stroke-width="1.8"/>`}
+  <rect class="a-line" style="--i:${i * 2 + 1}" x="26" y="${22.6 + i * 11}" width="${[13, 10, 12][i]}" height="3.4" rx="1.7" fill="${LINE}"/>
+  <g class="a-pop" style="--i:${i * 2 + 1}">${person(47.5, 22.4 + i * 11, 2.5, 9, 29 + i * 11, `url(#${['o', 'b', 't'][i]})`)}</g>`
+    )
+    .join('')}`),
+
+  // Decisions: the minutes, and the gavel come down on its block beside
+  // them — what was agreed. The block is teal rather than navy, which would
+  // vanish on a dark page.
+  'minutes-decisions': svg(`
+  ${splitTile(4, 4, 40, 44, 9, 'c')}
+  <rect x="9" y="9" width="30" height="34" rx="4" fill="#fff"/>
+  <rect class="a-line" style="--i:0" x="13.5" y="15" width="21" height="3.6" rx="1.8" fill="${LINE}"/>
+  <rect class="a-line" style="--i:1" x="13.5" y="22.5" width="16" height="3.6" rx="1.8" fill="${LINE}"/>
+  <rect class="a-line" style="--i:2" x="13.5" y="30" width="12" height="3.6" rx="1.8" fill="${LINE}"/>
+  <rect x="30" y="52.5" width="30" height="8" rx="3" fill="url(#t)" stroke="#fff" stroke-width="2" paint-order="stroke"/>
+  <g class="a-pop" style="--i:3">
+    <g transform="rotate(30 44 43)">
+      <rect x="41.5" y="10" width="5" height="30" rx="2.5" fill="url(#b)" stroke="#fff" stroke-width="2.4" paint-order="stroke"/>
+      <rect x="32" y="36" width="24" height="13" rx="4" fill="url(#o)" stroke="#fff" stroke-width="2.4" paint-order="stroke"/>
+      <rect x="32" y="36" width="24" height="13" rx="4" fill="url(#shine)"/>
+      <rect x="29.5" y="34" width="5" height="17" rx="2" fill="${O3}" stroke="#fff" stroke-width="1.8" paint-order="stroke"/>
+      <rect x="53.5" y="34" width="5" height="17" rx="2" fill="${O3}" stroke="#fff" stroke-width="1.8" paint-order="stroke"/>
+    </g>
+  </g>`),
+
+  // ---- Sections of the Small groups app (src/apps/smallgroups), named
+  // `smallgroups-<section>`. The app's ring of people is in each.
+
+  // Groups: every group, three small circles of people.
+  'smallgroups-groups': svg(`
+  ${[
+    ['o', 18.5, 20],
+    ['b', 45.5, 20],
+    ['t', 32, 44],
+  ]
+    .map(
+      ([f, cx, cy], i) => `
+  <g class="a-pop" style="--i:${i}">
+    <circle cx="${cx}" cy="${cy}" r="12.5" fill="url(#${f})"/>
+    <circle cx="${cx}" cy="${cy}" r="12.5" fill="url(#shine)"/>
+    <clipPath id="g${i}"><circle cx="${cx}" cy="${cy}" r="12.5"/></clipPath>
+    <g clip-path="url(#g${i})">
+      ${person(cx - 4.5, cy - 1, 2.8, 8.5, cy + 14, '#fff')}
+      ${person(cx + 4.5, cy - 1, 2.8, 8.5, cy + 14, '#fff')}
+    </g>
+  </g>`
+    )
+    .join('')}`),
+
+  // Sessions: a meeting on the calendar, and the group gathered on it.
+  'smallgroups-sessions': svg(`
+  ${splitTile(5, 11, 54, 47, 10, 'c')}
+  <rect x="10.5" y="22" width="43" height="30.5" rx="4.5" fill="#fff"/>
+  <path class="a-draw" style="--i:0" pathLength="1" d="M17.5 36a14.5 14.5 0 0 1 29 0" fill="none" stroke="url(#o)" stroke-width="3" stroke-linecap="round"/>
+  <g class="a-pop" style="--i:1">
+    ${person(22, 37, 3.4, 10.5, 50, 'url(#b)')}
+    ${person(42, 37, 3.4, 10.5, 50, 'url(#t)')}
+    ${person(32, 34, 4.2, 13, 50, 'url(#o)')}
+  </g>
+  <rect x="17" y="5" width="5.5" height="12" rx="2.75" fill="${O3}" stroke="#fff" stroke-width="1.5"/>
+  <rect x="41.5" y="5" width="5.5" height="12" rx="2.75" fill="${O3}" stroke="#fff" stroke-width="1.5"/>`),
+
+  // Not in a group: a group's ring with a gap left open in it, and someone
+  // beside it with room to step in. A place kept, never a person left out.
+  'smallgroups-unplaced': svg(`
+  ${(() => {
+    // The ring round (40, 31), drawn solid from the top round the right to
+    // the lower left, and left dotted across the left where the gap is.
+    const at = (deg) => [40 + 19 * Math.cos((deg * Math.PI) / 180), 31 + 19 * Math.sin((deg * Math.PI) / 180)].map((n) => n.toFixed(2)).join(' ')
+    return `<path class="a-draw" style="--i:0" pathLength="1" d="M${at(-105)}A19 19 0 1 1 ${at(125)}" fill="none" stroke="url(#b)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M${at(145)}A19 19 0 0 1 ${at(-125)}" fill="none" stroke="${LINE}" stroke-width="3" stroke-linecap="round" stroke-dasharray="0 6.5"/>`
+  })()}
+  <g class="a-pop" style="--i:1">
+    ${person(35, 26, 4.6, 15, 45, 'url(#t)')}
+    ${person(47, 30, 4, 13, 45, 'url(#b)')}
+  </g>
+  <g class="a-pop" style="--i:2">${person(11.5, 33, 6, 19, 57, 'url(#o)')}</g>`),
+
+  // Forms: the blank attendance sheet coming off the printer, its rows of
+  // boxes still to fill in.
+  'smallgroups-forms': svg(`
+  <g class="a-pop">
+    <rect x="15" y="4" width="34" height="30" rx="3" fill="#fff" stroke="#DCE3EE" stroke-width="1.6"/>
+    ${[0, 1, 2]
+      .map(
+        (i) => `
+    <rect x="19.5" y="${9.5 + i * 6.5}" width="4" height="4" rx="1.2" fill="none" stroke="url(#b)" stroke-width="1.6"/>
+    <rect class="a-line" style="--i:${i}" x="27" y="${10.3 + i * 6.5}" width="${17 - i * 3}" height="2.6" rx="1.3" fill="${LINE}"/>`
+      )
+      .join('')}
+  </g>
+  ${splitTile(4, 26, 56, 26, 8, 'c')}
+  <rect x="13" y="33" width="38" height="5" rx="2.5" fill="${NAVY}" opacity=".85"/>
+  <circle cx="51" cy="44" r="2.6" fill="#fff"/>
+  <rect x="14" y="46" width="36" height="14" rx="2.5" fill="#fff" stroke="#DCE3EE" stroke-width="1.6"/>
+  <rect class="a-line" style="--i:3" x="19" y="51" width="20" height="2.8" rx="1.4" fill="${LINE}"/>`),
+}
+
+// Sections drawn in files of their own (brand/ekkly/sections/<app>.mjs): each
+// exports a function that is handed the drawing kit below and returns its
+// icons by name. So an app's rooms are drawn beside the app, and several apps
+// can be drawn at once without all editing this one file.
+const here = dirname(fileURLToPath(import.meta.url))
+const kit = { svg, splitTile, person, gapMask, check, gearShape, O1, O2, O3, B1, B2, B3, T1, T2, LINE, NAVY }
+const sectionsDir = join(here, 'sections')
+const sectionFiles = (() => {
+  try {
+    return readdirSync(sectionsDir).filter((f) => f.endsWith('.mjs')).sort()
+  } catch {
+    return []
+  }
+})()
+for (const file of sectionFiles) {
+  const draw = (await import(pathToFileURL(join(sectionsDir, file)).href)).default
+  for (const [key, text] of Object.entries(draw(kit))) {
+    if (ICONS[key]) throw new Error(`${file} draws ${key}, which is already drawn`)
+    ICONS[key] = text
+  }
 }
 
 for (const [key, text] of Object.entries(ICONS)) writeFileSync(join(outDir, `${key}.svg`), text)

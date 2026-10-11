@@ -114,6 +114,30 @@ const notice = ref(null)
 const highlighted = ref(null)
 const readerRef = ref(null)
 
+// Verses a link named (`?v=16` or `?v=16-17`): the home's verse of the day,
+// tapped. These stay lit rather than fading like a search's mark — the verse
+// was opened to be read here, in its chapter, and a mark that vanished while
+// the eye was still finding it would leave nothing to find. They go when the
+// chapter is turned or another verse is followed.
+const pinned = ref(null)
+const readPinned = () => {
+  const match = String(route.query.v || '').match(/^(\d+)(?:-(\d+))?$/)
+  if (!match) return null
+  const from = Number(match[1])
+  const to = Number(match[2] || match[1])
+  return to >= from ? { from, to } : null
+}
+watch(
+  () => [route.params.slug, route.params.chapter, route.query.v].join('|'),
+  () => {
+    pinned.value = readPinned()
+    if (pinned.value) highlighted.value = pinned.value.from
+  },
+  { immediate: true }
+)
+const isMarked = (number) =>
+  highlighted.value === number || (pinned.value && number >= pinned.value.from && number <= pinned.value.to)
+
 let loadToken = 0
 
 const loadCurrentChapter = async () => {
@@ -174,8 +198,10 @@ const settle = async () => {
   target.scrollIntoView({ block: 'center' })
 
   // The mark is for finding your line on arrival, not for keeping. Left up, it
-  // reads as something the verse itself carries.
+  // reads as something the verse itself carries. A link's verses are the
+  // exception (pinned, above): they were what the link was for.
   clearTimeout(fadeTimer)
+  if (pinned.value) return
   fadeTimer = setTimeout(() => (highlighted.value = null), 2600)
 }
 
@@ -589,7 +615,7 @@ const showingResults = computed(() => searchable.value)
           :data-verse="verse.verse"
           :class="[
             '-mx-1 rounded px-1 py-0.5 text-[15px] leading-[1.75] text-gray-800 transition-colors duration-1000 dark:text-gray-200',
-            highlighted === verse.verse ? 'bg-yellow-100 dark:bg-yellow-500/20' : '',
+            isMarked(verse.verse) ? 'bg-yellow-100 dark:bg-yellow-500/20' : '',
           ]"
         >
           <span class="mr-1 align-super text-[10px] font-bold text-gray-400 dark:text-gray-500">

@@ -65,6 +65,30 @@
         ],
         "createdAt": "2026-10-09T03:59:05.950Z",
         "reason": "Claude: grey icon sits on the white row; active:bg-amber-50 pairs with active:text-amber-600, so grey never shows on colour"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "apps-wobble",
+        "createdAt": "2026-10-10T10:25:20.646Z",
+        "reason": "Claude: literal home-screen jiggle while choosing an app to swap out (alternate ease-in-out rotate, not a bounce); carried over unchanged from AppsDrawer.vue, renamed from drawer-wobble"
+      },
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "src/views/AllApps.vue"
+        ],
+        "createdAt": "2026-10-10T10:25:20.885Z",
+        "reason": "Claude: the spotlight's deeper bottom edge is the project's card style (DeckCard, CHANGELOG v0.33.1 'cards with an edge, not a glow'); carried over unchanged from AppsDrawer.vue"
+      },
+      {
+        "rule": "gray-on-color",
+        "value": "*",
+        "files": [
+          "src/views/Yunit.vue"
+        ],
+        "createdAt": "2026-10-10T10:57:20.029Z",
+        "reason": "Claude: reply bubble's gray text and red error background are exclusive branches of one ternary, never applied together"
       }
     ]
   }

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="o" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB21E"/><stop offset=".5" stop-color="#FF7417"/><stop offset="1" stop-color="#EC4319"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D9DFF"/><stop offset=".55" stop-color="#1467E8"/><stop offset="1" stop-color="#0A4FC4"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BD4C0"/><stop offset="1" stop-color="#0B93AB"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <g class="a-pop" style="--i:0"><g transform="rotate(-15 32 38)">
+    <rect x="12" y="12" width="36" height="44" rx="5" fill="url(#o)"/>
+    <rect x="12" y="12" width="36" height="44" rx="5" fill="url(#shine)"/>
+  </g></g>
+  <g class="a-pop" style="--i:1"><g transform="rotate(12 32 38)">
+    <rect x="15" y="12" width="36" height="44" rx="5" fill="url(#t)"/>
+    <rect x="15" y="12" width="36" height="44" rx="5" fill="url(#shine)"/>
+  </g></g>
+  <g class="a-pop" style="--i:2">
+    
+    <rect x="13" y="14" width="38" height="45" rx="4" fill="#fff" stroke="#DCE3EE" stroke-width="1.6"/>
+    
+    <clipPath id="p3"><rect x="16.5" y="17.5" width="31" height="33" rx="2.5"/></clipPath>
+    <g clip-path="url(#p3)">
+      <rect x="16.5" y="17.5" width="31" height="33" fill="url(#b)"/>
+      <circle cx="38.82" cy="27.4" r="4.03" fill="#fff"/>
+      <path d="M16.5 50.5L27.66 33.34L34.480000000000004 42.58L38.82 37.96L47.5 50.5Z" fill="url(#t)"/>
+    </g>
+    <rect class="a-line" style="--i:3" x="19" y="51" width="16" height="3.2" rx="1.6" fill="#8E9CB3"/>
+  </g>
+</svg>

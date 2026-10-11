@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="o" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB21E"/><stop offset=".5" stop-color="#FF7417"/><stop offset="1" stop-color="#EC4319"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D9DFF"/><stop offset=".55" stop-color="#1467E8"/><stop offset="1" stop-color="#0A4FC4"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BD4C0"/><stop offset="1" stop-color="#0B93AB"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  
+  <clipPath id="c"><rect x="4" y="6" width="56" height="52" rx="10"/></clipPath>
+  <g clip-path="url(#c)">
+    <rect x="4" y="6" width="56" height="52" fill="url(#b)"/>
+    <path d="M14.08 6 H60 V43.44 Z" fill="url(#o)"/>
+    <rect x="4" y="6" width="56" height="52" fill="url(#shine)"/>
+  </g>
+  <rect x="9.5" y="12" width="45" height="40" rx="5" fill="#fff"/>
+  
+  <g class="a-pop" style="--i:0">
+    <rect x="14" y="16" width="11" height="8.5" rx="2.2" fill="url(#o)"/>
+    <path d="M18.3 18v4.5l3.8-2.25z" fill="#fff"/>
+  </g>
+  <rect class="a-line" style="--i:0" x="29" y="18.5" width="19" height="3.6" rx="1.8" fill="#8E9CB3"/>
+  <g class="a-pop" style="--i:1">
+    <rect x="14" y="27.5" width="11" height="8.5" rx="2.2" fill="url(#b)"/>
+    <path d="M18.3 29.5v4.5l3.8-2.25z" fill="#fff"/>
+  </g>
+  <rect class="a-line" style="--i:1" x="29" y="30" width="15" height="3.6" rx="1.8" fill="#8E9CB3"/>
+  <g class="a-pop" style="--i:2">
+    <rect x="14" y="39" width="11" height="8.5" rx="2.2" fill="url(#t)"/>
+    <path d="M18.3 41v4.5l3.8-2.25z" fill="#fff"/>
+  </g>
+  <rect class="a-line" style="--i:2" x="29" y="41.5" width="11" height="3.6" rx="1.8" fill="#8E9CB3"/>
+</svg>

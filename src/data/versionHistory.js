@@ -8,6 +8,18 @@
 
 export const versionHistory = [
   {
+    version: '0.34.0',
+    date: '2026-10-11',
+    title: 'Every app, ready for the week',
+    summary: 'Minutes, Small groups, Prayer, Songs and the Gallery open on what needs doing — and Teaching is new.',
+    highlights: [
+      'Teaching: write the message ahead, and plan a lesson for every Sunday school class.',
+      'Hold any app to see what it does. Slide up to keep it open.',
+      'Ask YUNIT to change anything about the church, its address included. You still confirm every change.',
+      'Tap the verse on your home to read it, highlighted, in the Bible.',
+    ],
+  },
+  {
     version: '0.33.4',
     date: '2026-10-10',
     title: 'Meet YUNIT',

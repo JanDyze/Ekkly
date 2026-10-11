@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  BookOpenText,
   Calendar,
   ClipboardCheck,
   FileText,
@@ -52,6 +53,7 @@ import settingsArt from '../assets/app-icons/settings.svg'
 import smallGroupsArt from '../assets/app-icons/smallgroups.svg'
 import songsArt from '../assets/app-icons/songs.svg'
 import tasksArt from '../assets/app-icons/tasks.svg'
+import teachingArt from '../assets/app-icons/teaching.svg'
 import todosArt from '../assets/app-icons/todos.svg'
 import videosArt from '../assets/app-icons/videos.svg'
 
@@ -80,7 +82,7 @@ import videosArt from '../assets/app-icons/videos.svg'
  * `account` marks a page that is not an app. Settings is where the church is
  * looked after rather than where its work is done, so it opens from the
  * drawer behind the avatar. It stays listed here so the top bar can still name
- * it, and allowedGroups leaves it out of the home and the All apps drawer.
+ * it, and allowedGroups leaves it out of the home and the All apps page.
  */
 export const NAV_GROUPS = [
   {
@@ -151,7 +153,7 @@ export const NAV_GROUPS = [
         description: 'The church calendar — services, meetings and everything else that is on.',
       },
       {
-        name: 'Song List',
+        name: 'Songs',
         tagline: 'Worship together',
         path: '/songs',
         short: 'Songs',
@@ -210,6 +212,16 @@ export const NAV_GROUPS = [
         icon: FileText,
         capability: 'minutes.view',
         description: 'Notes typed during a meeting, written up into minutes the church can file.',
+      },
+      {
+        name: 'Teaching',
+        tagline: 'Sermons and Sunday school',
+        path: '/teaching',
+        image: teachingArt,
+        art: 'teaching',
+        icon: BookOpenText,
+        capability: 'teaching.view',
+        description: 'Write the message ahead, plan each Sunday school class’s lesson, and keep the plans to teach again.',
       },
       {
         name: 'Prayer Concerns',

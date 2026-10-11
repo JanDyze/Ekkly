@@ -25,6 +25,7 @@ export const APP_HUES = {
   bible: AMBER,
   minutes: TEAL,
   prayer: ORANGE,
+  teaching: AMBER,
   gallery: TEAL,
   videos: RED,
   links: BLUE,

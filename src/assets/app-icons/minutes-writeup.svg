@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="o" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB21E"/><stop offset=".5" stop-color="#FF7417"/><stop offset="1" stop-color="#EC4319"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D9DFF"/><stop offset=".55" stop-color="#1467E8"/><stop offset="1" stop-color="#0A4FC4"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BD4C0"/><stop offset="1" stop-color="#0B93AB"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  
+  <clipPath id="c"><rect x="4" y="9" width="46" height="50" rx="9"/></clipPath>
+  <g clip-path="url(#c)">
+    <rect x="4" y="9" width="46" height="50" fill="url(#b)"/>
+    <path d="M12.28 9 H50 V45 Z" fill="url(#o)"/>
+    <rect x="4" y="9" width="46" height="50" fill="url(#shine)"/>
+  </g>
+  <rect x="9.5" y="16" width="35" height="37" rx="4" fill="#fff"/>
+  <rect x="13" y="4" width="4" height="11" rx="2" fill="#0B2A6B" stroke="#fff" stroke-width="1.5"/><rect x="25" y="4" width="4" height="11" rx="2" fill="#0B2A6B" stroke="#fff" stroke-width="1.5"/><rect x="37" y="4" width="4" height="11" rx="2" fill="#0B2A6B" stroke="#fff" stroke-width="1.5"/>
+  <path class="a-draw" style="--i:0" pathLength="1" d="M14 25 q2 -3 4 0 q2 3 4 0 q2 -3 4 0 q2 3 4 0 q2 -3 4 0 q2 3 4 0" fill="none" stroke="#8E9CB3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path class="a-draw" style="--i:1" pathLength="1" d="M14 33 q2 -3 4 0 q2 3 4 0 q2 -3 4 0 q2 3 4 0 q2 -3 4 0" fill="none" stroke="#8E9CB3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path class="a-draw" style="--i:2" pathLength="1" d="M14 41 q2 -3 4 0 q2 3 4 0 q2 -3 4 0" fill="none" stroke="#8E9CB3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(0 4) rotate(45 46 44)">
+    <g class="a-write">
+      <rect x="41" y="22" width="10" height="30" rx="2" fill="url(#o)" stroke="#fff" stroke-width="2.4" paint-order="stroke"/>
+      <path d="M41 52h10l-5 9z" fill="#FFD9A6" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" paint-order="stroke"/>
+      <path d="M44.4 58.3L46 61l1.6-2.7z" fill="#0B2A6B"/>
+      <rect x="41" y="22" width="10" height="5" rx="2" fill="#EC4319"/>
+    </g>
+  </g>
+</svg>

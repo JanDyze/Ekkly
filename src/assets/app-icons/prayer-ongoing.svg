@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="o" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB21E"/><stop offset=".5" stop-color="#FF7417"/><stop offset="1" stop-color="#EC4319"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D9DFF"/><stop offset=".55" stop-color="#1467E8"/><stop offset="1" stop-color="#0A4FC4"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BD4C0"/><stop offset="1" stop-color="#0B93AB"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <path class="a-draw" style="--i:0" pathLength="1" d="M10.5 27A22 22 0 0 1 47.5 15" fill="none" stroke="url(#b)" stroke-width="5" stroke-linecap="round"/>
+  <path class="a-draw" style="--i:1" pathLength="1" d="M53.5 37A22 22 0 0 1 16.5 49" fill="none" stroke="url(#o)" stroke-width="5" stroke-linecap="round"/>
+  <path class="a-pop" style="--i:3" d="M42.5 9.5l7 5.2-7.8 3.6z" fill="url(#b)" stroke="url(#b)" stroke-width="2.4" stroke-linejoin="round"/>
+  <path class="a-pop" style="--i:4" d="M21.5 54.5l-7-5.2 7.8-3.6z" fill="url(#o)" stroke="url(#o)" stroke-width="2.4" stroke-linejoin="round"/>
+  <g class="a-pop" style="--i:2">
+  <clipPath id="h"><path d="M32.00 43.30C22.82 37.25 18.50 32.93 18.50 28.18A6.48 6.48 0 0 1 32.00 25.59A6.48 6.48 0 0 1 45.50 28.18C45.50 32.93 41.18 37.25 32.00 43.30Z"/></clipPath>
+  <g clip-path="url(#h)">
+    <rect x="18.5" y="19.810000000000002" width="27" height="23.76" fill="url(#b)"/>
+    <path d="M23.36 19.810000000000002H45.5V36.9172Z" fill="url(#o)"/>
+    <rect x="18.5" y="19.810000000000002" width="27" height="23.76" fill="url(#shine)"/>
+  </g></g>
+</svg>

@@ -95,7 +95,13 @@ const placeOf = async (church) => {
   // Most specific first, skipping the house and street: "123 Rizal St,
   // Antipolo, Rizal" tries Antipolo, then Rizal.
   const parts = address.split(',').map((p) => p.trim()).filter(Boolean)
-  const tries = parts.length > 1 ? parts.slice(1) : parts
+  // A city is written "Calapan City" or "City of Calapan" and known to
+  // Open-Meteo as plain "Calapan", so each part is tried as written and then
+  // without the word, or a city's address falls through to Manila.
+  const tries = (parts.length > 1 ? parts.slice(1) : parts).flatMap((part) => {
+    const bare = part.replace(/^city of\s+/i, '').replace(/\s+city$/i, '').trim()
+    return bare && bare !== part ? [part, bare] : [part]
+  })
   for (const name of tries) {
     try {
       const res = await fetch(
@@ -137,9 +143,13 @@ const report = ref(null)
 let fetching = null
 
 const fetchSky = async (church) => {
+  // Which place the report was for. A report kept for another address is
+  // another town's weather: changing the church's address must not go on
+  // showing the old town's rain (or sun) for half an hour.
+  const where = `${church?.mapUrl || ''}|${String(church?.address || '').trim()}`
   try {
     const kept = JSON.parse(sessionStorage.getItem(SKY_STORE) || 'null')
-    if (kept && 'temperature' in kept && Date.now() - kept.at < FRESH_MS) {
+    if (kept && 'temperature' in kept && kept.where === where && Date.now() - kept.at < FRESH_MS) {
       report.value = kept
       return
     }
@@ -157,6 +167,7 @@ const fetchSky = async (church) => {
       const data = await res.json()
       const next = {
         at: Date.now(),
+        where,
         weather: weatherOf(Number(data?.current?.weather_code)),
         temperature: Number.isFinite(data?.current?.temperature_2m) ? Math.round(data.current.temperature_2m) : null,
         sunrise: Number(data?.daily?.sunrise?.[0]) * 1000 || null,

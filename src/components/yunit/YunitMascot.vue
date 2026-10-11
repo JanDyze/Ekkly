@@ -46,6 +46,8 @@ const props = defineProps({
   fidget: { type: Boolean, default: true },
 })
 
+const emit = defineEmits(['wake'])
+
 const id = `yunit${++copies}-`
 const PETALS = [
   {
@@ -360,11 +362,17 @@ const onPointerMove = (event) => {
   wake()
 }
 
-// A tap plays something different from last time.
+// A tap plays something different from last time. Asleep, a tap wakes him
+// with a start instead, and tells the page so it can stop him dozing.
 const TAP = ['wave', 'jump', 'wink', 'celebrate', 'nod', 'surprise', 'hop']
 let lastTap = ''
 const onTap = () => {
   if (!props.interactive) return
+  if (props.mood === 'sleeping') {
+    play('surprise')
+    emit('wake')
+    return
+  }
   const choices = TAP.filter((name) => name !== lastTap)
   lastTap = choices[Math.floor(Math.random() * choices.length)]
   play(lastTap)
@@ -560,7 +568,8 @@ watch(
   () => props.mood,
   (mood, was) => {
     if (mood === 'happy') play('hop')
-    else if (mood === 'idle' && was === 'sleeping') play('surprise')
+    // Not again if a tap has already woken him with one.
+    else if (mood === 'idle' && was === 'sleeping' && gesture?.name !== 'surprise') play('surprise')
     wake()
   }
 )

@@ -201,8 +201,9 @@ const landMorph = (morph) => {
 // it grows from where it sits until it is the page area, so it looks to
 // become the page rather than make way for it, and on the way back the page
 // shrinks into its card, turning back (style.css draws how). The picture and
-// the name still fly on their own (the morphs above), so what can be kept on
-// screen is kept; the page's contents then rise in once it has arrived.
+// the name fly on their own at the same time (the morphs above), so what can
+// be kept on screen is kept; the page's contents then slide in once it has
+// arrived.
 //
 // A card says which page it opens with `data-morph-card` (HomeCard); the page
 // is the area pages appear in, `data-morph-page` (AdminLayout's <main>). One

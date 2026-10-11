@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="o" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB21E"/><stop offset=".5" stop-color="#FF7417"/><stop offset="1" stop-color="#EC4319"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D9DFF"/><stop offset=".55" stop-color="#1467E8"/><stop offset="1" stop-color="#0A4FC4"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BD4C0"/><stop offset="1" stop-color="#0B93AB"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  
+  <g class="a-pop" style="--i:0">
+    <rect x="6" y="36" width="14" height="22" rx="5" fill="url(#b)"/>
+    <rect x="6" y="36" width="14" height="22" rx="5" fill="url(#shine)"/>
+  </g>
+  <g class="a-pop" style="--i:1">
+    <rect x="25" y="26" width="14" height="32" rx="5" fill="url(#o)"/>
+    <rect x="25" y="26" width="14" height="32" rx="5" fill="url(#shine)"/>
+  </g>
+  <g class="a-pop" style="--i:2">
+    <rect x="44" y="42" width="14" height="16" rx="5" fill="url(#t)"/>
+    <rect x="44" y="42" width="14" height="16" rx="5" fill="url(#shine)"/>
+  </g>
+  <g class="a-pop" style="--i:3">
+    <g stroke="#fff" stroke-width="2.0952380952380953" stroke-linejoin="round" paint-order="stroke" transform="translate(29 18) scale(1.05)">
+      <path d="M5.2 -14.5V0" fill="none" stroke="#fff" stroke-width="4.761904761904762" stroke-linecap="round"/>
+      <path d="M5.2 -15.5l7 3.2v4.6l-7-3z" fill="none" stroke="#fff" stroke-width="4.761904761904762" stroke-linejoin="round"/>
+      <ellipse cx="0" cy="0" rx="6.2" ry="5" transform="rotate(-20)" fill="url(#b)"/>
+      <rect x="3.6" y="-15.5" width="3.2" height="16" rx="1.2" fill="url(#b)" stroke="none"/>
+      <path d="M5.2 -15.5l7 3.2v4.6l-7-3z" fill="url(#b)" stroke="none"/>
+    </g></g>
+</svg>

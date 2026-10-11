@@ -13,13 +13,13 @@ const props = defineProps({
   resultCount: { type: Number, default: 0 },
   totalCount: { type: Number, default: 0 },
   open: { type: Boolean, default: false },
+  // The placeholder has to teach what the box reaches: nobody tries typing
+  // "empty" into a search bar unless something says they can. Each screen
+  // that opens it says what its own list can be searched by.
+  placeholder: { type: String, default: 'Gathering, month or place' },
 })
 
 const emit = defineEmits(['update:searchQuery', 'close'])
-
-// The placeholder has to teach what the box reaches: nobody tries typing
-// "empty" into a search bar unless something says they can.
-const placeholder = 'Gathering, month, place — or "empty"'
 
 const showCount = computed(() => Boolean(props.searchQuery))
 
@@ -38,9 +38,11 @@ const closeSearch = () => emit('close')
 </script>
 
 <template>
+  <!-- Not pinned: on an app's screen the header is what stays at the top, and
+       a second bar pinned under it slid beneath it as the header hid. -->
   <div
     v-if="open"
-    class="sticky top-0 z-40 mb-3 shrink-0 rounded-xl border border-gray-200/80 bg-white/95 px-2 py-2 backdrop-blur dark:border-gray-700 dark:bg-gray-900/95 sm:px-3 lg:mb-4"
+    class="mb-3 shrink-0 rounded-xl border border-gray-200/80 bg-white/95 px-2 py-2 backdrop-blur dark:border-gray-700 dark:bg-gray-900/95 sm:px-3 lg:mb-4"
   >
     <!-- Mobile -->
     <div class="relative lg:hidden">

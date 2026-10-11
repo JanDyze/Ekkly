@@ -30,6 +30,17 @@ import { useScrollLock } from '../composables/useScrollLock'
 
 const route = useRoute()
 const router = useRouter()
+
+// Back is to wherever in the Minutes app the meeting was opened from — its
+// meetings, the ones to write up, the action items, the decisions, the home's
+// deck — and from anywhere else in Ekkly (search, a task) to the app's home.
+// Never a new history entry, the same as every screen of an app (AppScreen).
+const goBack = () => {
+  const previous = window.history.state?.back
+  if (previous && String(previous).startsWith('/minutes')) router.back()
+  else router.replace({ name: 'MinutesHome' })
+}
+
 const { minutes, loading, removeMinute, updateMinuteInFirestore } = useMinutes()
 const { members } = useMembers()
 const { tasks, addTask } = useTasks()
@@ -278,7 +289,7 @@ const handleDelete = () => {
     onConfirm: async () => {
       try {
         await removeMinute(minute.value)
-        router.push('/minutes')
+        router.replace({ name: 'MinutesMeetings' })
       } catch (error) {
         console.error('Error deleting minute:', error)
       }
@@ -1173,7 +1184,7 @@ watch(() => minute.value, (newMinute, oldMinute) => {
     <div class="shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-2 sm:px-4 lg:px-8 pt-[max(0.5rem,env(safe-area-inset-top))]">
       <div class="flex items-center gap-1.5 pb-2 sm:gap-3 sm:pb-3">
         <button
-          @click="router.push('/minutes')"
+          @click="goBack"
           class="shrink-0 rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
           aria-label="Back to minutes"
         >
@@ -1340,7 +1351,7 @@ watch(() => minute.value, (newMinute, oldMinute) => {
             <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Minute not found</h2>
             <p class="text-gray-500 dark:text-gray-400 mb-4">The minute you're looking for doesn't exist.</p>
             <button
-              @click="router.push('/minutes')"
+              @click="goBack"
               class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
             >
               Back to Minutes

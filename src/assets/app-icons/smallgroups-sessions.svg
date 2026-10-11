@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="o" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB21E"/><stop offset=".5" stop-color="#FF7417"/><stop offset="1" stop-color="#EC4319"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D9DFF"/><stop offset=".55" stop-color="#1467E8"/><stop offset="1" stop-color="#0A4FC4"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BD4C0"/><stop offset="1" stop-color="#0B93AB"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  
+  <clipPath id="c"><rect x="5" y="11" width="54" height="47" rx="10"/></clipPath>
+  <g clip-path="url(#c)">
+    <rect x="5" y="11" width="54" height="47" fill="url(#b)"/>
+    <path d="M14.719999999999999 11 H59 V44.839999999999996 Z" fill="url(#o)"/>
+    <rect x="5" y="11" width="54" height="47" fill="url(#shine)"/>
+  </g>
+  <rect x="10.5" y="22" width="43" height="30.5" rx="4.5" fill="#fff"/>
+  <path class="a-draw" style="--i:0" pathLength="1" d="M17.5 36a14.5 14.5 0 0 1 29 0" fill="none" stroke="url(#o)" stroke-width="3" stroke-linecap="round"/>
+  <g class="a-pop" style="--i:1">
+    
+  <circle cx="22" cy="37" r="3.4" fill="url(#b)"/>
+  <path d="M16.75 50 C16.75 44.480000000000004 19.06 42.269999999999996 22 42.269999999999996 C24.94 42.269999999999996 27.25 44.480000000000004 27.25 50 Z" fill="url(#b)"/>
+    
+  <circle cx="42" cy="37" r="3.4" fill="url(#t)"/>
+  <path d="M36.75 50 C36.75 44.480000000000004 39.06 42.269999999999996 42 42.269999999999996 C44.94 42.269999999999996 47.25 44.480000000000004 47.25 50 Z" fill="url(#t)"/>
+    
+  <circle cx="32" cy="34" r="4.2" fill="url(#o)"/>
+  <path d="M25.5 50 C25.5 43.24 28.36 40.51 32 40.51 C35.64 40.51 38.5 43.24 38.5 50 Z" fill="url(#o)"/>
+  </g>
+  <rect x="17" y="5" width="5.5" height="12" rx="2.75" fill="#EC4319" stroke="#fff" stroke-width="1.5"/>
+  <rect x="41.5" y="5" width="5.5" height="12" rx="2.75" fill="#EC4319" stroke="#fff" stroke-width="1.5"/>
+</svg>

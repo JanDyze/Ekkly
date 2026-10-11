@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  BookOpenText,
   Calendar,
   ClipboardCheck,
   FileText,
@@ -23,6 +24,7 @@ import songsArt from '../../assets/app-icons/songs.svg'
 import lineupsArt from '../../assets/app-icons/lineups.svg'
 import bibleArt from '../../assets/app-icons/bible.svg'
 import minutesArt from '../../assets/app-icons/minutes.svg'
+import teachingArt from '../../assets/app-icons/teaching.svg'
 import prayerArt from '../../assets/app-icons/prayer.svg'
 import galleryArt from '../../assets/app-icons/gallery.svg'
 import linksArt from '../../assets/app-icons/links.svg'
@@ -42,6 +44,7 @@ const ICONS = {
   bible: BookOpen,
   minutes: FileText,
   prayer: Heart,
+  teaching: BookOpenText,
   gallery: Image,
   links: Link2,
   finances: Wallet,
@@ -68,6 +71,7 @@ const ART = {
   bible: bibleArt,
   minutes: minutesArt,
   prayer: prayerArt,
+  teaching: teachingArt,
   gallery: galleryArt,
   links: linksArt,
   finances: financesArt,

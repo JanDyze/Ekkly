@@ -25,8 +25,22 @@ export const presentationRoutes = [
         // button has always used.
         path: 'services',
         name: 'Services',
-        meta: { depth: 1 },
+        meta: { art: 'presentation-services', title: 'Services', depth: 1 },
         component: () => import('./PresentationServices.vue'),
+      },
+      {
+        // The songs coming up and whether their words are in. They are read
+        // off the song list, so it asks for the song list's own permission.
+        path: 'lyrics',
+        name: 'PresentationLyrics',
+        meta: { art: 'presentation-lyrics', title: 'Lyrics', depth: 1, capability: 'songs.view' },
+        component: () => import('./PresentationLyrics.vue'),
+      },
+      {
+        path: 'readings',
+        name: 'PresentationReadings',
+        meta: { art: 'presentation-readings', title: 'Readings', depth: 1 },
+        component: () => import('./PresentationReadings.vue'),
       },
     ],
   },

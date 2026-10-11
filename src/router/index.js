@@ -22,6 +22,12 @@ import { eventsRoutes } from '../apps/events/routes'
 import { schedulesRoutes } from '../apps/schedules/routes'
 import { presentationRoutes } from '../apps/presentation/routes'
 import { videosRoutes } from '../apps/videos/routes'
+import { minutesRoutes } from '../apps/minutes/routes'
+import { smallGroupsRoutes } from '../apps/smallgroups/routes'
+import { prayerRoutes } from '../apps/prayer/routes'
+import { galleryRoutes } from '../apps/gallery/routes'
+import { songsRoutes } from '../apps/songs/routes'
+import { teachingRoutes } from '../apps/teaching/routes'
 
 const HOME = '/home'
 
@@ -119,33 +125,13 @@ const churchRoutes = [
       // People is an app of its own: a home, and its sections a step off it.
       // Its screens live with it, in src/apps/people.
       ...peopleRoutes,
-      {
-        path: 'small-groups',
-        name: 'SmallGroups',
-        meta: { capability: 'smallgroups.view' },
-        component: () => import('../views/SmallGroups.vue')
-      },
-      {
-        path: 'small-groups/:id',
-        name: 'SmallGroupDetails',
-        meta: { capability: 'smallgroups.view' },
-        component: () => import('../views/SmallGroupDetails.vue')
-      },
-      {
-        path: 'small-groups/:id/sessions/:sessionId',
-        name: 'SgSessionDetails',
-        meta: { capability: 'smallgroups.view' },
-        component: () => import('../views/SgSessionDetails.vue')
-      },
+      // Small groups is an app of its own (src/apps/smallgroups).
+      ...smallGroupsRoutes,
       // Events is an app of its own (src/apps/events).
       ...eventsRoutes,
-      {
-        path: 'gallery/:id?/:view?/:photoId?',
-        name: 'Gallery',
-        meta: { capability: 'gallery.view' },
-        component: () => import('../views/Gallery.vue'),
-        props: true
-      },
+      // The Gallery is an app of its own (src/apps/gallery); an album and a
+      // photo keep the addresses share links were made with.
+      ...galleryRoutes,
       {
         path: 'links',
         name: 'Links',
@@ -160,22 +146,10 @@ const churchRoutes = [
         meta: { app: 'ai' },
         component: () => import('../views/Yunit.vue')
       },
-      {
-        path: 'songs',
-        name: 'SongList',
-        meta: { capability: 'songs.view' },
-        component: () => import('../views/SongList.vue')
-      },
-      {
-        // Typing out a song needs the whole screen, the way recording
-        // attendance does — and the list opens straight into it, the same as
-        // People and Minutes do. Viewing is enough to reach it; the editor is read-only without
-        // songs.manage, so the worship team can read lyrics off it on a phone.
-        path: 'songs/:id',
-        name: 'SongDetails',
-        meta: { capability: 'songs.view' },
-        component: () => import('../views/SongDetails.vue')
-      },
+      // Songs is an app of its own (src/apps/songs). A song keeps /songs/:id,
+      // a full-screen editor that is read-only without songs.manage, so the
+      // worship team can read lyrics off it on a phone.
+      ...songsRoutes,
       {
         // Presentation is an app of its own at /presentation, and every old
         // link to the list of services lands on its home.
@@ -218,38 +192,36 @@ const churchRoutes = [
         meta: { hideTopbar: true, app: 'bible' },
         component: () => import('../views/Bible.vue')
       },
-      {
-        path: 'minutes',
-        name: 'Minutes',
-        meta: { capability: 'minutes.view' },
-        component: () => import('../views/Minutes.vue')
-      },
-      {
-        // focus: no top or bottom bar, the same as recording attendance. A
-        // minute is a document — read on a phone, and written into during a
-        // meeting — and the agenda rail, the notes and the write-up want the
-        // height. It carries its own back arrow to the list.
-        path: 'minutes/:id',
-        name: 'MinuteDetails',
-        meta: { capability: 'minutes.view', focus: true },
-        component: () => import('../views/MinuteDetails.vue')
-      },
+      // Minutes is an app of its own (src/apps/minutes). A meeting is still a
+      // focus route inside it: a document read and written in full screen.
+      ...minutesRoutes,
+      // Teaching is an app of its own (src/apps/teaching): sermon notes, Sunday
+      // school and lesson plans, sharing the sermons Schedules plans.
+      ...teachingRoutes,
       // Attendance is an app of its own (src/apps/attendance).
       ...attendanceRoutes,
       // Tasks is an app of its own (src/apps/tasks).
       ...tasksRoutes,
-      {
-        path: 'prayer-concerns',
-        name: 'PrayerConcerns',
-        meta: { capability: 'prayer.view' },
-        component: () => import('../views/PrayerConcerns.vue')
-      },
+      // Prayer concerns is an app of its own (src/apps/prayer), still at
+      // /prayer-concerns.
+      ...prayerRoutes,
       {
         // The home of all apps: where Ekkly opens and every app leads back to.
         path: 'home',
         name: 'Apps',
         meta: { root: true },
         component: () => import('../views/Apps.vue')
+      },
+      {
+        // Every app, behind More apps on the home and the bottom bar's mark.
+        // A page rather than a drawer, so it can be linked to and gone back
+        // to. No capability, like the home: it lists only what each person
+        // may open. focus: it carries its own way back, and a bar round it
+        // would be a second list of apps beside the first.
+        path: 'apps',
+        name: 'AllApps',
+        meta: { focus: true },
+        component: () => import('../views/AllApps.vue')
       },
       // Finances is an app of its own (src/apps/finances).
       ...financesRoutes,

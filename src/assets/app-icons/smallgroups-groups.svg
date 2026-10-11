@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="o" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB21E"/><stop offset=".5" stop-color="#FF7417"/><stop offset="1" stop-color="#EC4319"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D9DFF"/><stop offset=".55" stop-color="#1467E8"/><stop offset="1" stop-color="#0A4FC4"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BD4C0"/><stop offset="1" stop-color="#0B93AB"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  
+  <g class="a-pop" style="--i:0">
+    <circle cx="18.5" cy="20" r="12.5" fill="url(#o)"/>
+    <circle cx="18.5" cy="20" r="12.5" fill="url(#shine)"/>
+    <clipPath id="g0"><circle cx="18.5" cy="20" r="12.5"/></clipPath>
+    <g clip-path="url(#g0)">
+      
+  <circle cx="14" cy="19" r="2.8" fill="#fff"/>
+  <path d="M9.75 34 C9.75 25.16 11.62 23.34 14 23.34 C16.38 23.34 18.25 25.16 18.25 34 Z" fill="#fff"/>
+      
+  <circle cx="23" cy="19" r="2.8" fill="#fff"/>
+  <path d="M18.75 34 C18.75 25.16 20.62 23.34 23 23.34 C25.38 23.34 27.25 25.16 27.25 34 Z" fill="#fff"/>
+    </g>
+  </g>
+  <g class="a-pop" style="--i:1">
+    <circle cx="45.5" cy="20" r="12.5" fill="url(#b)"/>
+    <circle cx="45.5" cy="20" r="12.5" fill="url(#shine)"/>
+    <clipPath id="g1"><circle cx="45.5" cy="20" r="12.5"/></clipPath>
+    <g clip-path="url(#g1)">
+      
+  <circle cx="41" cy="19" r="2.8" fill="#fff"/>
+  <path d="M36.75 34 C36.75 25.16 38.62 23.34 41 23.34 C43.38 23.34 45.25 25.16 45.25 34 Z" fill="#fff"/>
+      
+  <circle cx="50" cy="19" r="2.8" fill="#fff"/>
+  <path d="M45.75 34 C45.75 25.16 47.62 23.34 50 23.34 C52.38 23.34 54.25 25.16 54.25 34 Z" fill="#fff"/>
+    </g>
+  </g>
+  <g class="a-pop" style="--i:2">
+    <circle cx="32" cy="44" r="12.5" fill="url(#t)"/>
+    <circle cx="32" cy="44" r="12.5" fill="url(#shine)"/>
+    <clipPath id="g2"><circle cx="32" cy="44" r="12.5"/></clipPath>
+    <g clip-path="url(#g2)">
+      
+  <circle cx="27.5" cy="43" r="2.8" fill="#fff"/>
+  <path d="M23.25 58 C23.25 49.16 25.12 47.34 27.5 47.34 C29.88 47.34 31.75 49.16 31.75 58 Z" fill="#fff"/>
+      
+  <circle cx="36.5" cy="43" r="2.8" fill="#fff"/>
+  <path d="M32.25 58 C32.25 49.16 34.12 47.34 36.5 47.34 C38.88 47.34 40.75 49.16 40.75 58 Z" fill="#fff"/>
+    </g>
+  </g>
+</svg>

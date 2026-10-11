@@ -71,7 +71,7 @@ const inAppSection = computed(() => isApp.value && Number(route.meta?.depth) >= 
 // name). Only lists that open a record as its own page belong here - it costs
 // memory to keep one, and a page kept alive must cope with being shown again
 // rather than mounted afresh (see useTitleCount and useListScrollMemory).
-const KEPT_ALIVE = ['PeopleEveryone']
+const KEPT_ALIVE = ['PeopleEveryone', 'SongsAll']
 </script>
 
 <template>

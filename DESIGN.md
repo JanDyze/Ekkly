@@ -84,7 +84,7 @@ CHANGELOG.md.
   plate, the plate flies to the middle, then its name, its live line and its
   front-door headline and wins; letting go runs it backwards. A tap still
   just opens the app. More
-  apps opens `AppsDrawer`: every app, the five on the home on a shelf, press
+  apps opens `/apps` (`AllApps.vue`): every app, the five on the home on a shelf, press
   and hold to drag one onto it. The order is the person's, saved to their
   account (`useAppOrder`).
 - The shell pads the content area (`p-0 sm:p-4 lg:px-8 lg:py-3`) of a page
@@ -653,13 +653,11 @@ anyway, bring it in line and remove it from this list.
   page and its UpcomingDock use their own dark teal (`#062832`, `#04202a`), and
   the notification dot uses the church red (`#bc1c09`). SessionFormPrintable.vue
   is a printed form and may keep its own.
-- **Tasks and Prayer Concerns** still use:
+- **Tasks** still uses:
   - the older heavy headings (`bg-gray-100 text-sm`) instead of the slim
     sticky heading
   - a permanent toolbar with an Add button instead of a FAB
   - "Loading…" text instead of skeletons
-- **Prayer Concerns** reports errors in a modal instead of a toast, and uses
-  Title Case with "Are you sure…" wording.
 - **People's phone loading state** is inline markup, not a skeleton component.
 - **Five copies of the FAB** exist (Members, Events, Gallery, Minutes,
   Schedules), plus repeated confirmation-modal state in each view. Before

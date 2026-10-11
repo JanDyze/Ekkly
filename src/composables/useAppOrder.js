@@ -4,7 +4,7 @@ import { useAuth } from './useAuth'
 
 /**
  * The order the apps sit in, and therefore which ones are on the home of all
- * apps (src/views/Apps.vue); the rest wait behind More apps (AppsDrawer).
+ * apps (src/views/Apps.vue); the rest wait behind More apps (/apps, AllApps.vue).
  *
  * The navigation's own order to begin with (src/data/navigation.js), which
  * puts the apps most churches use most — tasks, people, groups, attendance,

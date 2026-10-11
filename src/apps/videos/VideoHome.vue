@@ -1,132 +1,270 @@
 <script setup>
 import { computed } from 'vue'
-import { CalendarDots, CalendarPlus, ChevronRight, Palette, PlayFill } from '../../icons'
+import { ArrowUpDown, CalendarX, FilmSlate } from '../../icons'
 import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHero from '../../components/appframe/AppHero.vue'
-import AppTile from '../../components/appframe/AppTile.vue'
+import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
+import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
+import CardPanes from '../../components/appframe/CardPanes.vue'
+import DateTile from '../../components/appframe/DateTile.vue'
+import DeckCard from '../../components/appframe/DeckCard.vue'
+import DeckChips from '../../components/appframe/DeckChips.vue'
+import AppArt from '../../components/common/AppArt.vue'
 import { formatLength, useVideoOverview } from '../../composables/useVideoOverview'
 import { usePermissions } from '../../composables/usePermissions'
-import { aspectOf, LOOKS } from '../../utils/video/render'
-import { TRACKS } from '../../utils/video/music'
+import { getDisplayName } from '../../utils/memberUtils'
+import { parseIso } from '../../utils/lineupUtils'
 
-// The Videos app's home: this month's announcement video, already made.
+// The Videos app's home, built the way People's and Minutes' are. One screen,
+// and two things on it:
 //
-// Nobody has to start it. The calendar, the weekly services, the small groups
-// and the serving schedule already say what is happening, so the video is
-// there the moment the month is — the hero says how much is in it, and the
-// main action plays it. Shaping it is a step further in.
+//   1. A deck of cards (AppHeroDeck), the most important on top, earned the
+//      way useVideoOverview explains: the video for the month's first
+//      gathering in the week before it, a change of plan a video already
+//      posted still gets wrong, and events that arrived after a month's
+//      running order was arranged. Under them, the card that is always
+//      there: this month's video, already made, a tap from playing.
+//   2. The doors: this month, next month, and how every month looks and
+//      sounds — each its name alone, with a count on a month only for the
+//      events still to put in their place.
+//
+// Nobody has to start a video. The calendar, the weekly services, the small
+// groups and the serving schedule already say what is happening, so the
+// video is there the moment the month is. The home used to be one card
+// saying so, a button to watch it and the first few things it announced;
+// what is in it is the month's own screen now, and the deck says only what
+// needs doing about it.
 
-const { loading, settings, thisMonth, nextMonth, thisMonthScenes, nextMonthScenes, announcements, lengthOf, monthName } =
-  useVideoOverview()
+const {
+  loading,
+  thisMonth,
+  nextMonth,
+  thisMonthScenes,
+  scenesOf,
+  dueSoon,
+  changesAhead,
+  arrivedSince,
+  announcements,
+  lengthOf,
+  monthName,
+} = useVideoOverview()
 const { myMember, canManage } = usePermissions()
+
+// Arranging a month and choosing the look are for whoever manages events;
+// watching and saving a month's video is for anyone who can see the calendar.
 const canEdit = computed(() => canManage('events'))
 
-const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
+const plural = (n, one, many) => `${n.toLocaleString()} ${n === 1 ? one : many}`
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
   const part = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
-  const name = myMember.value?.nickname || myMember.value?.firstName || ''
+  const name = myMember.value ? getDisplayName(myMember.value) : ''
   return name ? `${part}, ${name}` : part
 })
 
-const thisName = computed(() => monthName(thisMonth))
-const nextName = computed(() => monthName(nextMonth))
-const thisCount = computed(() => announcements(thisMonthScenes.value).length)
-const nextCount = computed(() => announcements(nextMonthScenes.value).length)
+const monthTo = (monthKey) => ({ name: 'VideosMonth', params: { month: monthKey } })
 
-const headline = computed(() => {
-  if (loading.value) return 'Videos'
-  return thisCount.value ? `${thisName.value}’s video is ready` : `Nothing to announce in ${thisName.value} yet`
+/** "6 announcements · 0:54 long" */
+const sizeOf = (scenes) => {
+  const count = announcements(scenes).length
+  return `${plural(count, 'announcement', 'announcements')} · ${formatLength(lengthOf(scenes))} long`
+}
+
+/** "For Sunday", said from how many days off it is. */
+const forDay = (date, days) => {
+  if (days === 0) return 'For today'
+  if (days === 1) return 'For tomorrow'
+  const weekday = parseIso(date)?.toLocaleDateString('en-US', { weekday: 'long' }) || ''
+  return days >= 7 ? `For next ${weekday}` : `For ${weekday}`
+}
+
+const chipsOf = (scenes) => scenes.map((scene) => ({ key: scene.id, label: scene.title || 'Announcement' }))
+
+/* -------------------------------------------------------------- the deck */
+
+const cards = computed(() => {
+  if (loading.value) return [alwaysCard.value]
+  const list = []
+
+  // The video for the month's first gathering, in the week it is to be made.
+  // Keyed by the month, so putting it away is for this month's showing only.
+  const due = dueSoon.value
+  if (due) {
+    const scenes = scenesOf(due.monthKey)
+    const said = announcements(scenes)
+    const name = monthName(due.monthKey)
+    list.push({
+      kind: 'due',
+      key: `due:${due.monthKey}`,
+      tone: 'plain',
+      icon: FilmSlate,
+      dismissible: true,
+      kicker: forDay(due.date, due.days),
+      title: said.length ? `${name}’s video is ready` : `Nothing on ${name}’s calendar yet`,
+      detail: said.length
+        ? sizeOf(scenes)
+        : canEdit.value
+          ? 'Add its events and the video fills itself in.'
+          : 'It fills itself in as events go on the calendar.',
+      to: monthTo(due.monthKey),
+      date: due.date,
+      chips: chipsOf(said),
+    })
+  }
+
+  // A change of plan a posted video still gets wrong. Keyed by which ones, so
+  // another one called off is news again.
+  const changes = changesAhead.value
+  if (changes.length) {
+    const first = changes[0]
+    list.push({
+      key: `changes:${changes.map((scene) => scene.id).join(',')}`,
+      tone: 'warn',
+      icon: CalendarX,
+      dismissible: true,
+      kicker: changes.length === 1 ? first.eyebrow || 'Change of plans' : 'Changes of plan',
+      title: changes.length === 1 ? first.title || 'A gathering' : `${changes.length} gatherings have changed`,
+      detail:
+        changes.length === 1
+          ? 'A video already posted may still say it is on.'
+          : 'A video already posted may still say they are on.',
+      to: monthTo(first.date.slice(0, 7)),
+      chips: changes.map((scene) => ({
+        key: scene.id,
+        label: scene.title || 'A gathering',
+        strike: scene.eyebrow === 'Called off',
+      })),
+    })
+  }
+
+  // Events added since somebody arranged a month: only they can put them in
+  // their place, so only they see it. Keyed by which events, so a new one
+  // brings the card back.
+  if (canEdit.value) {
+    ;[thisMonth, nextMonth].forEach((monthKey) => {
+      const arrived = arrivedSince(monthKey)
+      if (!arrived.length) return
+      list.push({
+        key: `arrived:${monthKey}:${arrived.map((scene) => scene.id).join(',')}`,
+        tone: 'plain',
+        icon: ArrowUpDown,
+        dismissible: true,
+        kicker: 'New on the calendar',
+        title: `${plural(arrived.length, 'event', 'events')} added since ${monthName(monthKey)} was arranged`,
+        detail: 'Each went in just before the closing card.',
+        to: monthTo(monthKey),
+        chips: chipsOf(arrived),
+      })
+    })
+  }
+
+  list.push(alwaysCard.value)
+  return list
 })
 
-const heroDetail = computed(() => {
-  if (loading.value) return ''
-  if (!thisCount.value) return 'It fills itself in as events go on the calendar.'
-  return `${plural(thisCount.value, 'announcement')} · ${formatLength(lengthOf(thisMonthScenes.value))} long`
+/** The card that is always there: this month's video, made and ready to play. */
+const alwaysCard = computed(() => {
+  const scenes = thisMonthScenes.value
+  const said = announcements(scenes)
+  const name = monthName(thisMonth)
+  return {
+    key: 'month',
+    tone: 'accent',
+    kicker: greeting.value,
+    title: loading.value ? 'Videos' : said.length ? `${name}’s video` : `Nothing to announce in ${name} yet`,
+    detail: loading.value ? '' : said.length ? sizeOf(scenes) : 'It fills itself in as events go on the calendar.',
+    to: monthTo(thisMonth),
+    // What it says, in order, along the foot: three at most, on one line.
+    preview: said.slice(0, 3),
+    more: Math.max(0, said.length - 3),
+  }
 })
 
-const lookDetail = computed(() => {
-  const style = settings.value.style
-  const look = LOOKS.find((l) => l.key === style.look)?.label || 'Bold'
-  const track = settings.value.music.track
-  const sound = track === 'upload' ? 'your music' : TRACKS.find((t) => t.key === track)?.label.toLowerCase() || 'morning'
-  return `${aspectOf(style.aspect).label} · ${look} · ${sound}`
-})
+/* -------------------------------------------------------------- the doors */
 
-// The first few things this month's video announces, in order.
-const preview = computed(() => announcements(thisMonthScenes.value).slice(0, 5))
-const moreCount = computed(() => Math.max(0, thisCount.value - preview.value.length))
+// A door is its name, with a count on a month only for the events that came
+// in after it was arranged — the one thing in there waiting on whoever
+// manages it. How many announcements, and how long, are what the month shows
+// once opened, and this month's are on the card above.
+const doors = computed(() => {
+  const waiting = (monthKey) => (canEdit.value && !loading.value ? arrivedSince(monthKey).length : 0)
+  return [
+    { key: 'this', title: monthName(thisMonth), art: 'videos-month', to: monthTo(thisMonth), badge: waiting(thisMonth) },
+    { key: 'next', title: monthName(nextMonth), art: 'videos-next', to: monthTo(nextMonth), badge: waiting(nextMonth) },
+    ...(canEdit.value ? [{ key: 'look', title: 'Look and sound', art: 'videos-look', to: { name: 'VideosLook' } }] : []),
+  ]
+})
 </script>
 
 <template>
   <AppScreen>
-    <div class="flex flex-col gap-3">
-      <AppHero art="videos" :greeting="greeting" :title="headline" :detail="heroDetail" />
+    <div class="flex flex-col gap-4">
+      <!-- 1. What needs doing, most important on top -->
+      <AppHeroDeck :cards="cards" scope="videos" label="Videos this week" class="animate-rise">
+        <template #card="{ card }">
+          <!-- The video for the first gathering, dated the way a calendar
+               shows it, and what it announces. -->
+          <DeckCard
+            v-if="card.kind === 'due'"
+            :tone="card.tone"
+            :icon="card.icon"
+            :kicker="card.kicker"
+            :title="card.title"
+            :detail="card.detail"
+            :to="card.to"
+            inset
+          >
+            <template #leading>
+              <DateTile :date="card.date" highlight />
+            </template>
+            <DeckChips v-if="card.chips.length" :items="card.chips" :max="3" />
+          </DeckCard>
 
-      <nav class="grid grid-cols-2 gap-3" aria-label="Videos">
-        <AppTile
-          :to="{ name: 'VideosMonth', params: { month: thisMonth } }"
-          :title="thisName"
-          :detail="thisCount ? plural(thisCount, 'announcement') : 'Nothing yet'"
-          :icon="CalendarDots"
-          :delay="60"
-        />
-        <AppTile
-          :to="{ name: 'VideosMonth', params: { month: nextMonth } }"
-          :title="nextName"
-          :detail="nextCount ? `${plural(nextCount, 'announcement')} so far` : 'Nothing yet'"
-          :icon="CalendarPlus"
-          :delay="110"
-        />
-        <AppTile
-          v-if="canEdit"
-          :to="{ name: 'VideosLook' }"
-          title="Look and sound"
-          :detail="lookDetail"
-          :icon="Palette"
-          wide
-          :delay="160"
-        />
-      </nav>
+          <DeckCard
+            v-else-if="card.tone !== 'accent'"
+            :tone="card.tone"
+            :icon="card.icon"
+            :kicker="card.kicker"
+            :title="card.title"
+            :detail="card.detail"
+            :to="card.to"
+            :inset="card.dismissible"
+          >
+            <DeckChips v-if="card.chips?.length" :tone="card.tone" :items="card.chips" :max="3" />
+          </DeckCard>
 
-      <RouterLink
-        :to="{ name: 'VideosMonth', params: { month: thisMonth } }"
-        class="animate-rise flex h-13 items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-white transition-transform duration-200 ease-out hover:bg-primary-hover"
-        style="animation-delay: 210ms"
-      >
-        <PlayFill class="size-5" />
-        Watch {{ thisName }}’s video
-      </RouterLink>
-
-      <!-- What it says -->
-      <section v-if="preview.length" class="animate-rise mt-3" style="animation-delay: 260ms">
-        <h2 class="mb-2 px-0.5 text-sm font-medium text-gray-500 dark:text-gray-400">In {{ thisName }}’s video</h2>
-        <RouterLink
-          :to="{ name: 'VideosMonth', params: { month: thisMonth } }"
-          class="group block rounded-2xl border border-gray-200 bg-white p-4 transition-[transform,border-color] duration-200 ease-out hover:border-gray-300 dark:border-gray-700/80 dark:bg-gray-800 dark:hover:border-gray-600"
-        >
-          <div class="flex items-start gap-3">
-            <ol class="min-w-0 flex-1 space-y-1.5">
+          <!-- This month's video, and the first things it says. -->
+          <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
+            <template #art>
+              <CardPanes />
+            </template>
+            <!-- The Videos artwork, on white because its orange and blue are
+                 Ekkly's and need a white ground on a coloured card. -->
+            <template #trailing>
+              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+                <AppArt app-key="videos" :play="1" class="size-10" />
+              </span>
+            </template>
+            <!-- One line, each title giving up width as it fills, the way
+                 DeckChips lays its chips, in white on the church's colour. -->
+            <ul v-if="card.preview.length" class="flex min-w-0 gap-1.5">
               <li
-                v-for="(scene, index) in preview"
+                v-for="scene in card.preview"
                 :key="scene.id"
-                class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300"
+                class="min-w-0 max-w-40 shrink truncate rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium text-white"
               >
-                <span class="w-4 shrink-0 text-right text-xs tabular-nums text-gray-400">{{ index + 1 }}</span>
-                <span class="min-w-0 truncate">{{ scene.title }}</span>
-                <span v-if="scene.when" class="ml-auto hidden shrink-0 text-xs text-gray-400 sm:inline">
-                  {{ scene.when.split(' · ')[0] }}
-                </span>
+                {{ scene.title || 'Announcement' }}
               </li>
-            </ol>
-            <ChevronRight
-              class="mt-1 size-4 shrink-0 text-gray-300 transition-transform duration-300 group-engaged:translate-x-1 dark:text-gray-600"
-            />
-          </div>
-          <p v-if="moreCount" class="mt-1.5 pl-6.5 text-xs text-gray-400">and {{ moreCount }} more</p>
-        </RouterLink>
-      </section>
+              <li v-if="card.more" class="shrink-0 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white">
+                +{{ card.more }}
+              </li>
+            </ul>
+          </DeckCard>
+        </template>
+      </AppHeroDeck>
+
+      <!-- 2. The doors -->
+      <AppShortcuts :doors="doors" label="Videos" />
     </div>
   </AppScreen>
 </template>

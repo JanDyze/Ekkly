@@ -10,6 +10,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   onSnapshot,
   Timestamp
 } from './firestore'
@@ -78,6 +79,36 @@ export const subscribeToAlbumPhotos = (albumId, callback) => {
     callback(photos)
   }, (err) => {
     console.error('Error fetching photos:', err)
+    callback([])
+  })
+}
+
+/**
+ * The newest photos across every album, newest first, for the Gallery app's
+ * home and its Recent photos screen.
+ *
+ * Capped, because the photos are what someone opens the gallery to see this
+ * week, not its whole history, and each document is read whole: the oldest
+ * photos still carry their picture inside as a data URL. A photo saved before
+ * it had an upload time is not in an ordered query at all, which is the right
+ * answer here — it is not recent.
+ */
+export const subscribeToRecentPhotos = (count, callback) => {
+  const q = query(collection(db, PHOTOS_COLLECTION), orderBy('uploadedAt', 'desc'), limit(count))
+
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        albumId: data.albumId || '',
+        url: data.url,
+        description: data.description || '',
+        uploadedAt: data.uploadedAt?.toDate?.() || new Date()
+      }
+    }))
+  }, (err) => {
+    console.error('Error fetching recent photos:', err)
     callback([])
   })
 }

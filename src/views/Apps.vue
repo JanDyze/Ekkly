@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { CalendarDots, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MicrophoneStage, Moon, Sun } from '../icons'
 import AppHeroDeck from '../components/appframe/AppHeroDeck.vue'
@@ -8,7 +8,6 @@ import DeckCard from '../components/appframe/DeckCard.vue'
 import DeckFaces from '../components/appframe/DeckFaces.vue'
 import DeckChips from '../components/appframe/DeckChips.vue'
 import DeckWeek from '../components/appframe/DeckWeek.vue'
-import AppsDrawer from '../components/appframe/AppsDrawer.vue'
 import AppPeek from '../components/appframe/AppPeek.vue'
 import HomeScene from '../components/home/HomeScene.vue'
 import HomeAppCards from '../components/home/HomeAppCards.vue'
@@ -44,11 +43,12 @@ import { peopleOnService } from '../data/scheduleRoles'
 //      tiles.
 //   2. The apps this person keeps on their home — five, as cards that are
 //      their artwork and their name, nothing more — and More apps, which
-//      opens every app (AppsDrawer), where they can open any of them or press
-//      and hold to choose which five are here. The bottom bar's drawer did
-//      the same; the five it kept on the bar are the five kept here.
+//      opens every app (/apps, AllApps.vue), where they can open any of them
+//      or choose which five are here. The bottom bar's mark opens the same
+//      page; the four it keeps on the bar are the first four kept here.
 //      Holding one of the five shows what that app is, full screen, until
-//      the finger lifts (AppPeek); a tap still just opens it.
+//      the finger lifts (AppPeek) — for People, a short story of what it
+//      does — and sliding up keeps it open; a tap still just opens it.
 //
 // Everything is gated on the capability of the app it comes from (useToday,
 // allowedGroups), so nobody sees a card or a tile for something they cannot
@@ -290,7 +290,10 @@ const cards = computed(() => {
 const verseTo = computed(() => {
   const v = verse.value
   const canRead = allApps.value.some((item) => item.path === '/bible')
-  return v && canRead ? { name: 'Bible', params: { slug: v.slug, chapter: v.chapter } } : null
+  // The verse itself is named too, so the reader opens on it, lit.
+  return v && canRead
+    ? { name: 'Bible', params: { slug: v.slug, chapter: v.chapter }, query: v.verses ? { v: v.verses } : {} }
+    : null
 })
 
 /* -------------------------------------------------------------- the apps */
@@ -301,11 +304,17 @@ const allApps = computed(() => allowedGroups(can, isAdmin.value).flatMap((group)
 const { ordered, primary } = useAppOrder(allApps)
 const others = computed(() => ordered.value.slice(primary.value.length))
 
-const showDrawer = ref(false)
-
-// Holding an app's tile shows what it is; letting go puts it away.
-const { held, start: startHold, holdStill, swallowClick } = usePressAndHold()
+// Holding an app's tile shows what it is; letting go puts it away, unless
+// the finger slid up to keep it open, when Close does.
+const { held, drag, start: startHold, holdStill, swallowClick, keep, release } = usePressAndHold()
 const hold = { start: startHold, still: holdStill, swallow: swallowClick }
+
+// Open, from a preview kept open: into the app it was showing.
+const openHeld = () => {
+  const path = held.value?.item?.path
+  release()
+  if (path) router.push(path)
+}
 
 const { style: cardStyle } = useHomeCards()
 
@@ -499,7 +508,6 @@ const lineOf = (item) => {
         :apps="primary"
         :others="others"
         :hold="hold"
-        @more="showDrawer = true"
       />
 
       <!-- 3. The church on its hill, and the day's verse on a card beside
@@ -540,37 +548,57 @@ const lineOf = (item) => {
             <blockquote
               :class="[
                 'italic leading-snug',
-                openVerse ? 'line-clamp-8 text-[15px] text-gray-800 dark:text-white' : 'line-clamp-3 text-[13px] text-gray-700 dark:text-gray-200',
+                openVerse ? 'line-clamp-8 text-[15px] text-(--scene-ink)' : 'line-clamp-3 text-[13px] text-gray-700 dark:text-gray-200',
               ]"
             >
               {{ verse.text }}
             </blockquote>
-            <p class="mt-1.5 truncate text-[10px] font-bold uppercase tracking-[0.18em] text-primary dark:text-primary-light">
+            <!-- On the picture, the sky's ink (HomeScene): the verse follows
+                 the sky it is written on, not the app's theme. In its card,
+                 the theme's, because the card is its own ground. -->
+            <p
+              :class="[
+                'mt-1.5 truncate text-[10px] font-bold uppercase tracking-[0.18em]',
+                openVerse ? 'text-(--scene-ink-accent)' : 'text-primary dark:text-primary-light',
+              ]"
+            >
               {{ verse.reference }}
             </p>
-            <p class="truncate text-[9px] font-medium tracking-wide text-gray-500 dark:text-gray-300/80">{{ verse.version }}</p>
+            <p
+              :class="[
+                'truncate text-[9px] font-medium tracking-wide',
+                openVerse ? 'text-(--scene-ink-soft)' : 'text-gray-500 dark:text-gray-300/80',
+              ]"
+            >
+              {{ verse.version }}
+            </p>
           </component>
         </div>
       </section>
     </main>
 
-    <AppsDrawer :show="showDrawer" :apps="allApps" @close="showDrawer = false" />
-    <AppPeek :app="held?.item" :from="held?.el" :line="held ? lineOf(held.item) : ''" />
+    <AppPeek
+      :app="held?.item"
+      :from="held?.el"
+      :line="held ? lineOf(held.item) : ''"
+      :drag="drag"
+      @keep="keep"
+      @close="release"
+      @open="openHeld"
+    />
   </div>
 </template>
 
 <style scoped>
 /* The verse set on the picture: a soft halo of the sky behind its letters, so
-   it reads over a cloud or a hill without a card behind it. */
+   it reads over a cloud or a hill without a card behind it. Light on a light
+   sky and dark on a night one (HomeScene's --scene-ink-halo), whatever the
+   app's theme: it used to follow the theme, and dark mode under a noon sky
+   put white letters in a dark glow on pale blue. */
 .verse-open {
   text-shadow:
-    0 0 10px rgb(255 255 255 / 0.95),
-    0 0 2px rgb(255 255 255 / 0.9);
-}
-.dark .verse-open {
-  text-shadow:
-    0 0 12px rgb(0 0 0 / 0.75),
-    0 0 2px rgb(0 0 0 / 0.7);
+    0 0 10px var(--scene-ink-halo),
+    0 0 2px var(--scene-ink-halo);
 }
 
 /* The room under the apps measures itself, so what it holds can step aside

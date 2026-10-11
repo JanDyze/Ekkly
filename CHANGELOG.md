@@ -11,6 +11,69 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.34.0] — 2026-10-11
+
+Every app now opens the same way — on what needs doing this week, then its
+rooms — Teaching joins them, and holding an app shows you what it does.
+
+### Added
+
+- **Teaching,** a new app: write the message ahead (the notes the preacher
+  sees on Sunday, on the same sermon Schedules plans), plan each Sunday school
+  class's lesson for its teacher, and keep good lesson plans to teach again.
+  It asks the preacher with nothing written yet, and the teacher with no
+  lesson, before Sunday comes.
+- **Minutes is an app.** It opens on this week's meeting before it starts,
+  the meetings still in rough notes, and the action items that never became
+  anyone's task. **Decisions** gathers everything the meetings settled,
+  searchable — "when did we agree to that?" is one search.
+- **Small groups is an app.** A leader's group meeting today, or a session
+  this week never logged, comes first; then every group, every session
+  church-wide, the members in no group, and the blank forms to print.
+- **Prayer concerns is an app:** what is pressing, what is new this week,
+  what was answered (worth giving thanks for together), and the concerns with
+  no news lately.
+- **Songs is an app** (the Song list's new name): this Sunday's songs and any
+  missing words or keys, songs added but never sung, the most sung, and the
+  songs still without lyrics.
+- **The Gallery is an app:** this week's gatherings with no photos yet, new
+  photos since you last looked, and an album from a year ago this week.
+- **Hold an app to see what it does.** Holding an app's tile plays a short
+  story of it — People and Teaching first, the rest following. Slide up to
+  keep it open, then Close or Open. It works on the home, on every app on the
+  All apps page (apps not on your plan yet included), and on the bottom bar.
+- **YUNIT can look up and change anything the church keeps,** its own
+  details included (ask him to set the address), for anyone signed in, until
+  a panel for choosing what he may do arrives. Every change is still a card
+  you confirm, under your name. Billing, who may do what, and the logs stay
+  closed to him.
+- **Tapping the verse on the home** opens it in the Bible, highlighted.
+
+### Changed
+
+- **Presentation and Videos** open on what needs doing too: slides that
+  would come up blank this Sunday, a reading or notices still to add; the
+  video for the month's first gathering, and plans that changed since it was
+  made.
+- **Inside every app, you are inside a church:** Ekkly's windows on the back
+  wall and the pews below, barely there behind the screens. A section's
+  picture now keeps its colours in the header.
+- **Ekkly's own window** — its arch, its four panes, its light falling
+  through — now stands behind the Good evening card, the home's sky and the
+  hold preview.
+- **Rain on the home falls,** fine and scattered at three depths, and the
+  weather's grey veil is lighter, so the picture stays behind your apps.
+- **The verse stays readable** whatever the sky behind it, in light mode or
+  dark.
+- **All apps** is a page of its own, with a spotlight on one app, the five
+  on your home to drag into order, and every app to search.
+
+### Fixed
+
+- **The live sky found Manila** for an address like "Calapan City"; it now
+  finds the city, and changing the church's address changes the weather at
+  once.
+
 ## [0.33.4] — 2026-10-10
 
 Meet YUNIT, the assistant, on a page of his own; Tasks becomes an app; and

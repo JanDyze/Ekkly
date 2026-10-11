@@ -23,7 +23,7 @@ import HomeCardIcon from './HomeCardIcon.vue'
 
 defineProps({
   variant: { type: String, default: 'accent' },
-  // What the card opens: a RouterLink, or 'button' for More apps.
+  // What the card opens: a RouterLink, or a button.
   as: { type: [String, Object], default: 'button' },
   // { name, tagline, art, glyph, more, peek, path } — `path` is the key the
   // name and the drawing morph on (router/viewTransitions.js).

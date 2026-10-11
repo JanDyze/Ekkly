@@ -1,28 +1,20 @@
 <script setup>
 import { computed } from 'vue'
-import {
-  BookOpen,
-  CalendarDots,
-  ChevronRight,
-  ListMusic,
-  Music2,
-  Play,
-  ProjectorScreen,
-  TextT,
-  VideoCamera,
-} from '../../icons'
+import { BookOpen, Megaphone, MusicNotes, ProjectorScreen, Slideshow, TextT, VideoCamera } from '../../icons'
 import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHero from '../../components/appframe/AppHero.vue'
-import AppTile from '../../components/appframe/AppTile.vue'
-import { useScheduleOverview } from '../../composables/useScheduleOverview'
-import { useServicePlans } from '../../composables/useServicePlans'
-import { useServiceLyrics } from '../../composables/useServiceLyrics'
-import { usePermissions } from '../../composables/usePermissions'
+import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
+import CardPanes from '../../components/appframe/CardPanes.vue'
+import DateTile from '../../components/appframe/DateTile.vue'
+import DeckCard from '../../components/appframe/DeckCard.vue'
+import DeckChips from '../../components/appframe/DeckChips.vue'
+import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
+import AppArt from '../../components/common/AppArt.vue'
+import { usePresentationOverview } from '../../composables/usePresentationOverview'
 import { useMembers } from '../../composables/useMembers'
-import { findRosterMember, formatServiceDate, formatShortDate, parseIso, todayIso } from '../../utils/lineupUtils'
+import { findRosterMember, formatServiceDate, formatShortDate } from '../../utils/lineupUtils'
 import { getDisplayName } from '../../utils/memberUtils'
 
-// The Presentation app's home: the booth on a Sunday morning.
+// The Presentation app's home: the booth, the week before a service.
 //
 // Its own app rather than a corner of Schedules, because it is somebody
 // else's job. Schedules is the worship team and whoever serves, deciding who
@@ -31,16 +23,38 @@ import { getDisplayName } from '../../utils/memberUtils'
 // The two point at each other — a Sunday in Schedules has a Present button,
 // and this lists the Sundays Schedules has planned.
 //
-// So the hero answers the booth's question — is the next service ready to
-// run, and what is in it — and the main action runs it.
+// Built the way People's and Minutes' homes are. One screen, two things on it:
+//
+//   1. A deck of cards (AppHeroDeck), the most important on top, earned the
+//      way usePresentationOverview explains: the slides that would come up
+//      blank this Sunday, and a reading or the notices this church nearly
+//      always has and this Sunday does not yet. Under them, the card that is
+//      always there: the next service, in the order it runs, which opens the
+//      presenter.
+//   2. The doors: every service, the words of the songs coming up, every
+//      reading, and the two apps this one draws on — that Sunday in
+//      Schedules, and the song list.
+//
+// It used to be one hero with a Run button and the run order under it. The
+// run order is the always-true card's foot now, and the button is the card.
 
-const { loading, myMember, upcoming, next, leaderOf } = useScheduleOverview()
-const { plans } = useServicePlans()
-const { songs } = useServiceLyrics()
-const { can } = usePermissions()
+const {
+  loading,
+  myMember,
+  canRun,
+  canFixWords,
+  canSeeSongs,
+  next,
+  nextService,
+  thisWeek,
+  usuallyMissing,
+  wordsMissing,
+  sermonOn,
+  leaderOf,
+} = usePresentationOverview()
 const { members } = useMembers()
 
-const today = todayIso()
+const plural = (n, one, many = `${one}s`) => `${n.toLocaleString()} ${n === 1 ? one : many}`
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -49,183 +63,251 @@ const greeting = computed(() => {
   return name ? `${part}, ${name}` : part
 })
 
-/** "Today", "This Sunday", or "Oct 18". */
-const labelOf = (iso) => {
-  const from = parseIso(today)
-  const to = parseIso(iso)
-  const days = from && to ? Math.round((to - from) / 86400000) : 0
-  if (days === 0) return 'Today'
-  if (days <= 6) return 'This Sunday'
-  return formatShortDate(iso)
-}
+/** "Today", "This Sunday", or "Oct 18": how far off a service is. */
+const labelOf = (service) => (service.days === 0 ? 'Today' : service.days <= 6 ? 'This Sunday' : formatShortDate(service.date))
+/** The same, inside a sentence. */
+const inSentence = (service) => (service.days === 0 ? 'today' : service.days <= 6 ? 'this Sunday' : formatShortDate(service.date))
 
-const plan = computed(() => (next.value ? plans.value[next.value.date] || null : null))
+const present = (date) => ({ name: 'Present', params: { date } })
 
-// What a run sheet holds, counted the way the booth thinks of it: songs,
-// readings, and everything else said or shown.
-const counts = computed(() => {
-  const items = plan.value?.items
-  if (!items) {
-    const songCount = next.value?.songs?.length || 0
-    return { songs: songCount, readings: 0, other: 0 }
+/* -------------------------------------------------------------- the deck */
+
+const cards = computed(() => {
+  if (loading.value) return [alwaysCard.value]
+  const list = []
+  const service = thisWeek.value
+
+  // Slides that would come up blank. Whoever runs the service sees every
+  // one; whoever keeps the song list sees the songs, the part they can fix.
+  // Amber the day before and on the day, when it is no longer early.
+  const blanks = service
+    ? canRun.value
+      ? service.blanks
+      : canFixWords.value
+        ? service.blanks.filter((row) => row.item.type === 'song')
+        : []
+    : []
+  if (blanks.length) {
+    const onlySongs = blanks.every((row) => row.item.type === 'song')
+    const n = blanks.length
+    const first = blanks[0].item
+    list.push({
+      kind: 'dated',
+      key: `blanks:${service.date}:${blanks.map((row) => row.item.id).join(',')}`,
+      tone: service.days <= 1 ? 'warn' : 'plain',
+      icon: onlySongs ? MusicNotes : ProjectorScreen,
+      dismissible: true,
+      kicker: labelOf(service),
+      title: onlySongs
+        ? `${plural(n, 'song has', 'songs have')} no words yet`
+        : `${plural(n, 'slide', 'slides')} would come up blank`,
+      detail: onlySongs ? 'The screen would go blank mid-song.' : 'Fill them in, or take them off.',
+      // Songs are fixed in the song list: one opens straight into it, more
+      // open the list of what is coming up. Anything else is fixed on the
+      // run sheet itself.
+      to: onlySongs && canSeeSongs.value
+        ? n === 1 && first.songId && blanks[0].reason !== 'Not in the song list'
+          ? `/songs/${first.songId}`
+          : { name: 'PresentationLyrics' }
+        : present(service.date),
+      date: service.date,
+      chips: blanks.map((row) => ({ key: row.item.id, label: row.item.title || row.item.reference || 'Untitled' })),
+    })
   }
-  return {
-    songs: items.filter((i) => i.type === 'song').length,
-    readings: items.filter((i) => i.type === 'scripture').length,
-    other: items.filter((i) => i.type !== 'song' && i.type !== 'scripture').length,
+
+  // What this church nearly always puts up, not here yet. A missing reading
+  // usually means the message is not written, and saying so tells the booth
+  // it is waiting on the preacher rather than on itself.
+  if (service && canRun.value && usuallyMissing.value.length) {
+    const kinds = usuallyMissing.value.map((row) => row.kind)
+    const reading = kinds.includes('reading')
+    const notices = kinds.includes('notices')
+    const when = inSentence(service)
+    const row = usuallyMissing.value[0]
+    list.push({
+      kind: 'dated',
+      key: `usual:${service.date}:${kinds.join(',')}`,
+      tone: 'plain',
+      icon: reading ? BookOpen : Megaphone,
+      dismissible: true,
+      kicker: 'Still to add',
+      title: reading && notices ? `No reading or notices for ${when} yet` : reading ? `No reading for ${when} yet` : `No notices for ${when} yet`,
+      detail:
+        reading && !sermonOn(service.date)
+          ? 'It comes with the message, still to be written.'
+          : kinds.length > 1
+            ? 'Most Sundays here have both.'
+            : `${row.had} of the last ${row.of} Sundays had ${reading ? 'one' : 'them'}.`,
+      to: present(service.date),
+      date: service.date,
+    })
   }
+
+  list.push(alwaysCard.value)
+  return list
 })
 
-const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
+const ICONS = { song: MusicNotes, scripture: BookOpen, announcement: Megaphone, text: TextT, video: VideoCamera, slides: Slideshow }
 
-const headline = computed(() => {
-  if (loading.value) return 'Presentation'
-  if (!next.value) return 'Nothing to run yet'
-  const label = labelOf(next.value.date)
-  // A run sheet is the tech team's own preparation. Without one, the service
-  // still runs — it simply follows the schedule's songs — and saying so is
-  // more useful than calling it unready.
-  return plan.value ? `${label} is ready to run` : `${label} runs from the schedule`
-})
-
-const heroDetail = computed(() => {
-  if (!next.value) return 'A Sunday shows here once it has been scheduled.'
-  const { songs: s, readings, other } = counts.value
-  const parts = [plural(s, 'song')]
-  if (readings) parts.push(plural(readings, 'reading'))
-  if (other) parts.push(plural(other, 'other item'))
-  if (!plan.value) parts.push('no readings added yet')
-  return parts.join(' · ')
-})
-
-/* -------------------------------------------------------------- tiles */
-
-const canSeeSongs = computed(() => can('songs.view'))
-
-const servicesDetail = computed(() => {
-  const n = upcoming.value.length
-  return n ? `${plural(n, 'service')} coming up` : 'None coming up'
-})
-
-const scheduleDetail = computed(() => {
-  if (!next.value) return 'Nothing planned'
-  const leader = findRosterMember(members.value, leaderOf(next.value))
-  return leader ? `${getDisplayName(leader)} leading` : formatShortDate(next.value.date)
-})
-
-/* ------------------------------------------------------- the run sheet */
-
-const ICONS = { song: Music2, scripture: BookOpen, video: VideoCamera }
-
-// The first few things in the order they run — what a glance at the booth's
-// screen should tell you before you open it.
-const preview = computed(() => {
-  if (plan.value?.items?.length) {
-    return plan.value.items.slice(0, 5).map((item) => ({
-      key: item.id,
-      icon: ICONS[item.type] || TextT,
-      title: item.title || item.reference || 'Untitled',
-    }))
-  }
-  return (next.value?.songs || []).slice(0, 5).map((song, index) => ({
-    key: `${song.songId}-${index}`,
-    icon: Music2,
-    title: song.key ? `${song.title} · ${song.key}` : song.title,
+/** The run order as a strip, the blank ones drawn as empty frames. Six fit
+ *  a phone's card beside its chevron, with room for the "+N". */
+const STRIP = 6
+const strip = computed(() => {
+  const service = nextService.value
+  if (!service) return []
+  const blank = new Set(service.blanks.map((row) => row.item.id))
+  return service.items.map((item, index) => ({
+    key: item.id || index,
+    icon: ICONS[item.type] || TextT,
+    title: item.title || item.reference || 'Untitled',
+    blank: blank.has(item.id),
   }))
 })
 
-const moreCount = computed(() => {
-  const total = plan.value?.items?.length ?? next.value?.songs?.length ?? 0
-  return Math.max(0, total - preview.value.length)
+/** The theme and who leads: what the booth's title slide and cues hang on. */
+const caption = computed(() => {
+  const sunday = next.value
+  if (!sunday) return ''
+  const leader = findRosterMember(members.value, leaderOf(sunday))
+  return [sunday.theme ? `Theme · ${sunday.theme}` : '', leader ? `${getDisplayName(leader)} leading` : ''].filter(Boolean).join(' · ')
 })
+
+/** The card that is always there: the next service, which opens the presenter. */
+const alwaysCard = computed(() => {
+  const service = nextService.value
+  if (loading.value || !service) {
+    return {
+      kind: 'next',
+      key: 'next',
+      tone: 'accent',
+      kicker: greeting.value,
+      title: loading.value ? 'Presentation' : 'Nothing to run yet',
+      detail: loading.value ? '' : 'A Sunday shows here once it has been scheduled.',
+      to: loading.value ? null : { name: 'Services' },
+    }
+  }
+  const { songs, readings, notices, other } = service.counts
+  const ready = service.items.length > 0 && !service.blanks.length
+  // Ready only when nothing in it would come up blank. A service further off
+  // than this week is named in full, the way the presenter names it.
+  const name = service.days <= 6 ? labelOf(service) : formatServiceDate(service.date)
+  return {
+    kind: 'next',
+    key: 'next',
+    tone: 'accent',
+    kicker: greeting.value,
+    title: ready ? `${labelOf(service)} is ready to run` : name,
+    detail: service.items.length
+      ? [
+          plural(songs, 'song'),
+          readings ? plural(readings, 'reading') : '',
+          notices ? plural(notices, 'notice') : '',
+          other ? plural(other, 'cue') : '',
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      : 'Nothing in the order yet',
+    to: present(service.date),
+  }
+})
+
+/* -------------------------------------------------------------- the doors */
+
+// A door is its name, with a count on the corner only for what is waiting on
+// whoever keeps the song list: the songs coming up with no words.
+const doors = computed(() => [
+  { key: 'services', title: 'Services', art: 'presentation-services', to: { name: 'Services' } },
+  ...(canSeeSongs.value
+    ? [
+        {
+          key: 'lyrics',
+          title: 'Lyrics',
+          art: 'presentation-lyrics',
+          to: { name: 'PresentationLyrics' },
+          badge: canFixWords.value && !loading.value ? wordsMissing.value.length : 0,
+          urgent: Boolean(thisWeek.value?.days <= 1 && thisWeek.value.blanks.some((row) => row.item.type === 'song')),
+        },
+      ]
+    : []),
+  { key: 'readings', title: 'Readings', art: 'presentation-readings', to: { name: 'PresentationReadings' } },
+  // Doorways into the apps this one draws on, in their own artwork.
+  {
+    key: 'schedule',
+    title: 'Schedule',
+    art: 'lineups',
+    to: next.value ? { name: 'SchedulesSunday', params: { date: next.value.date } } : { name: 'SchedulesHome' },
+  },
+  ...(canSeeSongs.value ? [{ key: 'songs', title: 'Songs', art: 'songs', to: '/songs' }] : []),
+])
 </script>
 
 <template>
   <AppScreen>
-    <div class="flex flex-col gap-3">
-      <AppHero
-        art="presentation"
-        :greeting="greeting"
-        :title="headline"
-        :detail="heroDetail"
-      />
+    <div class="flex flex-col gap-4">
+      <!-- 1. What the booth should see to this week, most important on top -->
+      <AppHeroDeck :cards="cards" scope="presentation" label="Presentation this week" class="animate-rise">
+        <template #card="{ card }">
+          <!-- Something about this Sunday: its date, the way a calendar shows it. -->
+          <DeckCard
+            v-if="card.kind === 'dated'"
+            :tone="card.tone"
+            :icon="card.icon"
+            :kicker="card.kicker"
+            :title="card.title"
+            :detail="card.detail"
+            :to="card.to"
+            :inset="card.dismissible"
+          >
+            <template #leading>
+              <DateTile :date="card.date" class="size-14! rounded-2xl!" />
+            </template>
+            <DeckChips v-if="card.chips?.length" :tone="card.tone" :items="card.chips" :max="3" />
+          </DeckCard>
 
-      <nav class="grid grid-cols-2 gap-3" aria-label="Presentation">
-        <AppTile
-          :to="{ name: 'Services' }"
-          title="Services"
-          :detail="servicesDetail"
-          :icon="ProjectorScreen"
-          :wide="canSeeSongs"
-          :delay="60"
-        />
-        <!-- Doorways into the apps this one draws on. -->
-        <AppTile
-          :to="next ? { name: 'SchedulesSunday', params: { date: next.date } } : { name: 'SchedulesHome' }"
-          title="Schedule"
-          :detail="scheduleDetail"
-          :icon="CalendarDots"
-          :delay="110"
-        />
-        <AppTile
-          v-if="canSeeSongs"
-          to="/songs"
-          title="Songs"
-          :detail="`${plural(songs.length, 'song')}`"
-          :icon="ListMusic"
-          :delay="160"
-        />
-      </nav>
+          <!-- The next service, in the order it runs. -->
+          <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
+            <template #art>
+              <CardPanes />
+            </template>
+            <!-- The Presentation artwork, on white because its orange and
+                 blue are Ekkly's and need a white ground on a coloured card. -->
+            <template #trailing>
+              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+                <AppArt app-key="presentation" :play="1" class="size-10" />
+              </span>
+            </template>
+            <!-- Each thing in the order as its kind, so the shape of the
+                 service reads at a glance; one that would come up blank is
+                 an empty frame. -->
+            <template v-if="!loading && strip.length" #default>
+              <ol class="flex items-center gap-1.5" aria-label="The order of service">
+                <li
+                  v-for="item in strip.slice(0, STRIP)"
+                  :key="item.key"
+                  :title="item.title"
+                  :class="[
+                    'flex size-8 shrink-0 items-center justify-center rounded-[10px]',
+                    item.blank ? 'border-2 border-dashed border-white/50 text-white/60' : 'bg-white/18 text-white',
+                  ]"
+                >
+                  <component :is="item.icon" class="size-4" aria-hidden="true" />
+                  <span class="sr-only">{{ item.title }}</span>
+                </li>
+                <li
+                  v-if="strip.length > STRIP"
+                  class="ml-0.5 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white"
+                >
+                  +{{ strip.length - STRIP }}
+                </li>
+              </ol>
+              <p v-if="caption" class="mt-2 truncate text-xs text-white/80">{{ caption }}</p>
+            </template>
+          </DeckCard>
+        </template>
+      </AppHeroDeck>
 
-      <RouterLink
-        v-if="next"
-        :to="{ name: 'Present', params: { date: next.date } }"
-        class="animate-rise flex h-13 items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-white transition-transform duration-200 ease-out hover:bg-primary-hover"
-        style="animation-delay: 210ms"
-      >
-        <Play class="size-5" />
-        Run {{ labelOf(next.date) === 'Today' ? 'today' : labelOf(next.date) === 'This Sunday' ? 'this Sunday' : labelOf(next.date) }}
-      </RouterLink>
-
-      <!-- The run order itself -->
-      <section v-if="next" class="animate-rise mt-3" style="animation-delay: 260ms">
-        <h2 class="mb-2 px-0.5 text-sm font-medium text-gray-500 dark:text-gray-400">
-          {{ plan ? 'Run sheet' : 'From the schedule' }}
-        </h2>
-        <RouterLink
-          :to="{ name: 'Present', params: { date: next.date } }"
-          class="group block rounded-2xl border border-gray-200 bg-white p-4 transition-[transform,border-color] duration-200 ease-out hover:border-gray-300 dark:border-gray-700/80 dark:bg-gray-800 dark:hover:border-gray-600"
-        >
-          <div class="flex items-start gap-3">
-            <div class="min-w-0 flex-1">
-              <p class="text-lg font-semibold leading-tight tracking-tight text-gray-900 dark:text-white">
-                {{ formatServiceDate(next.date) }}
-              </p>
-              <p v-if="next.theme" class="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
-                Theme · {{ next.theme }}
-              </p>
-            </div>
-            <ChevronRight
-              class="mt-1 size-4 shrink-0 text-gray-300 transition-transform duration-300 group-engaged:translate-x-1 dark:text-gray-600"
-            />
-          </div>
-          <ol v-if="preview.length" class="mt-3 space-y-1.5">
-            <li
-              v-for="(item, index) in preview"
-              :key="item.key"
-              class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300"
-            >
-              <span class="w-4 shrink-0 text-right text-xs tabular-nums text-gray-400">{{ index + 1 }}</span>
-              <component :is="item.icon" class="size-4 shrink-0 text-primary dark:text-primary-light" />
-              <span class="min-w-0 truncate">{{ item.title }}</span>
-            </li>
-          </ol>
-          <p v-if="moreCount" class="mt-1.5 pl-6.5 text-xs text-gray-400">and {{ moreCount }} more</p>
-          <p v-if="!preview.length" class="mt-3 text-sm text-gray-500 dark:text-gray-400">
-            Nothing in the order yet. Open it to add songs, readings and notices.
-          </p>
-        </RouterLink>
-      </section>
+      <!-- 2. The doors -->
+      <AppShortcuts :doors="doors" label="Presentation" />
     </div>
   </AppScreen>
 </template>

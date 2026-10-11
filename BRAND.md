@@ -118,11 +118,22 @@ who serves, worship, preaching, ushers, welcome) `attendance-…` (the
 gatherings, what is still to record, who has gone quiet, the months) and
 `finances-…` (the book, the statement, the accounts, the months; money in is
 teal and money out orange on all four) and `events-…` (the calendar, what is
-coming up, what happens every week). They are rooms of an app, not apps,
+coming up, what happens every week) and `tasks-…` (yours, everyone's, by
+ministry, done) and `minutes-…` (the meetings, the ones to write up, the
+action items, the decisions) and `smallgroups-…` (the groups, the sessions,
+the people in none, the blank forms) and `prayer-…` (praying now, ongoing,
+answered, every concern) and `songs-…` (every song, the Sundays, the most
+sung, the missing lyrics) and `gallery-…` (the albums, the recent photos,
+the kinds, the albums still to fill) and `presentation-…` (the services, the
+lyrics, the readings) and `videos-…` (this month, next month, look and
+sound) and `teaching-…` (the sermons, Sunday school, the plans, what is
+taught when). Since the Minutes and Small groups rooms, each app's are drawn in a
+file of its own, `brand/ekkly/sections/<app>.mjs`, which the generator picks
+up. They are rooms of an app, not apps,
 and nothing sells them.
 
 **Apps and sections wear their artwork in colour.** Wherever an app is
-offered — the home of all apps, the All apps drawer, the top bar — it wears
+offered — the home of all apps, the All apps page, the top bar — it wears
 this artwork as drawn, glossy, on a flat plate of colour (no shadow under
 it). On the home that plate is a circle, and each card style carries a
 colour from the app's own drawing
@@ -201,7 +212,12 @@ now and then glances round or hops; he never breathes or bobs.
 
 - **The window is the motif.** The arch is the mark's own outline. The front
   door's last call opens out of one (`.arch-frame` / `.arch-window` in
-  [PlatformHome.vue](src/views/PlatformHome.vue)). Anything decorative has to
+  [PlatformHome.vue](src/views/PlatformHome.vue)). Inside the app, the window
+  with its light falling through, in one colour, stands behind the home's sky,
+  the day card and the hold preview: one drawing,
+  [WindowLight.vue](src/components/common/WindowLight.vue), whole and filled,
+  never an outlined arch running off an edge, which reads as a door.
+  Anything decorative has to
   earn its place by being a church's — the window, the mark, the app artwork.
 - **Radii:** `rounded-lg` for buttons, cards and inputs in the app;
   `rounded-xl` for the front door's tall calls to action; `rounded-full` only
@@ -249,4 +265,6 @@ A call to action is the flat accent at the radius above. A heading is ink.
 | [brand/uec/](brand/uec/) | The original UEC identity, kept as history — not Ekkly's |
 | [src/assets/hero-bg-light.webp](src/assets/hero-bg-light.webp), [hero-bg-dark.webp](src/assets/hero-bg-dark.webp) | The front door's window, one per theme. Each levelled so its wall is the page's ground |
 | [src/assets/app-icons/](src/assets/app-icons/) | Generated. Don't hand-edit |
+| [brand/ekkly/make-mock-photos.mjs](brand/ekkly/make-mock-photos.mjs) | Draws the mock photos in [src/assets/mock-photos/](src/assets/mock-photos/): church life illustrated, never photographed, for wherever Ekkly shows a photo that is not a church's own (the commercials). Never put on a church's real album or group: a drawing in its place would pass for theirs |
+| [src/components/appframe/churchInterior.js](src/components/appframe/churchInterior.js) | The inside of a church every app screen stands in, as the home stands under the sky |
 | [src/icons/index.js](src/icons/index.js) | Generated. Don't hand-edit |

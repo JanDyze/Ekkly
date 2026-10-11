@@ -1,6 +1,6 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useAuth } from './useAuth'
-import { blankSermon, deleteSermon, saveSermon, subscribeToSermons } from '../api/sermonsService'
+import { blankSermon, deleteSermon, saveSermon, saveSermonNotes, subscribeToSermons } from '../api/sermonsService'
 
 // Shared across callers, like useTasks: the Preaching section, a Sunday's
 // screen and the presenter all read the same messages.
@@ -39,6 +39,9 @@ export function useSermons() {
     sermonOn,
     blankSermon,
     save: (date, sermon) => saveSermon(date, sermon, user.value),
+    // The Teaching app's half of the record: the preacher's own preparation,
+    // never the slides or the recording (sermonsService).
+    saveNotes: (date, notes) => saveSermonNotes(date, notes, user.value),
     remove: deleteSermon,
   }
 }

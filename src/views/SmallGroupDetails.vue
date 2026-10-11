@@ -1,8 +1,8 @@
 <script setup>
 import { computed, nextTick, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AppScreen from '../components/appframe/AppScreen.vue'
 import {
-  ArrowLeft,
   Plus,
   MoreVertical,
   Pencil,
@@ -172,7 +172,7 @@ const confirmDeleteGroup = () => {
       try {
         await removeGroup(groupId.value)
         toast.success('Small group deleted')
-        router.push('/small-groups')
+        router.replace({ name: 'SmallGroupsAll' })
       } catch (error) {
         console.error('Error deleting small group:', error)
         toast.error('Failed to delete the group.')
@@ -251,22 +251,17 @@ const sessionsByMonth = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <!-- Top bar. The cover lives in the hero below, so this stays slim and
-         keeps the group name visible while the body scrolls. -->
-    <div class="shrink-0 flex items-center gap-1.5 pb-3 no-print">
-      <button
-        @click="router.push('/small-groups')"
-        class="shrink-0 p-2 -ml-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-        aria-label="Back"
-      >
-        <ArrowLeft class="h-5 w-5" />
-      </button>
-
-      <h1 class="flex-1 min-w-0 truncate text-base font-semibold text-gray-900 dark:text-white">
-        {{ group?.name || (groupsLoading ? '…' : 'Group not found') }}
-      </h1>
-
+  <div class="relative h-full">
+    <!-- A screen of the Small groups app (AppScreen): its header carries the
+         way back — to wherever in the app the group was opened from — and the
+         group's name, with the group's menu beside it. -->
+    <AppScreen
+      :title="group?.name || (groupsLoading ? '' : 'Group not found')"
+      :back="{ name: 'SmallGroupsAll' }"
+      root="/small-groups"
+      class="no-print"
+    >
+      <template #action>
       <div class="relative shrink-0">
         <button
           @click="showMenu = !showMenu"
@@ -310,11 +305,10 @@ const sessionsByMonth = computed(() => {
           </button>
         </div>
       </div>
-    </div>
+      </template>
 
-    <!-- Body -->
-    <div class="flex-1 overflow-hidden flex relative no-print">
-      <div class="flex-1 overflow-y-auto pb-bar! space-y-4 pb-4">
+      <!-- Body -->
+      <div class="space-y-4">
         <!-- Identity card. The cover is deliberately a small thumbnail rather
              than a full-bleed banner: at page width a 16:9 hero ran to roughly
              430px on desktop and pushed the roster and sessions below the fold.
@@ -494,8 +488,10 @@ const sessionsByMonth = computed(() => {
 
           <div v-else class="divide-y divide-gray-100 dark:divide-gray-700">
             <template v-for="monthGroup in sessionsByMonth" :key="monthGroup.key">
+              <!-- Not sticky: inside the app's screen the header already holds
+                   the top, and a month stuck under it would slide out of sight. -->
               <div
-                class="sticky top-0 z-10 bg-gray-100 dark:bg-gray-700 px-4 py-1.5 border-b border-gray-200 dark:border-gray-600"
+                class="bg-gray-100 dark:bg-gray-700 px-4 py-1.5 border-b border-gray-200 dark:border-gray-600"
               >
                 <h3
                   class="text-[11px] font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300"
@@ -513,6 +509,7 @@ const sessionsByMonth = computed(() => {
           </div>
         </section>
       </div>
+    </AppScreen>
 
       <SessionEditorDrawer
         v-if="group"
@@ -536,7 +533,6 @@ const sessionsByMonth = computed(() => {
         @save="handleGroupSave"
         @delete="confirmDeleteGroup"
       />
-    </div>
 
     <!-- Blank paper form: mounted only for the duration of a print. -->
     <div v-if="printBlank" class="print-area print-only">
