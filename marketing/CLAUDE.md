@@ -12,6 +12,7 @@ every claim can be checked against the code.
 | Writing any line of copy | [FACTS.md](FACTS.md) — what Ekkly does, and what an ad may promise |
 | Making anything | [LEARNINGS.md](LEARNINGS.md) — what has worked and what has not |
 | Choosing what to make next | [LOG.md](LOG.md) — what has already gone out |
+| Making a video | [SCRIPTS.md](SCRIPTS.md) — the scripts, and which are made |
 | Anything visual | [../BRAND.md](../BRAND.md) — the mark, the four colours, what Ekkly is not |
 
 Use the skills rather than doing these by hand: `/ad` makes ads, `/ad-plan`
@@ -25,10 +26,13 @@ marketing/
   FACTS.md         claims an ad may make, each traced to the app
   LEARNINGS.md     what worked and what flopped, kept up by /ad-results
   LOG.md           every ad and post, one row each
-  templates/       ad.css, ad.js and the starting layouts
+  SCRIPTS.md       video scripts, drawn, screen-recorded or filmed
+  templates/       ad.css, ad.js and the starting layouts;
+                   video.js and video.css for drawn videos
   ads/<date>-<slug>/
     brief.md       who it is for, the one idea, the copy for every placement
     feed.html      1080×1350, plus story.html, square.html as needed
+    reel.html      a drawn video, 1080×1920 (templates/video.js)
     *.png|webp     screenshots or pictures the ad uses
     out/           rendered PNGs (ignored by git; re-render from the HTML)
   scripts/render.mjs
@@ -44,6 +48,7 @@ file in the same folder, not a new folder, so a test stays together.
 node marketing/scripts/render.mjs marketing/ads/<folder>     # every .html → out/<name>.png
 node marketing/scripts/render.mjs serve                      # preview at http://localhost:4178
 node marketing/scripts/render.mjs shot <url> <out.png> 390x844 3
+node marketing/scripts/render.mjs video marketing/ads/<folder>/reel.html  # → out/reel.mp4
 ```
 
 It drives the Chrome or Edge already installed, headless, and serves the repo
@@ -55,6 +60,15 @@ copying them. `shot` photographs any page — usually the dev app
 An ad's size is its `<meta name="ad-size">`. Look at every PNG before calling
 an ad done.
 
+A drawn video is a list of scenes handed to `film()` in `templates/video.js`
+(its header names the scene types). Open the page to watch it loop, add
+`?t=12.5` to hold one moment, and give it `<meta name="ad-cover">` for the
+moment the folder render takes as its cover PNG. `video` draws every frame
+and encodes it in the same Chrome, as H.264 MP4, in about half the video's
+length; nothing is recorded in real time, so no frame is dropped. The videos
+are silent: music is added in Meta's editor from its licensed library. Before
+calling one done, look at frames of the MP4 itself, not only the page.
+
 ## Placements
 
 | Placement | Size | Keep clear |
@@ -63,6 +77,7 @@ an ad done.
 | Square, when a post needs it | 1080×1080 | — |
 | Stories | 1080×1920 (9:16) | Top 250px and bottom 340px: the profile bar and the reply box sit there |
 | Reels cover | 1080×1920 | Bottom 670px: the caption and buttons cover it |
+| Reels and Stories video | 1080×1920, MP4, 15–30s | As for a reel: `film({ size: 'reel' })` keeps every word above the bottom 670px |
 
 Copy for a paid ad, per placement:
 

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="tl">
+<head>
+  <meta charset="utf-8">
+  <meta name="ad-size" content="1080x1920">
+  <meta name="ad-cover" content="4.3">
+  <title>Sino sa Linggo?</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=Poppins:wght@500&display=block">
+  <link rel="stylesheet" href="/marketing/templates/video.css">
+</head>
+<body>
+  <script type="module">
+    import { film } from '/marketing/templates/video.js'
+
+    // Script 2 in marketing/SCRIPTS.md. Taglish throughout.
+    film({
+      size: 'reel',
+      scenes: [
+        {
+          type: 'pile',
+          dur: 5.2,
+          step: 1,
+          cards: [
+            { icon: 'chat-circle-dots', text: 'Sino’ng naka-keys sa Linggo?' },
+            { icon: 'chat-circle-dots', text: 'Ako ba yung magbabasa?' },
+            { icon: 'chat-circle-dots', text: 'Anong key nung pangalawang kanta?' },
+            { icon: 'chat-circle-dots', text: 'Pa-send ulit ng lineup, please' },
+          ],
+        },
+        { type: 'lines', dur: 2.8, ground: 'light', align: 'center', lines: ['Nasa Ekkly na ang lineup.', { text: 'Kita ng buong team.', accent: true }] },
+        {
+          type: 'apps',
+          dur: 4.2,
+          each: 1.9,
+          apps: [
+            { art: 'lineups', name: 'Schedules', line: 'Alam ng lahat ang role nila' },
+            { art: 'presentation', name: 'Presentation', line: 'Diretso sa screen ang mga kanta' },
+          ],
+        },
+        {
+          type: 'close',
+          dur: 4.2,
+          title: 'Linggo na walang gulo.',
+          sub: 'Libre ang unang buwan.',
+          cta: 'ekkly.online/start',
+        },
+      ],
+    })
+  </script>
+</body>
+</html>

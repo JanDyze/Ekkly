@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="ad-size" content="1080x1920">
+  <meta name="ad-cover" content="4.1">
+  <title>One place for the church's records</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=Poppins:wght@500&display=block">
+  <link rel="stylesheet" href="/marketing/templates/video.css">
+</head>
+<body>
+  <script type="module">
+    import { film } from '/marketing/templates/video.js'
+
+    // The script is in brief.md; each scene below is one of its beats.
+    film({
+      size: 'reel',
+      scenes: [
+        {
+          type: 'pile',
+          dur: 5,
+          step: 1,
+          cards: [
+            { icon: 'chats-circle', text: 'Sunday’s roster, lost in the group chat' },
+            { icon: 'notebook', text: 'The roll, kept in three notebooks' },
+            { icon: 'table', text: 'The offering in a spreadsheet nobody can open' },
+            { icon: 'files', text: 'The minutes, typed up twice' },
+          ],
+        },
+        { type: 'mark', dur: 3.2, lines: ['Your church’s records,', 'in one app.'] },
+        {
+          type: 'apps',
+          dur: 12,
+          each: 1.5,
+          after: 'All in one app.',
+          apps: [
+            { art: 'members', name: 'People', line: 'Everyone’s details, one tap away' },
+            { art: 'lineups', name: 'Schedules', line: 'Sunday without the scramble' },
+            { art: 'attendance', name: 'Attendance', line: 'Count a service in a few taps' },
+            { art: 'songs', name: 'Song List', line: 'Find a song by any line' },
+            { art: 'minutes', name: 'Minutes', line: 'Minutes done before you get home' },
+            { art: 'finances', name: 'Finances', line: 'The treasurer’s report, done' },
+            { art: 'prayer', name: 'Prayer Concerns', line: 'No prayer request forgotten' },
+          ],
+        },
+        {
+          type: 'link',
+          dur: 4.6,
+          title: 'Its own link.\nIts own colours.',
+          host: 'yourchurch',
+          sub: 'Opens in any phone’s browser. Nothing to install.',
+          subAt: 2.3,
+        },
+        { type: 'lines', dur: 3, align: 'center', lines: ['Less time on the lists.', { text: 'More for the ministry.', accent: true }] },
+        {
+          type: 'close',
+          dur: 4.2,
+          title: 'Ask for your church.',
+          sub: 'Free for a month. Only the apps you need.',
+          cta: 'ekkly.online/start',
+        },
+      ],
+    })
+  </script>
+</body>
+</html>

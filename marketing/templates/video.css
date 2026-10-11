@@ -1,0 +1,6 @@
+/* The page a video is drawn on (video.js). The canvas is the video at full
+   size; on screen it is scaled to fit the window, and a click pauses it. */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: #0b1336; overflow: hidden; }
+canvas { display: block; width: 100vw; height: 100vh; object-fit: contain; cursor: pointer; }
+p { position: fixed; left: 12px; bottom: 12px; color: #b9c3dc; font: 14px system-ui, sans-serif; }

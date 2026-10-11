@@ -6,6 +6,7 @@
 //   node marketing/scripts/render.mjs marketing/ads/<folder>/feed.html
 //   node marketing/scripts/render.mjs serve
 //   node marketing/scripts/render.mjs shot <url> <out.png> [390x844] [scale]
+//   node marketing/scripts/render.mjs video marketing/ads/<folder>/reel.html
 //
 // While it runs it serves the repo root over HTTP rather than opening files
 // directly. A file:// page may not fetch or mask with another file, which is
@@ -15,7 +16,7 @@
 // Set AD_BROWSER to a browser's path if neither Chrome nor Edge is found.
 import { spawn } from 'node:child_process'
 import { createServer } from 'node:http'
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join, relative, resolve, sep } from 'node:path'
@@ -57,8 +58,16 @@ function findBrowser() {
   return found
 }
 
-function serve() {
+function serve(onPost) {
   const server = createServer(async (req, res) => {
+    // A video page hands its finished file back this way (templates/video.js).
+    if (req.method === 'POST' && onPost) {
+      const chunks = []
+      for await (const chunk of req) chunks.push(chunk)
+      res.writeHead(204).end()
+      onPost(new URL(req.url, 'http://x'), Buffer.concat(chunks))
+      return
+    }
     const path = decodeURIComponent(new URL(req.url, 'http://x').pathname)
     let file = resolve(ROOT, '.' + path)
     // Nothing outside the repo is served, and nothing that holds secrets.
@@ -134,6 +143,14 @@ function adFiles(target) {
 
 const urlFor = (file) => `http://127.0.0.1:${PORT}/` + relative(ROOT, file).split(sep).join('/')
 
+// A video page (templates/video.js) renders as its cover: the moment named by
+// <meta name="ad-cover" content="7.5">, in seconds. The video itself is made
+// by the `video` command.
+function coverAt(html) {
+  const match = readFileSync(html, 'utf8').match(/<meta\s+name=["']ad-cover["']\s+content=["']([\d.]+)["']/i)
+  return match ? match[1] : null
+}
+
 async function render(targets) {
   const browser = findBrowser()
   const files = targets.flatMap(adFiles)
@@ -145,7 +162,8 @@ async function render(targets) {
       const outDir = join(dirname(file), 'out')
       mkdirSync(outDir, { recursive: true })
       const out = join(outDir, basename(file, '.html') + '.png')
-      await screenshot(browser, urlFor(file), out, width, height)
+      const cover = coverAt(file)
+      await screenshot(browser, urlFor(file) + (cover ? `?t=${cover}` : ''), out, width, height)
       await fit(out, width, height)
       console.log(`${relative(ROOT, out)}  ${width}×${height}`)
     }
@@ -163,15 +181,63 @@ async function shot([url, out, size = '390x844', scale = '3']) {
   console.log(`${out}  ${width * scale}×${height * scale}`)
 }
 
+// The page draws every frame itself and posts the finished MP4 back to the
+// server; this only opens it and waits. Encoding runs at whatever speed the
+// machine manages, never in real time, so no frame is dropped.
+async function video([page, target]) {
+  if (!page) throw new Error('Usage: render.mjs video <page.html> [out.mp4]')
+  const file = resolve(page)
+  const out = target ? resolve(target) : join(dirname(file), 'out', basename(file, '.html') + '.mp4')
+  mkdirSync(dirname(out), { recursive: true })
+  const [width, height] = adSize(file)
+
+  let settle
+  const finished = new Promise((ok, fail) => (settle = { ok, fail }))
+  const server = await serve((url, body) => {
+    if (url.pathname === '/__video') {
+      writeFileSync(out, body)
+      settle.ok(url.searchParams.get('codec'))
+    } else settle.fail(new Error(body.toString()))
+  })
+  const profile = mkdtempSync(join(tmpdir(), 'ekkly-video-'))
+  const child = spawn(
+    findBrowser(),
+    [
+      '--headless=new',
+      '--no-first-run',
+      '--no-default-browser-check',
+      `--user-data-dir=${profile}`,
+      `--window-size=${width},${height}`,
+      '--remote-debugging-port=0',
+      urlFor(file) + '?record=1',
+    ],
+    { stdio: ['ignore', 'ignore', 'ignore'] }
+  )
+  const timer = setTimeout(() => settle.fail(new Error('No video after ten minutes')), 10 * 60 * 1000)
+  try {
+    const codec = await finished
+    console.log(`${relative(ROOT, out)}  ${width}×${height}  ${codec}  ${(statSync(out).size / 1e6).toFixed(1)} MB`)
+  } finally {
+    clearTimeout(timer)
+    child.kill()
+    server.close()
+    setTimeout(() => {
+      try { rmSync(profile, { recursive: true, force: true }) } catch {}
+    }, 1500)
+  }
+}
+
 const [command, ...rest] = process.argv.slice(2)
 try {
   if (!command) {
-    console.log(readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 9).join('\n'))
+    console.log(readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 10).join('\n'))
   } else if (command === 'serve') {
     await serve()
     console.log(`Previewing the repo at http://127.0.0.1:${PORT}/marketing/ads/ — Ctrl+C to stop.`)
   } else if (command === 'shot') {
     await shot(rest)
+  } else if (command === 'video') {
+    await video(rest)
   } else {
     await render([command, ...rest])
   }
