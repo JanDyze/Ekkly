@@ -365,12 +365,15 @@ export function useAttendance() {
    * stores for one fact is what made a meeting read "Not recorded" on the list
    * while its minute showed thirty names.
    */
-  const saveMeetingRegister = async (row, attendees = []) => {
+  const saveMeetingRegister = async (row, attendees = [], headCount = 0) => {
     const id = row?.sourceId || row?.firestoreId || row?.id
     const minute = minutes.value.find((m) => (m.firestoreId || m.id) === id)
     if (!minute) throw new Error('That meeting is no longer on the Minutes page')
     return await updateMinuteInFirestore(minute, {
       attendees: (attendees || []).map(String),
+      // The clicker's count travels with the names, so a meeting keeps it the
+      // way a service does.
+      headCount: Number(headCount) || 0,
     })
   }
 
@@ -378,7 +381,7 @@ export function useAttendance() {
     // Wiping a meeting's count means emptying its register: there is no
     // document to delete, and deleting the minute would take the write-up with
     // it.
-    if (isMeetingRegister(record)) return await saveMeetingRegister(record, [])
+    if (isMeetingRegister(record)) return await saveMeetingRegister(record, [], 0)
     return await deleteAttendance(record)
   }
 

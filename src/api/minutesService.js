@@ -17,6 +17,9 @@ const normalizeMinute = (doc) => {
     endTime: data.endTime || '',
     location: data.location || '',
     attendees: data.attendees || [],
+    // Heads counted in the room with Attendance's clicker, kept beside the
+    // names like a service's (attendanceService.js); 0 when nobody counted.
+    headCount: Number(data.headCount) || 0,
     // The tag whose members this meeting is for, so the attendance list is the
     // council rather than the whole church. `null` means nobody has chosen —
     // which is not the same as choosing "Everyone", and the page guesses from

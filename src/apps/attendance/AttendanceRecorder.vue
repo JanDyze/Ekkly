@@ -83,7 +83,7 @@ const persist = async () => {
     // what used to leave this page and the Minutes page disagreeing about who
     // was there, so there is only ever the one.
     if (isMeetingRegister(target.value)) {
-      await saveMeetingRegister(target.value, payload.attendees)
+      await saveMeetingRegister(target.value, payload.attendees, payload.headCount)
       saveState.value = 'saved'
       return
     }
@@ -243,7 +243,8 @@ watch(
       location: row.location || '',
       // A meeting already knows who was there; everything else starts empty.
       attendees: row.rowType === 'minute' ? [...(row.attendees || [])] : [],
-      headCount: 0,
+      // A meeting keeps its head count on the minute, like its names.
+      headCount: row.rowType === 'minute' ? row.headCount || 0 : 0,
       notes: '',
       expectedAttendees: row.expectedAttendees || row.attendees?.length || 0,
       // Copied off the event or schedule at the moment of recording, so the

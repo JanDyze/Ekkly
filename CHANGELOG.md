@@ -11,6 +11,28 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.4] — 2026-10-12
+
+A livelier crowd, a meeting's head count kept, and a way to quiet YUNIT.
+
+### Changed
+
+- **The crowd in Tap to count is made of characters now:** jelly beans,
+  round one-eyed fellows, tall ones with antennae, square ones in glasses and
+  little blobs in beanies, every one different. Each lands with a squash and
+  then bobs, wiggles, hops or sways while you count. They stay still for
+  anyone who has turned motion down on their phone.
+
+### Fixed
+
+- **A meeting's head count is kept.** Counting heads at a meeting now saves
+  the count with the meeting's names, as it already did for a service.
+
+### Added
+
+- **YUNIT's sounds can be turned off** with the speaker beside New chat. The
+  phone remembers, and the small buzz stays.
+
 ## [0.35.3] — 2026-10-11
 
 The room fills up as you count it, and YUNIT can be heard and felt.

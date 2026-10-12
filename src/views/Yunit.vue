@@ -14,6 +14,8 @@ import {
   PaperPlaneRight,
   PencilSimple,
   Plus,
+  SpeakerHigh,
+  SpeakerSlash,
   Trash,
   User,
   UsersThree,
@@ -28,6 +30,7 @@ import { useMembers } from '../composables/useMembers'
 import { useAppSettings } from '../composables/useAppSettings'
 import { getFullName } from '../utils/memberUtils'
 import { markdownToHtml } from '../utils/markdownUtils'
+import { setYunitSound, yunitSound } from '../utils/yunitFeedback'
 
 // YUNIT's page: a conversation with him, and him reacting to it.
 //
@@ -177,6 +180,17 @@ onMounted(() => {
         <h1 class="text-lg font-black tracking-tight text-gray-900 dark:text-white" aria-label="YUNIT">YUN<span class="yunit-i" aria-hidden="true">ı</span>T</h1>
         <p class="truncate text-sm text-gray-500 dark:text-gray-400" aria-live="polite">{{ status }}</p>
       </div>
+      <!-- His sounds, off for whoever is asking him things in a quiet room. -->
+      <button
+        type="button"
+        class="flex size-10 shrink-0 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+        :aria-label="yunitSound ? 'Turn YUNIT’s sounds off' : 'Turn YUNIT’s sounds on'"
+        :aria-pressed="yunitSound"
+        @click="setYunitSound(!yunitSound)"
+      >
+        <SpeakerHigh v-if="yunitSound" class="size-5" />
+        <SpeakerSlash v-else class="size-5" />
+      </button>
       <button
         type="button"
         class="flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-800"

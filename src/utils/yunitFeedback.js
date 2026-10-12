@@ -14,6 +14,32 @@
 //   cancel   a change turned down
 //   sorry    something that failed
 //   clear    starting the conversation over
+//
+// The sound can be turned off from YUNIT's header (yunitSound), and the phone
+// remembers; the buzz stays, because it is felt rather than heard by the room.
+
+import { ref } from 'vue'
+
+const SOUND_KEY = 'ekkly:yunit-sound'
+const readSound = () => {
+  try {
+    return localStorage.getItem(SOUND_KEY) !== 'off'
+  } catch {
+    return true
+  }
+}
+
+/** Whether YUNIT makes sounds on this device. */
+export const yunitSound = ref(readSound())
+
+export const setYunitSound = (on) => {
+  yunitSound.value = Boolean(on)
+  try {
+    localStorage.setItem(SOUND_KEY, yunitSound.value ? 'on' : 'off')
+  } catch {
+    // Not remembered this time; the switch itself still happened.
+  }
+}
 
 // Notes as [frequency, start, length] in seconds, and a buzz pattern in ms.
 const MOMENTS = {
@@ -56,7 +82,7 @@ const play = (notes) => {
 export const feel = (moment) => {
   const it = MOMENTS[moment]
   if (!it) return
-  play(it.notes)
+  if (yunitSound.value) play(it.notes)
   try {
     navigator.vibrate?.(it.buzz)
   } catch {
