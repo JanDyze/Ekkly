@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="ad-size" content="1080x1920">
+  <meta name="ad-cover" content="4.5">
+  <title>No prayer request forgotten</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=Poppins:wght@500&display=block">
+  <link rel="stylesheet" href="/marketing/templates/video.css">
+</head>
+<body>
+  <script type="module">
+    import { film } from '/marketing/templates/video.js'
+
+    // Script 10 in marketing/SCRIPTS.md; the copy is in brief.md.
+    film({
+      "size": "reel",
+      "voice": "af_heart",
+      "music": "still",
+      "scenes": [
+        {
+          "type": "pile",
+          "dur": 4,
+          "cards": [
+            {
+              "icon": "note-blank",
+              "text": "On a scrap of paper"
+            },
+            {
+              "icon": "device-mobile",
+              "text": "In someone’s phone"
+            },
+            {
+              "icon": "chat-circle",
+              "text": "Said once after service"
+            }
+          ],
+          "voice": [
+            "On a scrap of paper.",
+            "In someone’s phone.",
+            "Said once, after the service."
+          ],
+          "tail": 0.9
+        },
+        {
+          "type": "apps",
+          "dur": 3,
+          "apps": [
+            {
+              "art": "prayer",
+              "name": "Prayer Concerns",
+              "line": "Every request in one list"
+            }
+          ],
+          "voice": [
+            "Ekkly keeps every prayer request in one list."
+          ]
+        },
+        {
+          "type": "lines",
+          "dur": 2.8,
+          "align": "center",
+          "lines": [
+            "Mark prayers answered.",
+            {
+              "text": "Celebrate answers together.",
+              "accent": true
+            }
+          ],
+          "voice": [
+            "Mark prayers answered.",
+            "And celebrate the answers together."
+          ]
+        },
+        {
+          "type": "close",
+          "dur": 4,
+          "title": "No prayer request forgotten.",
+          "sub": "Free for a month.",
+          "cta": "ekkly.online/start",
+          "voice": [
+            "Ekkly keeps the list. Your people do the praying.",
+            "Ask for your church, at ekkly dot online."
+          ],
+          "voiceAt": 0.7,
+          "tail": 1.4
+        }
+      ]
+    })
+  </script>
+</body>
+</html>

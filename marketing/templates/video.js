@@ -913,7 +913,10 @@ function appSpan(s, i) {
   const n = s.apps.length
   if (s.cues?.length === n) {
     const t0 = Math.max(0, s.cues[i].start - 0.3)
-    const t1 = i + 1 < n ? Math.max(t0 + 0.8, s.cues[i + 1].start - 0.3) : Math.max(t0 + 0.8, s.dur - 0.15)
+    // The last stays to the end of the scene, unless a line is to follow the
+    // row (`after`), when it settles soon after its own line to make room.
+    const last = s.after ? s.cues[i].end + 0.4 : s.dur - 0.15
+    const t1 = i + 1 < n ? Math.max(t0 + 0.8, s.cues[i + 1].start - 0.3) : Math.max(t0 + 0.8, last)
     return [t0, t1]
   }
   const each = s.each ?? 1.6

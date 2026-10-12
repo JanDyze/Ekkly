@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="ad-size" content="1080x1920">
+  <meta name="ad-cover" content="3.5">
+  <title>Only the apps you need</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=Poppins:wght@500&display=block">
+  <link rel="stylesheet" href="/marketing/templates/video.css">
+</head>
+<body>
+  <script type="module">
+    import { film } from '/marketing/templates/video.js'
+
+    // Script 14 in marketing/SCRIPTS.md; the copy is in brief.md.
+    film({
+      "size": "reel",
+      "voice": "af_heart",
+      "music": "morning",
+      "scenes": [
+        {
+          "type": "lines",
+          "dur": 2.6,
+          "ground": "light",
+          "align": "center",
+          "lines": [
+            "Not every church",
+            {
+              "text": "needs everything.",
+              "accent": true
+            }
+          ],
+          "voice": [
+            "Not every church needs everything."
+          ]
+        },
+        {
+          "type": "apps",
+          "dur": 4.8,
+          "after": "Turn on only what you need.",
+          "apps": [
+            {
+              "art": "members",
+              "name": "People",
+              "line": "Everyone’s details, one tap away"
+            },
+            {
+              "art": "attendance",
+              "name": "Attendance",
+              "line": "Know whether your church is growing"
+            },
+            {
+              "art": "finances",
+              "name": "Finances",
+              "line": "The treasurer’s report, done"
+            }
+          ],
+          "voice": [
+            "Your people.",
+            "Your attendance.",
+            "Your finances."
+          ],
+          "tail": 1.8
+        },
+        {
+          "type": "lines",
+          "dur": 3,
+          "align": "center",
+          "size": 100,
+          "lines": [
+            "Add more from Settings.",
+            {
+              "text": "Turning one off never deletes what’s in it.",
+              "accent": true
+            }
+          ],
+          "voice": [
+            "Turn on only the apps you need, and add more from Settings.",
+            "Turning one off never deletes what’s in it."
+          ]
+        },
+        {
+          "type": "close",
+          "dur": 4,
+          "title": "Ask for your church.",
+          "sub": "Free for a month.",
+          "cta": "ekkly.online/start",
+          "voice": [
+            "Ask for your church, at ekkly dot online.",
+            "Your first month is free."
+          ],
+          "voiceAt": 0.7,
+          "tail": 1.4
+        }
+      ]
+    })
+  </script>
+</body>
+</html>

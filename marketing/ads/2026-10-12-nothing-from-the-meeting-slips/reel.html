@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="ad-size" content="1080x1920">
+  <meta name="ad-cover" content="3.0">
+  <title>Nothing from the meeting slips</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=Poppins:wght@500&display=block">
+  <link rel="stylesheet" href="/marketing/templates/video.css">
+</head>
+<body>
+  <script type="module">
+    import { film } from '/marketing/templates/video.js'
+
+    // Script 16 in marketing/SCRIPTS.md; the copy is in brief.md.
+    film({
+      "size": "reel",
+      "voice": "af_heart",
+      "music": "uplift",
+      "scenes": [
+        {
+          "type": "pile",
+          "dur": 3.4,
+          "cards": [
+            {
+              "icon": "chats-circle",
+              "text": "“Someone will follow up.”"
+            },
+            {
+              "icon": "clock",
+              "text": "Nobody did."
+            }
+          ],
+          "voice": [
+            "Someone will follow up.",
+            "Nobody did."
+          ],
+          "voiceGap": 0.6,
+          "tail": 0.9
+        },
+        {
+          "type": "apps",
+          "dur": 3,
+          "apps": [
+            {
+              "art": "tasks",
+              "name": "Tasks",
+              "line": "Give each job to a person"
+            }
+          ],
+          "voice": [
+            "In Ekkly, every job from the meeting goes to a person."
+          ]
+        },
+        {
+          "type": "lines",
+          "dur": 2.8,
+          "align": "center",
+          "lines": [
+            "See what’s overdue.",
+            {
+              "text": "Tick it off when it’s done.",
+              "accent": true
+            }
+          ],
+          "voice": [
+            "See what’s overdue.",
+            "Tick it off when it’s done."
+          ]
+        },
+        {
+          "type": "close",
+          "dur": 4,
+          "title": "Nothing from the meeting slips.",
+          "sub": "Free for a month.",
+          "cta": "ekkly.online/start",
+          "voice": [
+            "Nothing from the meeting slips.",
+            "Ask for your church, at ekkly dot online."
+          ],
+          "voiceAt": 0.7,
+          "tail": 1.4
+        }
+      ]
+    })
+  </script>
+</body>
+</html>

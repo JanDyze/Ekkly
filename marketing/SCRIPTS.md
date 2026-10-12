@@ -80,11 +80,11 @@ YUNIT is a paid app: the brief says so if the ad is paid. Never “AI-powered”
 
 ## 5. Yung kantang may linyang…
 
-Drawn or Screen · Tagalog · 12s · worship teams
+*Made: `ads/2026-10-12-kanta-sa-isang-linya/`.* Drawn or Screen · Tagalog · 12s · worship teams
 
 | Time | On screen |
 |---|---|
-| 0–3s | *Yung kanta na… ano nga ulit ’yon?* |
+| 0–3s | *Yung kanta na… ano ulit ’yon?* |
 | 3–8s | A search box; a line of lyrics typed; the song comes up with its key. *Hanapin ang kanta sa kahit anong linya.* |
 | 8–12s | *Nasa iisang listahan ang mga kanta ninyo.* Ask. |
 
@@ -107,19 +107,19 @@ second copy, the adding up), never that the report needs nobody.
 
 ## 7. Walang makakalimutang birthday
 
-Drawn · Taglish · 12s · pastors, care teams
+*Made: `ads/2026-10-12-walang-makakalimutang-birthday/`.* Drawn · Taglish · 12s · pastors, care teams
 
 | Time | On screen |
 |---|---|
-| 0–3s | *Kaninong birthday ngayong linggo?* |
-| 3–8s | `apps` (members): *Makikita ang mga may birthday ngayong linggo.* |
+| 0–3s | *Sino’ng may birthday this week?* |
+| 3–8s | `apps` (members): *Nandito na ang mga birthday this week.* |
 | 8–12s | *Nasa iisang listahan ang lahat ng tao ng church ninyo.* Ask. |
 
 No faces, no names: the drawn version only.
 
 ## 8. Bagyo sa Linggo
 
-Drawn · Taglish · 15s · pastors, secretaries · post it when a storm is
+*Made: `ads/2026-10-12-bagyo-sa-linggo/`.* Drawn · Taglish · 15s · pastors, secretaries · post it when a storm is
 forecast, as an unpaid post, not a paid ad pinned to a disaster
 
 | Time | On screen |
@@ -145,7 +145,7 @@ Only MBBTAG, KJV and WEB on screen. Never the ESV or NIV.
 
 ## 10. No prayer request forgotten
 
-Drawn · English · 15s · prayer teams · best as an unpaid post
+*Made: `ads/2026-10-12-no-prayer-forgotten/`.* Drawn · English · 15s · prayer teams · best as an unpaid post
 
 | Time | On screen |
 |---|---|
@@ -168,7 +168,7 @@ Screen · English · 15s · small-group leaders
 
 ## 12. Pa-send ulit ng link
 
-Drawn · Taglish · 10s · everyone
+*Made: `ads/2026-10-12-pa-send-ulit-ng-link/`.* Drawn · Taglish · 10s · everyone
 
 | Time | On screen |
 |---|---|
@@ -190,7 +190,7 @@ The public page shown is the showcase church’s.
 
 ## 14. Only the apps you need
 
-Drawn · English · 15s · church councils
+*Made: `ads/2026-10-12-only-the-apps-you-need/`.* Drawn · English · 15s · church councils
 
 | Time | On screen |
 |---|---|
@@ -215,7 +215,7 @@ real congregation.
 
 ## 16. Nothing from the meeting slips
 
-Drawn · English · 12s · councils, secretaries
+*Made: `ads/2026-10-12-nothing-from-the-meeting-slips/`.* Drawn · English · 12s · councils, secretaries
 
 | Time | On screen |
 |---|---|

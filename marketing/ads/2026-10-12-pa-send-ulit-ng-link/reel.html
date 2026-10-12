@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="tl">
+<head>
+  <meta charset="utf-8">
+  <meta name="ad-size" content="1080x1920">
+  <meta name="ad-cover" content="4.5">
+  <title>Pa-send ulit ng link</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=Poppins:wght@500&display=block">
+  <link rel="stylesheet" href="/marketing/templates/video.css">
+</head>
+<body>
+  <script type="module">
+    import { film } from '/marketing/templates/video.js'
+
+    // Script 12 in marketing/SCRIPTS.md; the copy is in brief.md.
+    //
+    // The voice is an English one, so a Tagalog line is spelled the way an
+    // English reader would say it (`say`), hyphenated by syllable, beside what
+    // it `means`; checked by transcribing the finished video back as Tagalog.
+    film({
+      "size": "reel",
+      "voice": "af_heart",
+      "music": "uplift",
+      "scenes": [
+        {
+          "type": "pile",
+          "dur": 4,
+          "cards": [
+            {
+              "icon": "link-simple",
+              "text": "Pa-send ulit ng link ng giving"
+            },
+            {
+              "icon": "question",
+              "text": "Saan yung form?"
+            },
+            {
+              "icon": "link-simple",
+              "text": "Anong link ng livestream?"
+            }
+          ],
+          "voice": [
+            {
+              "means": "Pa-send ulit ng link ng giving.",
+              "say": "Pah send oo-lit nahng link nahng giving."
+            },
+            {
+              "means": "Saan yung form?",
+              "say": "Sah-ahn yoong form?"
+            },
+            {
+              "means": "Anong link ng livestream?",
+              "say": "Ah-nong link nahng livestream?"
+            }
+          ],
+          "tail": 0.9
+        },
+        {
+          "type": "apps",
+          "dur": 3,
+          "apps": [
+            {
+              "art": "links",
+              "name": "Links",
+              "line": "Forms, giving at livestream, iisang lugar"
+            }
+          ],
+          "voice": [
+            {
+              "means": "Sa Ekkly, forms, giving at livestream, iisang lugar.",
+              "say": "Sah Eckly: forms, giving, aht livestream, ee-ee-sahng loo-gar."
+            }
+          ]
+        },
+        {
+          "type": "lines",
+          "dur": 2.6,
+          "ground": "light",
+          "align": "center",
+          "lines": [
+            "Wala nang",
+            {
+              "text": "paulit-ulit na pag-send.",
+              "accent": true
+            }
+          ],
+          "voice": [
+            {
+              "means": "Wala nang paulit-ulit na pag-send.",
+              "say": "Wah-lah nahng pah-oo-lit oo-lit nah pahg-send."
+            }
+          ]
+        },
+        {
+          "type": "close",
+          "dur": 4,
+          "title": "Iisang lugar para sa lahat ng link.",
+          "sub": "Libre ang unang buwan.",
+          "cta": "ekkly.online/start",
+          "voice": [
+            {
+              "means": "Iisang lugar para sa lahat ng link.",
+              "say": "Ee-ee-sahng loo-gar, pah-rah sah lah-haht nahng link."
+            },
+            {
+              "means": "Libre ang unang buwan, sa ekkly.online.",
+              "say": "Lee-breh ahng oo-nahng boo-wahn. Sah Eckly dot online."
+            }
+          ],
+          "voiceAt": 0.7,
+          "tail": 1.4
+        }
+      ]
+    })
+  </script>
+</body>
+</html>

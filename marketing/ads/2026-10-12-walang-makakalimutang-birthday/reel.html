@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="tl">
+<head>
+  <meta charset="utf-8">
+  <meta name="ad-size" content="1080x1920">
+  <meta name="ad-cover" content="1.2">
+  <title>Walang makakalimutang birthday</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=Poppins:wght@500&display=block">
+  <link rel="stylesheet" href="/marketing/templates/video.css">
+</head>
+<body>
+  <script type="module">
+    import { film } from '/marketing/templates/video.js'
+
+    // Script 7 in marketing/SCRIPTS.md; the copy is in brief.md.
+    //
+    // The voice is an English one, so a Tagalog line is spelled the way an
+    // English reader would say it (`say`), hyphenated by syllable, beside what
+    // it `means`; checked by transcribing the finished video back as Tagalog.
+    film({
+      "size": "reel",
+      "voice": "af_heart",
+      "music": "morning",
+      "scenes": [
+        {
+          "type": "lines",
+          "dur": 2.6,
+          "ground": "light",
+          "align": "center",
+          "lines": [
+            "Sino’ng may birthday",
+            {
+              "text": "this week?",
+              "accent": true
+            }
+          ],
+          "voice": [
+            {
+              "means": "Sino’ng may birthday this week?",
+              "say": "See-nong my birthday, this week?"
+            }
+          ]
+        },
+        {
+          "type": "apps",
+          "dur": 3,
+          "apps": [
+            {
+              "art": "members",
+              "name": "People",
+              "line": "Nandito na ang mga birthday this week"
+            }
+          ],
+          "voice": [
+            {
+              "means": "Nandito na ang mga birthday this week.",
+              "say": "Nahn-dee-toh nah, ahng mahng-ah birthday this week."
+            }
+          ]
+        },
+        {
+          "type": "lines",
+          "dur": 2.6,
+          "align": "center",
+          "lines": [
+            "Nasa iisang listahan",
+            {
+              "text": "ang buong church.",
+              "accent": true
+            }
+          ],
+          "voice": [
+            {
+              "means": "Nasa iisang listahan ang buong church.",
+              "say": "Nah-sah ee-ee-sahng lees-tah-hahn, ahng boo-ong church."
+            }
+          ]
+        },
+        {
+          "type": "close",
+          "dur": 4,
+          "title": "Walang makakalimutang birthday.",
+          "sub": "Libre ang unang buwan.",
+          "cta": "ekkly.online/start",
+          "voice": [
+            {
+              "means": "Walang makakalimutang birthday.",
+              "say": "Wah-lang mah-kah-kah-lee-moo-tahng birthday."
+            },
+            {
+              "means": "Libre ang unang buwan, sa ekkly.online.",
+              "say": "Lee-breh ahng oo-nahng boo-wahn. Sah Eckly dot online."
+            }
+          ],
+          "voiceAt": 0.7,
+          "tail": 1.4
+        }
+      ]
+    })
+  </script>
+</body>
+</html>

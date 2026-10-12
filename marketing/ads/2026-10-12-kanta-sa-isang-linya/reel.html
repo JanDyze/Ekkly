@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="tl">
+<head>
+  <meta charset="utf-8">
+  <meta name="ad-size" content="1080x1920">
+  <meta name="ad-cover" content="1.2">
+  <title>Hanapin ang kanta sa isang linya</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=Poppins:wght@500&display=block">
+  <link rel="stylesheet" href="/marketing/templates/video.css">
+</head>
+<body>
+  <script type="module">
+    import { film } from '/marketing/templates/video.js'
+
+    // Script 5 in marketing/SCRIPTS.md; the copy is in brief.md.
+    //
+    // The voice is an English one, so a Tagalog line is spelled the way an
+    // English reader would say it (`say`), hyphenated by syllable, beside what
+    // it `means`; checked by transcribing the finished video back as Tagalog.
+    film({
+      "size": "reel",
+      "voice": "af_heart",
+      "music": "uplift",
+      "scenes": [
+        {
+          "type": "lines",
+          "dur": 2.6,
+          "ground": "light",
+          "align": "center",
+          "lines": [
+            "Yung kanta na…",
+            {
+              "text": "ano ulit ’yon?",
+              "accent": true
+            }
+          ],
+          "voice": [
+            {
+              "means": "Yung kanta na…",
+              "say": "Yoong kahn-tah nah..."
+            },
+            {
+              "means": "ano ulit ’yon?",
+              "say": "Ah-noh, oo-lit yon?"
+            }
+          ]
+        },
+        {
+          "type": "apps",
+          "dur": 3,
+          "apps": [
+            {
+              "art": "songs",
+              "name": "Song List",
+              "line": "Hanapin ang kanta sa kahit anong linya"
+            }
+          ],
+          "voice": [
+            {
+              "means": "Hanapin ang kanta sa kahit anong linya.",
+              "say": "Hah-nah-pin ahng kahn-tah, sah kah-hit ah-nong leen-yah."
+            }
+          ]
+        },
+        {
+          "type": "lines",
+          "dur": 2.6,
+          "align": "center",
+          "lines": [
+            "Nasa iisang listahan",
+            {
+              "text": "ang mga kanta ninyo.",
+              "accent": true
+            }
+          ],
+          "voice": [
+            {
+              "means": "Nasa iisang listahan ang mga kanta ninyo.",
+              "say": "Nah-sah ee-ee-sahng lees-tah-hahn, ahng mahng-ah kahn-tah neen-yo."
+            }
+          ]
+        },
+        {
+          "type": "close",
+          "dur": 4,
+          "title": "Hanapin sa Ekkly.",
+          "sub": "Libre ang unang buwan.",
+          "cta": "ekkly.online/start",
+          "voice": [
+            {
+              "means": "Hanapin sa Ekkly.",
+              "say": "Hah-nah-pin sah Eckly."
+            },
+            {
+              "means": "Libre ang unang buwan, sa ekkly.online.",
+              "say": "Lee-breh ahng oo-nahng boo-wahn. Sah Eckly dot online."
+            }
+          ],
+          "voiceAt": 0.7,
+          "tail": 1.4
+        }
+      ]
+    })
+  </script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="tl">
+<head>
+  <meta charset="utf-8">
+  <meta name="ad-size" content="1080x1920">
+  <meta name="ad-cover" content="4.5">
+  <title>Bagyo sa Linggo</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=Poppins:wght@500&display=block">
+  <link rel="stylesheet" href="/marketing/templates/video.css">
+</head>
+<body>
+  <script type="module">
+    import { film } from '/marketing/templates/video.js'
+
+    // Script 8 in marketing/SCRIPTS.md; the copy is in brief.md.
+    //
+    // The voice is an English one, so a Tagalog line is spelled the way an
+    // English reader would say it (`say`), hyphenated by syllable, beside what
+    // it `means`; checked by transcribing the finished video back as Tagalog.
+    film({
+      "size": "reel",
+      "voice": "af_heart",
+      "music": "still",
+      "scenes": [
+        {
+          "type": "pile",
+          "dur": 4,
+          "cards": [
+            {
+              "icon": "cloud-rain",
+              "text": "May bagyo. Tuloy pa ba ang service?"
+            },
+            {
+              "icon": "chats-circle",
+              "text": "Pa-announce sa GC"
+            },
+            {
+              "icon": "eye-slash",
+              "text": "Hindi nabasa ng iba"
+            }
+          ],
+          "voice": [
+            {
+              "means": "May bagyo. Tuloy pa ba ang service?",
+              "say": "My bahg-yo. Too-loy pah bah, ahng service?"
+            },
+            {
+              "means": "Pa-announce sa GC.",
+              "say": "Pah-announce sah G C."
+            },
+            {
+              "means": "Hindi nabasa ng iba.",
+              "say": "Heen-dee nah-bah-sah nahng ee-bah."
+            }
+          ],
+          "tail": 0.9
+        },
+        {
+          "type": "apps",
+          "dur": 3,
+          "apps": [
+            {
+              "art": "events",
+              "name": "Events",
+              "line": "Isang tap lang, cancelled na ang petsa"
+            }
+          ],
+          "voice": [
+            {
+              "means": "Sa Ekkly, isang tap lang, cancelled na ang petsa.",
+              "say": "Sah Eckly, ee-sahng tap lahng, cancelled nah ahng pet-sah."
+            }
+          ]
+        },
+        {
+          "type": "lines",
+          "dur": 2.8,
+          "ground": "light",
+          "align": "center",
+          "size": 104,
+          "lines": [
+            "Aabisuhan ang",
+            {
+              "text": "mga dapat makaalam.",
+              "accent": true
+            }
+          ],
+          "voice": [
+            {
+              "means": "Aabisuhan ang mga dapat makaalam.",
+              "say": "Ah-ah-bee-soo-hahn, ahng mahng-ah dah-paht mah-kah-ah-lahm."
+            }
+          ]
+        },
+        {
+          "type": "lines",
+          "dur": 2.8,
+          "align": "center",
+          "size": 96,
+          "lines": [
+            "Hindi na kailangang i-set up ulit",
+            {
+              "text": "ang Sunday service.",
+              "accent": true
+            }
+          ],
+          "voice": [
+            {
+              "means": "Hindi na kailangang i-set up ulit ang Sunday service.",
+              "say": "Heen-dee nah kah-ee-lah-ngahng ee set up oo-lit, ahng Sunday service."
+            }
+          ]
+        },
+        {
+          "type": "close",
+          "dur": 4,
+          "title": "Isang tap lang.",
+          "sub": "Libre ang unang buwan.",
+          "cta": "ekkly.online/start",
+          "voice": [
+            {
+              "means": "Isang tap lang.",
+              "say": "Ee-sahng tap lahng."
+            },
+            {
+              "means": "Libre ang unang buwan, sa ekkly.online.",
+              "say": "Lee-breh ahng oo-nahng boo-wahn. Sah Eckly dot online."
+            }
+          ],
+          "voiceAt": 0.7,
+          "tail": 1.4
+        }
+      ]
+    })
+  </script>
+</body>
+</html>
