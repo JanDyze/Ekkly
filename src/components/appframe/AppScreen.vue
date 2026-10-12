@@ -91,7 +91,9 @@ const onScroll = () => {
   }
 }
 
-defineExpose({ scroller })
+// `hidden` too, so something at the foot of a screen can step aside on the
+// same flick as the header (People's search dock, PeopleDock.vue).
+defineExpose({ scroller, hidden })
 </script>
 
 <template>
@@ -104,7 +106,10 @@ defineExpose({ scroller })
   <div
     ref="scroller"
     :class="[
-      'app-interior h-full bg-gray-50 dark:bg-gray-900',
+      // The room is drawn on an app's home only. A section is somewhere
+      // things are read — a roll, a month, a record — and windows and pews
+      // behind its rows pulled the eye off them, so it stands on plain ground.
+      hasHeader ? 'h-full bg-gray-50 dark:bg-gray-900' : 'app-interior h-full bg-gray-50 dark:bg-gray-900',
       fill
         ? 'flex flex-col overflow-hidden'
         : hasHeader

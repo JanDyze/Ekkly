@@ -11,6 +11,50 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.6] — 2026-10-12
+
+Finding someone in People is one tap, the crowd in Tap to count is simpler,
+and the screens inside an app are quieter to read.
+
+### Added
+
+- **YUNIT answers when you tap him,** with a sound and a small buzz for each
+  thing he does: a wave, a jump, a wink and the rest, and a startled one when
+  you wake him. His speaker switch turns these off too.
+- **Icons beside each way to sort,** in People and in the attendance
+  checker, so the choices read at a glance.
+- **Select people** in Everyone's "…" menu, so picking several people to tag
+  or put in a ministry no longer needs a long press to find.
+
+### Changed
+
+- **Search in Everyone sits at the foot of the screen,** a dark capsule with
+  the sort and the list or grid beside it. One tap and you are typing, and
+  while you scroll down it narrows into a round search button, widening
+  again on the way up. The plus button with its menu is gone: + Person is at
+  the top, and Add several and Export are under the "…".
+- **Choosing several people** uses the same capsule at the foot of the screen,
+  and the menu you get by holding someone looks like the "…" menu.
+- **Under Everyone's title** it says how the list is sorted.
+- **Switching between list and grid,** the faces on screen glide to their new
+  places.
+- **The crowd in Tap to count** is the simplest kind of person now: a round
+  head on a rounded body, in bright colours, big while there are few and
+  smaller only when the room fills. They stand on one floor, the ones in
+  front covering those behind, and stay still once they have landed.
+- **The screens inside an app have a plain background.** The church's
+  windows and pews stay on each app's home, where they no longer sit behind
+  lists you are trying to read.
+- **The All apps page** has the back arrow beside the search, with no title
+  above it, so the apps start higher.
+- **Opening a section of an app** slides in rather than turning over like a
+  card; the card turn is kept for opening an app from your home.
+- **Deleting someone** asks in plainer words.
+
+### Removed
+
+- The round plus button on Everyone (see Changed).
+
 ## [0.35.5] — 2026-10-12
 
 The crowd in Tap to count is people again, all sorts of them.

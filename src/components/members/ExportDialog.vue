@@ -163,17 +163,26 @@ useFocusTrap(dialogRef, () => props.showExport, close);
           tabindex="-1"
           class="flex max-h-[92dvh] w-full flex-col rounded-t-2xl bg-white dark:bg-gray-800 sm:max-w-lg sm:rounded-2xl ring-1 ring-gray-200 dark:ring-gray-700"
         >
-          <!-- Header -->
+          <!-- Header: the same as the roll's other sheets (SortSheet,
+               BulkAssignSheet), its icon on the church's colour. -->
           <div
-            class="flex shrink-0 items-center justify-between border-b border-gray-200 px-4 py-4 dark:border-gray-700 sm:px-6"
+            class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-linear-to-r from-primary/10 to-transparent px-4 py-3.5 dark:border-gray-700 dark:from-primary-light/10"
           >
-            <h2 id="export-dialog-title" class="text-lg font-semibold text-gray-900 dark:text-white">
-              Export people
-            </h2>
+            <div class="flex min-w-0 items-center gap-3">
+              <div class="shrink-0 rounded-xl bg-primary p-2.5">
+                <Download class="h-5 w-5 text-white" />
+              </div>
+              <div class="min-w-0">
+                <h2 id="export-dialog-title" class="truncate text-base font-bold text-gray-900 dark:text-white">
+                  Export people
+                </h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400">A spreadsheet, with the columns you choose</p>
+              </div>
+            </div>
             <button
               @click="close"
               aria-label="Close"
-              class="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+              class="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
             >
               <X class="h-5 w-5" />
             </button>

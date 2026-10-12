@@ -213,14 +213,20 @@ const pageArea = () => document.querySelector('[data-morph-page]')
 
 /**
  * Going in, the card for where you are going, if it is on screen. Coming back
- * up — to a shallower screen of the same app, or out of an app — the page
- * being left, to shrink into the card for it on the screen arriving.
+ * out of an app, the page being left, to shrink into the card for it on the
+ * screen arriving.
+ *
+ * Never between the screens of one app. They stand on the same ground, so a
+ * page turning over to become another page that looks just like it is motion
+ * that says nothing; the slide (appMove) says which way you went. It also
+ * used to turn a section away on the way back to its app's home, where no
+ * card waits for it, so the page flipped out of sight with nothing turning in.
  */
 const findFlip = (to, from) => {
+  if (appOf(to) && appOf(to) === appOf(from)) return null
   const card = morphable('card', to.path)
   if (card) return { into: true, from: card, key: to.path }
-  const up = appOf(from) && (!appOf(to) || depthOf(to) < depthOf(from))
-  const page = up ? pageArea() : null
+  const page = appOf(from) && !appOf(to) ? pageArea() : null
   return page ? { into: false, from: page, key: from.path } : null
 }
 

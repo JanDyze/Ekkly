@@ -82,6 +82,19 @@ const pick = (key) => {
                 : 'hover:bg-gray-100 dark:hover:bg-gray-700/60',
             ]"
           >
+            <!-- An option's icon, where it brings one: the sheet is then
+                 read by shape before words. -->
+            <span
+              v-if="option.icon"
+              :class="[
+                'flex size-9 shrink-0 items-center justify-center rounded-xl',
+                option.key === modelValue
+                  ? 'bg-primary text-white dark:bg-primary-light dark:text-gray-900'
+                  : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300',
+              ]"
+            >
+              <component :is="option.icon" class="size-5" />
+            </span>
             <span class="min-w-0 flex-1">
               <span
                 :class="[

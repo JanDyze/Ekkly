@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, ref } from 'vue'
-import { X, ArrowLeft, Search, Check, Trash2, List, Cards, ArrowUpDown, SquaresFour, HandTap } from '../../icons'
+import { X, ArrowLeft, Search, Check, Trash2, List, Cards, ArrowUpDown, SquaresFour, HandTap, Baby, TextAa, CircleDashed } from '../../icons'
 import AttendanceSwipe from './AttendanceSwipe.vue'
 import AttendanceTally from './AttendanceTally.vue'
 import { useMembers } from '../../composables/useMembers'
@@ -283,9 +283,9 @@ const byBandThenName = (a, b) =>
 // because a room sits that way - the kids together, the youth together - but a
 // long service wants "who is left" and a short list wants one plain A-Z.
 const SORT_OPTIONS = [
-  { key: 'band', label: 'Age groups', hint: 'The way the room sits' },
-  { key: 'name', label: 'Name', hint: 'One list, A to Z' },
-  { key: 'unmarked', label: 'Still to check', hint: 'Nobody marked yet, first' },
+  { key: 'band', label: 'Age groups', hint: 'The way the room sits', icon: Baby },
+  { key: 'name', label: 'Name', hint: 'One list, A to Z', icon: TextAa },
+  { key: 'unmarked', label: 'Still to check', hint: 'Nobody marked yet, first', icon: CircleDashed },
 ]
 const sortBy = ref('band')
 const showSort = ref(false)

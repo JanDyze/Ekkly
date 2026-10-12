@@ -1,6 +1,7 @@
-// The inside of a church, as the ground every app's screens stand on: the home
-// of all apps stands outside under the sky (HomeScene), and opening an app is
-// going in. Three of Ekkly's windows high on the back wall, their light falling
+// The inside of a church, as the ground an app's home stands on: the home of
+// all apps stands outside under the sky (HomeScene), and opening an app is
+// going in. Only its home: a section is a list or a record to read, and the
+// room behind its rows was a distraction there (AppScreen). Three of Ekkly's windows high on the back wall, their light falling
 // across the room, and the pews at the foot either side of the aisle.
 //
 // It is a ground, never the thing to look at — the screens are lists and cards

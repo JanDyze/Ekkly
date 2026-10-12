@@ -111,7 +111,7 @@ const shouldShowDivider = (index) => {
       <div
         v-if="show && member"
         ref="menuRef"
-        class="fixed z-9999 min-w-45 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 py-1 overflow-hidden"
+        class="fixed z-9999 w-56 overflow-hidden rounded-2xl bg-white py-1.5 ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700"
         :style="position ? { left: `${position.left}px`, top: `${position.top}px` } : { left: `${x}px`, top: `${y}px`, visibility: 'hidden' }"
       >
         <template v-for="(item, index) in menuItems" :key="item.id">
@@ -126,13 +126,15 @@ const shouldShowDivider = (index) => {
             v-else-if="!item.divider && isItemVisible(item)"
             @click="handleAction(item)"
             :class="[
-              'w-full px-3 py-2 text-left text-sm flex items-center gap-3 transition-colors',
+              'flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium transition-colors',
               item.danger
                 ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                : 'text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/60'
             ]"
           >
-            <component :is="item.icon" class="h-4 w-4" />
+            <!-- The same menu as the header's "…" (PeopleMenu.vue): one look for
+                 every list of actions on the roll. -->
+            <component :is="item.icon" :class="['size-5 shrink-0', item.danger ? '' : 'text-gray-500 dark:text-gray-400']" />
             <span>{{ item.label }}</span>
           </button>
         </template>

@@ -282,29 +282,23 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
        into the search. On a wide screen the content keeps to a readable
        column down the middle. -->
   <div class="flex h-full w-full flex-col overflow-hidden bg-gray-50 pt-[env(safe-area-inset-top)] dark:bg-gray-900">
-    <div class="mx-auto flex w-full max-w-2xl shrink-0 items-center gap-2 px-3 pb-2 pt-4">
+    <!-- The back arrow and the search share one row. A title and a count
+         above them took a band of the screen to say what the search field
+         already says, so the title is kept for screen readers only. The
+         search sits outside the scrolling list so it is always in reach, and
+         is never focused on its own: on a phone that would raise the
+         keyboard every time the page opened. -->
+    <h1 class="sr-only">Apps</h1>
+    <div class="mx-auto flex w-full max-w-2xl shrink-0 items-center gap-1 pb-2 pl-2 pr-4 pt-3">
       <button
         type="button"
         aria-label="Back"
-        class="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-200/70 dark:text-gray-400 dark:hover:bg-gray-800"
+        class="shrink-0 rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-200/70 dark:text-gray-400 dark:hover:bg-gray-800"
         @click="close"
       >
         <ArrowLeft class="size-5" />
       </button>
-      <div class="min-w-0">
-        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Apps</h1>
-        <p class="text-xs text-gray-500 dark:text-gray-400">{{ apps.length }} for your church</p>
-      </div>
-    </div>
-
-    <!-- overscroll-contain: a flick down at the top of this list would
-         otherwise be handed to the browser, and Chrome on Android turns
-         that into pull-to-refresh. -->
-    <!-- The search, outside the scrolling list so it is always in reach.
-         Never focused on its own: on a phone that would raise the
-         keyboard every time the page opened. -->
-    <div class="mx-auto w-full max-w-2xl shrink-0 px-4 pb-2">
-      <div class="relative">
+      <div class="relative min-w-0 flex-1">
         <MagnifyingGlass class="pointer-events-none absolute left-3.5 top-1/2 size-4.5 -translate-y-1/2 text-gray-400" />
         <input
           v-model="query"
@@ -312,7 +306,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           enterkeyhint="search"
           autocomplete="off"
           aria-label="Search apps"
-          placeholder="Search apps — try “birthdays” or “offering”"
+          :placeholder="`Search ${apps.length} apps — try “birthdays”`"
           class="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white [&::-webkit-search-cancel-button]:hidden"
         />
         <button
@@ -327,6 +321,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       </div>
     </div>
 
+    <!-- overscroll-contain: a flick down at the top of this list would
+         otherwise be handed to the browser, and Chrome on Android turns
+         that into pull-to-refresh. -->
     <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] [&>*]:mx-auto [&>*]:max-w-2xl">
       <!-- 1. The spotlight: one app, shown off. -->
       <section

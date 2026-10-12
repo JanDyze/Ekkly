@@ -282,5 +282,5 @@ A call to action is the flat accent at the radius above. A heading is ink.
 | [src/assets/hero-bg-light.webp](src/assets/hero-bg-light.webp), [hero-bg-dark.webp](src/assets/hero-bg-dark.webp) | The front door's window, one per theme. Each levelled so its wall is the page's ground |
 | [src/assets/app-icons/](src/assets/app-icons/) | Generated. Don't hand-edit |
 | [brand/ekkly/make-mock-photos.mjs](brand/ekkly/make-mock-photos.mjs) | Draws the mock photos in [src/assets/mock-photos/](src/assets/mock-photos/): church life illustrated, never photographed, for wherever Ekkly shows a photo that is not a church's own (the commercials). Never put on a church's real album or group: a drawing in its place would pass for theirs |
-| [src/components/appframe/churchInterior.js](src/components/appframe/churchInterior.js) | The inside of a church every app screen stands in, as the home stands under the sky |
+| [src/components/appframe/churchInterior.js](src/components/appframe/churchInterior.js) | The inside of a church each app's home stands in, as the home of all apps stands under the sky. Sections stand on plain ground |
 | [src/icons/index.js](src/icons/index.js) | Generated. Don't hand-edit |

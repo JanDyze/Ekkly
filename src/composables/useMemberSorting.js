@@ -1,5 +1,6 @@
 import { computed, ref, watch } from "vue";
 import { AGE_BANDS, UNKNOWN_BAND, ageOf, groupByBand } from "../utils/ageBands";
+import { Baby, Cake, Church, ClockCounterClockwise, IdentificationCard, Tag, TextAa } from "../icons";
 
 /**
  * How the People list is arranged.
@@ -32,14 +33,16 @@ import { AGE_BANDS, UNKNOWN_BAND, ageOf, groupByBand } from "../utils/ageBands";
 
 const SORT_KEY = "uec.people.sortBy";
 
+// Each with an icon, so the sheet can be read at a glance rather than line by
+// line (SortSheet).
 export const SORT_OPTIONS = [
-  { key: "name", label: "First name", hint: "Under A, B, C" },
-  { key: "lastName", label: "Last name", hint: "Under A, B, C" },
-  { key: "age", label: "Age", hint: "Under kids, youth, adults, seniors" },
-  { key: "birthday", label: "Birthday", hint: "Under the month, this one first" },
-  { key: "ministry", label: "Ministry", hint: "Under each ministry" },
-  { key: "tag", label: "Tag", hint: "Under each tag" },
-  { key: "recent", label: "Recently added", hint: "Newest on the roll first" },
+  { key: "name", label: "First name", hint: "Under A, B, C", icon: TextAa },
+  { key: "lastName", label: "Last name", hint: "Under A, B, C", icon: IdentificationCard },
+  { key: "age", label: "Age", hint: "Under kids, youth, adults, seniors", icon: Baby },
+  { key: "birthday", label: "Birthday", hint: "Under the month, this one first", icon: Cake },
+  { key: "ministry", label: "Ministry", hint: "Under each ministry", icon: Church },
+  { key: "tag", label: "Tag", hint: "Under each tag", icon: Tag },
+  { key: "recent", label: "Recently added", hint: "Newest on the roll first", icon: ClockCounterClockwise },
 ];
 
 const MONTHS = [

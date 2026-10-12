@@ -378,9 +378,25 @@ option:    h-9 rounded-md px-2.5 text-xs font-medium sm:text-sm
   off:     text-gray-500 dark:text-gray-400
 ```
 
+### Search dock (on trial in People)
+
+People's roll ([PeopleEveryone.vue](src/apps/people/PeopleEveryone.vue)) has
+no FAB. Search is a labelled capsule at the foot of the screen, with the sort
+and the list/grid switch inside it ([PeopleDock.vue](src/components/members/PeopleDock.vue)).
+It is dark on a light page and light on a dark one (`bg-gray-900` /
+`dark:bg-gray-100`): white on white rows it read as one more row, and a shadow
+to lift it is not allowed, while the church's colour stays with the one action
+that adds (`+ Person`). While the list scrolls down it narrows into a round
+search button, its width animating, on the same flick that hides the header
+(AppScreen exposes `hidden`). Searching, the bar
+is the search box and rides above the keyboard. Adding sits in the header's
+action slot (`+ Person`), and the rarer actions (Select people, Add several,
+Export) behind its "…" ([PeopleMenu.vue](src/components/members/PeopleMenu.vue)).
+If it holds up, the other FAB screens follow it.
+
 ### Floating action button (FAB)
 
-Copy [MembersFab.vue](src/components/members/MembersFab.vue).
+Copy [ActionFab.vue](src/components/common/ActionFab.vue).
 
 - **Main button:** `absolute bottom-4 right-4 z-50`, `h-14 w-14 rounded-full
   bg-primary text-white shadow-lg`. The `Plus` icon rotates
@@ -659,7 +675,7 @@ anyway, bring it in line and remove it from this list.
   - a permanent toolbar with an Add button instead of a FAB
   - "Loading…" text instead of skeletons
 - **People's phone loading state** is inline markup, not a skeleton component.
-- **Five copies of the FAB** exist (Members, Events, Gallery, Minutes,
-  Schedules), plus repeated confirmation-modal state in each view. Before
+- **Copies of the FAB** exist (Events, Gallery, Minutes, Schedules; People's
+  roll has the search dock instead), plus repeated confirmation-modal state in each view. Before
   adding a sixth, extract a shared `common/ActionFab.vue` so they can't drift
   apart.

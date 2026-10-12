@@ -183,8 +183,9 @@ screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
    (the older `AppHero`, `AppActionsSheet` and `SectionGlyph` are no longer
    on any home). Every screen sits in `AppScreen`, which gives a section its
    back arrow and hide-on-scroll header, shows the section's artwork in full
-   colour beside its title, and stands the screen inside a church
-   (`churchInterior.js`: windows, light, pews, all barely there); Ekkly's top
+   colour beside its title, and stands the app's home inside a church
+   (`churchInterior.js`: windows, light, pews, all barely there; a section
+   stands on plain ground, so its rows are all there is to read); Ekkly's top
    bar shows only on the app's home. They live in `src/components/appframe/`.
    - Last, its commercial: holding the app's tile anywhere (the home, the All
      apps page, the bottom bar) plays a story of what it does (`AppPeek`). It

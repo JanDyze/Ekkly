@@ -11,6 +11,7 @@ export const YUNIT_ACTIONS = ['wave', 'jump', 'hop', 'nod', 'shake', 'wink', 'su
 
 <script setup>
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { feel } from '../../utils/yunitFeedback'
 
 // YUNIT, Ekkly's assistant: a round white face held by four petals in
 // Ekkly's yellow, orange, teal and blue, standing on two feet, with a burst
@@ -363,19 +364,22 @@ const onPointerMove = (event) => {
 }
 
 // A tap plays something different from last time. Asleep, a tap wakes him
-// with a start instead, and tells the page so it can stop him dozing.
+// with a start instead, and tells the page so it can stop him dozing. Either
+// way the gesture comes with its own sound and buzz.
 const TAP = ['wave', 'jump', 'wink', 'celebrate', 'nod', 'surprise', 'hop']
 let lastTap = ''
 const onTap = () => {
   if (!props.interactive) return
   if (props.mood === 'sleeping') {
     play('surprise')
+    feel('startle')
     emit('wake')
     return
   }
   const choices = TAP.filter((name) => name !== lastTap)
   lastTap = choices[Math.floor(Math.random() * choices.length)]
   play(lastTap)
+  feel(lastTap)
 }
 
 // -------------------------------------------------------------- targets

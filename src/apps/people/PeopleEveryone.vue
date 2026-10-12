@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, onActivated } from "vue";
+import { ref, computed, watch, nextTick, onMounted, onUnmounted, onActivated } from "vue";
+import { motionLevel } from "../../composables/useMotion";
 import { useRouter, useRoute } from "vue-router";
 import { useMembers } from "../../composables/useMembers";
 import { useMemberSearch } from "../../composables/useMemberSearch";
@@ -7,8 +8,8 @@ import { useMemberSorting } from "../../composables/useMemberSorting";
 import { useMemberForm } from "../../composables/useMemberForm";
 import { useListScrollMemory } from "../../composables/useListScrollMemory";
 import { useToast } from "../../composables/useToast";
-import MembersToolbar from "../../components/members/MembersToolbar.vue";
-import MembersFab from "../../components/members/MembersFab.vue";
+import PeopleDock from "../../components/members/PeopleDock.vue";
+import PeopleMenu from "../../components/members/PeopleMenu.vue";
 import SortSheet from "../../components/common/SortSheet.vue";
 import MemberEditSheet from "../../components/members/MemberEditSheet.vue";
 import MemberContextMenu from "../../components/members/MemberContextMenu.vue";
@@ -23,7 +24,7 @@ import { mergeTagSources } from "../../utils/memberUtils";
 import { usePermissions } from "../../composables/usePermissions";
 import { useMinistries } from "../../composables/useMinistries";
 import { areaLabel } from "../../data/capabilities";
-import { Church, Tag, X } from "../../icons";
+import { CheckCircle, Church, Download, Plus, Tag, UsersThree, X } from "../../icons";
 import {
   subscribeToCustomTags,
   addCustomTag,
@@ -54,13 +55,61 @@ const readView = () => {
   }
 };
 const mobileView = ref(readView());
-const toggleMobileView = () => {
+
+// Switching between them, each face on screen glides from its place in one
+// to its place in the other, growing or shrinking as it goes, so the eye
+// keeps hold of who was where instead of the roll simply being redrawn. Only
+// the faces in view take part: measuring the whole roll would cost what the
+// view transition into a record once did (router/viewTransitions.js). Faces
+// with nowhere to come from fade in. None of it for anyone who has asked for
+// less motion.
+const FACE = "[data-member-avatar]";
+const facesInView = () => {
+  const root = screen.value?.scroller;
+  const faces = new Map();
+  if (!root) return faces;
+  root.querySelectorAll(FACE).forEach((el) => {
+    const box = el.getBoundingClientRect();
+    if (box.width && box.bottom > 0 && box.top < window.innerHeight) faces.set(el.dataset.memberAvatar, { el, box });
+  });
+  return faces;
+};
+
+const wantsMotion = () =>
+  motionLevel() !== "off" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const glideFaces = (before) => {
+  facesInView().forEach(({ el, box }, id) => {
+    const from = before.get(id)?.box;
+    const timing = { duration: 380, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" };
+    if (!from) {
+      el.animate([{ opacity: 0 }, { opacity: 1 }], { ...timing, duration: 260 });
+      return;
+    }
+    const dx = from.left - box.left;
+    const dy = from.top - box.top;
+    const s = from.width / box.width;
+    el.animate(
+      [
+        { transformOrigin: "0 0", transform: `translate(${dx}px, ${dy}px) scale(${s})` },
+        { transformOrigin: "0 0", transform: "none" },
+      ],
+      timing
+    );
+  });
+};
+
+const toggleMobileView = async () => {
+  const before = wantsMotion() ? facesInView() : null;
   mobileView.value = mobileView.value === "grid" ? "list" : "grid";
   try {
     localStorage.setItem(VIEW_KEY, mobileView.value);
   } catch {
     // Not remembered this time; the switch itself still happened.
   }
+  if (!before) return;
+  await nextTick();
+  glideFaces(before);
 };
 const showGrid = computed(() => mobileView.value === "grid");
 
@@ -94,12 +143,15 @@ const { members, loading, addMemberToFirestore, removeMember } = useMembers();
 const { allTags, filteredMembers: searchedMembers } = useMemberSearch(members, searchQuery);
 
 // The whole roll, under the title - never the searched count, which the
-// search bar already says as "8 of 142". Nothing while loading, so a zero
-// never flashes up for a church that has people.
+// search bar already says as "8 of 142" - and how it is sorted, which the
+// sort button at the foot only shows as an icon. Nothing while loading, so a
+// zero never flashes up for a church that has people.
 const subtitle = computed(() => {
   if (loading.value) return "";
   const n = members.value.length;
-  return `${n.toLocaleString()} ${n === 1 ? "person" : "people"}`;
+  const people = `${n.toLocaleString()} ${n === 1 ? "person" : "people"}`;
+  const sort = currentSort.value.key === "recent" ? "newest first" : `by ${currentSort.value.label.toLowerCase()}`;
+  return `${people} · ${sort}`;
 });
 
 // The split under the last row: the one breakdown the title has no room for.
@@ -525,22 +577,22 @@ const handleConfirmation = () => {
 
 const handleMemberDelete = async (member) => {
   const getFullName = (m) => {
-    return `${m.firstName || ''} ${m.lastName || ''}`.trim() || 'this member';
+    return `${m.firstName || ''} ${m.lastName || ''}`.trim() || 'This person';
   };
 
   showConfirmModal({
-    title: 'Delete Member',
-    message: `Are you sure you want to delete ${getFullName(member)}? This action cannot be undone.`,
+    title: 'Delete this person',
+    message: `${getFullName(member)} will be taken off the roll for good, with everything on their record.`,
     confirmText: 'Delete',
     cancelText: 'Cancel',
     confirmButtonClass: 'bg-red-600 text-white hover:bg-red-700',
     onConfirm: async () => {
       try {
         await removeMember(member);
-        toast.success('Member deleted');
+        toast.success(`${getFullName(member)} is off the roll`);
       } catch (error) {
         console.error('Error deleting member:', error);
-        toast.error('Failed to delete member. Please try again.');
+        toast.error('Could not delete them. Please try again.');
       }
     }
   });
@@ -549,40 +601,49 @@ const handleMemberDelete = async (member) => {
 // Three faces across, the width of the app's column on any screen.
 const gridClass = "grid grid-cols-3 gap-2 p-2";
 
-// The button would sit on top of whatever a drawer or the details modal is
-// showing, and both carry their own actions anyway.
-// While picking, the action bar owns the bottom of the screen.
-// Search is a mode now, not furniture. Closing it clears the query, because a
-// bar you cannot see must not still be filtering the list.
+// Search sits at the foot of the screen (PeopleDock), which also clears the
+// query when it is closed: a search you cannot see must not still be
+// filtering the list.
 const searchOpen = ref(false);
-const openSearch = () => {
-  searchOpen.value = true;
-};
-const closeSearch = () => {
-  searchOpen.value = false;
-  searchQuery.value = "";
-};
 
-const showFab = computed(
-  () => !showAddMemberComputed.value && !picking.value
-);
+// The dock steps aside while picking, when the selection bar owns the foot of
+// the screen, and while the add sheet is over it. While the list scrolls
+// down it is tucked to a round button, on the same flick as the header.
+const showDock = computed(() => !showAddMemberComputed.value && !picking.value);
+const dockTucked = computed(() => Boolean(screen.value?.hidden));
+
+// Adding one person is the header's plus. Everything else that changes or
+// takes from the whole roll is under its "…", in the order it is reached
+// for: picking people to tag or place, then adding a list, then exporting.
+const canAdd = computed(() => canManage("members"));
+const menuItems = computed(() => [
+  ...(canTag.value ? [{ key: "select", label: "Select people", icon: CheckCircle }] : []),
+  ...(canAdd.value ? [{ key: "add-many", label: "Add several people", icon: UsersThree }] : []),
+  { key: "export", label: "Export", icon: Download },
+]);
+
+const onMenu = (key) => {
+  if (key === "select") startPicking();
+  else if (key === "add-many") router.push({ name: "PeopleAdd" });
+  else if (key === "export") showExport.value = true;
+};
 </script>
 
 <template>
   <div :class="['relative h-full', returning ? 'page-return' : '']">
     <AppScreen ref="screen" title="Everyone" :subtitle="subtitle" :back="{ name: 'PeopleHome' }" root="/members">
-      <!-- Opened from the plus button rather than always sitting there: an
-           always-on search bar costs a row of the list on every visit, and most
-           visits are a scroll rather than a lookup. -->
-      <MembersToolbar
-        v-model:searchQuery="searchQuery"
-        :open="searchOpen"
-        :resultCount="filteredMembers.length"
-        :totalCount="members.length"
-        :canTag="canTag"
-        @tag-results="openTagSheetForResults"
-        @close="closeSearch"
-      />
+      <template #action>
+        <PeopleMenu :items="menuItems" @pick="onMenu" />
+        <button
+          v-if="canAdd"
+          type="button"
+          class="inline-flex h-9 shrink-0 items-center gap-1 rounded-xl bg-primary px-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+          @click="showAddMemberComputed = true"
+        >
+          <Plus class="size-4" />
+          Person
+        </button>
+      </template>
 
       <!-- Loading: the shape of whichever view is on, so nothing jumps when
            the rows arrive. -->
@@ -694,7 +755,9 @@ const showFab = computed(
         </p>
       </div>
 
-      <!-- Room for the plus button, so the last person scrolls clear of it. -->
+      <!-- Room for the search at the foot, so the last person scrolls clear
+           of it. -->
+      <div v-if="searchOpen && searchQuery" class="h-12" aria-hidden="true" />
       <div class="h-20" aria-hidden="true" />
     </AppScreen>
 
@@ -733,32 +796,31 @@ const showFab = computed(
       @select="startPicking"
     />
 
-    <!-- Picking mode. One bar for the whole selection, sitting where the FAB
-         would be so the thumb does not have to travel. With the bottom bar
-         on it stands on top of the bar instead of under it, and the bar's
-         space has already cleared the home indicator. -->
+    <!-- Picking mode. The selection takes the search capsule's place and
+         shape at the foot of the screen, so the thumb does not travel and
+         the two read as one control changing what it does. -->
     <div
       v-if="picking"
-      class="absolute inset-x-0 bottom-(--bottom-bar-space) z-50 border-t border-gray-200 bg-white/95 px-3 py-3 backdrop-blur pb-[max(0.75rem,env(safe-area-inset-bottom))] with-bar:pb-3 dark:border-gray-700 dark:bg-gray-900/95"
+      class="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom),calc(var(--bottom-bar-space)+0.75rem))] z-50 px-4"
     >
-      <div class="mx-auto flex max-w-xl items-center gap-3">
+      <div class="pointer-events-auto mx-auto flex max-w-xl items-center gap-1.5 rounded-full bg-gray-900 p-1.5 text-white dark:bg-gray-100 dark:text-gray-900">
         <button
+          type="button"
           @click="stopPicking"
           aria-label="Cancel selection"
-          class="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+          class="flex size-9 shrink-0 items-center justify-center rounded-full opacity-70 transition-colors hover:bg-white/10 hover:opacity-100 dark:hover:bg-gray-900/10"
         >
-          <X class="h-5 w-5" />
+          <X class="size-5" />
         </button>
 
-        <!-- Truncating keeps the bar one row deep on a narrow phone, where two
-             actions and a count are already all it can hold. -->
-        <div class="min-w-0 flex-1">
-          <p class="truncate text-sm font-semibold text-gray-900 dark:text-white">
-            {{ pickedCount }} selected
-          </p>
+        <!-- Truncating keeps the capsule one row deep on a narrow phone, where
+             two actions and a count are already all it can hold. -->
+        <div class="min-w-0 flex-1 leading-tight">
+          <p class="truncate text-sm font-semibold">{{ pickedCount }} selected</p>
           <button
+            type="button"
             @click="pickAllVisible"
-            class="block max-w-full truncate text-xs font-medium text-primary dark:text-primary-light"
+            class="block max-w-full truncate text-xs font-medium opacity-70 hover:opacity-100"
           >
             Select all {{ filteredMembers.length }}
           </button>
@@ -767,30 +829,22 @@ const showFab = computed(
         <!-- Ministry sits beside Tag rather than inside its sheet: they write
              different fields and only one of them grants access. -->
         <button
+          type="button"
           @click="openSheetForPicked('ministries')"
           :disabled="!pickedCount"
-          :class="[
-            'inline-flex h-11 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition-colors',
-            pickedCount
-              ? 'border border-primary/40 text-primary hover:bg-primary/10 dark:text-primary-light'
-              : 'cursor-not-allowed border border-gray-200 text-gray-400 dark:border-gray-700',
-          ]"
+          class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white/10 px-3 text-sm font-semibold transition-colors hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-gray-900/10 dark:hover:bg-gray-900/15"
         >
-          <Church class="h-4 w-4" />
+          <Church class="size-4" />
           Ministry
         </button>
 
         <button
+          type="button"
           @click="openSheetForPicked('tags')"
           :disabled="!pickedCount"
-          :class="[
-            'inline-flex h-11 shrink-0 items-center gap-1.5 rounded-lg px-4 text-sm font-semibold transition-colors',
-            pickedCount
-              ? 'bg-primary text-white hover:bg-primary-hover'
-              : 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-700',
-          ]"
+          class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <Tag class="h-4 w-4" />
+          <Tag class="size-4" />
           Tag
         </button>
       </div>
@@ -805,16 +859,19 @@ const showFab = computed(
       @close="showSort = false"
     />
 
-    <MembersFab
-      v-if="showFab"
+    <PeopleDock
+      v-if="showDock"
+      v-model:query="searchQuery"
+      v-model:open="searchOpen"
+      :tucked="dockTucked"
       :sortLabel="currentSort.label"
       :view="mobileView"
-      @search="openSearch"
-      @toggle-view="toggleMobileView"
+      :resultCount="filteredMembers.length"
+      :totalCount="members.length"
+      :canTag="canTag"
       @sort="showSort = true"
-      @add="showAddMemberComputed = true"
-      @add-many="router.push({ name: 'PeopleAdd' })"
-      @export="showExport = true"
+      @toggle-view="toggleMobileView"
+      @tag-results="openTagSheetForResults"
     />
 
     <BulkAssignSheet

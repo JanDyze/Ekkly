@@ -8,12 +8,23 @@
 
 export const versionHistory = [
   {
+    version: '0.35.6',
+    date: '2026-10-12',
+    title: 'Find anyone faster',
+    summary: 'Search for someone in People is now right under your thumb.',
+    highlights: [
+      'In Everyone, tap Search people at the bottom of the screen. It tucks into a round button while you scroll.',
+      'Add a person with + Person at the top. Select people, Add several and Export are under the "…".',
+      'Tap YUNIT and he answers with a sound of his own.',
+    ],
+  },
+  {
     version: '0.35.3',
     date: '2026-10-11',
     title: 'Watch the room fill',
     summary: 'Every tap in Tap to count adds a person to a crowd behind the number.',
     highlights: [
-      'A crowd piles up as you count: people of every age and size, in your church’s colours, each one different.',
+      'A crowd gathers as you count: grown-ups and children in bright colours, the ones in front covering those behind.',
       'YUNIT now makes a sound and a small buzz when he answers and when a change is done. The speaker beside New chat turns the sound off.',
     ],
   },
