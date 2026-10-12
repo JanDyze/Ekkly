@@ -13,7 +13,7 @@ export const versionHistory = [
     title: 'Watch the room fill',
     summary: 'Every tap in Tap to count adds a person to a crowd behind the number.',
     highlights: [
-      'A crowd of little characters piles up as you count, each one different, bobbing and wiggling.',
+      'A crowd piles up as you count: people of every age and size, in your church’s colours, each one different.',
       'YUNIT now makes a sound and a small buzz when he answers and when a change is done. The speaker beside New chat turns the sound off.',
     ],
   },

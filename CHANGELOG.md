@@ -11,6 +11,20 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.5] — 2026-10-12
+
+The crowd in Tap to count is people again, all sorts of them.
+
+### Changed
+
+- **People, in silhouette,** in shades of your church's colour: tall and
+  short, broad and slight, men and women, toddlers and children, a teen with
+  a backpack, grandparents with a cane or a handbag, someone in a wheelchair,
+  and people in the middle of something: waving, hands raised, carrying a
+  baby, on the phone, reading, under an umbrella, a worker in a hard hat, a
+  guitarist. They still land with a little bounce and shift about while you
+  count, and stay still for anyone who has turned motion down.
+
 ## [0.35.4] — 2026-10-12
 
 A livelier crowd, a meeting's head count kept, and a way to quiet YUNIT.
