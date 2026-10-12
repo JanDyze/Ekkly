@@ -18,6 +18,7 @@ import { useMyMember } from "../composables/useMyMember";
 import { useClaimFlow } from "../composables/useClaimFlow";
 import { usePresence } from "../composables/usePresence";
 import { useMediaQuery } from "../composables/useMediaQuery";
+import { useSearchSheet } from "../composables/useSearchSheet";
 import { usePermissions } from "../composables/usePermissions";
 import { useAppSettings } from "../composables/useAppSettings";
 import { canReceive } from "../../lib/notifications";
@@ -157,7 +158,8 @@ useFocusTrap(notifPanelRef, isNotifOpen, () => { isNotifOpen.value = false }, { 
 
 // Search everything (SearchSheet). Ctrl+K or ⌘K anywhere, and "/" when the
 // caret is not already in a field, the way most apps open their search.
-const showSearch = ref(false)
+// Shared (useSearchSheet), so a desktop's home can open it from its own field.
+const { open: showSearch } = useSearchSheet()
 const onSearchKey = (event) => {
   const typing = event.target?.closest?.('input, textarea, select, [contenteditable="true"]')
   if ((event.key === 'k' && (event.ctrlKey || event.metaKey)) || (event.key === '/' && !typing)) {

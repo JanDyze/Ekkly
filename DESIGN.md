@@ -87,6 +87,12 @@ CHANGELOG.md.
   apps opens `/apps` (`AllApps.vue`): every app, the five on the home on a shelf, press
   and hold to drag one onto it. The order is the person's, saved to their
   account (`useAppOrder`).
+  On a desktop (`lg`) the same home is laid out for a mouse: a search field
+  first (it opens `SearchSheet`, shared through `useSearchSheet`), the Today
+  cards side by side rather than a deck to swipe (`AppHeroDeck`'s `spread`:
+  three to a row, the always-true card kept, "Show more" for the rest), the
+  apps in one row of six, and the church and verse in room of their own at
+  the foot. There, and only there, the home may scroll.
 - The shell pads the content area (`p-0 sm:p-4 lg:px-8 lg:py-3`) of a page
   that is not yet an app, so **such a page never adds its own outer padding.**
 

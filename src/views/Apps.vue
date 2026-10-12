@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { CalendarDots, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MicrophoneStage, Moon, Sun } from '../icons'
+import { CalendarDots, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MagnifyingGlass, MicrophoneStage, Moon, Sun } from '../icons'
 import AppHeroDeck from '../components/appframe/AppHeroDeck.vue'
 import CardPanes from '../components/appframe/CardPanes.vue'
 import DeckCard from '../components/appframe/DeckCard.vue'
@@ -22,6 +22,8 @@ import { useAppSettings } from '../composables/useAppSettings'
 import { useToast } from '../composables/useToast'
 import { useToday } from '../composables/useToday'
 import { useHomeVerse } from '../composables/useHomeVerse'
+import { useMediaQuery } from '../composables/useMediaQuery'
+import { useSearchSheet } from '../composables/useSearchSheet'
 import { allowedGroups } from '../data/navigation'
 import { APPS } from '../../lib/apps'
 import { getDisplayName, getFullName, listPhrase } from '../utils/memberUtils'
@@ -53,6 +55,14 @@ import { peopleOnService } from '../data/scheduleRoles'
 // Everything is gated on the capability of the app it comes from (useToday,
 // allowedGroups), so nobody sees a card or a tile for something they cannot
 // open.
+//
+// On a desktop (lg) the same page has the room to show everything at once, so
+// it lays itself out for a mouse: a search field first, since someone at a
+// keyboard would rather type where they are going; the Today cards side by
+// side instead of a deck to swipe (AppHeroDeck's `spread`); the apps in one
+// row under them; and the church on its hill with the verse at the foot. It
+// may scroll there, where a phone's home never does, so the verse is given
+// room of its own rather than stepping aside.
 
 const route = useRoute()
 const router = useRouter()
@@ -67,6 +77,10 @@ onMounted(() => {
 })
 
 const { can, isAdmin, myMember } = usePermissions()
+const wide = useMediaQuery('(min-width: 1024px)')
+const { show: openSearch } = useSearchSheet()
+// The keys that open search anywhere (Topbar), as this keyboard names them.
+const searchKeys = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K'
 const { displayName } = useAuth()
 const { church, logoUrl } = useAppSettings()
 const today = useToday()
@@ -377,12 +391,26 @@ const lineOf = (item) => {
        home grows to fit rather than leave its apps under the bar: it still
        fits one screen wherever there is room, and scrolls only where there is
        not. -->
-  <div class="home-scene relative h-full overflow-hidden bg-(--scene-sky-3) with-bar:overflow-y-auto with-bar:overscroll-contain" v-bind="sky">
+  <div class="home-scene relative h-full overflow-hidden bg-(--scene-sky-3) with-bar:overflow-y-auto with-bar:overscroll-contain lg:overflow-y-auto" v-bind="sky">
     <HomeScene part="sky" class="pointer-events-none absolute inset-0 size-full" />
 
-    <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full">
-      <!-- 1. Today, most important on top -->
-      <AppHeroDeck :cards="cards" scope="home" label="Today">
+    <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:h-auto lg:min-h-full lg:max-w-6xl lg:gap-7 lg:px-8 lg:pt-8">
+      <!-- On a desktop, search everything (SearchSheet, the same one as the
+           top bar's magnifying glass) as a field to click into. -->
+      <button
+        v-if="wide"
+        type="button"
+        aria-haspopup="dialog"
+        class="flex h-12 w-full max-w-xl items-center gap-3 rounded-full bg-white/85 px-5 text-left ring-1 ring-black/5 backdrop-blur-md transition-colors hover:bg-white dark:bg-gray-900/70 dark:ring-white/10 dark:hover:bg-gray-900/85"
+        @click="openSearch"
+      >
+        <MagnifyingGlass class="size-5 shrink-0 text-gray-400 dark:text-gray-500" />
+        <span class="min-w-0 flex-1 truncate text-[15px] text-gray-500 dark:text-gray-400">Search people, songs, events…</span>
+        <kbd class="shrink-0 rounded-md bg-gray-100 px-2 py-0.5 font-sans text-xs font-semibold text-gray-500 dark:bg-white/10 dark:text-gray-300">{{ searchKeys }}</kbd>
+      </button>
+
+      <!-- 1. Today, most important on top; side by side on a desktop -->
+      <AppHeroDeck :cards="cards" scope="home" label="Today" :spread="wide">
         <template #card="{ card }">
           <BirthdayCard v-if="card.kind === 'birthday'" :card="card" />
 
@@ -519,7 +547,9 @@ const lineOf = (item) => {
            is never shorter than the bar's space, which is what keeps the apps
            above it - while the verse keeps to the part of the room above the
            bar (verse-space), and steps aside by that part's height. -->
-      <section class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space)" aria-label="A verse for today">
+      <!-- On a desktop the room is never less than the church and a verse
+           need, and the page scrolls instead if the screen is short. -->
+      <section class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space) lg:-mx-8 lg:min-h-60" aria-label="A verse for today">
         <HomeScene part="land" class="scene pointer-events-none absolute inset-0 size-full" />
 
         <div class="verse-space pointer-events-none absolute inset-x-0 top-0 bottom-(--bottom-bar-space)">
@@ -539,10 +569,10 @@ const lineOf = (item) => {
             v-if="verse"
             v-bind="verseTo ? { to: verseTo } : {}"
             :class="[
-              'verse pointer-events-auto absolute left-4 block text-left',
+              'verse pointer-events-auto absolute left-4 block text-left lg:left-8',
               openVerse
-                ? 'verse-open top-3 max-w-[62%]'
-                : 'bottom-[max(0.75rem,calc(env(safe-area-inset-bottom)-var(--bottom-bar-space)))] max-w-[58%] rounded-2xl bg-white/80 px-3.5 py-3 ring-1 ring-white/70 backdrop-blur-md dark:bg-gray-900/70 dark:ring-white/10',
+                ? 'verse-open top-3 max-w-[62%] lg:max-w-lg'
+                : 'bottom-[max(0.75rem,calc(env(safe-area-inset-bottom)-var(--bottom-bar-space)))] max-w-[58%] lg:bottom-6 lg:max-w-md rounded-2xl bg-white/80 px-3.5 py-3 ring-1 ring-white/70 backdrop-blur-md dark:bg-gray-900/70 dark:ring-white/10',
             ]"
           >
             <blockquote

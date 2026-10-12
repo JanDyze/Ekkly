@@ -11,6 +11,23 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.7] — 2026-10-13
+
+The home makes use of a computer's screen: everything that matters today side
+by side, and search right where you start.
+
+### Changed
+
+- **On a computer, the Today cards sit side by side** instead of in a deck you
+  swipe, so you see what needs you at a glance. Three fit in a row; when there
+  are more, "Show more" opens the rest, and each can still be put away.
+- **A search field leads the home on a computer.** Click it, or press Ctrl K
+  (⌘K on a Mac), to find people, songs, events, tasks and more.
+- **Your apps run in one row** under the cards on a computer, and the church
+  on its hill and the day's verse have room of their own at the foot. On a
+  short screen the home scrolls rather than hide the verse.
+- On a phone, the home is unchanged.
+
 ## [0.35.6] — 2026-10-12
 
 Finding someone in People is one tap, the crowd in Tap to count is simpler,

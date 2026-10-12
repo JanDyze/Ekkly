@@ -43,6 +43,14 @@ import { useSounds } from '../../composables/useSounds'
 // Each move is heard as well as seen (useSounds): a whoosh to the side a card
 // is swiped, a soft thud as it lands under the deck, a light lift as one is
 // put away.
+//
+// `spread` lays the same cards out flat, side by side, for a desktop. A swipe
+// is a thumb's gesture: with a mouse it hides every card but the top one
+// behind a move nobody makes, and a wide screen has the room to show them all
+// at once. A row holds `columns` of them; where there are more, the row keeps
+// the first ones and the last, which is the card that is always true, and
+// "Show more" opens the rest beneath. Putting a card away works as it does in
+// the deck.
 
 const props = defineProps({
   cards: { type: Array, required: true },
@@ -51,6 +59,8 @@ const props = defineProps({
   // Which app's dismissals these are, so two apps' keys never collide.
   scope: { type: String, required: true },
   label: { type: String, default: 'Today' },
+  spread: { type: Boolean, default: false },
+  columns: { type: Number, default: 3 },
 })
 
 /* ------------------------------------------------------------- dismissing */
@@ -115,6 +125,23 @@ watch(
 const visible = computed(() =>
   props.cards.filter((card) => !(card.remember && levelOf(card) <= 0) && !isPutAway(card))
 )
+
+/* --------------------------------------------------------- laid out flat */
+
+const expanded = ref(false)
+
+// Spread out, the cards that fit in one row: the first ones, and the last.
+const shown = computed(() => {
+  const all = visible.value
+  if (!props.spread || expanded.value || all.length <= props.columns) return all
+  return [...all.slice(0, props.columns - 1), all[all.length - 1]]
+})
+const hiddenCount = computed(() => visible.value.length - shown.value.length)
+// One row as wide as the cards in it, so two cards share the row rather than
+// leaving a gap where a third would go.
+const spreadColumns = computed(() => ({
+  gridTemplateColumns: `repeat(${Math.min(shown.value.length, props.columns)}, minmax(0, 1fr))`,
+}))
 
 // The card on its way out: it fades where it is first, and only then leaves the
 // deck, so the one under it rises into a space that has visibly been made.
@@ -247,7 +274,7 @@ const onPointerDown = (event) => {
   // A browser lets a page make sound only from inside a touch, so the audio
   // is woken here, before the swipe it will be needed for.
   prime()
-  if (event.button > 0 || count.value < 2 || flying.value) return
+  if (props.spread || event.button > 0 || count.value < 2 || flying.value) return
   if (event.target.closest('[data-deck-dismiss]')) return
   start = { x: event.clientX, y: event.clientY }
   recent = { x: event.clientX, t: event.timeStamp }
@@ -308,6 +335,11 @@ const styleOf = (card, i) => {
   const motion = dragging.value || instant.value
     ? { transition: 'none' }
     : { transition: 'transform 380ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease' }
+
+  // Laid out flat, a card only ever fades, when it is put away.
+  if (props.spread) {
+    return { transition: 'opacity 200ms ease', opacity: card.key === leaving.value ? 0 : 1 }
+  }
 
   if (card.key === leaving.value) {
     // Put away, it fades where it is: a card never rises or shrinks.
@@ -377,11 +409,11 @@ const fanned = (depth) => {
   <div
     v-if="visible.length"
     role="region"
-    aria-roledescription="carousel"
+    :aria-roledescription="spread ? undefined : 'carousel'"
     :aria-label="label"
     class="-mx-4 flex flex-col gap-2 overflow-x-clip px-4"
-    @keydown.left="go(index - 1)"
-    @keydown.right="sendUnder(-1)"
+    @keydown.left="spread || go(index - 1)"
+    @keydown.right="spread || sendUnder(-1)"
   >
     <!-- Every card in the one grid cell, each the same fixed share of the
          screen's height (DeckCard), so nothing jumps between them. The one
@@ -391,9 +423,15 @@ const fanned = (depth) => {
          The region round it is clipped sideways at the screen's edge rather
          than the column's, so a swiped card can travel to the edge without
          the page scrolling sideways under it. -->
+    <!-- Spread out, the same cards side by side in a row (or rows, once
+         "Show more" has opened them). -->
     <div
       ref="deck"
-      :class="['grid grid-cols-1 touch-pan-y select-none', visible.length > 1 ? 'pb-2' : '']"
+      :class="[
+        'grid select-none',
+        spread ? 'gap-4' : ['grid-cols-1 touch-pan-y', visible.length > 1 ? 'pb-2' : ''],
+      ]"
+      :style="spread ? spreadColumns : undefined"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
@@ -402,13 +440,13 @@ const fanned = (depth) => {
       @dragstart.prevent
     >
       <div
-        v-for="(card, i) in visible"
+        v-for="(card, i) in shown"
         :key="card.key"
         role="group"
-        aria-roledescription="slide"
-        :aria-label="`${i + 1} of ${visible.length}`"
-        :inert="i !== index"
-        class="deck-card relative min-w-0 [grid-area:1/1] origin-bottom"
+        :aria-roledescription="spread ? undefined : 'slide'"
+        :aria-label="spread ? undefined : `${i + 1} of ${visible.length}`"
+        :inert="!spread && i !== index"
+        :class="['deck-card relative min-w-0', spread ? '' : '[grid-area:1/1] origin-bottom']"
         :style="styleOf(card, i)"
       >
         <slot name="card" :card="card" :top="i === index">
@@ -446,7 +484,18 @@ const fanned = (depth) => {
          either side are for whoever has not guessed the cards swipe: quiet
          enough to pass unnoticed by someone who has, and doing the same as a
          swipe (next sends the top card under) for someone who has not. -->
-    <div v-if="visible.length > 1" class="flex items-center justify-center gap-0.5">
+    <div v-if="spread && visible.length > columns" class="flex justify-end">
+      <button
+        type="button"
+        class="rounded-full px-3 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-gray-900/5 dark:text-primary-light dark:hover:bg-white/10"
+        :aria-expanded="expanded"
+        @click="expanded = !expanded"
+      >
+        {{ expanded ? 'Show fewer' : `Show ${hiddenCount} more` }}
+      </button>
+    </div>
+
+    <div v-else-if="!spread && visible.length > 1" class="flex items-center justify-center gap-0.5">
       <button
         type="button"
         class="mr-1 flex size-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-900/5 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300"
