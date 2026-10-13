@@ -3,17 +3,17 @@ import { RouterLink } from 'vue-router'
 import { ChevronRight } from '../../icons'
 import AppArt from '../common/AppArt.vue'
 
-// One card of a deck told as a row, for the list a deck becomes on a desktop
+// One card of a deck told as a line, for the list a deck becomes on a desktop
 // (AppHeroDeck's `spread`): however many cards there are, every one is on show
-// at once, in the deck's order. The deck card's parts, kept to one line at
-// least 64px tall — its icon (or the date, through `leading`), its headline,
-// its label and the line under it, the small picture it is about at the right
-// (faces, through `trailing`), and the app the click opens. As tall as its
-// place in the list, which shares out the height beside the day's card.
+// at once, in the deck's order, without ten boxes competing. The deck card's
+// parts, kept to one line — its icon (or the date, through `leading`), its
+// headline, the line under it with its label, the faces it is about small at
+// the right (through `trailing`), and the app the click opens.
 //
-// Tones as DeckCard's, quieter, because a list of them sits beside the one
-// card in the church's colour: warn is pale amber, celebrate wears that colour
-// in its icon alone, and plain is white.
+// The lines share one panel, so a line is not a box of its own: no fill and
+// no ring, only a shade on hover. Its tone is in its icon alone: amber for
+// something waiting on you, the church's colour for somebody's day, quiet
+// grey for the rest, so the few that need you are the ones that stand out.
 
 defineProps({
   tone: { type: String, default: 'plain' },
@@ -30,26 +30,15 @@ defineProps({
   destLabel: { type: String, default: '' },
 })
 
-const TONES = {
-  warn: 'bg-amber-50 ring-amber-200 dark:bg-gray-800 dark:ring-amber-500/40',
-  plain: 'bg-white ring-gray-200 dark:bg-gray-800 dark:ring-gray-700',
-}
-
-// Only a row that goes somewhere answers the pointer.
-const HOVERS = {
-  warn: 'hover:bg-amber-100 dark:hover:bg-gray-700',
-  plain: 'hover:bg-gray-50 dark:hover:bg-gray-700',
-}
-
 const CHIPS = {
-  warn: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
-  celebrate: 'bg-primary text-white dark:bg-primary-light dark:text-gray-900',
-  plain: 'bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light',
+  warn: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
+  celebrate: 'bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light',
+  plain: 'bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-300',
 }
 
 const KICKERS = {
-  warn: 'text-amber-800 dark:text-amber-300',
-  plain: 'text-primary dark:text-primary-light',
+  warn: 'text-amber-700 dark:text-amber-300',
+  plain: 'text-gray-500 dark:text-gray-400',
 }
 </script>
 
@@ -59,34 +48,33 @@ const KICKERS = {
     :to="to || undefined"
     draggable="false"
     :class="[
-      'group flex h-full min-h-16 min-w-0 items-center gap-3 rounded-2xl px-3 ring-1 transition-colors duration-200',
-      TONES[tone] || TONES.plain,
-      to ? HOVERS[tone] || HOVERS.plain : '',
+      'group flex min-h-15 min-w-0 items-center gap-3.5 rounded-2xl px-3 py-2.5 transition-colors duration-150',
+      to ? 'hover:bg-gray-900/[0.04] focus-visible:bg-gray-900/[0.04] dark:hover:bg-white/[0.06]' : '',
       inset ? 'pr-12' : '',
     ]"
   >
     <slot name="leading">
-      <span :class="['flex size-10 shrink-0 items-center justify-center rounded-xl', CHIPS[tone] || CHIPS.plain]">
-        <component :is="icon" v-if="icon" class="size-5" />
+      <span :class="['flex size-9 shrink-0 items-center justify-center rounded-xl', CHIPS[tone] || CHIPS.plain]">
+        <component :is="icon" v-if="icon" class="size-[18px]" />
       </span>
     </slot>
 
     <span class="min-w-0 flex-1">
       <span class="block truncate text-[15px] font-semibold leading-snug text-gray-900 dark:text-white">{{ title }}</span>
-      <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
-        <span v-if="kicker" :class="['font-semibold', KICKERS[tone] || KICKERS.plain]">{{ kicker }}</span>
+      <span class="mt-0.5 block truncate text-[13px] text-gray-500 dark:text-gray-400">
+        <span v-if="kicker" :class="['font-medium', KICKERS[tone] || KICKERS.plain]">{{ kicker }}</span>
         <template v-if="kicker && detail"> · </template>{{ detail }}
       </span>
     </span>
 
     <slot name="trailing" />
 
-    <span v-if="to" class="flex shrink-0 items-center gap-1">
+    <span v-if="to" class="flex shrink-0 items-center gap-1.5 opacity-60 transition-opacity duration-150 group-hover:opacity-100">
       <AppArt v-if="dest" :app-key="dest" class="size-5" />
       <span v-if="destLabel" class="sr-only">Opens {{ destLabel }}</span>
       <ChevronRight
         aria-hidden="true"
-        class="size-4 text-gray-300 transition-transform duration-300 group-hover:translate-x-0.5 dark:text-gray-600"
+        class="size-4 text-gray-400 transition-transform duration-200 group-hover:translate-x-0.5 dark:text-gray-500"
       />
     </span>
   </component>

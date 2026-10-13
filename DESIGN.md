@@ -87,18 +87,25 @@ CHANGELOG.md.
   apps opens `/apps` (`AllApps.vue`): every app, the five on the home on a shelf, press
   and hold to drag one onto it. The order is the person's, saved to their
   account (`useAppOrder`).
-  On a desktop (`lg`) the same home is laid out for a mouse: a search field
-  first (it opens `SearchSheet`, shared through `useSearchSheet`), then Today
-  with nothing hidden (`AppHeroDeck`'s `spread`): the day's card on the left,
-  as tall as what is beside it, and every other card a row (`DeckRow`) in a
-  list beside it, in the deck's order, two columns once there are five or
-  more; the rows share the card's height, never under 64px, so a few fill it
-  rather than leave a gap. No paging, no loop, no "more": a row of cards with
-  the rest kept behind arrows read as deceiving. Birthdays are one row there,
-  naming everyone. Then the apps in one row of six; the coming week as seven
-  day columns (`HomeWeek`, for whoever has Events), in what was empty sky; and
-  the church and verse as a strip at the foot. There, and only there, the home
-  may scroll.
+  On a desktop (`lg`) the same home is read top to bottom like a page, not
+  swiped like a deck, and kept calm however much is on:
+  1. The greeting as words on the sky, in its ink (`--scene-ink`) with a halo:
+     the day, the weather over the church, the church. Search beside it opens
+     `SearchSheet` (shared through `useSearchSheet`). The day card is not
+     drawn there; the greeting says what it said.
+  2. The apps in one row of six, because the home is the way between apps.
+  3. Today as one panel of lines (`AppHeroDeck`'s `spread`, each a
+     `DeckRow`): **Needs you** (the `warn` cards) then **Good to know**, each
+     with its count, every line on show. A line has no box of its own, and its
+     tone is in its icon alone, so the few that need you stand out. No paging,
+     loops or "more" (a row of cards with the rest behind arrows read as
+     deceiving), and no grid of boxes (ten of them read as overwhelming).
+     Birthdays are one line, naming everyone.
+  4. Beside it, a 20rem column: the week ahead as a short agenda of only the
+     days with something on (`HomeWeek`, for whoever has Events), and the
+     day's verse under it. What is on is said there and not as a Today line.
+  5. The church on its hill as a strip at the foot.
+  There, and only there, the home may scroll.
 - The shell pads the content area (`p-0 sm:p-4 lg:px-8 lg:py-3`) of a page
   that is not yet an app, so **such a page never adds its own outer padding.**
 

@@ -60,15 +60,18 @@ import { sampleTodayCards } from '../data/sampleTodayCards'
 // allowedGroups), so nobody sees a card or a tile for something they cannot
 // open.
 //
-// On a desktop (lg) the same page has the room to show everything at once, so
-// it lays itself out for a mouse: a search field first, since someone at a
-// keyboard would rather type where they are going; Today as the day's card
-// with every other card a row in a list beside it, all on show at once,
-// instead of a deck to swipe (AppHeroDeck's `spread`); the apps in one row
-// under them; the coming week under those (HomeWeek), in what was empty
-// sky; and the church on its hill with the verse, a strip at the foot. It
-// may scroll there, where a phone's home never does, so the verse is given
-// room of its own rather than stepping aside.
+// On a desktop (lg) the same page has the room to show everything at once,
+// and is read top to bottom like a page rather than swiped like a deck: the
+// greeting as words on the sky (the day, the weather, the church) with search
+// beside it, since someone at a keyboard would rather type where they are
+// going; the apps in one row, because this is the way between them; then
+// Today as one quiet list, what needs you before what is good to know
+// (AppHeroDeck's `spread`), with the week ahead and the day's verse in a
+// narrow column beside it (HomeWeek); and the church on its hill as a strip
+// at the foot. One panel of lines and one short column, rather than a card,
+// a grid of rows and a band of seven days all asking to be read at once.
+// What is on goes in the week and nowhere else, so nothing is said twice. It
+// may scroll there, where a phone's home never does.
 
 const route = useRoute()
 const router = useRouter()
@@ -289,9 +292,12 @@ const cards = computed(() => {
     })
   }
 
-  // What is on: today's, or the next thing this week.
+  // What is on: today's, or the next thing this week. Not on a desktop, where
+  // the week ahead stands beside Today and already says it (HomeWeek).
   const on = today.eventsToday.value
-  if (on.length) {
+  if (wide.value) {
+    // The week beside Today has it.
+  } else if (on.length) {
     list.push({
       kind: 'dated',
       key: `on:${today.today}`,
@@ -330,10 +336,12 @@ const cards = computed(() => {
   // Only in a dev build, so a church's home never shows one.
   const samples = import.meta.env.DEV ? sampleCount.value : 0
   if (samples > 0) {
-    list.push(...sampleTodayCards(samples, {
+    const made = sampleTodayCards(samples, {
       wide: wide.value,
       icons: { Cake, CalendarDots, ClipboardCheck, KeyRound, ListChecks, MicrophoneStage },
-    }))
+    })
+    // As with the real ones, what is on is the week's to show on a desktop.
+    list.push(...made.filter((card) => !(wide.value && card.dest === 'events')))
   }
 
   // The card that is always there: the person greeted by name, the day, and
@@ -377,12 +385,20 @@ const rowDetail = (card) => {
 }
 const rowFaces = (card) => (card.members || card.faces?.members || []).slice(0, 4)
 
+/* ------------------------------------------------------ the desktop page */
+
+// The greeting's line on a desktop: the day, and whose church this is.
+const todayLong = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
+const churchName = computed(() => church.value?.shortName || church.value?.fullName || '')
+
 /* -------------------------------------------------------------- the week */
 
 // The coming seven days under the apps, on a desktop, for whoever has Events
 // (HomeWeek). Someone without it would see a week of "Nothing on" that is
 // only nothing because they cannot see it.
 const showWeek = computed(() => wide.value && allApps.value.some((item) => item.path === '/events'))
+// The column beside Today, on a desktop, when it has the week or the verse.
+const hasAside = computed(() => wide.value && (showWeek.value || Boolean(verse.value)))
 
 /* ------------------------------------------------------------- the verse */
 
@@ -483,22 +499,48 @@ const lineOf = (item) => {
     <HomeScene part="sky" class="pointer-events-none absolute inset-0 size-full" />
 
     <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:h-auto lg:min-h-full lg:max-w-6xl lg:gap-7 lg:px-8 lg:pt-8">
-      <!-- On a desktop, search everything (SearchSheet, the same one as the
-           top bar's magnifying glass) as a field to click into. -->
-      <button
-        v-if="wide"
-        type="button"
-        aria-haspopup="dialog"
-        class="flex h-12 w-full max-w-xl items-center gap-3 rounded-full bg-white/85 px-5 text-left ring-1 ring-black/5 backdrop-blur-md transition-colors hover:bg-white dark:bg-gray-900/70 dark:ring-white/10 dark:hover:bg-gray-900/85"
-        @click="openSearch"
-      >
-        <MagnifyingGlass class="size-5 shrink-0 text-gray-400 dark:text-gray-500" />
-        <span class="min-w-0 flex-1 truncate text-[15px] text-gray-500 dark:text-gray-400">Search people, songs, events…</span>
-        <kbd class="shrink-0 rounded-md bg-gray-100 px-2 py-0.5 font-sans text-xs font-semibold text-gray-500 dark:bg-white/10 dark:text-gray-300">{{ searchKeys }}</kbd>
-      </button>
+      <!-- On a desktop, the greeting is words on the sky, in the sky's own ink
+           (HomeScene) with its halo, as the verse on the picture is: the day,
+           the weather over the church, and the church. Search beside it opens
+           SearchSheet, the same as the top bar's magnifying glass. -->
+      <header v-if="wide" class="flex items-end justify-between gap-8 lg:order-1">
+        <div class="on-sky min-w-0">
+          <h1 class="text-[32px] font-bold leading-tight tracking-tight text-balance text-(--scene-ink)">{{ greeting }}</h1>
+          <p class="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[15px] text-(--scene-ink-soft)">
+            <span>{{ todayLong }}</span>
+            <template v-if="weather">
+              <span aria-hidden="true">·</span>
+              <span class="inline-flex items-center gap-1.5">
+                <component :is="weatherIcon" class="size-4" />
+                <span v-if="weather.temperature !== null" class="tabular-nums">{{ weather.temperature }}°</span>
+                {{ weather.label }}
+              </span>
+            </template>
+            <template v-if="churchName">
+              <span aria-hidden="true">·</span>
+              <span class="inline-flex min-w-0 items-center gap-2">
+                <img v-if="logoUrl" :src="logoUrl" alt="" class="size-5 shrink-0 rounded-md bg-white object-contain p-px" />
+                <span class="truncate">{{ churchName }}</span>
+              </span>
+            </template>
+          </p>
+        </div>
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          class="flex h-11 w-80 shrink-0 items-center gap-3 rounded-full bg-white/90 px-4 text-left ring-1 ring-black/5 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:bg-gray-900/80 dark:ring-white/10 dark:hover:bg-gray-900"
+          @click="openSearch"
+        >
+          <MagnifyingGlass class="size-[18px] shrink-0 text-gray-500 dark:text-gray-400" />
+          <span class="min-w-0 flex-1 truncate text-sm text-gray-500 dark:text-gray-400">Search people, songs, events…</span>
+          <kbd class="shrink-0 rounded-md bg-gray-100 px-1.5 py-0.5 font-sans text-xs font-semibold text-gray-500 dark:bg-white/10 dark:text-gray-300">{{ searchKeys }}</kbd>
+        </button>
+      </header>
 
-      <!-- 1. Today, most important on top; on a desktop, the day's card with
-           every other card a row in a list beside it -->
+      <!-- 1. Today, most important on top. On a desktop it comes after the
+           apps: one list, what needs you then what is good to know, with the
+           week and the verse in a column beside it. -->
+      <div :class="['lg:order-3', hasAside ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-6' : '']">
       <AppHeroDeck :cards="cards" scope="home" label="Today" :spread="wide">
         <template #row="{ card }">
           <DeckRow
@@ -588,7 +630,6 @@ const lineOf = (item) => {
             :kicker="card.kicker"
             :title="card.title"
             :to="card.to"
-            :fill="wide"
           >
             <template #art>
               <!-- Ekkly's panes of light in the corner, the same shapes as the
@@ -643,10 +684,34 @@ const lineOf = (item) => {
         </template>
       </AppHeroDeck>
 
-      <!-- 2. The apps kept on the home, and the way to all of them -->
+      <aside
+        v-if="hasAside"
+        class="flex flex-col gap-6 rounded-[28px] bg-white/90 p-5 ring-1 ring-black/5 dark:bg-gray-900/80 dark:ring-white/10"
+      >
+        <HomeWeek v-if="showWeek" :days="today.week.value" :events="today.eventsThisWeek.value" />
+
+        <!-- The day's verse, on a desktop: under the week rather than on the
+             hill, where it sat small in a corner of the strip. -->
+        <component
+          :is="verseTo ? 'RouterLink' : 'div'"
+          v-if="verse"
+          v-bind="verseTo ? { to: verseTo } : {}"
+          :class="['block px-1', showWeek ? 'border-t border-gray-200 pt-5 dark:border-white/10' : '', verseTo ? 'group' : '']"
+        >
+          <blockquote class="line-clamp-6 text-[15px] italic leading-relaxed text-gray-700 dark:text-gray-200">{{ verse.text }}</blockquote>
+          <p class="mt-2 text-[13px] text-gray-500 dark:text-gray-400">
+            <span class="font-semibold text-gray-900 group-hover:underline dark:text-white">{{ verse.reference }}</span>
+            · {{ verse.version }}
+          </p>
+        </component>
+      </aside>
+      </div>
+
+      <!-- 2. The apps kept on the home, and the way to all of them; on a
+           desktop, straight under the greeting -->
       <div
         v-if="!allApps.length"
-        class="rounded-2xl border border-dashed border-gray-300 p-8 text-center dark:border-gray-600"
+        class="rounded-2xl border border-dashed border-gray-300 p-8 text-center lg:order-2 dark:border-gray-600"
       >
         <p class="text-sm text-gray-500 dark:text-gray-400">Nothing has been shared with this account yet.</p>
         <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">An administrator grants access by ministry in Settings.</p>
@@ -656,18 +721,11 @@ const lineOf = (item) => {
            themselves (HomeAppCards, useHomeCards). -->
       <HomeAppCards
         v-else
+        class="lg:order-2"
         :variant="cardStyle"
         :apps="primary"
         :others="others"
         :hold="hold"
-      />
-
-      <!-- On a desktop, the coming week: what was empty sky under the apps. -->
-      <HomeWeek
-        v-if="showWeek"
-        :days="today.week.value"
-        :events="today.eventsThisWeek.value"
-        :turn="today.myNextTurn.value"
       />
 
       <!-- 3. The church on its hill, and the day's verse on a card beside
@@ -679,11 +737,9 @@ const lineOf = (item) => {
            is never shorter than the bar's space, which is what keeps the apps
            above it - while the verse keeps to the part of the room above the
            bar (verse-space), and steps aside by that part's height. -->
-      <!-- On a desktop the week takes the room the hill had, and the hill is
-           a strip at the foot: never less than the church and a verse need
-           (above the verse's 7.5rem), the page scrolling instead if the
-           screen is short. -->
-      <section class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space) lg:-mx-8 lg:min-h-36" aria-label="A verse for today">
+      <!-- On a desktop the hill is a strip at the foot, the church whole in
+           it, and the verse has moved to the column beside Today. -->
+      <section class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space) lg:order-4 lg:-mx-8 lg:mt-0 lg:min-h-32" aria-label="A verse for today">
         <HomeScene part="land" class="scene pointer-events-none absolute inset-0 size-full" />
 
         <div class="verse-space pointer-events-none absolute inset-x-0 top-0 bottom-(--bottom-bar-space)">
@@ -703,10 +759,10 @@ const lineOf = (item) => {
             v-if="verse"
             v-bind="verseTo ? { to: verseTo } : {}"
             :class="[
-              'verse pointer-events-auto absolute left-4 block text-left lg:left-8',
+              'verse pointer-events-auto absolute left-4 block text-left lg:hidden',
               openVerse
-                ? 'verse-open top-3 max-w-[62%] lg:max-w-lg'
-                : 'bottom-[max(0.75rem,calc(env(safe-area-inset-bottom)-var(--bottom-bar-space)))] max-w-[58%] lg:bottom-6 lg:max-w-md rounded-2xl bg-white/80 px-3.5 py-3 ring-1 ring-white/70 backdrop-blur-md dark:bg-gray-900/70 dark:ring-white/10',
+                ? 'verse-open top-3 max-w-[62%]'
+                : 'bottom-[max(0.75rem,calc(env(safe-area-inset-bottom)-var(--bottom-bar-space)))] max-w-[58%] rounded-2xl bg-white/80 px-3.5 py-3 ring-1 ring-white/70 backdrop-blur-md dark:bg-gray-900/70 dark:ring-white/10',
             ]"
           >
             <blockquote
@@ -759,7 +815,8 @@ const lineOf = (item) => {
    sky and dark on a night one (HomeScene's --scene-ink-halo), whatever the
    app's theme: it used to follow the theme, and dark mode under a noon sky
    put white letters in a dark glow on pale blue. */
-.verse-open {
+.verse-open,
+.on-sky {
   text-shadow:
     0 0 10px var(--scene-ink-halo),
     0 0 2px var(--scene-ink-halo);

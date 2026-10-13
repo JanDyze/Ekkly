@@ -47,16 +47,16 @@ import { useSounds } from '../../composables/useSounds'
 //
 // `spread` is the same deck on a desktop, where nothing has to hide. A swipe
 // is a thumb's gesture: with a mouse it hides every card but the top one
-// behind a move nobody makes. So the card that is always true (the deck's
-// last) stands on its own at the left, the `card` slot drawn the full height
-// of what is beside it, and every other card is a row in a list beside it
-// (the `row` slot, a DeckRow), in the deck's order, most important first.
-// Five or more and the list runs in two columns, filled down then across, so
-// ten come to five rows: about the height of the card beside them. More than
-// that and the page grows; it never pages, loops or hides one behind a count,
-// which on a row of cards read as a full row with more kept out of sight.
-// Nothing waiting is said in words where the rows would be. Putting a card
-// away works as it does in the deck, and the rows after it close the gap.
+// behind a move nobody makes. So every card but the last is a line (the
+// `row` slot, a DeckRow) in one quiet panel, in two groups: what is waiting
+// on you (a `warn` card), then what is good to know, each in the deck's
+// order. The last card, the one that is always true, is the page's to show
+// another way (the home's greeting), so it is left out here. Every line is on
+// show; the panel never pages, loops or hides one behind a count, and with
+// one panel and one column, ten lines read as a list rather than ten boxes
+// competing, the few that need you leading. Nothing waiting is said in words.
+// Putting a card away works as it does in the deck, and the lines after it
+// close the gap.
 
 const props = defineProps({
   cards: { type: Array, required: true },
@@ -66,8 +66,11 @@ const props = defineProps({
   scope: { type: String, required: true },
   label: { type: String, default: 'Today' },
   spread: { type: Boolean, default: false },
-  // What the list says when nothing is waiting, laid out flat.
-  emptyText: { type: String, default: 'Nothing is waiting on you today.' },
+  // Laid out flat: the two groups' headings, and what the panel says when
+  // there is nothing in either.
+  urgentLabel: { type: String, default: 'Needs you' },
+  restLabel: { type: String, default: 'Good to know' },
+  emptyText: { type: String, default: 'Nothing needs you today.' },
 })
 
 /* ------------------------------------------------------------- dismissing */
@@ -162,23 +165,12 @@ const dismiss = (card) => {
 
 /* --------------------------------------------------------- laid out flat */
 
-// The card that is always true, and the rest as rows.
-const lead = computed(() => visible.value[visible.value.length - 1])
+// Every card but the last, the one that is always true, in its two groups.
 const rows = computed(() => visible.value.slice(0, -1))
-
-// One column up to four rows; past that, two, filled down then across. The
-// rows share the card's height between them, never less than a row's own
-// 4rem, so one or two waiting fill the space beside the card rather than
-// sitting at its top over a gap.
-const listGrid = computed(() => {
-  const n = rows.value.length
-  if (n <= 4) return { gridTemplateColumns: 'minmax(0, 1fr)', gridAutoRows: 'minmax(4rem, 1fr)' }
-  return {
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gridTemplateRows: `repeat(${Math.ceil(n / 2)}, minmax(4rem, 1fr))`,
-    gridAutoFlow: 'column',
-  }
-})
+const groups = computed(() => [
+  { key: 'urgent', label: props.urgentLabel, cards: rows.value.filter((card) => card.tone === 'warn') },
+  { key: 'rest', label: props.restLabel, cards: rows.value.filter((card) => card.tone !== 'warn') },
+].filter((group) => group.cards.length))
 
 /* -------------------------------------------------------------- the deck */
 
@@ -411,66 +403,56 @@ const fanned = (depth) => {
 </script>
 
 <template>
-  <!-- Laid out flat: the card that is always true, and every other card as a
-       row beside it. -->
+  <!-- Laid out flat: one panel, what needs you and then what is good to
+       know, a line each. Nearly opaque, because it stands on the home's
+       picture and has to read over a cloud. -->
   <section
-    v-if="spread && visible.length"
+    v-if="spread"
     :aria-label="label"
-    class="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-4"
+    class="rounded-[28px] bg-white/90 p-2 ring-1 ring-black/5 dark:bg-gray-900/80 dark:ring-white/10"
   >
-    <div class="relative min-w-0">
-      <slot name="card" :card="lead" :top="true" :spread="true">
-        <AppHero
-          class="h-full"
-          :art="art"
-          :greeting="lead.greeting"
-          :title="lead.title"
-          :detail="lead.detail"
-          :badge="lead.badge"
-          :to="lead.to"
-        />
-      </slot>
+    <div v-for="group in groups" :key="group.key" class="not-first:mt-2">
+      <h3 class="flex items-baseline gap-2 px-3 pb-1 pt-3 text-sm font-semibold text-gray-900 dark:text-white">
+        {{ group.label }}
+        <span class="font-medium tabular-nums text-gray-500 dark:text-gray-400">{{ group.cards.length }}</span>
+      </h3>
+      <TransitionGroup tag="ul" name="row" class="relative flex flex-col">
+        <li
+          v-for="card in group.cards"
+          :key="card.key"
+          class="group/row relative min-w-0"
+          :style="card.key === leaving ? { transition: 'opacity 200ms ease', opacity: 0 } : undefined"
+        >
+          <slot name="row" :card="card">
+            <DeckRow
+              :tone="card.tone"
+              :icon="card.icon"
+              :kicker="card.kicker"
+              :title="card.title"
+              :detail="card.detail"
+              :to="card.to"
+              :dest="card.dest"
+              :dest-label="card.destLabel"
+              :inset="card.dismissible"
+            />
+          </slot>
+
+          <!-- Quiet until the row is pointed at, where there is a pointer to
+               point with; always there on a touch screen. -->
+          <button
+            v-if="card.dismissible"
+            type="button"
+            class="absolute right-2.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-900/5 hover:text-gray-600 focus-visible:opacity-100 group-hover/row:opacity-100 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300 [@media(hover:hover)]:opacity-0"
+            :aria-label="card.remember ? 'Dismiss until there are more' : 'Dismiss until the app is opened again'"
+            @click="dismiss(card)"
+          >
+            <X class="size-4" />
+          </button>
+        </li>
+      </TransitionGroup>
     </div>
 
-    <TransitionGroup v-if="rows.length" tag="ul" name="row" class="relative grid gap-2" :style="listGrid">
-      <li
-        v-for="card in rows"
-        :key="card.key"
-        class="group/row relative min-w-0"
-        :style="card.key === leaving ? { transition: 'opacity 200ms ease', opacity: 0 } : undefined"
-      >
-        <slot name="row" :card="card">
-          <DeckRow
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :dest="card.dest"
-            :dest-label="card.destLabel"
-            :inset="card.dismissible"
-          />
-        </slot>
-
-        <!-- Quiet until the row is pointed at, where there is a pointer to
-             point with; always there on a touch screen. -->
-        <button
-          v-if="card.dismissible"
-          type="button"
-          class="absolute right-2.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-900/5 hover:text-gray-600 focus-visible:opacity-100 group-hover/row:opacity-100 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300 [@media(hover:hover)]:opacity-0"
-          :aria-label="card.remember ? 'Dismiss until there are more' : 'Dismiss until the app is opened again'"
-          @click="dismiss(card)"
-        >
-          <X class="size-4" />
-        </button>
-      </li>
-    </TransitionGroup>
-
-    <p
-      v-else
-      class="flex items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white/50 p-6 text-center text-sm text-gray-500 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-400"
-    >
+    <p v-if="!groups.length" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
       {{ emptyText }}
     </p>
   </section>

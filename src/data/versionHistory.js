@@ -8,14 +8,14 @@
 
 export const versionHistory = [
   {
-    version: '0.35.11',
+    version: '0.35.12',
     date: '2026-10-13',
-    title: 'A home for the big screen',
-    summary: 'On a computer, everything that matters today is on show at once.',
+    title: 'A calmer home on a computer',
+    summary: 'On a computer, your home reads top to bottom: your apps, then one list of what matters today.',
     highlights: [
-      'Everything for today is on show: your day card, with a list of all the rest beside it. Click one to open it.',
-      'Search is the first thing on your home. Click it, or press Ctrl K.',
-      'Your apps run in one row underneath, and the week ahead under them, with what is on each day.',
+      'Today is one list: what needs you first, then what is good to know.',
+      'The week ahead sits beside it, with the day’s verse.',
+      'Search is beside your greeting. Click it, or press Ctrl K.',
     ],
   },
   {

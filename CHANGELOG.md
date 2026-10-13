@@ -11,6 +11,27 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.12] — 2026-10-13
+
+The home on a computer, made calm: one list of what matters, read top to
+bottom.
+
+### Changed
+
+- **Your greeting is written across the sky** at the top of the home on a
+  computer, with the day, the weather over the church and the church's name,
+  and search beside it.
+- **Your apps come next,** in one row, since the home is how you get between
+  them.
+- **Today is one list,** in two parts: **Needs you** first (accounts to link,
+  overdue tasks, gatherings to count), then **Good to know** (birthdays, your
+  turn serving, new faces), each with how many. Every item is there, as a
+  quiet line rather than a box of its own, so the few that need you stand out.
+- **The week ahead sits beside Today** as a short agenda of only the days
+  with something on, with the day's verse under it. What is on is said there
+  and not again in Today.
+- The church on its hill is a strip at the foot of the page.
+
 ## [0.35.11] — 2026-10-13
 
 On a computer, the home fills the screen with the week ahead.
