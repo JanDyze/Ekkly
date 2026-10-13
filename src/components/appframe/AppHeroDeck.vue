@@ -1,7 +1,8 @@
 <script setup>
-import { TransitionGroup, computed, ref, watch } from 'vue'
+import { TransitionGroup, computed, onBeforeUnmount, ref, watch } from 'vue'
 import { ChevronLeft, ChevronRight, X } from '../../icons'
 import AppHero from './AppHero.vue'
+import DeckRow from './DeckRow.vue'
 import { useSounds } from '../../composables/useSounds'
 
 // An app's first card, when there is more than one thing worth leading with.
@@ -46,16 +47,15 @@ import { useSounds } from '../../composables/useSounds'
 //
 // `spread` is the same deck on a desktop, where nothing has to hide. A swipe
 // is a thumb's gesture: with a mouse it hides every card but the top one
-// behind a move nobody makes. So the same cards, drawn by the same `card`
-// slot as on a phone, are laid side by side on a grid: the card that is
-// always true (the deck's last, the church's colour) first and, once there are
-// enough to fill a second row beside it, two rows tall; every other card after
-// it in the deck's order. A desktop is not given a lesser kind of card: thin
-// lines in its place read as a different, poorer design than the phone's.
-// Each row is a phone card's height, so the cards look as they do there. The
-// grid is as tall as what is in it, never taller than it is given, and on a
-// day with more cards than fit only the grid scrolls, never the page around
-// it. Putting a card away works as it does in the deck, the rest moving up.
+// behind a move nobody makes. So every card but the last is a small card of
+// its own (the `row` slot, a DeckRow: the phone's card made small), stacked in
+// two columns side by side: what is waiting on you (a `warn` card), and what
+// is good to know, each in the deck's order. The last card, the one that is
+// always true, is the page's to show another way (the home's greeting), so it
+// is left out here. Every card is there; a column never pages, loops or hides
+// one behind a count. An empty column says so in words. Putting a card away
+// works as it does in the deck, and the cards after it close the gap. The
+// section spans two columns of the grid it is put in.
 
 const props = defineProps({
   cards: { type: Array, required: true },
@@ -65,8 +65,12 @@ const props = defineProps({
   scope: { type: String, required: true },
   label: { type: String, default: 'Today' },
   spread: { type: Boolean, default: false },
-  // Laid out flat: how many cards to a row.
-  columns: { type: Number, default: 4 },
+  // Laid out flat: the two columns' headings, and what each says when it has
+  // nothing.
+  urgentLabel: { type: String, default: 'Needs you' },
+  restLabel: { type: String, default: 'Good to know' },
+  urgentEmpty: { type: String, default: 'Nothing needs you today.' },
+  restEmpty: { type: String, default: 'Nothing else today.' },
 })
 
 /* ------------------------------------------------------------- dismissing */
@@ -161,15 +165,44 @@ const dismiss = (card) => {
 
 /* --------------------------------------------------------- laid out flat */
 
-// The card that is always true first, then the rest in the deck's order.
-const laidOut = computed(() => {
-  const all = visible.value
-  return all.length ? [all[all.length - 1], ...all.slice(0, -1)] : []
-})
-// The first card is two rows tall once the others fill a row beside it;
-// before that it would stand over an empty space.
-const leadTall = computed(() => laidOut.value.length - 1 >= props.columns)
-const spreadGrid = computed(() => ({ gridTemplateColumns: `repeat(${props.columns}, minmax(0, 1fr))` }))
+// Every card but the last, the one that is always true, in its two groups.
+const rows = computed(() => visible.value.slice(0, -1))
+const groups = computed(() => [
+  { key: 'urgent', label: props.urgentLabel, empty: props.urgentEmpty, cards: rows.value.filter((card) => card.tone === 'warn') },
+  { key: 'rest', label: props.restLabel, empty: props.restEmpty, cards: rows.value.filter((card) => card.tone !== 'warn') },
+])
+
+// Laid out flat, a card is the phone's in small. Rest the pointer on one (or
+// reach it with the keyboard) and, after a beat, it shows as the phone shows
+// it — the `card` slot, the same face, full size — floating over where it
+// stands, kept inside the window. The beat is so sweeping down a column does
+// not flash every card. It is a look only: it takes no pointer and no focus,
+// so the small card under it is still the one clicked.
+const peek = ref(null)
+let peekTimer = null
+const PEEK_AFTER = 450
+const PEEK_WIDTH = 360
+// A phone card is at most 16rem tall (DeckCard), and a little room under it.
+const PEEK_ROOM = 272
+
+const peekAt = (card, event) => {
+  clearTimeout(peekTimer)
+  const el = event.currentTarget
+  peekTimer = setTimeout(() => {
+    if (!el?.isConnected || leaving.value === card.key) return
+    const box = el.getBoundingClientRect()
+    const left = Math.min(Math.max(box.left + box.width / 2 - PEEK_WIDTH / 2, 8), window.innerWidth - PEEK_WIDTH - 8)
+    const top = Math.min(Math.max(box.top - 12, 8), window.innerHeight - PEEK_ROOM)
+    peek.value = { card, left, top }
+  }, PEEK_AFTER)
+}
+
+const unpeek = () => {
+  clearTimeout(peekTimer)
+  peek.value = null
+}
+
+onBeforeUnmount(() => clearTimeout(peekTimer))
 
 /* -------------------------------------------------------------- the deck */
 
@@ -402,52 +435,106 @@ const fanned = (depth) => {
 </script>
 
 <template>
-  <!-- Laid out flat: the same cards on a grid, a phone card's height a row,
-       the first (the card that is always true) two rows tall once there are
-       enough beside it. -->
-  <TransitionGroup
+  <!-- Laid out flat: two columns side by side, what needs you and what is
+       good to know, each a heading on the home's sky (its ink) over its cards
+       stacked, each card the phone's in small (DeckRow). No panel round them:
+       a card inside a card is a box too many. -->
+  <section
     v-if="spread"
-    tag="section"
-    name="spread"
     :aria-label="label"
-    class="spread relative grid min-h-0 auto-rows-[15rem] gap-4 overflow-y-auto [scrollbar-width:thin]"
-    :style="spreadGrid"
+    class="col-span-2 grid max-h-full min-h-0 grid-cols-2 grid-rows-[minmax(0,1fr)] items-start gap-5"
   >
     <div
-      v-for="(card, i) in laidOut"
-      :key="card.key"
-      :class="['spread-card relative min-w-0', i === 0 && leadTall ? 'row-span-2' : '']"
-      :style="card.key === leaving ? { transition: 'opacity 200ms ease', opacity: 0 } : undefined"
+      v-for="group in groups"
+      :key="group.key"
+      class="flex max-h-full min-h-0 flex-col gap-2"
     >
-      <slot name="card" :card="card" :top="true">
-        <AppHero
-          class="h-full"
-          :art="art"
-          :greeting="card.greeting"
-          :title="card.title"
-          :detail="card.detail"
-          :badge="card.dismissible ? '' : card.badge"
-          :to="card.to"
-          :inset="card.dismissible"
-        />
-      </slot>
-
-      <button
-        v-if="card.dismissible"
-        type="button"
-        :class="[
-          'absolute right-3 top-3 flex size-8 items-center justify-center rounded-full transition-colors',
-          !card.tone || card.tone === 'accent' || card.tone === 'celebrate'
-            ? 'bg-white/15 text-white hover:bg-white/25'
-            : 'bg-gray-900/5 text-gray-500 hover:bg-gray-900/10 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/15',
-        ]"
-        :aria-label="card.remember ? 'Dismiss until there are more' : 'Dismiss until the app is opened again'"
-        @click="dismiss(card)"
+      <h3 class="flex items-baseline gap-2 px-1 text-[15px] font-semibold text-(--scene-ink)">
+        {{ group.label }}
+        <span v-if="group.cards.length" class="font-medium tabular-nums opacity-70">{{ group.cards.length }}</span>
+      </h3>
+      <p
+        v-if="!group.cards.length"
+        class="rounded-[20px] border border-dashed border-white/70 bg-white/45 px-4 py-5 text-sm text-gray-600 dark:border-white/15 dark:bg-gray-900/40 dark:text-gray-300"
       >
-        <X class="size-4" />
-      </button>
+        {{ group.empty }}
+      </p>
+      <TransitionGroup
+        v-else
+        tag="ul"
+        name="row"
+        class="relative flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto [scrollbar-width:thin]"
+        @scroll.passive="unpeek"
+      >
+        <li
+          v-for="card in group.cards"
+          :key="card.key"
+          class="group/row relative min-w-0"
+          @pointerenter="peekAt(card, $event)"
+          @pointerleave="unpeek"
+          @focusin="peekAt(card, $event)"
+          @focusout="unpeek"
+          :style="card.key === leaving ? { transition: 'opacity 200ms ease', opacity: 0 } : undefined"
+        >
+          <slot name="row" :card="card">
+            <DeckRow
+              :tone="card.tone"
+              :icon="card.icon"
+              :kicker="card.kicker"
+              :title="card.title"
+              :detail="card.detail"
+              :to="card.to"
+              :dest="card.dest"
+              :dest-label="card.destLabel"
+            />
+          </slot>
+
+          <!-- In the card's top corner, in its own tone as on a phone; quiet
+               until the card is pointed at, where there is a pointer to point
+               with, and always there on a touch screen. -->
+          <button
+            v-if="card.dismissible"
+            type="button"
+            :class="[
+              'absolute right-2 top-2 flex size-7 items-center justify-center rounded-full transition focus-visible:opacity-100 group-hover/row:opacity-100 [@media(hover:hover)]:opacity-0',
+              card.tone === 'accent' || card.tone === 'celebrate'
+                ? 'bg-white/15 text-white hover:bg-white/25'
+                : 'bg-gray-900/5 text-gray-500 hover:bg-gray-900/10 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/15',
+            ]"
+            :aria-label="card.remember ? 'Dismiss until there are more' : 'Dismiss until the app is opened again'"
+            @click="unpeek(); dismiss(card)"
+          >
+            <X class="size-3.5" />
+          </button>
+        </li>
+      </TransitionGroup>
     </div>
-  </TransitionGroup>
+
+    <!-- The card rested on, as the phone shows it (the peek, above). -->
+    <Teleport to="body">
+      <Transition name="peek">
+        <div
+          v-if="peek"
+          class="peek pointer-events-none fixed z-70"
+          :style="{ left: `${peek.left}px`, top: `${peek.top}px`, width: `${PEEK_WIDTH}px` }"
+          aria-hidden="true"
+          inert
+        >
+          <div class="rounded-[28px] shadow-[0_18px_40px_-12px_rgb(15_23_42/0.45)]">
+            <slot name="card" :card="peek.card" :top="true">
+              <AppHero
+                :art="art"
+                :greeting="peek.card.greeting"
+                :title="peek.card.title"
+                :detail="peek.card.detail"
+                :to="peek.card.to"
+              />
+            </slot>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+  </section>
 
   <div
     v-else-if="visible.length"
@@ -559,38 +646,47 @@ const fanned = (depth) => {
 </template>
 
 <style scoped>
-/* Laid out flat: a card put away has faded already, so it leaves at once,
-   out of the way, and the cards after it slide into its place. One arriving
+/* Laid out flat, the card rested on rises into view where it stands. */
+.peek-enter-active,
+.peek-leave-active {
+  transition:
+    opacity 160ms ease,
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.peek-enter-from,
+.peek-leave-to {
+  opacity: 0;
+  transform: scale(0.94);
+}
+.peek {
+  transform-origin: 50% 20%;
+}
+
+/* Laid out flat: a row put away has faded already, so it leaves at once, out
+   of the way, and the rows after it slide up into its place. One arriving
    rises into its own. */
-.spread-move,
-.spread-enter-active {
+.row-move,
+.row-enter-active {
   transition:
     transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
     opacity 240ms ease;
 }
-.spread-enter-from {
+.row-enter-from {
   opacity: 0;
   transform: translateY(6px);
 }
-.spread-leave-active {
+.row-leave-active {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
-/* A card on the grid is as tall as its place there, not the share of a
-   phone's screen it is given in the deck (DeckCard's own height). The card
-   only: the dismiss button beside it keeps its own size. */
-.spread-card > :deep(:first-child) {
-  height: 100% !important;
-  min-height: 0 !important;
-  max-height: none !important;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .deck-card,
-  .spread-move,
-  .spread-enter-active {
+  .row-move,
+  .row-enter-active,
+  .peek-enter-active,
+  .peek-leave-active {
     transition: none !important;
   }
 }

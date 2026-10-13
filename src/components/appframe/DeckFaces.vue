@@ -17,6 +17,7 @@ const props = defineProps({
   max: { type: Number, default: 6 },
   caption: { type: String, default: '' },
   // The card's tone, so the rings and seats are cut from its own background.
+  // Celebrate is the church's colour as accent is, so it reads the same.
   tone: { type: String, default: 'plain' },
 })
 
@@ -26,18 +27,21 @@ const more = computed(() => props.members.length + props.empty - shown.value.len
 
 const RINGS = {
   accent: 'ring-2 ring-white/70',
+  celebrate: 'ring-2 ring-white/70',
   warn: 'ring-2 ring-amber-50 dark:ring-gray-800',
   plain: 'ring-2 ring-white dark:ring-gray-800',
 }
 
 const SEATS = {
   accent: 'border-white/60 bg-white/10',
+  celebrate: 'border-white/60 bg-white/10',
   warn: 'border-amber-300 bg-amber-50 dark:border-gray-600 dark:bg-gray-800',
   plain: 'border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800',
 }
 
 const MUTED = {
   accent: 'text-white/80',
+  celebrate: 'text-white/80',
   warn: 'text-amber-800 dark:text-gray-400',
   plain: 'text-gray-500 dark:text-gray-400',
 }

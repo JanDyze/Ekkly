@@ -11,6 +11,28 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.19] — 2026-10-13
+
+The home on a computer, redrawn around your church: its colour first, then
+three columns of cards that look like your phone's.
+
+### Changed
+
+- **Your home opens with a banner in your church's colour:** its logo, the
+  day and the weather, your greeting, and the day's verse.
+- **Today is three columns again,** with nothing to scroll: **Needs you**,
+  **Good to know**, and **This week**. Each item is a card like your phone's,
+  in small: amber when it is waiting on you, your church's colour for a
+  birthday, white for the rest, with its label, its headline and a picture of
+  what it is about: the people's faces, an event's photo, or its own drawing.
+- **Rest the pointer on a card** to see it full size, as your phone shows it.
+- **New pictures** for tasks that are late or due today, gatherings still to
+  count, accounts to link, and songs not yet chosen.
+
+### Removed
+
+- The grid of full-size cards on a computer, which could scroll.
+
 ## [0.35.18] — 2026-10-13
 
 The home on a computer uses the same cards as the phone.

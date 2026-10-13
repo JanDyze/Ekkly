@@ -1,21 +1,25 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, shallowRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { CalendarDots, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MicrophoneStage, Moon, Sun } from '../icons'
+import { Cake, CalendarDots, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MicrophoneStage, Moon, Sun } from '../icons'
 import AppHeroDeck from '../components/appframe/AppHeroDeck.vue'
 import CardPanes from '../components/appframe/CardPanes.vue'
+import AppArt from '../components/common/AppArt.vue'
 import DeckCard from '../components/appframe/DeckCard.vue'
 import DeckFaces from '../components/appframe/DeckFaces.vue'
 import DeckChips from '../components/appframe/DeckChips.vue'
 import DeckWeek from '../components/appframe/DeckWeek.vue'
+import DeckRow from '../components/appframe/DeckRow.vue'
 import AppPeek from '../components/appframe/AppPeek.vue'
 import HomeScene from '../components/home/HomeScene.vue'
 import HomeAppCards from '../components/home/HomeAppCards.vue'
+import HomeWeek from '../components/home/HomeWeek.vue'
 import { useHomeCards } from '../composables/useHomeCards'
 import { useLiveSky } from '../composables/useLiveSky'
 import { useAppOrder } from '../composables/useAppOrder'
 import { usePressAndHold } from '../composables/usePressAndHold'
 import BirthdayCard from '../components/members/BirthdayCard.vue'
+import MemberAvatar from '../components/members/MemberAvatar.vue'
 import { usePermissions } from '../composables/usePermissions'
 import { useAuth } from '../composables/useAuth'
 import { useAppSettings } from '../composables/useAppSettings'
@@ -28,7 +32,6 @@ import { APPS } from '../../lib/apps'
 import { getDisplayName, getFullName, listPhrase } from '../utils/memberUtils'
 import { findRosterMember, formatShortDate } from '../utils/lineupUtils'
 import { peopleOnService } from '../data/scheduleRoles'
-import { sampleTodayCards } from '../data/sampleTodayCards'
 
 // The home of all apps: where Ekkly opens, and where every app's back arrow
 // leads. Each app is a screen of its own now (src/apps/), with its own home
@@ -57,15 +60,19 @@ import { sampleTodayCards } from '../data/sampleTodayCards'
 // open.
 //
 // On a desktop (lg) the same page has the room to show everything at once,
-// and is read top to bottom rather than swiped: the apps in the style the church chose, each kept to one line and six in a
-// row (HomeAppCards' `inline`), because this is the way between them; then the
-// very same cards as the phone's deck, side by side on a grid (AppHeroDeck's
-// `spread`), the day's card in the church's colour first, with the day's verse
-// on it (a header over the apps said its greeting twice). A desktop once had
-// thinner lines in their place, and they read as a different, poorer design
-// than the phone's. Like a phone's, the home fits one screen and never
-// scrolls: on a day with more cards than fit, only the grid scrolls, and the
-// church on its hill takes the room left under it.
+// and is read top to bottom like a page rather than swiped like a deck: the
+// greeting as words on the sky (the day, the weather, the church) with search
+// beside it, since someone at a keyboard would rather type where they are
+// going; the apps in the style the church chose, each kept to one line and
+// six in a row (HomeAppCards' `inline`), because this is the way between
+// them; then three columns: what
+// needs you, what is good to know (AppHeroDeck's `spread`), and, narrower,
+// the week ahead with the day's verse (HomeWeek). Quiet lines in three panels, rather than a card, a grid of rows
+// and a band of seven days all asking to be read at once. What is on goes in
+// the week and nowhere else, so nothing is said twice. Like a phone's, it
+// fits one screen and never scrolls: a column with more than it can hold
+// scrolls inside itself, and the hill, which only had the room left over, is
+// left to the phone.
 
 const route = useRoute()
 const router = useRouter()
@@ -124,6 +131,12 @@ const keyOf = (member) => member.firestoreId || member.id
 
 /* ---------------------------------------------------- made-up cards (dev) */
 
+// The made-up cards' module (sampleTodayCards), loaded only in a dev build:
+// imported plainly, its photos were copied into a church's build even though
+// nothing there used them.
+const sampleModule = shallowRef(null)
+if (import.meta.env.DEV) import('../data/sampleTodayCards').then((module) => (sampleModule.value = module))
+
 // How many made-up cards to add (sampleTodayCards), from `?cards=N` and kept
 // for the tab once set: a sign-in, the church picker or any redirect rebuilds
 // the address without it, and the preview went with it. `?cards=0` ends it.
@@ -170,6 +183,7 @@ const cards = computed(() => {
       icon: KeyRound,
       dismissible: true,
       kicker: 'Waiting on you',
+      art: 'today-claims',
       title: `${plural(n, 'account', 'accounts')} to link`,
       detail: 'Someone signed in and says a record on the roll is theirs.',
       to: '/accounts',
@@ -179,7 +193,30 @@ const cards = computed(() => {
     })
   }
 
-  today.birthdaysToday.value.forEach(({ member, turning }) => {
+  // On a desktop every card is a row, and a row each would let a busy day's
+  // birthdays crowd out everything else: they are one row there, naming
+  // everyone, and it opens the day's birthdays in People.
+  const birthdays = today.birthdaysToday.value
+  if (wide.value && birthdays.length) {
+    const one = birthdays.length === 1 ? birthdays[0] : null
+    const people = birthdays.map(({ member }) => member)
+    list.push({
+      kind: 'birthdays',
+      key: `birthdays:${people.map(keyOf).join(',')}:${today.today}`,
+      tone: 'celebrate',
+      icon: Cake,
+      dismissible: true,
+      kicker: 'Birthday today',
+      title: one ? `${getDisplayName(one.member)}'s birthday` : `${plural(birthdays.length, 'birthday', 'birthdays')} today`,
+      detail: one ? (one.turning ? `Turns ${one.turning}` : getFullName(one.member)) : namesOf(people),
+      to: one ? { name: 'MemberDetails', params: { id: one.member.id || one.member.firestoreId } } : { name: 'PeopleBirthdays' },
+      dest: 'members',
+      destLabel: one ? 'their record in People' : 'Birthdays, in People',
+      members: people,
+      // Its faces, for the phone's card it shows as when rested on.
+      faces: { members: people, empty: 0, caption: namesOf(people) },
+    })
+  } else birthdays.forEach(({ member, turning }) => {
     list.push({
       kind: 'birthday',
       key: `birthday:${member.firestoreId || member.id}:${today.today}`,
@@ -233,6 +270,7 @@ const cards = computed(() => {
       icon: ListChecks,
       dismissible: true,
       kicker: late.length ? 'Overdue' : 'Due today',
+      art: late.length ? 'today-overdue' : 'today-due',
       title: `${plural(tasks.length, 'task', 'tasks')} of yours ${late.length ? 'overdue' : 'due today'}`,
       to: { name: 'TasksMine' },
       dest: 'tasks',
@@ -250,6 +288,7 @@ const cards = computed(() => {
       icon: ClipboardCheck,
       dismissible: true,
       kicker: 'Still to count',
+      art: 'today-count',
       title: `${plural(n, 'gathering', 'gatherings')} with no attendance`,
       detail: 'They stay on the list until someone records or dismisses them.',
       to: { name: 'AttendanceOwed' },
@@ -262,9 +301,12 @@ const cards = computed(() => {
     })
   }
 
-  // What is on: today's, or the next thing this week.
+  // What is on: today's, or the next thing this week. Not on a desktop, where
+  // the week ahead stands beside Today and already says it (HomeWeek).
   const on = today.eventsToday.value
-  if (on.length) {
+  if (wide.value) {
+    // The week beside Today has it.
+  } else if (on.length) {
     list.push({
       kind: 'dated',
       key: `on:${today.today}`,
@@ -302,10 +344,13 @@ const cards = computed(() => {
   // Made-up cards to see a full day with, while working locally: `?cards=10`.
   // Only in a dev build, so a church's home never shows one.
   const samples = import.meta.env.DEV ? sampleCount.value : 0
-  if (samples > 0) {
-    list.push(...sampleTodayCards(samples, {
-      icons: { CalendarDots, ClipboardCheck, KeyRound, ListChecks, MicrophoneStage },
-    }))
+  if (samples > 0 && sampleModule.value) {
+    const made = sampleModule.value.sampleTodayCards(samples, {
+      wide: wide.value,
+      icons: { Cake, CalendarDots, ClipboardCheck, KeyRound, ListChecks, MicrophoneStage },
+    })
+    // As with the real ones, what is on is the week's to show on a desktop.
+    list.push(...made.filter((card) => !(wide.value && card.dest === 'events')))
   }
 
   // The card that is always there: the person greeted by name, the day, and
@@ -331,6 +376,32 @@ const cards = computed(() => {
   return list
 })
 
+/* ------------------------------------------------- a card told as a row */
+
+// On a desktop each card but the day's is a row (DeckRow): the line under its
+// headline is the most telling thing the card holds. Its faces are left to the
+// phone's card: in a third of a screen they took the room the words needed,
+// and the line already names who it is about.
+// A card's picture is what it is about wherever there is one, rather than a
+// plain icon: a photo (an event's, a Sunday's), else the people it is about —
+// the accounts waiting, whose birthday, who is new, who you serve with — else
+// the date it is on, else its own drawing (`art`: tasks late or due, a count
+// not taken). Only a card with none of those keeps its icon.
+const rowPeople = (card) => (card.members || card.faces?.members || []).filter(Boolean)
+const rowPicture = (card) => Boolean(card.photo || rowPeople(card).length || card.date || card.art)
+
+const rowDetail = (card) => {
+  if (card.chips) return card.chips.map((chip) => chip.label).join(', ')
+  if (card.tasks) {
+    const names = card.tasks.slice(0, 2).map((task) => task.title)
+    if (card.tasks.length > 2) names.push(`${card.tasks.length - 2} more`)
+    return names.join(' · ')
+  }
+  // Who an account claim is for says more than what a claim is.
+  if (card.faces?.caption && !card.date) return card.faces.caption
+  return card.detail
+}
+
 /* ------------------------------------------------------ the desktop page */
 
 // The column everything but the hill keeps to on a desktop. The page itself
@@ -339,14 +410,25 @@ const cards = computed(() => {
 // left a quarter of the width as bare sky either side of three narrow columns.
 const COLUMN = 'lg:mx-auto lg:w-full lg:max-w-[90rem] lg:px-8'
 
+// The greeting's line on a desktop: the day, and whose church this is.
+const todayLong = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
+const churchName = computed(() => church.value?.shortName || church.value?.fullName || '')
 
-/* --------------------------------------------------------- the card grid */
+/* -------------------------------------------------------------- the week */
 
-// How many cards to a row on a desktop: three on a laptop, four on a wide
-// screen, so each is about the width it has on a phone and looks as it does
-// there. Four on a laptop cut their labels short.
-const roomy = useMediaQuery('(min-width: 1536px)')
-const deckColumns = computed(() => (roomy.value ? 4 : 3))
+// The coming seven days under the apps, on a desktop, for whoever has Events
+// (HomeWeek). Someone without it would see a week of "Nothing on" that is
+// only nothing because they cannot see it.
+// The week's events, with made-up ones beside them while previewing locally
+// (`?cards=`, a dev build only), so the week shows its pictures too.
+const weekEvents = computed(() =>
+  import.meta.env.DEV && sampleCount.value > 0 && sampleModule.value
+    ? [...today.eventsThisWeek.value, ...sampleModule.value.sampleWeekEvents()].sort((a, b) => a.date.localeCompare(b.date) || String(a.time).localeCompare(String(b.time)))
+    : today.eventsThisWeek.value
+)
+const showWeek = computed(() => wide.value && allApps.value.some((item) => item.path === '/events'))
+// The column beside Today, on a desktop, when it has the week.
+const hasAside = computed(() => showWeek.value)
 
 /* ------------------------------------------------------------- the verse */
 
@@ -446,15 +528,100 @@ const lineOf = (item) => {
   <div class="home-scene relative h-full overflow-hidden bg-(--scene-sky-3) with-bar:overflow-y-auto with-bar:overscroll-contain" v-bind="sky">
     <HomeScene part="sky" class="pointer-events-none absolute inset-0 size-full" />
 
-    <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:max-w-none lg:gap-6 lg:px-0 lg:pt-6">
+    <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:max-w-none lg:gap-4 lg:px-0 lg:pt-5">
+      <!-- On a desktop, the greeting is words on the sky, in the sky's own ink
+           (HomeScene): the day, the weather over the church, and the church.
+           Search is the top bar's (its magnifying glass, and Ctrl K): a second
+           search field here said the same thing twice. -->
+      <!-- On a desktop the page leads with one card in the church's colour,
+           as the phone's deck ends on its day card and as every sketch of a
+           desktop home did (a hero in that colour): without it the eye had
+           nowhere to land first. Its logo, the day and the weather in pills,
+           the greeting large, and the day's verse across from it, over
+           Ekkly's panes of light as on the phone's day card. -->
+      <header v-if="wide" :class="['lg:order-1', COLUMN]">
+        <div class="home-hero relative isolate flex items-center justify-between gap-8 overflow-hidden rounded-[28px] border border-black/15 px-6 py-4 text-white dark:border-black/40">
+          <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]" aria-hidden="true">
+            <CardPanes />
+          </div>
+          <div class="flex min-w-0 items-center gap-4">
+            <span v-if="logoUrl" class="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5 ring-1 ring-black/10">
+              <img :src="logoUrl" alt="" class="size-full object-contain" />
+            </span>
+            <div class="min-w-0">
+              <p class="flex min-w-0 flex-wrap items-center gap-2 text-[13px] font-semibold">
+                <span class="rounded-full bg-white/18 px-2.5 py-0.5">{{ todayLong }}</span>
+                <span v-if="weather" class="inline-flex items-center gap-1.5 rounded-full bg-white/18 px-2.5 py-0.5">
+                  <component :is="weatherIcon" class="size-4" />
+                  {{ weather.label }}
+                </span>
+                <span v-if="churchName" class="truncate text-white/85">{{ churchName }}</span>
+              </p>
+              <h1 class="mt-0.5 truncate text-[26px] font-bold leading-tight tracking-tight">{{ greeting }}</h1>
+            </div>
+          </div>
+
+          <component
+            :is="verseTo ? 'RouterLink' : 'div'"
+            v-if="verse"
+            v-bind="verseTo ? { to: verseTo } : {}"
+            :class="['block max-w-md shrink text-right', verseTo ? 'group' : '']"
+          >
+            <blockquote class="line-clamp-2 text-[15px] italic leading-snug text-white/90">{{ verse.text }}</blockquote>
+            <p class="mt-1 text-[13px] text-white/75">
+              <span class="font-semibold text-white group-hover:underline">{{ verse.reference }}</span>
+              · {{ verse.version }}
+            </p>
+          </component>
+        </div>
+      </header>
 
       <!-- 1. Today, most important on top. On a desktop it comes after the
-           apps: the same cards as on a phone, side by side on a grid, as tall
-           as they need and never taller than the room left (only the grid
-           scrolls, on a day with more than fit), and the hill takes whatever
-           is left under them. -->
-      <div :class="['lg:order-3 lg:flex lg:min-h-0 lg:flex-col', COLUMN]">
-      <AppHeroDeck :cards="cards" scope="home" label="Today" :spread="wide" :columns="deckColumns">
+           apps: one list, what needs you then what is good to know, with the
+           week and the verse in a column beside it. -->
+      <!-- The three columns are as tall as what is in them, never taller than
+           the screen has room for (a column with more scrolls inside itself),
+           and the hill takes whatever is left under them. -->
+      <div :class="['lg:order-3 lg:grid lg:min-h-0 lg:grid-rows-[minmax(0,1fr)] lg:items-start lg:gap-5', COLUMN, hasAside ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_19rem]' : 'lg:grid-cols-2']">
+      <AppHeroDeck :cards="cards" scope="home" label="Today" :spread="wide">
+        <template #row="{ card }">
+          <DeckRow
+            :tone="card.tone"
+            :icon="card.icon"
+            :kicker="card.kicker"
+            :title="card.title"
+            :detail="rowDetail(card)"
+            :to="card.to"
+            :dest="card.dest"
+            :dest-label="card.destLabel"
+          >
+            <!-- The line's picture (rowPicture): its photo, the faces it is
+                 about, or its date, before falling back to its icon. -->
+            <template v-if="rowPicture(card)" #leading>
+              <img v-if="card.photo" :src="card.photo" alt="" class="size-11 shrink-0 rounded-2xl object-cover" />
+              <span v-else-if="rowPeople(card).length === 1" class="shrink-0">
+                <MemberAvatar :member="rowPeople(card)[0]" alt="" size="h-11 w-11" />
+              </span>
+              <!-- Two or more: the first two, one over the other's shoulder. -->
+              <span v-else-if="rowPeople(card).length" class="relative size-11 shrink-0" aria-hidden="true">
+                <span class="absolute left-0 top-0">
+                  <MemberAvatar :member="rowPeople(card)[0]" alt="" size="h-8 w-8" />
+                </span>
+                <span class="absolute bottom-0 right-0">
+                  <MemberAvatar :member="rowPeople(card)[1]" alt="" size="h-8 w-8" plain-class="ring-2 ring-white dark:ring-gray-800" />
+                </span>
+              </span>
+              <span v-else-if="card.date" class="flex size-11 shrink-0 flex-col items-center justify-center rounded-2xl bg-primary/10 leading-none text-primary dark:bg-primary-light/15 dark:text-primary-light">
+                <span class="text-[9px] font-bold uppercase">{{ card.date.month }}</span>
+                <span class="mt-px text-sm font-bold tabular-nums">{{ card.date.day }}</span>
+              </span>
+              <!-- Its own drawing (brand/ekkly/sections/today.mjs), for a card
+                   about something with no face, photo or day of its own. -->
+              <AppArt v-else :app-key="card.art" class="size-11 shrink-0" />
+            </template>
+          </DeckRow>
+        </template>
+
         <template #card="{ card }">
           <BirthdayCard v-if="card.kind === 'birthday'" :card="card" />
 
@@ -471,11 +638,8 @@ const lineOf = (item) => {
             :dest-label="card.destLabel"
             :inset="card.dismissible"
           >
-            <!-- Its photo where it has one (an event's, a Sunday's), else its
-                 date, the way a calendar shows it. -->
             <template #leading>
-              <img v-if="card.photo" :src="card.photo" alt="" class="size-14 shrink-0 rounded-2xl object-cover" />
-              <span v-else class="flex size-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-primary/10 leading-none text-primary dark:bg-primary-light/15 dark:text-primary-light">
+              <span class="flex size-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-primary/10 leading-none text-primary dark:bg-primary-light/15 dark:text-primary-light">
                 <span class="text-[11px] font-bold uppercase">{{ card.date.month }}</span>
                 <span class="mt-0.5 text-xl font-bold tabular-nums">{{ card.date.day }}</span>
               </span>
@@ -539,22 +703,6 @@ const lineOf = (item) => {
               </span>
             </template>
 
-            <!-- On a desktop the day's verse, over the church: this card leads
-                 the grid there, often two rows tall, and the picture at a
-                 phone's foot has no room on a laptop's screen. -->
-            <component
-              :is="verseTo ? 'RouterLink' : 'div'"
-              v-if="wide && verse"
-              v-bind="verseTo ? { to: verseTo } : {}"
-              :class="['mb-4 block text-white', verseTo ? 'group/verse' : '']"
-            >
-              <blockquote class="line-clamp-3 text-[15px] italic leading-snug text-white/90">{{ verse.text }}</blockquote>
-              <p class="mt-1.5 truncate text-[12px] text-white/75">
-                <span class="font-semibold text-white group-hover/verse:underline">{{ verse.reference }}</span>
-                · {{ verse.version }}
-              </p>
-            </component>
-
             <!-- Whose church this is: its own logo, on white so any logo reads
                  on any church colour, and its name. -->
             <div class="flex min-w-0 items-center gap-3">
@@ -583,6 +731,13 @@ const lineOf = (item) => {
         </template>
       </AppHeroDeck>
 
+      <aside
+        v-if="hasAside"
+        class="flex max-h-full min-h-0 flex-col"
+      >
+        <HomeWeek v-if="showWeek" :days="today.week.value" :events="weekEvents" />
+
+      </aside>
       </div>
 
       <!-- 2. The apps kept on the home, and the way to all of them; on a
@@ -699,6 +854,16 @@ const lineOf = (item) => {
   text-shadow:
     0 0 10px var(--scene-ink-halo),
     0 0 2px var(--scene-ink-halo);
+}
+
+/* The desktop's hero, in the church's colour (the primary token) as the
+   phone's day card is, and as that card does, a deeper shade of it on a dark
+   page, where the token is the lighter one made for text. */
+.home-hero {
+  background-color: var(--color-primary);
+}
+.dark .home-hero {
+  background-color: color-mix(in oklab, var(--color-primary) 55%, black);
 }
 
 /* The room under the apps measures itself, so what it holds can step aside

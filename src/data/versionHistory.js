@@ -8,14 +8,14 @@
 
 export const versionHistory = [
   {
-    version: '0.35.18',
+    version: '0.35.19',
     date: '2026-10-13',
     title: 'Your home on a computer',
-    summary: 'On a computer, your home shows the same cards as your phone, all at once.',
+    summary: 'On a computer, your home opens in your church’s colour, with today in three columns.',
     highlights: [
-      'Every card for today sits side by side, with your day and the verse in the church colour first.',
+      'What needs you, what is good to know, and the week ahead, side by side.',
+      'Rest the pointer on a card to see it full size, as on your phone.',
       'Your apps keep your church’s card style, in one row at the top.',
-      'New clouds in the sky behind it all.',
     ],
   },
   {

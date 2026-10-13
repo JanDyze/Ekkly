@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="o" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB21E"/><stop offset=".5" stop-color="#FF7417"/><stop offset="1" stop-color="#EC4319"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D9DFF"/><stop offset=".55" stop-color="#1467E8"/><stop offset="1" stop-color="#0A4FC4"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2BD4C0"/><stop offset="1" stop-color="#0B93AB"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  
+  <clipPath id="c"><rect x="4" y="4" width="46" height="50" rx="10"/></clipPath>
+  <g clip-path="url(#c)">
+    <rect x="4" y="4" width="46" height="50" fill="url(#b)"/>
+    <path d="M12.28 4 H50 V40 Z" fill="url(#o)"/>
+    <rect x="4" y="4" width="46" height="50" fill="url(#shine)"/>
+  </g>
+  <rect x="9" y="10" width="36" height="38" rx="4.5" fill="#fff"/>
+  <circle cx="20" cy="22" r="6" fill="url(#b)"/>
+  <path d="M11.5 38c0-5.6 3.8-9.4 8.5-9.4s8.5 3.8 8.5 9.4z" fill="url(#b)"/>
+  <rect class="a-line" style="--i:0" x="31" y="18" width="10" height="3.4" rx="1.7" fill="#8E9CB3"/>
+  <rect class="a-line" style="--i:1" x="31" y="25" width="7" height="3.4" rx="1.7" fill="#DCE3EE"/>
+  
+  <g class="a-pop" style="--i:2">
+    <circle cx="46" cy="46" r="12" fill="url(#o)" stroke="#fff" stroke-width="2.4"/>
+    <circle cx="46" cy="46" r="12" fill="url(#shine)"/>
+    
+    <circle cx="42.6" cy="44.4" r="3.4" fill="none" stroke="#fff" stroke-width="2.4"/>
+    <path d="M45.2 46.6l6.2 5.2M49.2 50.1l-1.8 2.1M51.4 51.8l-1.6 1.9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+  </g>
+</svg>
