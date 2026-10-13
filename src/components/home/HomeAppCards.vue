@@ -17,9 +17,10 @@ import { MASONRY_SPANS, orbitPlace } from '../../data/homeCards'
 // above already wears. The cards themselves are HomeCard, which the sections
 // inside every app are drawn with too (AppShortcuts); this lays them out.
 //
-// On a desktop the home asks for `row` whatever the style (HomeCard's quiet
-// row of pictures and names); the other styles still run six across at lg
-// for anywhere else they are drawn wide. Orbit keeps its circle.
+// On a desktop the home asks for them `inline`: whatever the style, each card
+// kept to one line (HomeCard's `inline`) and the six in one row, each as wide
+// as its name and the row filled between them, so the home still fits one
+// screen and no name is cut short to fit an equal column.
 
 const props = defineProps({
   variant: { type: String, default: 'accent' },
@@ -27,6 +28,8 @@ const props = defineProps({
   others: { type: Array, default: () => [] },
   // The home's press-and-hold, as { start, still, swallow } (usePressAndHold).
   hold: { type: Object, default: null },
+  // One line, all six in a row, whatever the style (the desktop home).
+  inline: { type: Boolean, default: false },
 })
 
 const router = useRouter()
@@ -81,8 +84,22 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
 </script>
 
 <template>
+  <!-- On the desktop home: the chosen style, one line tall, six in a row. -->
+  <nav v-if="inline" class="flex gap-2.5" aria-label="Your apps">
+    <HomeCard
+      v-for="(card, index) in cards"
+      :key="card.key"
+      :variant="variant"
+      inline
+      :as="RouterLink"
+      :card="card"
+      v-bind="attrsOf(card, index)"
+      class="flex-auto"
+    />
+  </nav>
+
   <!-- 4. Orbit: the apps round a circle, More apps in the middle. -->
-  <nav v-if="variant === 'orbit'" class="relative mx-auto aspect-square w-full max-w-88" aria-label="Your apps">
+  <nav v-else-if="variant === 'orbit'" class="relative mx-auto aspect-square w-full max-w-88" aria-label="Your apps">
     <span class="absolute inset-[13%] rounded-full border border-gray-300/70 dark:border-white/10" />
     <span class="absolute inset-[34%] rounded-full border border-gray-300/50 dark:border-white/10" />
     <HomeCard
@@ -128,21 +145,6 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
       :card="card"
       v-bind="attrsOf(card, index)"
       :class="MASONRY_SPANS[index % MASONRY_SPANS.length]"
-    />
-  </nav>
-
-  <!-- The desktop home's quiet row (HomeCard's `row`): each app as wide as
-       its name, spread across the line, so no name is cut short to fit an
-       equal column. -->
-  <nav v-else-if="variant === 'row'" class="flex items-center justify-between gap-2" aria-label="Your apps">
-    <HomeCard
-      v-for="(card, index) in cards"
-      :key="card.key"
-      variant="row"
-      :as="RouterLink"
-      :card="card"
-      v-bind="attrsOf(card, index)"
-      class="min-w-0"
     />
   </nav>
 

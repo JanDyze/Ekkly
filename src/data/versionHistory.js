@@ -8,13 +8,13 @@
 
 export const versionHistory = [
   {
-    version: '0.35.17',
+    version: '0.35.18',
     date: '2026-10-13',
-    title: 'A calmer home on a computer',
-    summary: 'On a computer, your home fits one screen: your apps, then what matters today.',
+    title: 'Your home on a computer',
+    summary: 'On a computer, your home shows the same cards as your phone, all at once.',
     highlights: [
-      'Your apps sit in a quiet row under your greeting.',
-      'Today is three columns: what needs you, what is good to know, and the week ahead.',
+      'Every card for today sits side by side, with your day and the verse in the church colour first.',
+      'Your apps keep your church’s card style, in one row at the top.',
       'New clouds in the sky behind it all.',
     ],
   },

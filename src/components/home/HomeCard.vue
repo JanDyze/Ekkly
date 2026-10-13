@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import { ChevronRight } from '../../icons'
 import AppArt from '../common/AppArt.vue'
 import HomeCardIcon from './HomeCardIcon.vue'
@@ -21,14 +22,17 @@ import HomeCardIcon from './HomeCardIcon.vue'
 // fill, never a shadow, and answer a pointer or a finger by deepening the ring
 // and the fill rather than by lifting, growing or shrinking.
 //
-// One more, `row`, is not a style anyone picks: it is how the home draws its
-// apps on a desktop, whatever the style. There the apps are a row above the
-// day's lists, and six white cards over them pulled the eye as hard as what
-// needed doing; so each is only its picture on its own colour and its name,
-// standing on the sky, with a soft ground only when pointed at.
+// `inline` is the same style kept to one line, for the desktop home, where the
+// apps are a row above the day's lists and a card as tall as a phone's would
+// push them off the screen: the picture and the name side by side, and the
+// style's own mark of it — accent's stripe, illustrated's wash and faint
+// drawing, list's sweep of colour. Orbit has no line of its own and is drawn
+// as compact; masonry, a wash like illustrated, as illustrated.
 
-defineProps({
+const props = defineProps({
   variant: { type: String, default: 'accent' },
+  // One line tall, whatever the style (above).
+  inline: { type: Boolean, default: false },
   // What the card opens: a RouterLink, or a button.
   as: { type: [String, Object], default: 'button' },
   // { name, tagline, art, glyph, more, peek, path } — `path` is the key the
@@ -51,12 +55,45 @@ const badgeTone = (urgent) => (urgent ? 'bg-amber-500 text-white' : 'bg-primary 
 const badgeText = (count) => (count > 99 ? '99+' : count)
 
 const press = 'animate-rise transition-[background-color,box-shadow] duration-200 ease-out'
+
+// Kept to one line: which style it is drawn as, and that style's surface, its
+// padding (accent's leaves room for the stripe) and its picture's ground.
+const INLINE = {
+  accent: { surface: 'home-card', pad: 'pl-3.5 pr-3', ground: 'home-tint' },
+  illustrated: { surface: 'home-wash', pad: 'px-3', ground: 'home-chip' },
+  compact: { surface: 'home-card', pad: 'px-3', ground: 'home-tint' },
+  list: { surface: 'home-card', pad: 'px-3', ground: 'home-tint' },
+}
+const inlineStyle = computed(() => ({ orbit: 'compact', masonry: 'illustrated' })[props.variant] || props.variant)
+const inlineLook = computed(() => INLINE[inlineStyle.value] || INLINE.compact)
 </script>
 
 <template>
+  <!-- Any style kept to one line (`inline`), for the desktop home. -->
+  <component
+    v-if="inline"
+    :is="as"
+    :data-morph-card="card.more ? undefined : card.path"
+    :class="['group relative isolate flex h-16 min-w-0 items-center gap-2.5 overflow-hidden rounded-2xl text-left', inlineLook.surface, inlineLook.pad, press]"
+  >
+    <span v-if="inlineStyle === 'accent'" class="home-stripe absolute inset-y-0 left-0 w-1" />
+    <AppArt
+      v-if="inlineStyle === 'illustrated' && card.art && !card.more"
+      :app-key="card.art"
+      flat
+      class="home-hue pointer-events-none absolute -bottom-4 -right-3 -z-10 size-16 opacity-25"
+    />
+    <svg v-if="inlineStyle === 'list'" class="home-hue pointer-events-none absolute inset-y-0 right-0 -z-10 h-full w-20 opacity-15" viewBox="0 0 120 60" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M44 0C24 22 66 34 40 60H120V0Z" fill="currentColor" />
+    </svg>
+    <HomeCardIcon :card="card" :play="play" size="size-9" art="size-6" :ground="inlineLook.ground" />
+    <span :data-morph-label="card.path" class="min-w-0 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ card.name }}</span>
+    <span v-if="badge > 0" :class="[BADGE, badgeTone(urgent)]">{{ badgeText(badge) }}</span>
+  </component>
+
   <!-- 1. Accent lines: flat cards, a stripe of the app's colour. -->
   <component
-    v-if="variant === 'accent'"
+    v-else-if="variant === 'accent'"
     :is="as"
     :data-morph-card="card.more ? undefined : card.path"
     :class="['home-card group relative flex min-w-0 flex-col items-start gap-2.5 overflow-hidden rounded-2xl p-3.5 pl-4.5 pr-8 text-left', press]"
@@ -86,19 +123,6 @@ const press = 'animate-rise transition-[background-color,box-shadow] duration-20
       <span v-if="card.tagline" class="mt-0.5 block truncate text-xs text-gray-600 dark:text-gray-300">{{ card.tagline }}</span>
     </span>
     <span v-if="badge > 0" :class="[BADGE, badgeTone(urgent), 'absolute right-2.5 top-2.5 z-10']">{{ badgeText(badge) }}</span>
-  </component>
-
-  <!-- The desktop home's row of apps: no card, the picture and the name on
-       the sky, in the sky's own ink so it reads by day and by night. -->
-  <component
-    v-else-if="variant === 'row'"
-    :is="as"
-    :data-morph-card="card.more ? undefined : card.path"
-    :class="['group flex h-14 min-w-0 items-center gap-3 rounded-2xl px-2.5 text-left transition-colors duration-150 hover:bg-white/55 dark:hover:bg-white/10', press]"
-  >
-    <HomeCardIcon :card="card" :play="play" size="size-10" art="size-6.5" ground="home-plate" />
-    <span :data-morph-label="card.path" class="min-w-0 truncate text-[15px] font-semibold text-(--scene-ink)">{{ card.name }}</span>
-    <span v-if="badge > 0" :class="[BADGE, badgeTone(urgent)]">{{ badgeText(badge) }}</span>
   </component>
 
   <!-- 3. Compact: slim rows, the picture on the left. -->
@@ -267,17 +291,6 @@ const press = 'animate-rise transition-[background-color,box-shadow] duration-20
 }
 .home-chip {
   background: color-mix(in srgb, var(--color-white) 85%, transparent);
-}
-
-/* The row's picture stands on the sky with no card round it, so its ground is
-   solid: a tint over blue came out muddy. White, ringed in the app's colour. */
-.home-plate {
-  background: var(--color-white);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--hue) 30%, transparent);
-}
-.dark .home-plate {
-  background: var(--color-gray-800);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--hue) 40%, transparent);
 }
 .dark .home-chip {
   background: color-mix(in srgb, var(--color-white) 12%, transparent);

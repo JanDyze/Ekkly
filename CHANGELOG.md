@@ -11,6 +11,27 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.18] — 2026-10-13
+
+The home on a computer uses the same cards as the phone.
+
+### Changed
+
+- **Today on a computer shows the same cards as your phone,** side by side:
+  the faces, the birthday card, the dates and pictures, and your day's card in
+  the church's colour leading them, with the day's verse on it. They had been
+  shortened to plain lines there, which looked like a lesser version of the
+  phone.
+- **Your apps keep the card style your church chose,** kept to one line so
+  they sit in a single row.
+- **More room on wide screens:** the home uses more of the width, with less
+  empty sky either side.
+
+### Removed
+
+- The separate "This week" column on a computer. Coming events are cards
+  again, as on the phone.
+
 ## [0.35.17] — 2026-10-13
 
 A tidier home on a computer: less to look at, the same things to do.

@@ -3,7 +3,11 @@
 // `npm run dev` (Apps.vue adds them only in a dev build, never in the app a
 // church uses). Every kind the home draws is here at least once, with made-up
 // people only, so the deck, the desktop list and its two columns can all be
-// looked at without putting pretend records into a real church's data.
+// looked at without putting pretend records into a real church's data. Where a
+// card has a photo it is one of the drawn ones in assets/mock-photos.
+
+import sundayService from '../assets/mock-photos/sunday-service.svg'
+import youthCamp from '../assets/mock-photos/youth-camp.svg'
 
 const person = (firstName, lastName) => ({ id: `sample-${firstName}-${lastName}`.toLowerCase(), firstName, lastName })
 
@@ -27,11 +31,10 @@ const tile = (offset) => {
 const weekday = (offset) => dayOf(offset).toLocaleDateString(undefined, { weekday: 'long' })
 
 /**
- * `count` cards, the kinds in turn and round again. `wide` is whether the home
- * is laid out for a desktop, where birthdays are one card naming everyone
- * rather than a card each. `icons` are the home's own, by name.
+ * `count` cards, the kinds in turn and round again. `icons` are the home's
+ * own, by name.
  */
-export function sampleTodayCards(count, { wide, icons }) {
+export function sampleTodayCards(count, { icons }) {
   const kinds = [
     () => ({
       kind: 'plain',
@@ -45,32 +48,18 @@ export function sampleTodayCards(count, { wide, icons }) {
       destLabel: 'Accounts',
       faces: { members: [ANA, BEN], empty: 0, caption: 'For Ana and Ben' },
     }),
-    () =>
-      wide
-        ? {
-            kind: 'birthdays',
-            tone: 'celebrate',
-            icon: icons.Cake,
-            kicker: 'Birthday today',
-            title: '3 birthdays today',
-            detail: 'Maria, Joy and Paolo',
-            to: '/members',
-            dest: 'members',
-            destLabel: 'Birthdays, in People',
-            members: [MARIA, JOY, PAOLO],
-          }
-        : {
-            kind: 'birthday',
-            tone: 'celebrate',
-            kicker: 'Birthday today',
-            detail: 'Maria Santos',
-            to: '/members',
-            dest: 'members',
-            destLabel: 'their record in People',
-            member: MARIA,
-            name: 'Maria',
-            turning: 40,
-          },
+    () => ({
+      kind: 'birthday',
+      tone: 'celebrate',
+      kicker: 'Birthday today',
+      detail: 'Maria Santos',
+      to: '/members',
+      dest: 'members',
+      destLabel: 'their record in People',
+      member: MARIA,
+      name: 'Maria',
+      turning: 40,
+    }),
     () => ({
       kind: 'dated',
       tone: 'plain',
@@ -78,6 +67,7 @@ export function sampleTodayCards(count, { wide, icons }) {
       kicker: 'You are serving',
       title: `You're on ${weekday(5)}`,
       detail: 'Keys · Vocals',
+      photo: sundayService,
       to: '/schedules',
       dest: 'lineups',
       destLabel: 'that Sunday in Schedules',
@@ -121,6 +111,7 @@ export function sampleTodayCards(count, { wide, icons }) {
       kicker: 'Coming up',
       title: 'Youth night',
       detail: `${weekday(3)} · 7:00 PM`,
+      photo: youthCamp,
       to: '/events',
       dest: 'events',
       destLabel: 'the day in Events',
@@ -183,3 +174,4 @@ export function sampleTodayCards(count, { wide, icons }) {
     dismissible: true,
   }))
 }
+

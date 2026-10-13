@@ -87,28 +87,23 @@ CHANGELOG.md.
   apps opens `/apps` (`AllApps.vue`): every app, the five on the home on a shelf, press
   and hold to drag one onto it. The order is the person's, saved to their
   account (`useAppOrder`).
-  On a desktop (`lg`) the same home is read top to bottom like a page, not
-  swiped like a deck, and like a phone's it fits one screen and never scrolls:
-  1. The greeting as words on the sky, in its ink (`--scene-ink`): the day,
-     the weather in a word, the church. Search is the top bar's alone (its
-     magnifying glass and Ctrl K); a second field here said it twice. The day
-     card is not drawn there; the greeting says what it said.
-  2. The apps as a quiet row, whatever the style (`HomeCard`'s `row`): each
-     app's picture on a solid white plate ringed in its colour, and its name,
-     standing on the sky, each as wide as its name. Six white cards there
-     pulled the eye as hard as the work below them.
-  3. Three columns as tall as what is in them: **Needs you** (the `warn`
-     cards) and **Good to know** (`AppHeroDeck`'s `spread`, each card a
-     `DeckRow`), then, narrower (19rem), the week ahead as an agenda of only
-     the days with something on (`HomeWeek`, for whoever has Events) with the
-     day's verse. A line is one icon and its words: no box of its own, no
-     faces, no second picture of where it goes; its tone is in its icon
-     alone, and hovering shades it. A column with more than the screen has
-     room for scrolls inside itself, never the page. No paging, loops or
-     "more", and no grid of boxes. Birthdays are one line, naming everyone.
-     What is on is said in the week only.
-  4. The church on its hill in whatever room is left, the full width of the
-     page; everything else keeps to a 72rem column.
+  On a desktop (`lg`) the same home is read top to bottom, not swiped, and
+  like a phone's it fits one screen and never scrolls:
+  1. The apps in the style the church chose (Settings > Home), each kept to
+     one line and six in a row (`HomeAppCards`/`HomeCard`'s `inline`: accent's
+     stripe, illustrated's wash, list's sweep; orbit draws as compact and
+     masonry as illustrated), each as wide as its name.
+  2. The very same cards as the phone's deck, drawn by the same `card` slot,
+     side by side on a grid (`AppHeroDeck`'s `spread`): three to a row on a
+     laptop, four from 1536px, each about a phone card's width and a row a
+     phone card's height. The day's card, in the church's colour, comes first
+     and is two rows tall once the others fill a row beside it; on a desktop
+     it carries the day's verse over the church. A desktop is never given a
+     lesser kind of card: thin lines in their place read as a poorer design
+     than the phone's. On a day with more cards than fit, only the grid
+     scrolls. Putting one away works as in the deck.
+  3. The church on its hill in whatever room is left, the full width of the
+     page; everything else keeps to a 90rem column.
 - The shell pads the content area (`p-0 sm:p-4 lg:px-8 lg:py-3`) of a page
   that is not yet an app, so **such a page never adds its own outer padding.**
 
