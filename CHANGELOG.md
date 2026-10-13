@@ -11,6 +11,21 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.17] — 2026-10-13
+
+A tidier home on a computer: less to look at, the same things to do.
+
+### Changed
+
+- **Your apps are a quiet row** of their pictures and names across the sky,
+  instead of six white boxes, and every name shows in full.
+- **One search, in the top bar.** The second search box on the home is gone;
+  the magnifying glass and Ctrl K still search everything.
+- **Each line in Today is one picture and its words.** The small picture of
+  the app it opens is gone from the right, so more of each line can be read.
+- **The week ahead is a narrower column,** giving Today more room.
+- **Your greeting is crisper,** without the glow behind it.
+
 ## [0.35.16] — 2026-10-13
 
 ### Changed

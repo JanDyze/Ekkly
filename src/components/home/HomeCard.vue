@@ -20,6 +20,12 @@ import HomeCardIcon from './HomeCardIcon.vue'
 // Every style is flat. Cards are set off the page by a hairline ring and a
 // fill, never a shadow, and answer a pointer or a finger by deepening the ring
 // and the fill rather than by lifting, growing or shrinking.
+//
+// One more, `row`, is not a style anyone picks: it is how the home draws its
+// apps on a desktop, whatever the style. There the apps are a row above the
+// day's lists, and six white cards over them pulled the eye as hard as what
+// needed doing; so each is only its picture on its own colour and its name,
+// standing on the sky, with a soft ground only when pointed at.
 
 defineProps({
   variant: { type: String, default: 'accent' },
@@ -80,6 +86,19 @@ const press = 'animate-rise transition-[background-color,box-shadow] duration-20
       <span v-if="card.tagline" class="mt-0.5 block truncate text-xs text-gray-600 dark:text-gray-300">{{ card.tagline }}</span>
     </span>
     <span v-if="badge > 0" :class="[BADGE, badgeTone(urgent), 'absolute right-2.5 top-2.5 z-10']">{{ badgeText(badge) }}</span>
+  </component>
+
+  <!-- The desktop home's row of apps: no card, the picture and the name on
+       the sky, in the sky's own ink so it reads by day and by night. -->
+  <component
+    v-else-if="variant === 'row'"
+    :is="as"
+    :data-morph-card="card.more ? undefined : card.path"
+    :class="['group flex h-14 min-w-0 items-center gap-3 rounded-2xl px-2.5 text-left transition-colors duration-150 hover:bg-white/55 dark:hover:bg-white/10', press]"
+  >
+    <HomeCardIcon :card="card" :play="play" size="size-10" art="size-6.5" ground="home-plate" />
+    <span :data-morph-label="card.path" class="min-w-0 truncate text-[15px] font-semibold text-(--scene-ink)">{{ card.name }}</span>
+    <span v-if="badge > 0" :class="[BADGE, badgeTone(urgent)]">{{ badgeText(badge) }}</span>
   </component>
 
   <!-- 3. Compact: slim rows, the picture on the left. -->
@@ -248,6 +267,17 @@ const press = 'animate-rise transition-[background-color,box-shadow] duration-20
 }
 .home-chip {
   background: color-mix(in srgb, var(--color-white) 85%, transparent);
+}
+
+/* The row's picture stands on the sky with no card round it, so its ground is
+   solid: a tint over blue came out muddy. White, ringed in the app's colour. */
+.home-plate {
+  background: var(--color-white);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--hue) 30%, transparent);
+}
+.dark .home-plate {
+  background: var(--color-gray-800);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--hue) 40%, transparent);
 }
 .dark .home-chip {
   background: color-mix(in srgb, var(--color-white) 12%, transparent);

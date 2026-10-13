@@ -1,7 +1,5 @@
 <script setup>
 import { RouterLink } from 'vue-router'
-import { ChevronRight } from '../../icons'
-import AppArt from '../common/AppArt.vue'
 
 // One card of a deck told as a line, for the list a deck becomes on a desktop
 // (AppHeroDeck's `spread`): however many cards there are, every one is on show
@@ -11,9 +9,13 @@ import AppArt from '../common/AppArt.vue'
 // the right (through `trailing`), and the app the click opens.
 //
 // The lines share one panel, so a line is not a box of its own: no fill and
-// no ring, only a shade on hover. Its tone is in its icon alone: amber for
-// something waiting on you, the church's colour for somebody's day, quiet
-// grey for the rest, so the few that need you are the ones that stand out.
+// no ring, only a shade on hover, which is all that says it is a link. Its
+// tone is in its icon alone: amber for something waiting on you, the church's
+// colour for somebody's day, quiet grey for the rest, so the few that need you
+// are the ones that stand out. It had the app it opens drawn small at its
+// right as well: two pictures a line, sixteen in eight lines, and the second
+// told nobody anything they needed to choose, so where it goes is said only
+// to a screen reader.
 
 defineProps({
   tone: { type: String, default: 'plain' },
@@ -69,12 +71,6 @@ const KICKERS = {
 
     <slot name="trailing" />
 
-    <!-- Where the click goes: the place's artwork, or a chevron where it has
-         none. The shade the line takes on hover says it is a link. -->
-    <span v-if="to" class="flex shrink-0 items-center opacity-70 transition-opacity duration-150 group-hover:opacity-100">
-      <AppArt v-if="dest" :app-key="dest" class="size-5" />
-      <ChevronRight v-else aria-hidden="true" class="size-4 text-gray-400 dark:text-gray-500" />
-      <span v-if="destLabel" class="sr-only">Opens {{ destLabel }}</span>
-    </span>
+    <span v-if="to && destLabel" class="sr-only">Opens {{ destLabel }}</span>
   </component>
 </template>

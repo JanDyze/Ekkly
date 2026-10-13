@@ -17,9 +17,9 @@ import { MASONRY_SPANS, orbitPlace } from '../../data/homeCards'
 // above already wears. The cards themselves are HomeCard, which the sections
 // inside every app are drawn with too (AppShortcuts); this lays them out.
 //
-// On a desktop (lg) the six run in one row, the width each has on a phone, so
-// the apps read as one line under the Today cards rather than a block to scan.
-// Orbit keeps its circle.
+// On a desktop the home asks for `row` whatever the style (HomeCard's quiet
+// row of pictures and names); the other styles still run six across at lg
+// for anywhere else they are drawn wide. Orbit keeps its circle.
 
 const props = defineProps({
   variant: { type: String, default: 'accent' },
@@ -128,6 +128,21 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
       :card="card"
       v-bind="attrsOf(card, index)"
       :class="MASONRY_SPANS[index % MASONRY_SPANS.length]"
+    />
+  </nav>
+
+  <!-- The desktop home's quiet row (HomeCard's `row`): each app as wide as
+       its name, spread across the line, so no name is cut short to fit an
+       equal column. -->
+  <nav v-else-if="variant === 'row'" class="flex items-center justify-between gap-2" aria-label="Your apps">
+    <HomeCard
+      v-for="(card, index) in cards"
+      :key="card.key"
+      variant="row"
+      :as="RouterLink"
+      :card="card"
+      v-bind="attrsOf(card, index)"
+      class="min-w-0"
     />
   </nav>
 

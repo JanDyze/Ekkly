@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Cake, CalendarDots, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MagnifyingGlass, MicrophoneStage, Moon, Sun } from '../icons'
+import { Cake, CalendarDots, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MicrophoneStage, Moon, Sun } from '../icons'
 import AppHeroDeck from '../components/appframe/AppHeroDeck.vue'
 import CardPanes from '../components/appframe/CardPanes.vue'
 import DeckCard from '../components/appframe/DeckCard.vue'
@@ -25,7 +25,6 @@ import { useToast } from '../composables/useToast'
 import { useToday } from '../composables/useToday'
 import { useHomeVerse } from '../composables/useHomeVerse'
 import { useMediaQuery } from '../composables/useMediaQuery'
-import { useSearchSheet } from '../composables/useSearchSheet'
 import { allowedGroups } from '../data/navigation'
 import { APPS } from '../../lib/apps'
 import { getDisplayName, getFullName, listPhrase } from '../utils/memberUtils'
@@ -63,10 +62,10 @@ import { sampleTodayCards } from '../data/sampleTodayCards'
 // and is read top to bottom like a page rather than swiped like a deck: the
 // greeting as words on the sky (the day, the weather, the church) with search
 // beside it, since someone at a keyboard would rather type where they are
-// going; the apps in one slim row, because this is the way between them; then
-// three columns filling the rest of the screen: what needs you, what is good
-// to know (AppHeroDeck's `spread`), and the week ahead with the day's verse
-// (HomeWeek). Quiet lines in three panels, rather than a card, a grid of rows
+// going; the apps as a quiet row of pictures and names on the sky (HomeCard's
+// `row`), because this is the way between them; then three columns: what
+// needs you, what is good to know (AppHeroDeck's `spread`), and, narrower,
+// the week ahead with the day's verse (HomeWeek). Quiet lines in three panels, rather than a card, a grid of rows
 // and a band of seven days all asking to be read at once. What is on goes in
 // the week and nowhere else, so nothing is said twice. Like a phone's, it
 // fits one screen and never scrolls: a column with more than it can hold
@@ -87,9 +86,6 @@ onMounted(() => {
 
 const { can, isAdmin, myMember } = usePermissions()
 const wide = useMediaQuery('(min-width: 1024px)')
-const { show: openSearch } = useSearchSheet()
-// The keys that open search anywhere (Topbar), as this keyboard names them.
-const searchKeys = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K'
 const { displayName } = useAuth()
 const { church, logoUrl } = useAppSettings()
 const today = useToday()
@@ -505,11 +501,11 @@ const lineOf = (item) => {
 
     <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:max-w-none lg:gap-6 lg:px-0 lg:pt-6">
       <!-- On a desktop, the greeting is words on the sky, in the sky's own ink
-           (HomeScene) with its halo, as the verse on the picture is: the day,
-           the weather over the church, and the church. Search beside it opens
-           SearchSheet, the same as the top bar's magnifying glass. -->
+           (HomeScene): the day, the weather over the church, and the church.
+           Search is the top bar's (its magnifying glass, and Ctrl K): a second
+           search field here said the same thing twice. -->
       <header v-if="wide" :class="['flex items-end justify-between gap-8 lg:order-1', COLUMN]">
-        <div class="on-sky min-w-0">
+        <div class="min-w-0">
           <h1 class="text-[32px] font-bold leading-tight tracking-tight text-balance text-(--scene-ink)">{{ greeting }}</h1>
           <p class="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[15px] font-medium text-(--scene-ink)">
             <span>{{ todayLong }}</span>
@@ -529,16 +525,6 @@ const lineOf = (item) => {
             </template>
           </p>
         </div>
-        <button
-          type="button"
-          aria-haspopup="dialog"
-          class="flex h-11 w-80 shrink-0 items-center gap-3 rounded-full bg-white/90 px-4 text-left ring-1 ring-black/5 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:bg-gray-900/80 dark:ring-white/10 dark:hover:bg-gray-900"
-          @click="openSearch"
-        >
-          <MagnifyingGlass class="size-[18px] shrink-0 text-gray-500 dark:text-gray-400" />
-          <span class="min-w-0 flex-1 truncate text-sm text-gray-500 dark:text-gray-400">Search people, songs, events…</span>
-          <kbd class="shrink-0 rounded-md bg-gray-100 px-1.5 py-0.5 font-sans text-xs font-semibold text-gray-500 dark:bg-white/10 dark:text-gray-300">{{ searchKeys }}</kbd>
-        </button>
       </header>
 
       <!-- 1. Today, most important on top. On a desktop it comes after the
@@ -547,7 +533,7 @@ const lineOf = (item) => {
       <!-- The three columns are as tall as what is in them, never taller than
            the screen has room for (a column with more scrolls inside itself),
            and the hill takes whatever is left under them. -->
-      <div :class="['lg:order-3 lg:grid lg:min-h-0 lg:grid-rows-[minmax(0,1fr)] lg:items-start lg:gap-5', COLUMN, hasAside ? 'lg:grid-cols-3' : 'lg:grid-cols-2']">
+      <div :class="['lg:order-3 lg:grid lg:min-h-0 lg:grid-rows-[minmax(0,1fr)] lg:items-start lg:gap-5', COLUMN, hasAside ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_19rem]' : 'lg:grid-cols-2']">
       <AppHeroDeck :cards="cards" scope="home" label="Today" :spread="wide">
         <template #row="{ card }">
           <DeckRow
@@ -717,7 +703,7 @@ const lineOf = (item) => {
       <HomeAppCards
         v-else
         :class="['lg:order-2', COLUMN]"
-        :variant="wide ? 'compact' : cardStyle"
+        :variant="wide ? 'row' : cardStyle"
         :apps="primary"
         :others="others"
         :hold="hold"
@@ -811,8 +797,7 @@ const lineOf = (item) => {
    sky and dark on a night one (HomeScene's --scene-ink-halo), whatever the
    app's theme: it used to follow the theme, and dark mode under a noon sky
    put white letters in a dark glow on pale blue. */
-.verse-open,
-.on-sky {
+.verse-open {
   text-shadow:
     0 0 10px var(--scene-ink-halo),
     0 0 2px var(--scene-ink-halo);
