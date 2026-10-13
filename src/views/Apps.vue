@@ -128,6 +128,32 @@ const greeting = computed(() => {
 const memberOf = (id) => findRosterMember(today.people.members.value, id)
 const keyOf = (member) => member.firestoreId || member.id
 
+/* ---------------------------------------------------- made-up cards (dev) */
+
+// How many made-up cards to add (sampleTodayCards), from `?cards=N` and kept
+// for the tab once set: a sign-in, the church picker or any redirect rebuilds
+// the address without it, and the preview went with it. `?cards=0` ends it.
+// In a dev build only; everywhere else this is 0 and nothing is read.
+const SAMPLE_STORE = 'ekkly:sample-cards'
+const sampleCount = computed(() => {
+  if (!import.meta.env.DEV) return 0
+  const asked = route.query.cards
+  if (asked !== undefined) {
+    const n = Math.min(Math.max(Number(asked) || 0, 0), 30)
+    try {
+      sessionStorage.setItem(SAMPLE_STORE, String(n))
+    } catch {
+      // Not kept past this page; it still shows on it.
+    }
+    return n
+  }
+  try {
+    return Number(sessionStorage.getItem(SAMPLE_STORE)) || 0
+  } catch {
+    return 0
+  }
+})
+
 /* -------------------------------------------------------------- the deck */
 
 // Unlike an app's own deck, these cards each lead into a different app, so
@@ -302,7 +328,7 @@ const cards = computed(() => {
 
   // Made-up cards to see a full day with, while working locally: `?cards=10`.
   // Only in a dev build, so a church's home never shows one.
-  const samples = import.meta.env.DEV ? Math.min(Number(route.query.cards) || 0, 30) : 0
+  const samples = import.meta.env.DEV ? sampleCount.value : 0
   if (samples > 0) {
     list.push(...sampleTodayCards(samples, {
       wide: wide.value,
