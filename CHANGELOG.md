@@ -11,6 +11,18 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.9] — 2026-10-13
+
+The Today row on a computer says plainly what is in it.
+
+### Changed
+
+- **The day card leads the Today row** and stays put. The other cards sit
+  beside it two at a time, and when there are more, the row says which you
+  are seeing ("1–2 of 4") with arrows to the rest. The row no longer loops
+  round or shifts cards along one place at a time, so what you were reading
+  never moves under you.
+
 ## [0.35.8] — 2026-10-13
 
 The Today cards on a computer stay one tidy row.

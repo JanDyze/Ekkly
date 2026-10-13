@@ -90,9 +90,10 @@ CHANGELOG.md.
   On a desktop (`lg`) the same home is laid out for a mouse: a search field
   first (it opens `SearchSheet`, shared through `useSearchSheet`), the Today
   cards side by side rather than a deck to swipe (`AppHeroDeck`'s `spread`:
-  one row of three, never a second; with more, the always-true card keeps the
-  last place and the others turn through the first two, by arrows, dots, keys,
-  a drag or a trackpad swipe), the
+  one row of three, never a second; the always-true card leads it and stays,
+  and with more the others go by two at a time under a "1–2 of 4" and arrows,
+  stopping at either end, never looping, by arrows, keys, a drag or a trackpad
+  swipe), the
   apps in one row of six, and the church and verse in room of their own at
   the foot. There, and only there, the home may scroll.
 - The shell pads the content area (`p-0 sm:p-4 lg:px-8 lg:py-3`) of a page

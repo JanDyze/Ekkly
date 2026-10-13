@@ -49,11 +49,14 @@ import { useSounds } from '../../composables/useSounds'
 // behind a move nobody makes, and a wide screen has the room to show them all
 // at once. A row holds `columns` of them, and never grows a second row: the
 // cards are one height, and a row of one under a row of three broke that.
-// Where there are more, the last place keeps the card that is always true,
-// and the places before it turn through the rest, a card at a time and round
-// again, the way the deck does: by the arrows and dots under the row, the
-// arrow keys, a drag sideways, or a sideways swipe on a trackpad. Putting a
-// card away works as it does in the deck.
+// The card that is always true (the deck's last) leads the row and stays put;
+// the rest fill the places after it. Where there are more than fit, they go by
+// in pages, and the row says so in words over it — "1–2 of 4", with arrows —
+// rather than leaving a full-looking row to hide the others. The deck's loop
+// is left behind here: cards that came round again, shifting a place each
+// turn, read as a row that had changed under you. A page turns by the arrows,
+// the arrow keys, a drag sideways, or a sideways swipe on a trackpad, and stops
+// at either end. Putting a card away works as it does in the deck.
 
 const props = defineProps({
   cards: { type: Array, required: true },
@@ -131,45 +134,45 @@ const visible = computed(() =>
 
 /* --------------------------------------------------------- laid out flat */
 
-// The cards that turn through the row: all but the last, which stays put.
-const rotating = computed(() => visible.value.slice(0, -1))
-const turns = computed(() => props.spread && visible.value.length > props.columns)
-// The first of the turning cards on show, and which way the row last turned,
-// so the card coming in arrives from that side.
+// The cards that go by in pages: all but the last, which leads the row.
+const paged = computed(() => visible.value.slice(0, -1))
+const pageSize = computed(() => props.columns - 1)
+const turns = computed(() => props.spread && paged.value.length > pageSize.value)
+// The first card of the page on show, and which way the row last turned, so
+// the page coming in arrives from that side. The last page is a full one,
+// ending on the last card, rather than one card and a gap.
 const turn = ref(0)
 const turnDir = ref(1)
-const wrapTurn = (i) => {
-  const n = rotating.value.length
-  return n ? ((i % n) + n) % n : 0
-}
+const lastStart = computed(() => Math.max(paged.value.length - pageSize.value, 0))
+const clampTurn = (i) => Math.min(Math.max(i, 0), lastStart.value)
 
-// A card put away must not leave the row pointing past the last one.
-watch(() => rotating.value.length, () => {
-  turn.value = wrapTurn(turn.value)
+// A card put away must not leave the row on a page past the end.
+watch(lastStart, () => {
+  turn.value = clampTurn(turn.value)
 })
 
-// Spread out, the cards in the row: those from `turn` on, then the last.
+// Spread out, the row: the card that is always true, then the page on show.
 const shown = computed(() => {
   const all = visible.value
-  if (!props.spread || all.length <= props.columns) return all
-  const row = Array.from({ length: props.columns - 1 }, (_, k) => rotating.value[wrapTurn(turn.value + k)])
-  return [...row, all[all.length - 1]]
+  if (!props.spread || !all.length) return all
+  return [all[all.length - 1], ...paged.value.slice(turn.value, turn.value + pageSize.value)]
 })
-const isShowing = (card) => shown.value.includes(card)
+
+// What the row says over it: which of the cards are on show, of how many.
+const pageLabel = computed(() => {
+  const first = turn.value + 1
+  const last = Math.min(turn.value + pageSize.value, paged.value.length)
+  return `${first === last ? first : `${first}–${last}`} of ${paged.value.length}`
+})
 
 const turnRow = (dir) => {
   if (!turns.value) return
+  const next = clampTurn(turn.value + dir * pageSize.value)
+  if (next === turn.value) return
   turnDir.value = dir
-  turn.value = wrapTurn(turn.value + dir)
+  turn.value = next
   // Heard the way the deck's next card is: the cards go off to the side.
   swipe(-dir)
-}
-
-/** Straight to a card, from its dot: it becomes the first in the row. */
-const turnTo = (i) => {
-  if (!turns.value || i === turn.value) return
-  turnDir.value = i > turn.value ? 1 : -1
-  turn.value = wrapTurn(i)
 }
 
 // A sideways swipe on a trackpad turns the row, once per swipe: the wheel
@@ -487,8 +490,32 @@ const fanned = (depth) => {
          The region round it is clipped sideways at the screen's edge rather
          than the column's, so a swiped card can travel to the edge without
          the page scrolling sideways under it. -->
-    <!-- Spread out, the same cards side by side in one row, turning through
-         it (TransitionGroup slides the ones that stay into their new places). -->
+    <!-- Laid out flat with more cards than fit: which are on show, of how
+         many, and the arrows to the rest, over the cards they page through. -->
+    <div v-if="turns" class="flex items-center justify-end gap-1">
+      <span class="mr-1.5 text-sm font-semibold tabular-nums text-gray-600 dark:text-gray-300" aria-live="polite">{{ pageLabel }}</span>
+      <button
+        type="button"
+        class="flex size-9 items-center justify-center rounded-full bg-white/80 text-gray-700 ring-1 ring-black/5 transition-colors hover:bg-white disabled:cursor-default disabled:opacity-40 disabled:hover:bg-white/80 dark:bg-gray-800/80 dark:text-gray-200 dark:ring-white/10 dark:hover:bg-gray-800"
+        aria-label="Previous cards"
+        :disabled="turn === 0"
+        @click="turnRow(-1)"
+      >
+        <ChevronLeft class="size-4" />
+      </button>
+      <button
+        type="button"
+        class="flex size-9 items-center justify-center rounded-full bg-white/80 text-gray-700 ring-1 ring-black/5 transition-colors hover:bg-white disabled:cursor-default disabled:opacity-40 disabled:hover:bg-white/80 dark:bg-gray-800/80 dark:text-gray-200 dark:ring-white/10 dark:hover:bg-gray-800"
+        aria-label="Next cards"
+        :disabled="turn >= lastStart"
+        @click="turnRow(1)"
+      >
+        <ChevronRight class="size-4" />
+      </button>
+    </div>
+
+    <!-- Spread out, the same cards side by side in one row, a page at a time
+         (TransitionGroup slides the page coming in from its side). -->
     <component
       :is="spread ? TransitionGroup : 'div'"
       ref="deck"
@@ -551,30 +578,28 @@ const fanned = (depth) => {
          either side are for whoever has not guessed the cards swipe: quiet
          enough to pass unnoticed by someone who has, and doing the same as a
          swipe (next sends the top card under) for someone who has not. -->
-    <!-- Laid out flat, the same row, for the cards that turn: a dot each,
-         lit for the ones on show. -->
-    <div v-if="spread ? turns : visible.length > 1" class="flex items-center justify-center gap-0.5">
+    <div v-if="!spread && visible.length > 1" class="flex items-center justify-center gap-0.5">
       <button
         type="button"
         class="mr-1 flex size-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-900/5 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300"
         aria-label="Previous card"
-        @click="spread ? turnRow(-1) : go(index - 1)"
+        @click="go(index - 1)"
       >
         <ChevronLeft class="size-4" />
       </button>
       <button
-        v-for="(card, i) in spread ? rotating : visible"
+        v-for="(card, i) in visible"
         :key="card.key"
         type="button"
         class="flex h-4 items-center px-0.5"
-        :aria-label="`Card ${i + 1} of ${(spread ? rotating : visible).length}`"
-        :aria-current="(spread ? isShowing(card) : i === index) ? 'true' : undefined"
-        @click="spread ? turnTo(i) : go(i)"
+        :aria-label="`Card ${i + 1} of ${visible.length}`"
+        :aria-current="i === index ? 'true' : undefined"
+        @click="go(i)"
       >
         <span
           :class="[
             'block h-1.5 rounded-full transition-all duration-300',
-            (spread ? isShowing(card) : i === index) ? 'w-5 bg-primary dark:bg-primary-light' : 'w-1.5 bg-gray-300 dark:bg-gray-600',
+            i === index ? 'w-5 bg-primary dark:bg-primary-light' : 'w-1.5 bg-gray-300 dark:bg-gray-600',
           ]"
         />
       </button>
@@ -582,7 +607,7 @@ const fanned = (depth) => {
         type="button"
         class="ml-1 flex size-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-900/5 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300"
         aria-label="Next card"
-        @click="spread ? turnRow(1) : sendUnder(-1)"
+        @click="sendUnder(-1)"
       >
         <ChevronRight class="size-4" />
       </button>
@@ -591,9 +616,9 @@ const fanned = (depth) => {
 </template>
 
 <style scoped>
-/* Laid out flat, turning the row: the cards that stay slide to their new
-   places, the one coming in slides in from the side the row turned toward,
-   and the one going out leaves at once, out of the row's way. */
+/* Laid out flat, turning a page: the cards coming in slide in from the side
+   the row turned toward, and the ones going out leave at once, out of their
+   way. The card that leads the row never moves. */
 .row-move,
 .row-enter-active {
   transition:
