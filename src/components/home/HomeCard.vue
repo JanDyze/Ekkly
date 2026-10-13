@@ -95,7 +95,7 @@ const press = 'animate-rise transition-[background-color,box-shadow] duration-20
       <span v-if="detail" class="block truncate text-xs text-gray-500 dark:text-gray-400">{{ detail }}</span>
     </span>
     <span v-if="badge > 0" :class="[BADGE, badgeTone(urgent)]">{{ badgeText(badge) }}</span>
-    <ChevronRight v-if="!section" class="size-4 shrink-0 text-gray-300 dark:text-gray-500" />
+    <ChevronRight v-if="!section" class="size-4 shrink-0 text-gray-300 lg:hidden dark:text-gray-500" />
   </component>
 
   <!-- 4. Orbit: a round node on the circle; its place is the caller's. -->

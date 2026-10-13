@@ -18,7 +18,6 @@ import { useLiveSky } from '../composables/useLiveSky'
 import { useAppOrder } from '../composables/useAppOrder'
 import { usePressAndHold } from '../composables/usePressAndHold'
 import BirthdayCard from '../components/members/BirthdayCard.vue'
-import MemberAvatar from '../components/members/MemberAvatar.vue'
 import { usePermissions } from '../composables/usePermissions'
 import { useAuth } from '../composables/useAuth'
 import { useAppSettings } from '../composables/useAppSettings'
@@ -64,14 +63,15 @@ import { sampleTodayCards } from '../data/sampleTodayCards'
 // and is read top to bottom like a page rather than swiped like a deck: the
 // greeting as words on the sky (the day, the weather, the church) with search
 // beside it, since someone at a keyboard would rather type where they are
-// going; the apps in one row, because this is the way between them; then
-// Today as one quiet list, what needs you before what is good to know
-// (AppHeroDeck's `spread`), with the week ahead and the day's verse in a
-// narrow column beside it (HomeWeek); and the church on its hill as a strip
-// at the foot. One panel of lines and one short column, rather than a card,
-// a grid of rows and a band of seven days all asking to be read at once.
-// What is on goes in the week and nowhere else, so nothing is said twice. It
-// may scroll there, where a phone's home never does.
+// going; the apps in one slim row, because this is the way between them; then
+// three columns filling the rest of the screen: what needs you, what is good
+// to know (AppHeroDeck's `spread`), and the week ahead with the day's verse
+// (HomeWeek). Quiet lines in three panels, rather than a card, a grid of rows
+// and a band of seven days all asking to be read at once. What is on goes in
+// the week and nowhere else, so nothing is said twice. Like a phone's, it
+// fits one screen and never scrolls: a column with more than it can hold
+// scrolls inside itself, and the hill, which only had the room left over, is
+// left to the phone.
 
 const route = useRoute()
 const router = useRouter()
@@ -370,8 +370,9 @@ const cards = computed(() => {
 /* ------------------------------------------------- a card told as a row */
 
 // On a desktop each card but the day's is a row (DeckRow): the line under its
-// headline is the most telling thing the card holds, and the faces it is about
-// sit small at its right.
+// headline is the most telling thing the card holds. Its faces are left to the
+// phone's card: in a third of a screen they took the room the words needed,
+// and the line already names who it is about.
 const rowDetail = (card) => {
   if (card.chips) return card.chips.map((chip) => chip.label).join(', ')
   if (card.tasks) {
@@ -383,9 +384,13 @@ const rowDetail = (card) => {
   if (card.faces?.caption && !card.date) return card.faces.caption
   return card.detail
 }
-const rowFaces = (card) => (card.members || card.faces?.members || []).slice(0, 4)
 
 /* ------------------------------------------------------ the desktop page */
+
+// The column everything but the hill keeps to on a desktop. The page itself
+// is the full width, so the hill can run from edge to edge under it rather
+// than stop short at the column's sides.
+const COLUMN = 'lg:mx-auto lg:w-full lg:max-w-6xl lg:px-8'
 
 // The greeting's line on a desktop: the day, and whose church this is.
 const todayLong = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
@@ -495,18 +500,18 @@ const lineOf = (item) => {
        home grows to fit rather than leave its apps under the bar: it still
        fits one screen wherever there is room, and scrolls only where there is
        not. -->
-  <div class="home-scene relative h-full overflow-hidden bg-(--scene-sky-3) with-bar:overflow-y-auto with-bar:overscroll-contain lg:overflow-y-auto" v-bind="sky">
+  <div class="home-scene relative h-full overflow-hidden bg-(--scene-sky-3) with-bar:overflow-y-auto with-bar:overscroll-contain" v-bind="sky">
     <HomeScene part="sky" class="pointer-events-none absolute inset-0 size-full" />
 
-    <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:h-auto lg:min-h-full lg:max-w-6xl lg:gap-7 lg:px-8 lg:pt-8">
+    <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:max-w-none lg:gap-6 lg:px-0 lg:pt-6">
       <!-- On a desktop, the greeting is words on the sky, in the sky's own ink
            (HomeScene) with its halo, as the verse on the picture is: the day,
            the weather over the church, and the church. Search beside it opens
            SearchSheet, the same as the top bar's magnifying glass. -->
-      <header v-if="wide" class="flex items-end justify-between gap-8 lg:order-1">
+      <header v-if="wide" :class="['flex items-end justify-between gap-8 lg:order-1', COLUMN]">
         <div class="on-sky min-w-0">
           <h1 class="text-[32px] font-bold leading-tight tracking-tight text-balance text-(--scene-ink)">{{ greeting }}</h1>
-          <p class="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[15px] text-(--scene-ink-soft)">
+          <p class="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[15px] font-medium text-(--scene-ink)">
             <span>{{ todayLong }}</span>
             <template v-if="weather">
               <span aria-hidden="true">·</span>
@@ -540,7 +545,10 @@ const lineOf = (item) => {
       <!-- 1. Today, most important on top. On a desktop it comes after the
            apps: one list, what needs you then what is good to know, with the
            week and the verse in a column beside it. -->
-      <div :class="['lg:order-3', hasAside ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-6' : '']">
+      <!-- The three columns are as tall as what is in them, never taller than
+           the screen has room for (a column with more scrolls inside itself),
+           and the hill takes whatever is left under them. -->
+      <div :class="['lg:order-3 lg:grid lg:min-h-0 lg:grid-rows-[minmax(0,1fr)] lg:items-start lg:gap-5', COLUMN, hasAside ? 'lg:grid-cols-3' : 'lg:grid-cols-2']">
       <AppHeroDeck :cards="cards" scope="home" label="Today" :spread="wide">
         <template #row="{ card }">
           <DeckRow
@@ -552,25 +560,12 @@ const lineOf = (item) => {
             :to="card.to"
             :dest="card.dest"
             :dest-label="card.destLabel"
-            :inset="card.dismissible"
           >
             <!-- Something on a day: its date, as the deck card shows it. -->
             <template v-if="card.date" #leading>
               <span class="flex size-10 shrink-0 flex-col items-center justify-center rounded-xl bg-primary/10 leading-none text-primary dark:bg-primary-light/15 dark:text-primary-light">
                 <span class="text-[9px] font-bold uppercase">{{ card.date.month }}</span>
                 <span class="mt-px text-sm font-bold tabular-nums">{{ card.date.day }}</span>
-              </span>
-            </template>
-            <template v-if="rowFaces(card).length" #trailing>
-              <span class="flex shrink-0 -space-x-2" aria-hidden="true">
-                <MemberAvatar
-                  v-for="member in rowFaces(card)"
-                  :key="keyOf(member)"
-                  :member="member"
-                  alt=""
-                  size="h-7 w-7"
-                  :plain-class="card.tone === 'warn' ? 'ring-2 ring-amber-50 dark:ring-gray-800' : 'ring-2 ring-white dark:ring-gray-800'"
-                />
               </span>
             </template>
           </DeckRow>
@@ -686,7 +681,7 @@ const lineOf = (item) => {
 
       <aside
         v-if="hasAside"
-        class="flex flex-col gap-6 rounded-[28px] bg-white/90 p-5 ring-1 ring-black/5 dark:bg-gray-900/80 dark:ring-white/10"
+        class="flex max-h-full min-h-0 flex-col gap-6 overflow-y-auto rounded-[28px] bg-white/90 p-5 ring-1 ring-black/5 [scrollbar-width:thin] dark:bg-gray-900/80 dark:ring-white/10"
       >
         <HomeWeek v-if="showWeek" :days="today.week.value" :events="today.eventsThisWeek.value" />
 
@@ -711,7 +706,7 @@ const lineOf = (item) => {
            desktop, straight under the greeting -->
       <div
         v-if="!allApps.length"
-        class="rounded-2xl border border-dashed border-gray-300 p-8 text-center lg:order-2 dark:border-gray-600"
+        :class="['rounded-2xl border border-dashed border-gray-300 p-8 text-center lg:order-2 dark:border-gray-600', COLUMN]"
       >
         <p class="text-sm text-gray-500 dark:text-gray-400">Nothing has been shared with this account yet.</p>
         <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">An administrator grants access by ministry in Settings.</p>
@@ -721,8 +716,8 @@ const lineOf = (item) => {
            themselves (HomeAppCards, useHomeCards). -->
       <HomeAppCards
         v-else
-        class="lg:order-2"
-        :variant="cardStyle"
+        :class="['lg:order-2', COLUMN]"
+        :variant="wide ? 'compact' : cardStyle"
         :apps="primary"
         :others="others"
         :hold="hold"
@@ -737,9 +732,10 @@ const lineOf = (item) => {
            is never shorter than the bar's space, which is what keeps the apps
            above it - while the verse keeps to the part of the room above the
            bar (verse-space), and steps aside by that part's height. -->
-      <!-- On a desktop the hill is a strip at the foot, the church whole in
-           it, and the verse has moved to the column beside Today. -->
-      <section class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space) lg:order-4 lg:-mx-8 lg:mt-0 lg:min-h-32" aria-label="A verse for today">
+      <!-- On a desktop the hill takes the room left under the columns, the
+           church stepping aside where there is too little (the container
+           queries below), and the verse has moved to the column beside Today. -->
+      <section class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space) lg:order-4 lg:mx-0 lg:mt-0" aria-label="A verse for today">
         <HomeScene part="land" class="scene pointer-events-none absolute inset-0 size-full" />
 
         <div class="verse-space pointer-events-none absolute inset-x-0 top-0 bottom-(--bottom-bar-space)">

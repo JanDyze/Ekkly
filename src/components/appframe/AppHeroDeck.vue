@@ -48,15 +48,15 @@ import { useSounds } from '../../composables/useSounds'
 // `spread` is the same deck on a desktop, where nothing has to hide. A swipe
 // is a thumb's gesture: with a mouse it hides every card but the top one
 // behind a move nobody makes. So every card but the last is a line (the
-// `row` slot, a DeckRow) in one quiet panel, in two groups: what is waiting
-// on you (a `warn` card), then what is good to know, each in the deck's
-// order. The last card, the one that is always true, is the page's to show
-// another way (the home's greeting), so it is left out here. Every line is on
-// show; the panel never pages, loops or hides one behind a count, and with
-// one panel and one column, ten lines read as a list rather than ten boxes
-// competing, the few that need you leading. Nothing waiting is said in words.
-// Putting a card away works as it does in the deck, and the lines after it
-// close the gap.
+// `row` slot, a DeckRow), in two quiet panels side by side: what is waiting
+// on you (a `warn` card), and what is good to know, each in the deck's order.
+// The last card, the one that is always true, is the page's to show another
+// way (the home's greeting), so it is left out here. Every line is there; a
+// panel never pages, loops or hides one behind a count. The panels fill the
+// height they are given and a line past it scrolls inside its own panel, so
+// the page around them never has to. An empty panel says so in words. Putting
+// a card away works as it does in the deck, and the lines after it close the
+// gap. The section spans two columns of the grid it is put in.
 
 const props = defineProps({
   cards: { type: Array, required: true },
@@ -70,7 +70,8 @@ const props = defineProps({
   // there is nothing in either.
   urgentLabel: { type: String, default: 'Needs you' },
   restLabel: { type: String, default: 'Good to know' },
-  emptyText: { type: String, default: 'Nothing needs you today.' },
+  urgentEmpty: { type: String, default: 'Nothing needs you today.' },
+  restEmpty: { type: String, default: 'Nothing else today.' },
 })
 
 /* ------------------------------------------------------------- dismissing */
@@ -168,9 +169,9 @@ const dismiss = (card) => {
 // Every card but the last, the one that is always true, in its two groups.
 const rows = computed(() => visible.value.slice(0, -1))
 const groups = computed(() => [
-  { key: 'urgent', label: props.urgentLabel, cards: rows.value.filter((card) => card.tone === 'warn') },
-  { key: 'rest', label: props.restLabel, cards: rows.value.filter((card) => card.tone !== 'warn') },
-].filter((group) => group.cards.length))
+  { key: 'urgent', label: props.urgentLabel, empty: props.urgentEmpty, cards: rows.value.filter((card) => card.tone === 'warn') },
+  { key: 'rest', label: props.restLabel, empty: props.restEmpty, cards: rows.value.filter((card) => card.tone !== 'warn') },
+])
 
 /* -------------------------------------------------------------- the deck */
 
@@ -403,20 +404,25 @@ const fanned = (depth) => {
 </script>
 
 <template>
-  <!-- Laid out flat: one panel, what needs you and then what is good to
-       know, a line each. Nearly opaque, because it stands on the home's
-       picture and has to read over a cloud. -->
+  <!-- Laid out flat: two panels side by side, what needs you and what is
+       good to know, a line each. Nearly opaque, because they stand on the
+       home's picture and have to read over a cloud. -->
   <section
     v-if="spread"
     :aria-label="label"
-    class="rounded-[28px] bg-white/90 p-2 ring-1 ring-black/5 dark:bg-gray-900/80 dark:ring-white/10"
+    class="col-span-2 grid max-h-full min-h-0 grid-cols-2 grid-rows-[minmax(0,1fr)] items-start gap-5"
   >
-    <div v-for="group in groups" :key="group.key" class="not-first:mt-2">
+    <div
+      v-for="group in groups"
+      :key="group.key"
+      class="flex max-h-full min-h-0 flex-col rounded-[28px] bg-white/90 p-2 ring-1 ring-black/5 dark:bg-gray-900/80 dark:ring-white/10"
+    >
       <h3 class="flex items-baseline gap-2 px-3 pb-1 pt-3 text-sm font-semibold text-gray-900 dark:text-white">
         {{ group.label }}
-        <span class="font-medium tabular-nums text-gray-500 dark:text-gray-400">{{ group.cards.length }}</span>
+        <span v-if="group.cards.length" class="font-medium tabular-nums text-gray-500 dark:text-gray-400">{{ group.cards.length }}</span>
       </h3>
-      <TransitionGroup tag="ul" name="row" class="relative flex flex-col">
+      <p v-if="!group.cards.length" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">{{ group.empty }}</p>
+      <TransitionGroup v-else tag="ul" name="row" class="relative flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:thin]">
         <li
           v-for="card in group.cards"
           :key="card.key"
@@ -433,16 +439,17 @@ const fanned = (depth) => {
               :to="card.to"
               :dest="card.dest"
               :dest-label="card.destLabel"
-              :inset="card.dismissible"
             />
           </slot>
 
           <!-- Quiet until the row is pointed at, where there is a pointer to
-               point with; always there on a touch screen. -->
+               point with; always there on a touch screen. It sits over the
+               line's artwork, on a ground of its own, rather than keeping
+               room for itself that the words need. -->
           <button
             v-if="card.dismissible"
             type="button"
-            class="absolute right-2.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-900/5 hover:text-gray-600 focus-visible:opacity-100 group-hover/row:opacity-100 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300 [@media(hover:hover)]:opacity-0"
+            class="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-white text-gray-500 ring-1 ring-black/5 transition hover:bg-gray-100 hover:text-gray-800 focus-visible:opacity-100 group-hover/row:opacity-100 dark:bg-gray-900 dark:text-gray-400 dark:ring-white/10 dark:hover:bg-gray-800 dark:hover:text-gray-200 [@media(hover:hover)]:opacity-0"
             :aria-label="card.remember ? 'Dismiss until there are more' : 'Dismiss until the app is opened again'"
             @click="dismiss(card)"
           >
@@ -451,10 +458,6 @@ const fanned = (depth) => {
         </li>
       </TransitionGroup>
     </div>
-
-    <p v-if="!groups.length" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-      {{ emptyText }}
-    </p>
   </section>
 
   <div

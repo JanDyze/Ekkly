@@ -11,6 +11,22 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.13] — 2026-10-13
+
+The home on a computer fits one screen again.
+
+### Changed
+
+- **Nothing on the home scrolls on a computer.** Your apps sit in one slim
+  row, and Today is three columns side by side: **Needs you**, **Good to
+  know**, and **This week** with the day's verse. Each is only as tall as what
+  is in it.
+- **The church on its hill is back** below them, across the whole width of the
+  screen, in whatever room is left.
+- **Lines in Today keep their words:** they no longer give room to faces (the
+  line names who it is about), and the button to put one away appears over its
+  app's picture when you point at it.
+
 ## [0.35.12] — 2026-10-13
 
 The home on a computer, made calm: one list of what matters, read top to

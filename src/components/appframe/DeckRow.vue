@@ -50,7 +50,7 @@ const KICKERS = {
     :class="[
       'group flex min-h-15 min-w-0 items-center gap-3.5 rounded-2xl px-3 py-2.5 transition-colors duration-150',
       to ? 'hover:bg-gray-900/[0.04] focus-visible:bg-gray-900/[0.04] dark:hover:bg-white/[0.06]' : '',
-      inset ? 'pr-12' : '',
+      inset ? 'pr-10' : '',
     ]"
   >
     <slot name="leading">
@@ -69,13 +69,12 @@ const KICKERS = {
 
     <slot name="trailing" />
 
-    <span v-if="to" class="flex shrink-0 items-center gap-1.5 opacity-60 transition-opacity duration-150 group-hover:opacity-100">
+    <!-- Where the click goes: the place's artwork, or a chevron where it has
+         none. The shade the line takes on hover says it is a link. -->
+    <span v-if="to" class="flex shrink-0 items-center opacity-70 transition-opacity duration-150 group-hover:opacity-100">
       <AppArt v-if="dest" :app-key="dest" class="size-5" />
+      <ChevronRight v-else aria-hidden="true" class="size-4 text-gray-400 dark:text-gray-500" />
       <span v-if="destLabel" class="sr-only">Opens {{ destLabel }}</span>
-      <ChevronRight
-        aria-hidden="true"
-        class="size-4 text-gray-400 transition-transform duration-200 group-hover:translate-x-0.5 dark:text-gray-500"
-      />
     </span>
   </component>
 </template>

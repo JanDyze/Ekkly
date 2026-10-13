@@ -88,24 +88,26 @@ CHANGELOG.md.
   and hold to drag one onto it. The order is the person's, saved to their
   account (`useAppOrder`).
   On a desktop (`lg`) the same home is read top to bottom like a page, not
-  swiped like a deck, and kept calm however much is on:
+  swiped like a deck, and like a phone's it fits one screen and never scrolls:
   1. The greeting as words on the sky, in its ink (`--scene-ink`) with a halo:
      the day, the weather over the church, the church. Search beside it opens
      `SearchSheet` (shared through `useSearchSheet`). The day card is not
      drawn there; the greeting says what it said.
-  2. The apps in one row of six, because the home is the way between apps.
-  3. Today as one panel of lines (`AppHeroDeck`'s `spread`, each a
-     `DeckRow`): **Needs you** (the `warn` cards) then **Good to know**, each
-     with its count, every line on show. A line has no box of its own, and its
-     tone is in its icon alone, so the few that need you stand out. No paging,
-     loops or "more" (a row of cards with the rest behind arrows read as
-     deceiving), and no grid of boxes (ten of them read as overwhelming).
-     Birthdays are one line, naming everyone.
-  4. Beside it, a 20rem column: the week ahead as a short agenda of only the
-     days with something on (`HomeWeek`, for whoever has Events), and the
-     day's verse under it. What is on is said there and not as a Today line.
-  5. The church on its hill as a strip at the foot.
-  There, and only there, the home may scroll.
+  2. The apps in one slim row of six, always the compact style there, so the
+     row is never taller than one line.
+  3. Three columns as tall as what is in them: **Needs you** (the `warn`
+     cards) and **Good to know** (`AppHeroDeck`'s `spread`, each card a
+     `DeckRow`), then the week ahead as an agenda of only the days with
+     something on (`HomeWeek`, for whoever has Events) with the day's verse.
+     Every line is there, with no box of its own and its tone in its icon
+     alone; a column with more than the screen has room for scrolls inside
+     itself, never the page. No paging, loops or "more" (a row of cards with
+     the rest behind arrows read as deceiving), and no grid of boxes (ten of
+     them read as overwhelming). Birthdays are one line, naming everyone; a
+     line leaves faces to the phone's card. What is on is said in the week
+     only.
+  4. The church on its hill in whatever room is left, the full width of the
+     page; everything else keeps to a 72rem column.
 - The shell pads the content area (`p-0 sm:p-4 lg:px-8 lg:py-3`) of a page
   that is not yet an app, so **such a page never adds its own outer padding.**
 
