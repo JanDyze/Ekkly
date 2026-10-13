@@ -11,6 +11,17 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.8] — 2026-10-13
+
+The Today cards on a computer stay one tidy row.
+
+### Changed
+
+- **More than three Today cards now turn through the row** instead of opening
+  a second row under it. The day card keeps its place at the end, and the
+  others take turns beside it: use the arrows or dots under the row, the arrow
+  keys, a drag, or a sideways swipe on a trackpad. "Show more" is gone.
+
 ## [0.35.7] — 2026-10-13
 
 The home makes use of a computer's screen: everything that matters today side

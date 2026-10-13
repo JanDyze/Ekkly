@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { TransitionGroup, computed, ref, watch } from 'vue'
 import { ChevronLeft, ChevronRight, X } from '../../icons'
 import AppHero from './AppHero.vue'
 import { useSounds } from '../../composables/useSounds'
@@ -47,10 +47,13 @@ import { useSounds } from '../../composables/useSounds'
 // `spread` lays the same cards out flat, side by side, for a desktop. A swipe
 // is a thumb's gesture: with a mouse it hides every card but the top one
 // behind a move nobody makes, and a wide screen has the room to show them all
-// at once. A row holds `columns` of them; where there are more, the row keeps
-// the first ones and the last, which is the card that is always true, and
-// "Show more" opens the rest beneath. Putting a card away works as it does in
-// the deck.
+// at once. A row holds `columns` of them, and never grows a second row: the
+// cards are one height, and a row of one under a row of three broke that.
+// Where there are more, the last place keeps the card that is always true,
+// and the places before it turn through the rest, a card at a time and round
+// again, the way the deck does: by the arrows and dots under the row, the
+// arrow keys, a drag sideways, or a sideways swipe on a trackpad. Putting a
+// card away works as it does in the deck.
 
 const props = defineProps({
   cards: { type: Array, required: true },
@@ -128,15 +131,63 @@ const visible = computed(() =>
 
 /* --------------------------------------------------------- laid out flat */
 
-const expanded = ref(false)
+// The cards that turn through the row: all but the last, which stays put.
+const rotating = computed(() => visible.value.slice(0, -1))
+const turns = computed(() => props.spread && visible.value.length > props.columns)
+// The first of the turning cards on show, and which way the row last turned,
+// so the card coming in arrives from that side.
+const turn = ref(0)
+const turnDir = ref(1)
+const wrapTurn = (i) => {
+  const n = rotating.value.length
+  return n ? ((i % n) + n) % n : 0
+}
 
-// Spread out, the cards that fit in one row: the first ones, and the last.
+// A card put away must not leave the row pointing past the last one.
+watch(() => rotating.value.length, () => {
+  turn.value = wrapTurn(turn.value)
+})
+
+// Spread out, the cards in the row: those from `turn` on, then the last.
 const shown = computed(() => {
   const all = visible.value
-  if (!props.spread || expanded.value || all.length <= props.columns) return all
-  return [...all.slice(0, props.columns - 1), all[all.length - 1]]
+  if (!props.spread || all.length <= props.columns) return all
+  const row = Array.from({ length: props.columns - 1 }, (_, k) => rotating.value[wrapTurn(turn.value + k)])
+  return [...row, all[all.length - 1]]
 })
-const hiddenCount = computed(() => visible.value.length - shown.value.length)
+const isShowing = (card) => shown.value.includes(card)
+
+const turnRow = (dir) => {
+  if (!turns.value) return
+  turnDir.value = dir
+  turn.value = wrapTurn(turn.value + dir)
+  // Heard the way the deck's next card is: the cards go off to the side.
+  swipe(-dir)
+}
+
+/** Straight to a card, from its dot: it becomes the first in the row. */
+const turnTo = (i) => {
+  if (!turns.value || i === turn.value) return
+  turnDir.value = i > turn.value ? 1 : -1
+  turn.value = wrapTurn(i)
+}
+
+// A sideways swipe on a trackpad turns the row, once per swipe: the wheel
+// events of one swipe add up, and after a turn the rest of that swipe is let
+// go by. Up and down are the page scrolling, left alone; sideways is ours, so
+// the browser does not take it for going back a page.
+let wheelX = 0
+let wheelQuiet = 0
+const onWheel = (event) => {
+  if (!turns.value || Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return
+  event.preventDefault()
+  if (event.timeStamp < wheelQuiet) return
+  wheelX += event.deltaX
+  if (Math.abs(wheelX) < 60) return
+  turnRow(wheelX > 0 ? 1 : -1)
+  wheelX = 0
+  wheelQuiet = event.timeStamp + 450
+}
 // One row as wide as the cards in it, so two cards share the row rather than
 // leaving a gap where a third would go.
 const spreadColumns = computed(() => ({
@@ -274,7 +325,8 @@ const onPointerDown = (event) => {
   // A browser lets a page make sound only from inside a touch, so the audio
   // is woken here, before the swipe it will be needed for.
   prime()
-  if (props.spread || event.button > 0 || count.value < 2 || flying.value) return
+  if (event.button > 0 || flying.value) return
+  if (props.spread ? !turns.value : count.value < 2) return
   if (event.target.closest('[data-deck-dismiss]')) return
   start = { x: event.clientX, y: event.clientY }
   recent = { x: event.clientX, t: event.timeStamp }
@@ -295,14 +347,21 @@ const onPointerMove = (event) => {
     }
     dragging.value = true
     swallowClick = true
-    deck.value?.setPointerCapture?.(event.pointerId)
+    // On the element listening, not `deck`: laid out flat that is a
+    // TransitionGroup, a component rather than an element.
+    event.currentTarget?.setPointerCapture?.(event.pointerId)
   }
   dx.value = mx
   recent = { x: event.clientX, t: event.timeStamp, vx: (event.clientX - recent.x) / Math.max(event.timeStamp - recent.t, 1) }
 }
 
 const onPointerUp = () => {
-  if (dragging.value) {
+  // Laid out flat, a drag far enough or a flick turns the row a card.
+  if (dragging.value && props.spread) {
+    const flick = recent?.vx || 0
+    if (dx.value < -60 || flick < -0.5) turnRow(1)
+    else if (dx.value > 60 || flick > 0.5) turnRow(-1)
+  } else if (dragging.value) {
     // Far enough, or flicked: either one sends it under, off the side it
     // was pushed. Not far enough and it settles back on top.
     const far = width() * 0.25
@@ -336,9 +395,14 @@ const styleOf = (card, i) => {
     ? { transition: 'none' }
     : { transition: 'transform 380ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease' }
 
-  // Laid out flat, a card only ever fades, when it is put away.
+  // Laid out flat, the row leans a little after a drag, and a card fades when
+  // it is put away; its turning is TransitionGroup's (row-*, below), with the
+  // card coming in from the side the row turned toward (--from).
   if (props.spread) {
-    return { transition: 'opacity 200ms ease', opacity: card.key === leaving.value ? 0 : 1 }
+    const from = { '--from': `${turnDir.value * 48}px` }
+    if (card.key === leaving.value) return { ...from, transition: 'opacity 200ms ease', opacity: 0 }
+    if (dragging.value) return { ...from, transition: 'none', transform: `translateX(${dx.value * 0.2}px)` }
+    return from
   }
 
   if (card.key === leaving.value) {
@@ -412,8 +476,8 @@ const fanned = (depth) => {
     :aria-roledescription="spread ? undefined : 'carousel'"
     :aria-label="label"
     class="-mx-4 flex flex-col gap-2 overflow-x-clip px-4"
-    @keydown.left="spread || go(index - 1)"
-    @keydown.right="spread || sendUnder(-1)"
+    @keydown.left="spread ? turnRow(-1) : go(index - 1)"
+    @keydown.right="spread ? turnRow(1) : sendUnder(-1)"
   >
     <!-- Every card in the one grid cell, each the same fixed share of the
          screen's height (DeckCard), so nothing jumps between them. The one
@@ -423,13 +487,15 @@ const fanned = (depth) => {
          The region round it is clipped sideways at the screen's edge rather
          than the column's, so a swiped card can travel to the edge without
          the page scrolling sideways under it. -->
-    <!-- Spread out, the same cards side by side in a row (or rows, once
-         "Show more" has opened them). -->
-    <div
+    <!-- Spread out, the same cards side by side in one row, turning through
+         it (TransitionGroup slides the ones that stay into their new places). -->
+    <component
+      :is="spread ? TransitionGroup : 'div'"
       ref="deck"
+      v-bind="spread ? { tag: 'div', name: 'row' } : {}"
       :class="[
-        'grid select-none',
-        spread ? 'gap-4' : ['grid-cols-1 touch-pan-y', visible.length > 1 ? 'pb-2' : ''],
+        'grid touch-pan-y select-none',
+        spread ? 'relative gap-4' : ['grid-cols-1', visible.length > 1 ? 'pb-2' : ''],
       ]"
       :style="spread ? spreadColumns : undefined"
       @pointerdown="onPointerDown"
@@ -437,6 +503,7 @@ const fanned = (depth) => {
       @pointerup="onPointerUp"
       @pointercancel="onPointerUp"
       @click.capture="onClickCapture"
+      @wheel="onWheel"
       @dragstart.prevent
     >
       <div
@@ -478,45 +545,36 @@ const fanned = (depth) => {
           <X class="size-4" />
         </button>
       </div>
-    </div>
+    </component>
 
     <!-- Where you are in the deck, and a tap to any card in it. The chevrons
          either side are for whoever has not guessed the cards swipe: quiet
          enough to pass unnoticed by someone who has, and doing the same as a
          swipe (next sends the top card under) for someone who has not. -->
-    <div v-if="spread && visible.length > columns" class="flex justify-end">
-      <button
-        type="button"
-        class="rounded-full px-3 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-gray-900/5 dark:text-primary-light dark:hover:bg-white/10"
-        :aria-expanded="expanded"
-        @click="expanded = !expanded"
-      >
-        {{ expanded ? 'Show fewer' : `Show ${hiddenCount} more` }}
-      </button>
-    </div>
-
-    <div v-else-if="!spread && visible.length > 1" class="flex items-center justify-center gap-0.5">
+    <!-- Laid out flat, the same row, for the cards that turn: a dot each,
+         lit for the ones on show. -->
+    <div v-if="spread ? turns : visible.length > 1" class="flex items-center justify-center gap-0.5">
       <button
         type="button"
         class="mr-1 flex size-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-900/5 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300"
         aria-label="Previous card"
-        @click="go(index - 1)"
+        @click="spread ? turnRow(-1) : go(index - 1)"
       >
         <ChevronLeft class="size-4" />
       </button>
       <button
-        v-for="(card, i) in visible"
+        v-for="(card, i) in spread ? rotating : visible"
         :key="card.key"
         type="button"
         class="flex h-4 items-center px-0.5"
-        :aria-label="`Card ${i + 1} of ${visible.length}`"
-        :aria-current="i === index ? 'true' : undefined"
-        @click="go(i)"
+        :aria-label="`Card ${i + 1} of ${(spread ? rotating : visible).length}`"
+        :aria-current="(spread ? isShowing(card) : i === index) ? 'true' : undefined"
+        @click="spread ? turnTo(i) : go(i)"
       >
         <span
           :class="[
             'block h-1.5 rounded-full transition-all duration-300',
-            i === index ? 'w-5 bg-primary dark:bg-primary-light' : 'w-1.5 bg-gray-300 dark:bg-gray-600',
+            (spread ? isShowing(card) : i === index) ? 'w-5 bg-primary dark:bg-primary-light' : 'w-1.5 bg-gray-300 dark:bg-gray-600',
           ]"
         />
       </button>
@@ -524,7 +582,7 @@ const fanned = (depth) => {
         type="button"
         class="ml-1 flex size-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-900/5 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300"
         aria-label="Next card"
-        @click="sendUnder(-1)"
+        @click="spread ? turnRow(1) : sendUnder(-1)"
       >
         <ChevronRight class="size-4" />
       </button>
@@ -533,6 +591,25 @@ const fanned = (depth) => {
 </template>
 
 <style scoped>
+/* Laid out flat, turning the row: the cards that stay slide to their new
+   places, the one coming in slides in from the side the row turned toward,
+   and the one going out leaves at once, out of the row's way. */
+.row-move,
+.row-enter-active {
+  transition:
+    transform 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 300ms ease;
+}
+.row-enter-from {
+  opacity: 0;
+  transform: translateX(var(--from));
+}
+.row-leave-active {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .deck-card {
     transition: none !important;
