@@ -11,6 +11,14 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.22] — 2026-10-13
+
+### Changed
+
+- **A card on your home opens in its place** when you rest the pointer on it:
+  the cards under it move down to make room while it grows into the full card,
+  and move back up when you move on. It used to open over them.
+
 ## [0.35.21] — 2026-10-13
 
 ### Fixed

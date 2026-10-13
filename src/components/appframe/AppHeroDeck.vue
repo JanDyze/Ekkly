@@ -1,5 +1,5 @@
 <script setup>
-import { TransitionGroup, computed, onBeforeUnmount, ref, watch } from 'vue'
+import { TransitionGroup, computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { ChevronLeft, ChevronRight, X } from '../../icons'
 import AppHero from './AppHero.vue'
 import DeckRow from './DeckRow.vue'
@@ -173,108 +173,94 @@ const groups = computed(() => [
 ])
 
 // Laid out flat, a card is the phone's in small. Rest the pointer on one and,
-// after a beat, the card itself grows into the phone's full card — the `card`
-// slot, the same face: its headline whole, its faces, its list, its chips —
-// its height easing open where it stands, and easing back down when the
-// pointer leaves. It grows over the cards under it rather than pushing them
-// down, so nothing else moves; one near the foot of the window grows upward
-// instead. The beat is so sweeping down a column does not open every card on
-// the way.
-//
-// The opened card is drawn above the page, pinned to where the small one
-// stands, rather than inside its column: a column with more cards than it has
-// room for scrolls, and anything inside it is cut off at its edges. So the
-// list keeps its scroll, and scrolling it — or turning the wheel over the
-// opened card, which would otherwise scroll nothing — closes the card.
-const opened = ref(null)
+// after a beat, it grows where it stands into the phone's full card — the
+// `card` slot, the same face: its headline whole, its faces, its list, its
+// chips — the cards under it moving down to make room as its height eases
+// open, and back up as it eases shut when the pointer leaves. In the list,
+// not laid over it: a card drawn over its neighbours hid them. A column whose
+// cards no longer fit scrolls, as it does on a day with many. The beat is so
+// sweeping down a column does not open every card on the way.
+const full = ref(new Set())
+const boxes = new Map()
+const smallHeights = new Map()
+const easing = new Map()
 let openTimer = null
 const OPEN_AFTER = 320
-// A phone card is at most 16rem tall (DeckCard).
-const OPEN_ROOM = 264
-
-const openAt = (card, event) => {
-  clearTimeout(openTimer)
-  const el = event.currentTarget
-  if (opened.value?.key === card.key) return
-  openTimer = setTimeout(() => {
-    if (!el?.isConnected || leaving.value === card.key) return
-    const box = el.getBoundingClientRect()
-    const up = box.top + OPEN_ROOM > window.innerHeight - 8
-    opened.value = {
-      card,
-      key: card.key,
-      from: box.height,
-      style: {
-        left: `${box.left}px`,
-        width: `${box.width}px`,
-        ...(up ? { bottom: `${window.innerHeight - box.bottom}px` } : { top: `${box.top}px` }),
-      },
-    }
-  }, OPEN_AFTER)
-}
-
-// Leaving the small card for the opened one over it is not leaving: a moment's
-// grace, which the opened card takes up as the pointer arrives on it.
-let closeTimer = null
-const closeSoon = () => {
-  clearTimeout(openTimer)
-  clearTimeout(closeTimer)
-  closeTimer = setTimeout(() => (opened.value = null), 90)
-}
-const stayOpen = () => clearTimeout(closeTimer)
-
-const close = () => {
-  clearTimeout(openTimer)
-  clearTimeout(closeTimer)
-  opened.value = null
-}
-
-// Closed by a scroll: at once, not eased, since the list is already moving
-// out from under where the opened card is pinned.
-let snapShut = false
-const closeNow = () => {
-  if (!opened.value) return
-  snapShut = true
-  close()
-}
+const GROW_MS = 300
+const SHRINK_MS = 240
 
 const still = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-// From the small card's height to the full card's, and back: the height eases,
-// solid from the first frame (a fade let the small card's words show through
-// it), and closing fades it as it shrinks.
-const GROW_MS = 300
-const growIn = (el, done) => {
-  if (still()) return done()
-  const to = el.scrollHeight
-  el.style.height = `${el.dataset.from}px`
-  requestAnimationFrame(() => {
-    el.style.transition = `height ${GROW_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`
-    el.style.height = `${to}px`
-  })
-  setTimeout(() => {
-    el.style.height = ''
-    el.style.transition = ''
-    done()
-  }, GROW_MS)
+const setBox = (key, el) => {
+  if (el) boxes.set(key, el)
+  else boxes.delete(key)
 }
-const growOut = (el, done) => {
-  if (still() || snapShut) {
-    snapShut = false
-    return done()
+
+/** Eases a card's box to `height`, then does `then`. */
+const ease = (key, height, ms, then) => {
+  const box = boxes.get(key)
+  clearTimeout(easing.get(key))
+  if (!box || still()) return then?.()
+  box.style.transition = `height ${ms}ms cubic-bezier(0.22, 1, 0.36, 1)`
+  box.style.height = `${height}px`
+  easing.set(key, setTimeout(() => {
+    box.style.transition = ''
+    then?.()
+  }, ms))
+}
+
+// The full card goes in at the small card's height, and the height eases to
+// the full card's own.
+const grow = async (key) => {
+  const box = boxes.get(key)
+  if (!box) return
+  if (full.value.has(key)) {
+    // Caught on its way shut: open again from where it is.
+    ease(key, box.scrollHeight, GROW_MS, () => (box.style.height = ''))
+    return
   }
-  el.style.height = `${el.offsetHeight}px`
-  requestAnimationFrame(() => {
-    el.style.transition = `height 240ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease 60ms`
-    el.style.height = `${el.dataset.from}px`
-    el.style.opacity = '0'
-  })
-  setTimeout(done, 260)
+  const from = box.offsetHeight
+  smallHeights.set(key, from)
+  box.style.height = `${from}px`
+  full.value = new Set(full.value).add(key)
+  await nextTick()
+  const to = box.scrollHeight
+  requestAnimationFrame(() => ease(key, to, GROW_MS, () => (box.style.height = '')))
+}
+
+// The height eases back to the small card's, and only then is the small card
+// put back, so the words do not change while it is still moving.
+const shrink = (key) => {
+  const box = boxes.get(key)
+  if (!box || !full.value.has(key)) return
+  box.style.height = `${box.offsetHeight}px`
+  requestAnimationFrame(() =>
+    ease(key, smallHeights.get(key) || 0, SHRINK_MS, () => {
+      const next = new Set(full.value)
+      next.delete(key)
+      full.value = next
+      box.style.height = ''
+    })
+  )
+}
+
+const openAt = (card) => {
+  clearTimeout(openTimer)
+  openTimer = setTimeout(() => {
+    if (leaving.value === card.key) return
+    full.value.forEach((key) => key !== card.key && shrink(key))
+    grow(card.key)
+  }, OPEN_AFTER)
+}
+
+const closeCard = (card) => {
+  clearTimeout(openTimer)
+  shrink(card.key)
 }
 
 onBeforeUnmount(() => {
   clearTimeout(openTimer)
-  clearTimeout(closeTimer)
+  easing.forEach((timer) => clearTimeout(timer))
 })
 
 /* -------------------------------------------------------------- the deck */
@@ -537,28 +523,41 @@ const fanned = (depth) => {
         tag="ul"
         name="row"
         class="relative flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto [scrollbar-width:thin]"
-        @scroll.passive="closeNow"
       >
         <li
           v-for="card in group.cards"
           :key="card.key"
           class="group/row relative min-w-0"
-          @pointerenter="openAt(card, $event)"
-          @pointerleave="closeSoon"
+          @pointerenter="openAt(card)"
+          @pointerleave="closeCard(card)"
           :style="card.key === leaving ? { transition: 'opacity 200ms ease', opacity: 0 } : undefined"
         >
-          <slot name="row" :card="card">
-            <DeckRow
-              :tone="card.tone"
-              :icon="card.icon"
-              :kicker="card.kicker"
-              :title="card.title"
-              :detail="card.detail"
-              :to="card.to"
-              :dest="card.dest"
-              :dest-label="card.destLabel"
-            />
-          </slot>
+          <!-- The small card, or grown into the phone's (full, above); the box
+               round it is what eases from one height to the other. -->
+          <div :ref="(el) => setBox(card.key, el)" :class="['overflow-hidden', full.has(card.key) ? 'rounded-[28px]' : 'rounded-[20px]']">
+            <slot v-if="full.has(card.key)" name="card" :card="card" :top="true">
+              <AppHero
+                :art="art"
+                :greeting="card.greeting"
+                :title="card.title"
+                :detail="card.detail"
+                :to="card.to"
+                :inset="card.dismissible"
+              />
+            </slot>
+            <slot v-else name="row" :card="card">
+              <DeckRow
+                :tone="card.tone"
+                :icon="card.icon"
+                :kicker="card.kicker"
+                :title="card.title"
+                :detail="card.detail"
+                :to="card.to"
+                :dest="card.dest"
+                :dest-label="card.destLabel"
+              />
+            </slot>
+          </div>
 
           <!-- In the card's top corner, in its own tone as on a phone; quiet
                until the card is pointed at, where there is a pointer to point
@@ -567,62 +566,22 @@ const fanned = (depth) => {
             v-if="card.dismissible"
             type="button"
             :class="[
-              'absolute right-2 top-2 flex size-7 items-center justify-center rounded-full transition focus-visible:opacity-100 group-hover/row:opacity-100 [@media(hover:hover)]:opacity-0',
+              'absolute flex items-center justify-center rounded-full transition focus-visible:opacity-100 group-hover/row:opacity-100 [@media(hover:hover)]:opacity-0',
+              full.has(card.key) ? 'right-3 top-3 size-8' : 'right-2 top-2 size-7',
               card.tone === 'accent' || card.tone === 'celebrate'
                 ? 'bg-white/15 text-white hover:bg-white/25'
                 : 'bg-gray-900/5 text-gray-500 hover:bg-gray-900/10 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/15',
             ]"
             :aria-label="card.remember ? 'Dismiss until there are more' : 'Dismiss until the app is opened again'"
-            @click="close(); dismiss(card)"
+            @click="closeCard(card); dismiss(card)"
           >
-            <X class="size-3.5" />
+            <X :class="full.has(card.key) ? 'size-4' : 'size-3.5'" />
           </button>
 
         </li>
       </TransitionGroup>
     </div>
 
-    <!-- The card grown into the phone's (opened, above), pinned over where
-         the small one stands, its own dismiss in its corner. -->
-    <Teleport to="body">
-      <Transition :css="false" @enter="growIn" @leave="growOut">
-        <div
-          v-if="opened"
-          :key="opened.key"
-          :data-from="opened.from"
-          class="fixed z-60 overflow-hidden rounded-[28px] shadow-[0_18px_40px_-14px_rgb(15_23_42/0.45)]"
-          :style="opened.style"
-          @pointerenter="stayOpen"
-          @pointerleave="close"
-          @wheel.passive="closeNow"
-        >
-          <slot name="card" :card="opened.card" :top="true">
-            <AppHero
-              :art="art"
-              :greeting="opened.card.greeting"
-              :title="opened.card.title"
-              :detail="opened.card.detail"
-              :to="opened.card.to"
-              :inset="opened.card.dismissible"
-            />
-          </slot>
-          <button
-            v-if="opened.card.dismissible"
-            type="button"
-            :class="[
-              'absolute right-3 top-3 flex size-8 items-center justify-center rounded-full transition-colors',
-              opened.card.tone === 'accent' || opened.card.tone === 'celebrate'
-                ? 'bg-white/15 text-white hover:bg-white/25'
-                : 'bg-gray-900/5 text-gray-500 hover:bg-gray-900/10 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/15',
-            ]"
-            :aria-label="opened.card.remember ? 'Dismiss until there are more' : 'Dismiss until the app is opened again'"
-            @click="dismiss(opened.card); close()"
-          >
-            <X class="size-4" />
-          </button>
-        </div>
-      </Transition>
-    </Teleport>
   </section>
 
   <div

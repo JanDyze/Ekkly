@@ -103,11 +103,10 @@ CHANGELOG.md.
      day, white), a label pill, a bold headline, and its picture — the photo,
      the faces it is about, its date, or its own drawing
      (`brand/ekkly/sections/today.mjs`, `today-<kind>`). Resting on one grows
-     it where it stands into the phone's full card, its height easing open
-     over the cards under it (upward near the window's foot), and back down
-     when the pointer leaves; nothing else moves. It is drawn above the page,
-     pinned over the small card, so a column with more cards than fit keeps
-     its own scroll (the only scroll on the page), and scrolling closes it.
+     it in the list into the phone's full card, its height easing open as the
+     cards under it move down, and back when the pointer leaves; never laid
+     over its neighbours. A column whose cards no longer fit scrolls (the
+     only scroll on the page).
      Birthdays are one card naming everyone; what is on is said in the week.
   4. The church on its hill in whatever room is left, the full width of the
      page; everything else keeps to a 90rem column.

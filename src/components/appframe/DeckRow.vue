@@ -13,7 +13,7 @@ import { RouterLink } from 'vue-router'
 //
 // A column a third of a screen wide cuts a long headline or detail short, so
 // resting on a card grows it, where it stands, into the phone's full card
-// (AppHeroDeck's `opened`).
+// (AppHeroDeck's `full`), pushing the cards under it down.
 
 defineProps({
   tone: { type: String, default: 'plain' },
