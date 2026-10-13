@@ -5,10 +5,11 @@ import AppArt from '../common/AppArt.vue'
 
 // One card of a deck told as a row, for the list a deck becomes on a desktop
 // (AppHeroDeck's `spread`): however many cards there are, every one is on show
-// at once, in the deck's order. The deck card's parts, kept to one line of
-// 64px — its icon (or the date, through `leading`), its headline, its label
-// and the line under it, the small picture it is about at the right (faces,
-// through `trailing`), and the app the click opens.
+// at once, in the deck's order. The deck card's parts, kept to one line at
+// least 64px tall — its icon (or the date, through `leading`), its headline,
+// its label and the line under it, the small picture it is about at the right
+// (faces, through `trailing`), and the app the click opens. As tall as its
+// place in the list, which shares out the height beside the day's card.
 //
 // Tones as DeckCard's, quieter, because a list of them sits beside the one
 // card in the church's colour: warn is pale amber, celebrate wears that colour
@@ -58,7 +59,7 @@ const KICKERS = {
     :to="to || undefined"
     draggable="false"
     :class="[
-      'group flex h-16 min-w-0 items-center gap-3 rounded-2xl px-3 ring-1 transition-colors duration-200',
+      'group flex h-full min-h-16 min-w-0 items-center gap-3 rounded-2xl px-3 ring-1 transition-colors duration-200',
       TONES[tone] || TONES.plain,
       to ? HOVERS[tone] || HOVERS.plain : '',
       inset ? 'pr-12' : '',

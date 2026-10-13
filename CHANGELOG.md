@@ -11,6 +11,24 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.11] — 2026-10-13
+
+On a computer, the home fills the screen with the week ahead.
+
+### Added
+
+- **This week, under your apps on a computer:** the coming seven days side
+  by side, today first, each with what is on and when, and the day you are
+  serving marked. Click a day or anything on it to open it in Events, or Open
+  calendar for the month.
+
+### Changed
+
+- **With only a few things waiting today,** they fill the space beside the
+  day card instead of leaving a gap under them.
+- **The church on its hill and the day's verse** are a strip at the foot of
+  the home on a computer, where the week now sits above them.
+
 ## [0.35.10] — 2026-10-13
 
 On a computer, everything for today is on show at once.

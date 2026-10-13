@@ -166,13 +166,16 @@ const dismiss = (card) => {
 const lead = computed(() => visible.value[visible.value.length - 1])
 const rows = computed(() => visible.value.slice(0, -1))
 
-// One column up to four rows; past that, two, filled down then across.
+// One column up to four rows; past that, two, filled down then across. The
+// rows share the card's height between them, never less than a row's own
+// 4rem, so one or two waiting fill the space beside the card rather than
+// sitting at its top over a gap.
 const listGrid = computed(() => {
   const n = rows.value.length
-  if (n <= 4) return { gridTemplateColumns: 'minmax(0, 1fr)' }
+  if (n <= 4) return { gridTemplateColumns: 'minmax(0, 1fr)', gridAutoRows: 'minmax(4rem, 1fr)' }
   return {
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gridTemplateRows: `repeat(${Math.ceil(n / 2)}, auto)`,
+    gridTemplateRows: `repeat(${Math.ceil(n / 2)}, minmax(4rem, 1fr))`,
     gridAutoFlow: 'column',
   }
 })
@@ -429,7 +432,7 @@ const fanned = (depth) => {
       </slot>
     </div>
 
-    <TransitionGroup v-if="rows.length" tag="ul" name="row" class="relative grid content-start gap-2" :style="listGrid">
+    <TransitionGroup v-if="rows.length" tag="ul" name="row" class="relative grid gap-2" :style="listGrid">
       <li
         v-for="card in rows"
         :key="card.key"

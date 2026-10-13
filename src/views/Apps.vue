@@ -12,6 +12,7 @@ import DeckRow from '../components/appframe/DeckRow.vue'
 import AppPeek from '../components/appframe/AppPeek.vue'
 import HomeScene from '../components/home/HomeScene.vue'
 import HomeAppCards from '../components/home/HomeAppCards.vue'
+import HomeWeek from '../components/home/HomeWeek.vue'
 import { useHomeCards } from '../composables/useHomeCards'
 import { useLiveSky } from '../composables/useLiveSky'
 import { useAppOrder } from '../composables/useAppOrder'
@@ -31,6 +32,7 @@ import { APPS } from '../../lib/apps'
 import { getDisplayName, getFullName, listPhrase } from '../utils/memberUtils'
 import { findRosterMember, formatShortDate } from '../utils/lineupUtils'
 import { peopleOnService } from '../data/scheduleRoles'
+import { sampleTodayCards } from '../data/sampleTodayCards'
 
 // The home of all apps: where Ekkly opens, and where every app's back arrow
 // leads. Each app is a screen of its own now (src/apps/), with its own home
@@ -63,7 +65,8 @@ import { peopleOnService } from '../data/scheduleRoles'
 // keyboard would rather type where they are going; Today as the day's card
 // with every other card a row in a list beside it, all on show at once,
 // instead of a deck to swipe (AppHeroDeck's `spread`); the apps in one row
-// under them; and the church on its hill with the verse at the foot. It
+// under them; the coming week under those (HomeWeek), in what was empty
+// sky; and the church on its hill with the verse, a strip at the foot. It
 // may scroll there, where a phone's home never does, so the verse is given
 // room of its own rather than stepping aside.
 
@@ -297,6 +300,16 @@ const cards = computed(() => {
     })
   }
 
+  // Made-up cards to see a full day with, while working locally: `?cards=10`.
+  // Only in a dev build, so a church's home never shows one.
+  const samples = import.meta.env.DEV ? Math.min(Number(route.query.cards) || 0, 30) : 0
+  if (samples > 0) {
+    list.push(...sampleTodayCards(samples, {
+      wide: wide.value,
+      icons: { Cake, CalendarDots, ClipboardCheck, KeyRound, ListChecks, MicrophoneStage },
+    }))
+  }
+
   // The card that is always there: the person greeted by name, the day, and
   // whose church this is. The day's verse used to run along its foot; it has
   // the foot of the page now, under the church (verseTo, below).
@@ -337,6 +350,13 @@ const rowDetail = (card) => {
   return card.detail
 }
 const rowFaces = (card) => (card.members || card.faces?.members || []).slice(0, 4)
+
+/* -------------------------------------------------------------- the week */
+
+// The coming seven days under the apps, on a desktop, for whoever has Events
+// (HomeWeek). Someone without it would see a week of "Nothing on" that is
+// only nothing because they cannot see it.
+const showWeek = computed(() => wide.value && allApps.value.some((item) => item.path === '/events'))
 
 /* ------------------------------------------------------------- the verse */
 
@@ -616,6 +636,14 @@ const lineOf = (item) => {
         :hold="hold"
       />
 
+      <!-- On a desktop, the coming week: what was empty sky under the apps. -->
+      <HomeWeek
+        v-if="showWeek"
+        :days="today.week.value"
+        :events="today.eventsThisWeek.value"
+        :turn="today.myNextTurn.value"
+      />
+
       <!-- 3. The church on its hill, and the day's verse on a card beside
            it, in whatever room the apps leave at the foot of the screen. The
            home never scrolls, so the room decides: the verse steps aside
@@ -625,9 +653,11 @@ const lineOf = (item) => {
            is never shorter than the bar's space, which is what keeps the apps
            above it - while the verse keeps to the part of the room above the
            bar (verse-space), and steps aside by that part's height. -->
-      <!-- On a desktop the room is never less than the church and a verse
-           need, and the page scrolls instead if the screen is short. -->
-      <section class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space) lg:-mx-8 lg:min-h-60" aria-label="A verse for today">
+      <!-- On a desktop the week takes the room the hill had, and the hill is
+           a strip at the foot: never less than the church and a verse need
+           (above the verse's 7.5rem), the page scrolling instead if the
+           screen is short. -->
+      <section class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space) lg:-mx-8 lg:min-h-36" aria-label="A verse for today">
         <HomeScene part="land" class="scene pointer-events-none absolute inset-0 size-full" />
 
         <div class="verse-space pointer-events-none absolute inset-x-0 top-0 bottom-(--bottom-bar-space)">
