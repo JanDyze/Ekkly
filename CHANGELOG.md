@@ -11,6 +11,18 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.14] — 2026-10-13
+
+The picture behind the home looks right on a computer.
+
+### Fixed
+
+- **The church on its hill is always whole** on a wide screen. On some
+  computers the top of the church and its cross were cut off.
+- **Clouds are a sensible size on a computer.** On a cloudy or rainy day one
+  stretched halfway across the screen behind the church; they are now the size
+  they are on a phone.
+
 ## [0.35.13] — 2026-10-13
 
 The home on a computer fits one screen again.

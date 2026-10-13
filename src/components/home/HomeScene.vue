@@ -13,9 +13,11 @@
 //   land — the hills, the bushes and the church. It stands in the room left
 //          under the apps, sized to that room's height, so the church is
 //          always whole, cross and all. The hills run on far to the left (to
-//          -4000), so the drawing is always wider than the room in proportion:
-//          a drawing narrower than its room would be scaled to the width
-//          instead, and lose the top of the cross off the top of the room.
+//          -12000, flat past -4000), so the drawing is always wider than the
+//          room in proportion, even a desktop's wide, short strip under its
+//          columns: a drawing narrower than its room would be scaled to the
+//          width instead, and lose the top of the cross off the top of the
+//          room. At -4000 it was 9:1, and a desktop's strip is often wider.
 //
 // Both draw in the painting's own coordinates (887 × 1774), so the two halves
 // line up as one picture however they are placed.
@@ -160,22 +162,26 @@ defineProps({
     <!-- Clouds drifting higher up, so some of the sky shows between the
          cards above as well as at the foot. -->
     <g style="fill: var(--scene-cloud); opacity: 0.85">
-      <path d="M420 520C430 500 460 494 480 504C496 478 540 474 560 498C584 494 604 506 608 520Z" />
-      <path d="M-20 722C0 690 40 680 70 692C90 650 150 640 180 672C212 664 250 682 262 722Z" />
-      <path d="M600 902C612 872 650 862 676 874C700 836 760 830 790 862C830 850 880 870 900 902Z" />
+      <path class="scene-cloud" d="M420 520C430 500 460 494 480 504C496 478 540 474 560 498C584 494 604 506 608 520Z" />
+      <path class="scene-cloud" d="M-20 722C0 690 40 680 70 692C90 650 150 640 180 672C212 664 250 682 262 722Z" />
+      <path class="scene-cloud" d="M600 902C612 872 650 862 676 874C700 836 760 830 790 862C830 850 880 870 900 902Z" />
     </g>
 
     <!-- Clouds: one each side, and a low bank along the horizon. -->
+    <g class="scene-cloud">
+      <path
+        d="M0 1100C45 1100 72 1150 70 1195C98 1182 152 1195 160 1252C200 1255 236 1286 240 1312H0Z"
+        style="fill: var(--scene-cloud)"
+      />
+      <path d="M0 1262C60 1256 110 1268 140 1290C180 1292 220 1300 240 1312H0Z" style="fill: var(--scene-cloud-shade)" />
+    </g>
     <path
-      d="M0 1100C45 1100 72 1150 70 1195C98 1182 152 1195 160 1252C200 1255 236 1286 240 1312H0Z"
-      style="fill: var(--scene-cloud)"
-    />
-    <path d="M0 1262C60 1256 110 1268 140 1290C180 1292 220 1300 240 1312H0Z" style="fill: var(--scene-cloud-shade)" />
-    <path
+      class="scene-cloud"
       d="M887 1150C860 1160 845 1190 848 1225C815 1225 790 1242 785 1276C750 1282 725 1310 718 1346H887Z"
       style="fill: var(--scene-cloud-warm)"
     />
     <path
+      class="scene-cloud"
       d="M80 1502C110 1480 150 1478 175 1495C200 1470 262 1470 282 1500C330 1490 382 1502 402 1532H80Z"
       style="fill: var(--scene-cloud-warm)"
     />
@@ -184,9 +190,9 @@ defineProps({
          wrapper says so (data-weather, the rules below): more and heavier
          clouds, a grey veil when it is overcast, rain, and fog. -->
     <g class="scene-extra-clouds" style="fill: var(--scene-cloud)">
-      <path d="M520 360C540 316 600 300 640 324C668 280 750 276 784 318C830 300 887 320 887 360Z" />
-      <path d="M-20 560C10 520 70 506 110 524C140 480 220 474 252 514C300 500 350 520 362 560Z" />
-      <path d="M480 980C500 946 548 934 580 952C606 916 670 912 700 946C740 934 790 952 800 980Z" />
+      <path class="scene-cloud" d="M520 360C540 316 600 300 640 324C668 280 750 276 784 318C830 300 887 320 887 360Z" />
+      <path class="scene-cloud" d="M-20 560C10 520 70 506 110 524C140 480 220 474 252 514C300 500 350 520 362 560Z" />
+      <path class="scene-cloud" d="M480 980C500 946 548 934 580 952C606 916 670 912 700 946C740 934 790 952 800 980Z" />
     </g>
     <rect class="scene-overcast" width="887" height="1774" style="fill: var(--scene-overcast)" />
     <!-- Each sheet is drawn a repeat larger than the picture all round, so
@@ -210,7 +216,7 @@ defineProps({
   <svg
     v-else
     class="home-scene-land"
-    viewBox="-4000 1240 4887 534"
+    viewBox="-12000 1240 12887 534"
     preserveAspectRatio="xMaxYMax slice"
     aria-hidden="true"
   >
@@ -263,15 +269,15 @@ defineProps({
     <!-- Hills behind the church, far to near. -->
     <path d="M690 1505C760 1470 820 1452 887 1448V1774H690Z" style="fill: var(--scene-hill-far)" />
     <path
-      d="M-4000 1600C-1100 1540 -800 1560 -560 1530C-330 1500 -120 1520 0 1478C40 1462 80 1478 112 1502C160 1488 250 1488 300 1510C360 1535 420 1562 482 1574V1774H-4000Z"
+      d="M-12000 1600L-4000 1600C-1100 1540 -800 1560 -560 1530C-330 1500 -120 1520 0 1478C40 1462 80 1478 112 1502C160 1488 250 1488 300 1510C360 1535 420 1562 482 1574V1774H-12000Z"
       style="fill: var(--scene-hill-back)"
     />
     <path
-      d="M-4000 1590C-1150 1530 -900 1520 -680 1500C-460 1480 -260 1520 -120 1494C-60 1482 -20 1470 0 1470C50 1468 96 1502 120 1562V1774H-4000Z"
+      d="M-12000 1590L-4000 1590C-1150 1530 -900 1520 -680 1500C-460 1480 -260 1520 -120 1494C-60 1482 -20 1470 0 1470C50 1468 96 1502 120 1562V1774H-12000Z"
       style="fill: var(--scene-hill-left)"
     />
     <path
-      d="M-4000 1668C-1100 1626 -820 1640 -560 1618C-320 1598 -140 1622 0 1600C80 1584 160 1562 240 1562C320 1566 400 1598 470 1614V1774H-4000Z"
+      d="M-12000 1668L-4000 1668C-1100 1626 -820 1640 -560 1618C-320 1598 -140 1622 0 1600C80 1584 160 1562 240 1562C320 1566 400 1598 470 1614V1774H-12000Z"
       style="fill: var(--scene-hill-mid)"
     />
 
@@ -358,7 +364,7 @@ defineProps({
 
     <!-- The near ground, darkest, across the whole width. -->
     <path
-      d="M-4000 1712C-1100 1672 -800 1690 -560 1700C-320 1710 -120 1676 0 1700C120 1662 252 1662 382 1702C462 1722 522 1742 562 1774H-4000Z"
+      d="M-12000 1712L-4000 1712C-1100 1672 -800 1690 -560 1700C-320 1710 -120 1676 0 1700C120 1662 252 1662 382 1702C462 1722 522 1742 562 1774H-12000Z"
       style="fill: var(--scene-ground)"
     />
     <path d="M300 1774C380 1720 482 1700 602 1720C682 1690 782 1652 887 1650V1774Z" style="fill: var(--scene-ground-deep)" />
@@ -372,14 +378,14 @@ defineProps({
         :key="layer.key"
         class="scene-rain-fall"
         :style="fallOf(layer)"
-        x="-4120"
+        x="-12120"
         y="1000"
-        width="5127"
+        width="13127"
         height="774"
         :fill="`url(#scene-rain-land-${layer.key})`"
       />
     </g>
-    <rect class="scene-haze" x="-4000" y="1380" width="4887" height="394" fill="url(#scene-rain-land-haze)" />
+    <rect class="scene-haze" x="-12000" y="1380" width="12887" height="394" fill="url(#scene-rain-land-haze)" />
   </svg>
 </template>
 
@@ -547,6 +553,20 @@ defineProps({
 @media (prefers-reduced-motion: reduce) {
   .home-scene[data-rainbow] .scene-rainbow {
     animation: none;
+  }
+}
+
+/* The sky is drawn for a phone and scaled to fill whatever it stands behind,
+   so on a desktop it is three or four times a phone's size, and its clouds
+   came out as slabs: a weather cloud ran half the width of the screen behind
+   the church, its flat foot a hard line across the hill. There each cloud is
+   shrunk where it stands, on its own foot, to about the size it is on a
+   phone; the sky, the light and the rain keep filling the page. */
+@media (min-width: 1024px) {
+  .scene-cloud {
+    transform: scale(0.42);
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
   }
 }
 
