@@ -15,7 +15,7 @@ export const versionHistory = [
     highlights: [
       'Everything for today is on show: your day card, with a list of all the rest beside it. Click one to open it.',
       'Search is the first thing on your home. Click it, or press Ctrl K.',
-      'Your apps run in one row underneath, and this week's days under them, with what is on each.',
+      'Your apps run in one row underneath, and the week ahead under them, with what is on each day.',
     ],
   },
   {
