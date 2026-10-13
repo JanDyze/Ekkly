@@ -517,7 +517,6 @@ const lineOf = (item) => {
               <span aria-hidden="true">·</span>
               <span class="inline-flex items-center gap-1.5">
                 <component :is="weatherIcon" class="size-4" />
-                <span v-if="weather.temperature !== null" class="tabular-nums">{{ weather.temperature }}°</span>
                 {{ weather.label }}
               </span>
             </template>
@@ -642,12 +641,13 @@ const lineOf = (item) => {
             </template>
 
             <!-- The weather over the church right now (live sky), when there
-                 is a report: a glance out of the window before the day. -->
+                 is a report: a glance out of the window before the day. The
+                 sky in a word, not the temperature: nobody plans a Sunday by
+                 the degree, and the number only crowded the card. -->
             <template v-if="weather" #trailing>
               <span class="flex shrink-0 items-center gap-1.5 rounded-full bg-white/18 px-2.5 py-1 text-[13px] font-semibold">
                 <component :is="weatherIcon" class="size-4" />
-                <span v-if="weather.temperature !== null" class="tabular-nums">{{ weather.temperature }}°</span>
-                <span class="hidden min-[380px]:inline">{{ weather.label }}</span>
+                <span>{{ weather.label }}</span>
               </span>
             </template>
 
