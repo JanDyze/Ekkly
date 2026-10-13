@@ -177,9 +177,15 @@ const groups = computed(() => [
 // slot, the same face: its headline whole, its faces, its list, its chips —
 // its height easing open where it stands, and easing back down when the
 // pointer leaves. It grows over the cards under it rather than pushing them
-// down, so nothing else moves and the column never has to scroll; one near the
-// foot of the window grows upward instead. The beat is so sweeping down a
-// column does not open every card on the way.
+// down, so nothing else moves; one near the foot of the window grows upward
+// instead. The beat is so sweeping down a column does not open every card on
+// the way.
+//
+// The opened card is drawn above the page, pinned to where the small one
+// stands, rather than inside its column: a column with more cards than it has
+// room for scrolls, and anything inside it is cut off at its edges. So the
+// list keeps its scroll, and scrolling it — or turning the wheel over the
+// opened card, which would otherwise scroll nothing — closes the card.
 const opened = ref(null)
 let openTimer = null
 const OPEN_AFTER = 320
@@ -193,29 +199,58 @@ const openAt = (card, event) => {
   openTimer = setTimeout(() => {
     if (!el?.isConnected || leaving.value === card.key) return
     const box = el.getBoundingClientRect()
-    opened.value = { key: card.key, from: box.height, up: box.top + OPEN_ROOM > window.innerHeight - 8 }
+    const up = box.top + OPEN_ROOM > window.innerHeight - 8
+    opened.value = {
+      card,
+      key: card.key,
+      from: box.height,
+      style: {
+        left: `${box.left}px`,
+        width: `${box.width}px`,
+        ...(up ? { bottom: `${window.innerHeight - box.bottom}px` } : { top: `${box.top}px` }),
+      },
+    }
   }, OPEN_AFTER)
 }
 
+// Leaving the small card for the opened one over it is not leaving: a moment's
+// grace, which the opened card takes up as the pointer arrives on it.
+let closeTimer = null
+const closeSoon = () => {
+  clearTimeout(openTimer)
+  clearTimeout(closeTimer)
+  closeTimer = setTimeout(() => (opened.value = null), 90)
+}
+const stayOpen = () => clearTimeout(closeTimer)
+
 const close = () => {
   clearTimeout(openTimer)
+  clearTimeout(closeTimer)
   opened.value = null
+}
+
+// Closed by a scroll: at once, not eased, since the list is already moving
+// out from under where the opened card is pinned.
+let snapShut = false
+const closeNow = () => {
+  if (!opened.value) return
+  snapShut = true
+  close()
 }
 
 const still = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-// From the small card's height to the full card's, and back: the height eases
-// while the full card's face fades in over the small one's first moments.
+// From the small card's height to the full card's, and back: the height eases,
+// solid from the first frame (a fade let the small card's words show through
+// it), and closing fades it as it shrinks.
 const GROW_MS = 300
 const growIn = (el, done) => {
   if (still()) return done()
   const to = el.scrollHeight
   el.style.height = `${el.dataset.from}px`
-  el.style.opacity = '0.4'
   requestAnimationFrame(() => {
-    el.style.transition = `height ${GROW_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease`
+    el.style.transition = `height ${GROW_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`
     el.style.height = `${to}px`
-    el.style.opacity = '1'
   })
   setTimeout(() => {
     el.style.height = ''
@@ -224,7 +259,10 @@ const growIn = (el, done) => {
   }, GROW_MS)
 }
 const growOut = (el, done) => {
-  if (still()) return done()
+  if (still() || snapShut) {
+    snapShut = false
+    return done()
+  }
   el.style.height = `${el.offsetHeight}px`
   requestAnimationFrame(() => {
     el.style.transition = `height 240ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease 60ms`
@@ -234,7 +272,10 @@ const growOut = (el, done) => {
   setTimeout(done, 260)
 }
 
-onBeforeUnmount(() => clearTimeout(openTimer))
+onBeforeUnmount(() => {
+  clearTimeout(openTimer)
+  clearTimeout(closeTimer)
+})
 
 /* -------------------------------------------------------------- the deck */
 
@@ -474,7 +515,7 @@ const fanned = (depth) => {
   <section
     v-if="spread"
     :aria-label="label"
-    class="col-span-2 grid max-h-full min-h-0 grid-cols-2 grid-rows-[minmax(0,1fr)] items-start gap-5"
+    class="col-span-2 grid h-full min-h-0 grid-cols-2 grid-rows-[minmax(0,1fr)] items-start gap-5"
   >
     <div
       v-for="group in groups"
@@ -495,14 +536,15 @@ const fanned = (depth) => {
         v-else
         tag="ul"
         name="row"
-        class="relative flex min-h-0 flex-1 flex-col gap-2"
+        class="relative flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto [scrollbar-width:thin]"
+        @scroll.passive="closeNow"
       >
         <li
           v-for="card in group.cards"
           :key="card.key"
-          :class="['group/row relative min-w-0', opened?.key === card.key ? 'z-20' : '']"
+          class="group/row relative min-w-0"
           @pointerenter="openAt(card, $event)"
-          @pointerleave="close"
+          @pointerleave="closeSoon"
           :style="card.key === leaving ? { transition: 'opacity 200ms ease', opacity: 0 } : undefined"
         >
           <slot name="row" :card="card">
@@ -536,47 +578,51 @@ const fanned = (depth) => {
             <X class="size-3.5" />
           </button>
 
-          <!-- The card grown into the phone's (opened, above): over where the
-               small one stands, its own dismiss in its corner. -->
-          <Transition :css="false" @enter="growIn" @leave="growOut">
-            <div
-              v-if="opened?.key === card.key"
-              :data-from="opened.from"
-              :class="[
-                'absolute inset-x-0 overflow-hidden rounded-[28px] shadow-[0_18px_40px_-14px_rgb(15_23_42/0.45)]',
-                opened.up ? 'bottom-0' : 'top-0',
-              ]"
-            >
-              <slot name="card" :card="card" :top="true">
-                <AppHero
-                  :art="art"
-                  :greeting="card.greeting"
-                  :title="card.title"
-                  :detail="card.detail"
-                  :to="card.to"
-                  :inset="card.dismissible"
-                />
-              </slot>
-              <button
-                v-if="card.dismissible"
-                type="button"
-                :class="[
-                  'absolute right-3 top-3 flex size-8 items-center justify-center rounded-full transition-colors',
-                  card.tone === 'accent' || card.tone === 'celebrate'
-                    ? 'bg-white/15 text-white hover:bg-white/25'
-                    : 'bg-gray-900/5 text-gray-500 hover:bg-gray-900/10 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/15',
-                ]"
-                :aria-label="card.remember ? 'Dismiss until there are more' : 'Dismiss until the app is opened again'"
-                @click="close(); dismiss(card)"
-              >
-                <X class="size-4" />
-              </button>
-            </div>
-          </Transition>
         </li>
       </TransitionGroup>
     </div>
 
+    <!-- The card grown into the phone's (opened, above), pinned over where
+         the small one stands, its own dismiss in its corner. -->
+    <Teleport to="body">
+      <Transition :css="false" @enter="growIn" @leave="growOut">
+        <div
+          v-if="opened"
+          :key="opened.key"
+          :data-from="opened.from"
+          class="fixed z-60 overflow-hidden rounded-[28px] shadow-[0_18px_40px_-14px_rgb(15_23_42/0.45)]"
+          :style="opened.style"
+          @pointerenter="stayOpen"
+          @pointerleave="close"
+          @wheel.passive="closeNow"
+        >
+          <slot name="card" :card="opened.card" :top="true">
+            <AppHero
+              :art="art"
+              :greeting="opened.card.greeting"
+              :title="opened.card.title"
+              :detail="opened.card.detail"
+              :to="opened.card.to"
+              :inset="opened.card.dismissible"
+            />
+          </slot>
+          <button
+            v-if="opened.card.dismissible"
+            type="button"
+            :class="[
+              'absolute right-3 top-3 flex size-8 items-center justify-center rounded-full transition-colors',
+              opened.card.tone === 'accent' || opened.card.tone === 'celebrate'
+                ? 'bg-white/15 text-white hover:bg-white/25'
+                : 'bg-gray-900/5 text-gray-500 hover:bg-gray-900/10 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/15',
+            ]"
+            :aria-label="opened.card.remember ? 'Dismiss until there are more' : 'Dismiss until the app is opened again'"
+            @click="dismiss(opened.card); close()"
+          >
+            <X class="size-4" />
+          </button>
+        </div>
+      </Transition>
+    </Teleport>
   </section>
 
   <div
