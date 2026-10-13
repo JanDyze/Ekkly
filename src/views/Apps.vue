@@ -1,13 +1,14 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { CalendarDots, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MagnifyingGlass, MicrophoneStage, Moon, Sun } from '../icons'
+import { Cake, CalendarDots, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MagnifyingGlass, MicrophoneStage, Moon, Sun } from '../icons'
 import AppHeroDeck from '../components/appframe/AppHeroDeck.vue'
 import CardPanes from '../components/appframe/CardPanes.vue'
 import DeckCard from '../components/appframe/DeckCard.vue'
 import DeckFaces from '../components/appframe/DeckFaces.vue'
 import DeckChips from '../components/appframe/DeckChips.vue'
 import DeckWeek from '../components/appframe/DeckWeek.vue'
+import DeckRow from '../components/appframe/DeckRow.vue'
 import AppPeek from '../components/appframe/AppPeek.vue'
 import HomeScene from '../components/home/HomeScene.vue'
 import HomeAppCards from '../components/home/HomeAppCards.vue'
@@ -16,6 +17,7 @@ import { useLiveSky } from '../composables/useLiveSky'
 import { useAppOrder } from '../composables/useAppOrder'
 import { usePressAndHold } from '../composables/usePressAndHold'
 import BirthdayCard from '../components/members/BirthdayCard.vue'
+import MemberAvatar from '../components/members/MemberAvatar.vue'
 import { usePermissions } from '../composables/usePermissions'
 import { useAuth } from '../composables/useAuth'
 import { useAppSettings } from '../composables/useAppSettings'
@@ -58,9 +60,10 @@ import { peopleOnService } from '../data/scheduleRoles'
 //
 // On a desktop (lg) the same page has the room to show everything at once, so
 // it lays itself out for a mouse: a search field first, since someone at a
-// keyboard would rather type where they are going; the Today cards side by
-// side instead of a deck to swipe (AppHeroDeck's `spread`); the apps in one
-// row under them; and the church on its hill with the verse at the foot. It
+// keyboard would rather type where they are going; Today as the day's card
+// with every other card a row in a list beside it, all on show at once,
+// instead of a deck to swipe (AppHeroDeck's `spread`); the apps in one row
+// under them; and the church on its hill with the verse at the foot. It
 // may scroll there, where a phone's home never does, so the verse is given
 // room of its own rather than stepping aside.
 
@@ -153,7 +156,28 @@ const cards = computed(() => {
     })
   }
 
-  today.birthdaysToday.value.forEach(({ member, turning }) => {
+  // On a desktop every card is a row, and a row each would let a busy day's
+  // birthdays crowd out everything else: they are one row there, naming
+  // everyone, and it opens the day's birthdays in People.
+  const birthdays = today.birthdaysToday.value
+  if (wide.value && birthdays.length) {
+    const one = birthdays.length === 1 ? birthdays[0] : null
+    const people = birthdays.map(({ member }) => member)
+    list.push({
+      kind: 'birthdays',
+      key: `birthdays:${people.map(keyOf).join(',')}:${today.today}`,
+      tone: 'celebrate',
+      icon: Cake,
+      dismissible: true,
+      kicker: 'Birthday today',
+      title: one ? `${getDisplayName(one.member)}'s birthday` : `${plural(birthdays.length, 'birthday', 'birthdays')} today`,
+      detail: one ? (one.turning ? `Turns ${one.turning}` : getFullName(one.member)) : namesOf(people),
+      to: one ? { name: 'MemberDetails', params: { id: one.member.id || one.member.firestoreId } } : { name: 'PeopleBirthdays' },
+      dest: 'members',
+      destLabel: one ? 'their record in People' : 'Birthdays, in People',
+      members: people,
+    })
+  } else birthdays.forEach(({ member, turning }) => {
     list.push({
       kind: 'birthday',
       key: `birthday:${member.firestoreId || member.id}:${today.today}`,
@@ -296,6 +320,24 @@ const cards = computed(() => {
   return list
 })
 
+/* ------------------------------------------------- a card told as a row */
+
+// On a desktop each card but the day's is a row (DeckRow): the line under its
+// headline is the most telling thing the card holds, and the faces it is about
+// sit small at its right.
+const rowDetail = (card) => {
+  if (card.chips) return card.chips.map((chip) => chip.label).join(', ')
+  if (card.tasks) {
+    const names = card.tasks.slice(0, 2).map((task) => task.title)
+    if (card.tasks.length > 2) names.push(`${card.tasks.length - 2} more`)
+    return names.join(' · ')
+  }
+  // Who an account claim is for says more than what a claim is.
+  if (card.faces?.caption && !card.date) return card.faces.caption
+  return card.detail
+}
+const rowFaces = (card) => (card.members || card.faces?.members || []).slice(0, 4)
+
 /* ------------------------------------------------------------- the verse */
 
 // The verse opens its chapter in the Bible, for whoever has the Bible app.
@@ -409,8 +451,43 @@ const lineOf = (item) => {
         <kbd class="shrink-0 rounded-md bg-gray-100 px-2 py-0.5 font-sans text-xs font-semibold text-gray-500 dark:bg-white/10 dark:text-gray-300">{{ searchKeys }}</kbd>
       </button>
 
-      <!-- 1. Today, most important on top; side by side on a desktop -->
+      <!-- 1. Today, most important on top; on a desktop, the day's card with
+           every other card a row in a list beside it -->
       <AppHeroDeck :cards="cards" scope="home" label="Today" :spread="wide">
+        <template #row="{ card }">
+          <DeckRow
+            :tone="card.tone"
+            :icon="card.icon"
+            :kicker="card.kicker"
+            :title="card.title"
+            :detail="rowDetail(card)"
+            :to="card.to"
+            :dest="card.dest"
+            :dest-label="card.destLabel"
+            :inset="card.dismissible"
+          >
+            <!-- Something on a day: its date, as the deck card shows it. -->
+            <template v-if="card.date" #leading>
+              <span class="flex size-10 shrink-0 flex-col items-center justify-center rounded-xl bg-primary/10 leading-none text-primary dark:bg-primary-light/15 dark:text-primary-light">
+                <span class="text-[9px] font-bold uppercase">{{ card.date.month }}</span>
+                <span class="mt-px text-sm font-bold tabular-nums">{{ card.date.day }}</span>
+              </span>
+            </template>
+            <template v-if="rowFaces(card).length" #trailing>
+              <span class="flex shrink-0 -space-x-2" aria-hidden="true">
+                <MemberAvatar
+                  v-for="member in rowFaces(card)"
+                  :key="keyOf(member)"
+                  :member="member"
+                  alt=""
+                  size="h-7 w-7"
+                  :plain-class="card.tone === 'warn' ? 'ring-2 ring-amber-50 dark:ring-gray-800' : 'ring-2 ring-white dark:ring-gray-800'"
+                />
+              </span>
+            </template>
+          </DeckRow>
+        </template>
+
         <template #card="{ card }">
           <BirthdayCard v-if="card.kind === 'birthday'" :card="card" />
 
@@ -465,6 +542,7 @@ const lineOf = (item) => {
             :kicker="card.kicker"
             :title="card.title"
             :to="card.to"
+            :fill="wide"
           >
             <template #art>
               <!-- Ekkly's panes of light in the corner, the same shapes as the

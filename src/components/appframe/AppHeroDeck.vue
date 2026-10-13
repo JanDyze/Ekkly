@@ -2,6 +2,7 @@
 import { TransitionGroup, computed, ref, watch } from 'vue'
 import { ChevronLeft, ChevronRight, X } from '../../icons'
 import AppHero from './AppHero.vue'
+import DeckRow from './DeckRow.vue'
 import { useSounds } from '../../composables/useSounds'
 
 // An app's first card, when there is more than one thing worth leading with.
@@ -44,19 +45,18 @@ import { useSounds } from '../../composables/useSounds'
 // is swiped, a soft thud as it lands under the deck, a light lift as one is
 // put away.
 //
-// `spread` lays the same cards out flat, side by side, for a desktop. A swipe
+// `spread` is the same deck on a desktop, where nothing has to hide. A swipe
 // is a thumb's gesture: with a mouse it hides every card but the top one
-// behind a move nobody makes, and a wide screen has the room to show them all
-// at once. A row holds `columns` of them, and never grows a second row: the
-// cards are one height, and a row of one under a row of three broke that.
-// The card that is always true (the deck's last) leads the row and stays put;
-// the rest fill the places after it. Where there are more than fit, they go by
-// in pages, and the row says so in words over it — "1–2 of 4", with arrows —
-// rather than leaving a full-looking row to hide the others. The deck's loop
-// is left behind here: cards that came round again, shifting a place each
-// turn, read as a row that had changed under you. A page turns by the arrows,
-// the arrow keys, a drag sideways, or a sideways swipe on a trackpad, and stops
-// at either end. Putting a card away works as it does in the deck.
+// behind a move nobody makes. So the card that is always true (the deck's
+// last) stands on its own at the left, the `card` slot drawn the full height
+// of what is beside it, and every other card is a row in a list beside it
+// (the `row` slot, a DeckRow), in the deck's order, most important first.
+// Five or more and the list runs in two columns, filled down then across, so
+// ten come to five rows: about the height of the card beside them. More than
+// that and the page grows; it never pages, loops or hides one behind a count,
+// which on a row of cards read as a full row with more kept out of sight.
+// Nothing waiting is said in words where the rows would be. Putting a card
+// away works as it does in the deck, and the rows after it close the gap.
 
 const props = defineProps({
   cards: { type: Array, required: true },
@@ -66,7 +66,8 @@ const props = defineProps({
   scope: { type: String, required: true },
   label: { type: String, default: 'Today' },
   spread: { type: Boolean, default: false },
-  columns: { type: Number, default: 3 },
+  // What the list says when nothing is waiting, laid out flat.
+  emptyText: { type: String, default: 'Nothing is waiting on you today.' },
 })
 
 /* ------------------------------------------------------------- dismissing */
@@ -132,71 +133,6 @@ const visible = computed(() =>
   props.cards.filter((card) => !(card.remember && levelOf(card) <= 0) && !isPutAway(card))
 )
 
-/* --------------------------------------------------------- laid out flat */
-
-// The cards that go by in pages: all but the last, which leads the row.
-const paged = computed(() => visible.value.slice(0, -1))
-const pageSize = computed(() => props.columns - 1)
-const turns = computed(() => props.spread && paged.value.length > pageSize.value)
-// The first card of the page on show, and which way the row last turned, so
-// the page coming in arrives from that side. The last page is a full one,
-// ending on the last card, rather than one card and a gap.
-const turn = ref(0)
-const turnDir = ref(1)
-const lastStart = computed(() => Math.max(paged.value.length - pageSize.value, 0))
-const clampTurn = (i) => Math.min(Math.max(i, 0), lastStart.value)
-
-// A card put away must not leave the row on a page past the end.
-watch(lastStart, () => {
-  turn.value = clampTurn(turn.value)
-})
-
-// Spread out, the row: the card that is always true, then the page on show.
-const shown = computed(() => {
-  const all = visible.value
-  if (!props.spread || !all.length) return all
-  return [all[all.length - 1], ...paged.value.slice(turn.value, turn.value + pageSize.value)]
-})
-
-// What the row says over it: which of the cards are on show, of how many.
-const pageLabel = computed(() => {
-  const first = turn.value + 1
-  const last = Math.min(turn.value + pageSize.value, paged.value.length)
-  return `${first === last ? first : `${first}–${last}`} of ${paged.value.length}`
-})
-
-const turnRow = (dir) => {
-  if (!turns.value) return
-  const next = clampTurn(turn.value + dir * pageSize.value)
-  if (next === turn.value) return
-  turnDir.value = dir
-  turn.value = next
-  // Heard the way the deck's next card is: the cards go off to the side.
-  swipe(-dir)
-}
-
-// A sideways swipe on a trackpad turns the row, once per swipe: the wheel
-// events of one swipe add up, and after a turn the rest of that swipe is let
-// go by. Up and down are the page scrolling, left alone; sideways is ours, so
-// the browser does not take it for going back a page.
-let wheelX = 0
-let wheelQuiet = 0
-const onWheel = (event) => {
-  if (!turns.value || Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return
-  event.preventDefault()
-  if (event.timeStamp < wheelQuiet) return
-  wheelX += event.deltaX
-  if (Math.abs(wheelX) < 60) return
-  turnRow(wheelX > 0 ? 1 : -1)
-  wheelX = 0
-  wheelQuiet = event.timeStamp + 450
-}
-// One row as wide as the cards in it, so two cards share the row rather than
-// leaving a gap where a third would go.
-const spreadColumns = computed(() => ({
-  gridTemplateColumns: `repeat(${Math.min(shown.value.length, props.columns)}, minmax(0, 1fr))`,
-}))
-
 // The card on its way out: it fades where it is first, and only then leaves the
 // deck, so the one under it rises into a space that has visibly been made.
 const leaving = ref(null)
@@ -223,6 +159,23 @@ const dismiss = (card) => {
     rememberTop()
   }, 220)
 }
+
+/* --------------------------------------------------------- laid out flat */
+
+// The card that is always true, and the rest as rows.
+const lead = computed(() => visible.value[visible.value.length - 1])
+const rows = computed(() => visible.value.slice(0, -1))
+
+// One column up to four rows; past that, two, filled down then across.
+const listGrid = computed(() => {
+  const n = rows.value.length
+  if (n <= 4) return { gridTemplateColumns: 'minmax(0, 1fr)' }
+  return {
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gridTemplateRows: `repeat(${Math.ceil(n / 2)}, auto)`,
+    gridAutoFlow: 'column',
+  }
+})
 
 /* -------------------------------------------------------------- the deck */
 
@@ -328,8 +281,7 @@ const onPointerDown = (event) => {
   // A browser lets a page make sound only from inside a touch, so the audio
   // is woken here, before the swipe it will be needed for.
   prime()
-  if (event.button > 0 || flying.value) return
-  if (props.spread ? !turns.value : count.value < 2) return
+  if (event.button > 0 || count.value < 2 || flying.value) return
   if (event.target.closest('[data-deck-dismiss]')) return
   start = { x: event.clientX, y: event.clientY }
   recent = { x: event.clientX, t: event.timeStamp }
@@ -350,21 +302,14 @@ const onPointerMove = (event) => {
     }
     dragging.value = true
     swallowClick = true
-    // On the element listening, not `deck`: laid out flat that is a
-    // TransitionGroup, a component rather than an element.
-    event.currentTarget?.setPointerCapture?.(event.pointerId)
+    deck.value?.setPointerCapture?.(event.pointerId)
   }
   dx.value = mx
   recent = { x: event.clientX, t: event.timeStamp, vx: (event.clientX - recent.x) / Math.max(event.timeStamp - recent.t, 1) }
 }
 
 const onPointerUp = () => {
-  // Laid out flat, a drag far enough or a flick turns the row a card.
-  if (dragging.value && props.spread) {
-    const flick = recent?.vx || 0
-    if (dx.value < -60 || flick < -0.5) turnRow(1)
-    else if (dx.value > 60 || flick > 0.5) turnRow(-1)
-  } else if (dragging.value) {
+  if (dragging.value) {
     // Far enough, or flicked: either one sends it under, off the side it
     // was pushed. Not far enough and it settles back on top.
     const far = width() * 0.25
@@ -397,16 +342,6 @@ const styleOf = (card, i) => {
   const motion = dragging.value || instant.value
     ? { transition: 'none' }
     : { transition: 'transform 380ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease' }
-
-  // Laid out flat, the row leans a little after a drag, and a card fades when
-  // it is put away; its turning is TransitionGroup's (row-*, below), with the
-  // card coming in from the side the row turned toward (--from).
-  if (props.spread) {
-    const from = { '--from': `${turnDir.value * 48}px` }
-    if (card.key === leaving.value) return { ...from, transition: 'opacity 200ms ease', opacity: 0 }
-    if (dragging.value) return { ...from, transition: 'none', transform: `translateX(${dx.value * 0.2}px)` }
-    return from
-  }
 
   if (card.key === leaving.value) {
     // Put away, it fades where it is: a card never rises or shrinks.
@@ -473,14 +408,78 @@ const fanned = (depth) => {
 </script>
 
 <template>
+  <!-- Laid out flat: the card that is always true, and every other card as a
+       row beside it. -->
+  <section
+    v-if="spread && visible.length"
+    :aria-label="label"
+    class="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-4"
+  >
+    <div class="relative min-w-0">
+      <slot name="card" :card="lead" :top="true" :spread="true">
+        <AppHero
+          class="h-full"
+          :art="art"
+          :greeting="lead.greeting"
+          :title="lead.title"
+          :detail="lead.detail"
+          :badge="lead.badge"
+          :to="lead.to"
+        />
+      </slot>
+    </div>
+
+    <TransitionGroup v-if="rows.length" tag="ul" name="row" class="relative grid content-start gap-2" :style="listGrid">
+      <li
+        v-for="card in rows"
+        :key="card.key"
+        class="group/row relative min-w-0"
+        :style="card.key === leaving ? { transition: 'opacity 200ms ease', opacity: 0 } : undefined"
+      >
+        <slot name="row" :card="card">
+          <DeckRow
+            :tone="card.tone"
+            :icon="card.icon"
+            :kicker="card.kicker"
+            :title="card.title"
+            :detail="card.detail"
+            :to="card.to"
+            :dest="card.dest"
+            :dest-label="card.destLabel"
+            :inset="card.dismissible"
+          />
+        </slot>
+
+        <!-- Quiet until the row is pointed at, where there is a pointer to
+             point with; always there on a touch screen. -->
+        <button
+          v-if="card.dismissible"
+          type="button"
+          class="absolute right-2.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-900/5 hover:text-gray-600 focus-visible:opacity-100 group-hover/row:opacity-100 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300 [@media(hover:hover)]:opacity-0"
+          :aria-label="card.remember ? 'Dismiss until there are more' : 'Dismiss until the app is opened again'"
+          @click="dismiss(card)"
+        >
+          <X class="size-4" />
+        </button>
+      </li>
+    </TransitionGroup>
+
+    <p
+      v-else
+      class="flex items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white/50 p-6 text-center text-sm text-gray-500 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-400"
+    >
+      {{ emptyText }}
+    </p>
+  </section>
+
   <div
-    v-if="visible.length"
+    v-else-if="visible.length"
     role="region"
-    :aria-roledescription="spread ? undefined : 'carousel'"
+    aria-roledescription="carousel"
     :aria-label="label"
     class="-mx-4 flex flex-col gap-2 overflow-x-clip px-4"
-    @keydown.left="spread ? turnRow(-1) : go(index - 1)"
-    @keydown.right="spread ? turnRow(1) : sendUnder(-1)"
+    @keydown.left="go(index - 1)"
+    @keydown.right="sendUnder(-1)"
   >
     <!-- Every card in the one grid cell, each the same fixed share of the
          screen's height (DeckCard), so nothing jumps between them. The one
@@ -490,57 +489,24 @@ const fanned = (depth) => {
          The region round it is clipped sideways at the screen's edge rather
          than the column's, so a swiped card can travel to the edge without
          the page scrolling sideways under it. -->
-    <!-- Laid out flat with more cards than fit: which are on show, of how
-         many, and the arrows to the rest, over the cards they page through. -->
-    <div v-if="turns" class="flex items-center justify-end gap-1">
-      <span class="mr-1.5 text-sm font-semibold tabular-nums text-gray-600 dark:text-gray-300" aria-live="polite">{{ pageLabel }}</span>
-      <button
-        type="button"
-        class="flex size-9 items-center justify-center rounded-full bg-white/80 text-gray-700 ring-1 ring-black/5 transition-colors hover:bg-white disabled:cursor-default disabled:opacity-40 disabled:hover:bg-white/80 dark:bg-gray-800/80 dark:text-gray-200 dark:ring-white/10 dark:hover:bg-gray-800"
-        aria-label="Previous cards"
-        :disabled="turn === 0"
-        @click="turnRow(-1)"
-      >
-        <ChevronLeft class="size-4" />
-      </button>
-      <button
-        type="button"
-        class="flex size-9 items-center justify-center rounded-full bg-white/80 text-gray-700 ring-1 ring-black/5 transition-colors hover:bg-white disabled:cursor-default disabled:opacity-40 disabled:hover:bg-white/80 dark:bg-gray-800/80 dark:text-gray-200 dark:ring-white/10 dark:hover:bg-gray-800"
-        aria-label="Next cards"
-        :disabled="turn >= lastStart"
-        @click="turnRow(1)"
-      >
-        <ChevronRight class="size-4" />
-      </button>
-    </div>
-
-    <!-- Spread out, the same cards side by side in one row, a page at a time
-         (TransitionGroup slides the page coming in from its side). -->
-    <component
-      :is="spread ? TransitionGroup : 'div'"
+    <div
       ref="deck"
-      v-bind="spread ? { tag: 'div', name: 'row' } : {}"
-      :class="[
-        'grid touch-pan-y select-none',
-        spread ? 'relative gap-4' : ['grid-cols-1', visible.length > 1 ? 'pb-2' : ''],
-      ]"
-      :style="spread ? spreadColumns : undefined"
+      :class="['grid grid-cols-1 touch-pan-y select-none', visible.length > 1 ? 'pb-2' : '']"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
       @pointercancel="onPointerUp"
       @click.capture="onClickCapture"
-      @wheel="onWheel"
       @dragstart.prevent
     >
       <div
-        v-for="(card, i) in shown"
+        v-for="(card, i) in visible"
         :key="card.key"
         role="group"
-        :aria-roledescription="spread ? undefined : 'slide'"
-        :aria-label="spread ? undefined : `${i + 1} of ${visible.length}`"
-        :inert="!spread && i !== index"
-        :class="['deck-card relative min-w-0', spread ? '' : '[grid-area:1/1] origin-bottom']"
+        aria-roledescription="slide"
+        :aria-label="`${i + 1} of ${visible.length}`"
+        :inert="i !== index"
+        class="deck-card relative min-w-0 [grid-area:1/1] origin-bottom"
         :style="styleOf(card, i)"
       >
         <slot name="card" :card="card" :top="i === index">
@@ -572,13 +538,13 @@ const fanned = (depth) => {
           <X class="size-4" />
         </button>
       </div>
-    </component>
+    </div>
 
     <!-- Where you are in the deck, and a tap to any card in it. The chevrons
          either side are for whoever has not guessed the cards swipe: quiet
          enough to pass unnoticed by someone who has, and doing the same as a
          swipe (next sends the top card under) for someone who has not. -->
-    <div v-if="!spread && visible.length > 1" class="flex items-center justify-center gap-0.5">
+    <div v-if="visible.length > 1" class="flex items-center justify-center gap-0.5">
       <button
         type="button"
         class="mr-1 flex size-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-900/5 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300"
@@ -616,18 +582,18 @@ const fanned = (depth) => {
 </template>
 
 <style scoped>
-/* Laid out flat, turning a page: the cards coming in slide in from the side
-   the row turned toward, and the ones going out leave at once, out of their
-   way. The card that leads the row never moves. */
+/* Laid out flat: a row put away has faded already, so it leaves at once, out
+   of the way, and the rows after it slide up into its place. One arriving
+   rises into its own. */
 .row-move,
 .row-enter-active {
   transition:
-    transform 380ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 300ms ease;
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 240ms ease;
 }
 .row-enter-from {
   opacity: 0;
-  transform: translateX(var(--from));
+  transform: translateY(6px);
 }
 .row-leave-active {
   position: absolute;
@@ -636,7 +602,9 @@ const fanned = (depth) => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .deck-card {
+  .deck-card,
+  .row-move,
+  .row-enter-active {
     transition: none !important;
   }
 }

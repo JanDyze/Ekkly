@@ -38,6 +38,9 @@ const props = defineProps({
   // and that place's name for a screen reader.
   dest: { type: String, default: '' },
   destLabel: { type: String, default: '' },
+  // Standing beside a list rather than in a deck (AppHeroDeck's `spread`):
+  // as tall as the list, never shorter than a deck card.
+  fill: { type: Boolean, default: false },
 })
 
 // A foot whose only content is switched off by a `v-if` still arrives as a
@@ -114,7 +117,7 @@ const DETAILS = {
     draggable="false"
     :class="[
       'group relative isolate flex flex-col rounded-[28px] border px-4 pb-3 pt-[15px]',
-      HEIGHT,
+      fill ? 'h-full min-h-54' : HEIGHT,
       TONES[tone] || TONES.plain,
       tappable ? ['transition-colors duration-200 ease-out', HOVERS[tone] || HOVERS.plain] : '',
       action && !to ? 'w-full text-left' : '',

@@ -8,12 +8,12 @@
 
 export const versionHistory = [
   {
-    version: '0.35.9',
+    version: '0.35.10',
     date: '2026-10-13',
     title: 'A home for the big screen',
     summary: 'On a computer, everything that matters today is on show at once.',
     highlights: [
-      'Your Today cards sit side by side in one row, the day card first. With more, the row says how many and the arrows show the rest.',
+      'Everything for today is on show: your day card, with a list of all the rest beside it. Click one to open it.',
       'Search is the first thing on your home. Click it, or press Ctrl K.',
       'Your apps run in one row underneath.',
     ],

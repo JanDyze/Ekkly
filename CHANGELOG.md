@@ -11,6 +11,21 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.10] — 2026-10-13
+
+On a computer, everything for today is on show at once.
+
+### Changed
+
+- **Today on a computer is the day card with a list beside it.** Every other
+  card is a line in that list, most important first: what it is, the detail
+  that matters, the faces it is about, and the app it opens. However many
+  there are, they are all there, in two columns once there are five or more.
+  No more arrows or counting through pages.
+- **Birthdays share one line on a computer:** "3 birthdays today: Maria, Ben
+  and Joy", opening the day's birthdays in People.
+- **When nothing is waiting on you,** the list says so.
+
 ## [0.35.9] — 2026-10-13
 
 The Today row on a computer says plainly what is in it.
