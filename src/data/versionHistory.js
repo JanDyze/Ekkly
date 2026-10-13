@@ -8,13 +8,13 @@
 
 export const versionHistory = [
   {
-    version: '0.35.19',
+    version: '0.35.20',
     date: '2026-10-13',
     title: 'Your home on a computer',
     summary: 'On a computer, your home opens in your church’s colour, with today in three columns.',
     highlights: [
       'What needs you, what is good to know, and the week ahead, side by side.',
-      'Rest the pointer on a card to see it full size, as on your phone.',
+      'Rest the pointer on a card and it opens into the full card, as on your phone.',
       'Your apps keep your church’s card style, in one row at the top.',
     ],
   },

@@ -12,7 +12,8 @@ import { RouterLink } from 'vue-router'
 // or failing those its icon).
 //
 // A column a third of a screen wide cuts a long headline or detail short, so
-// resting on a card shows it whole, as the phone's card (AppHeroDeck's peek).
+// resting on a card grows it, where it stands, into the phone's full card
+// (AppHeroDeck's `opened`).
 
 defineProps({
   tone: { type: String, default: 'plain' },

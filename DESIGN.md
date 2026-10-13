@@ -102,8 +102,10 @@ CHANGELOG.md.
      same tones (amber for waiting on you, the church's colour for somebody's
      day, white), a label pill, a bold headline, and its picture — the photo,
      the faces it is about, its date, or its own drawing
-     (`brand/ekkly/sections/today.mjs`, `today-<kind>`). Resting on one floats
-     the phone's full card over it (the peek): a look only, never a click.
+     (`brand/ekkly/sections/today.mjs`, `today-<kind>`). Resting on one grows
+     it where it stands into the phone's full card, its height easing open
+     over the cards under it (upward near the window's foot), and back down
+     when the pointer leaves; nothing else moves.
      Birthdays are one card naming everyone; what is on is said in the week.
   4. The church on its hill in whatever room is left, the full width of the
      page; everything else keeps to a 90rem column.

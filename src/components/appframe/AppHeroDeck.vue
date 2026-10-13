@@ -172,37 +172,69 @@ const groups = computed(() => [
   { key: 'rest', label: props.restLabel, empty: props.restEmpty, cards: rows.value.filter((card) => card.tone !== 'warn') },
 ])
 
-// Laid out flat, a card is the phone's in small. Rest the pointer on one (or
-// reach it with the keyboard) and, after a beat, it shows as the phone shows
-// it — the `card` slot, the same face, full size — floating over where it
-// stands, kept inside the window. The beat is so sweeping down a column does
-// not flash every card. It is a look only: it takes no pointer and no focus,
-// so the small card under it is still the one clicked.
-const peek = ref(null)
-let peekTimer = null
-const PEEK_AFTER = 450
-const PEEK_WIDTH = 360
-// A phone card is at most 16rem tall (DeckCard), and a little room under it.
-const PEEK_ROOM = 272
+// Laid out flat, a card is the phone's in small. Rest the pointer on one and,
+// after a beat, the card itself grows into the phone's full card — the `card`
+// slot, the same face: its headline whole, its faces, its list, its chips —
+// its height easing open where it stands, and easing back down when the
+// pointer leaves. It grows over the cards under it rather than pushing them
+// down, so nothing else moves and the column never has to scroll; one near the
+// foot of the window grows upward instead. The beat is so sweeping down a
+// column does not open every card on the way.
+const opened = ref(null)
+let openTimer = null
+const OPEN_AFTER = 320
+// A phone card is at most 16rem tall (DeckCard).
+const OPEN_ROOM = 264
 
-const peekAt = (card, event) => {
-  clearTimeout(peekTimer)
+const openAt = (card, event) => {
+  clearTimeout(openTimer)
   const el = event.currentTarget
-  peekTimer = setTimeout(() => {
+  if (opened.value?.key === card.key) return
+  openTimer = setTimeout(() => {
     if (!el?.isConnected || leaving.value === card.key) return
     const box = el.getBoundingClientRect()
-    const left = Math.min(Math.max(box.left + box.width / 2 - PEEK_WIDTH / 2, 8), window.innerWidth - PEEK_WIDTH - 8)
-    const top = Math.min(Math.max(box.top - 12, 8), window.innerHeight - PEEK_ROOM)
-    peek.value = { card, left, top }
-  }, PEEK_AFTER)
+    opened.value = { key: card.key, from: box.height, up: box.top + OPEN_ROOM > window.innerHeight - 8 }
+  }, OPEN_AFTER)
 }
 
-const unpeek = () => {
-  clearTimeout(peekTimer)
-  peek.value = null
+const close = () => {
+  clearTimeout(openTimer)
+  opened.value = null
 }
 
-onBeforeUnmount(() => clearTimeout(peekTimer))
+const still = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+// From the small card's height to the full card's, and back: the height eases
+// while the full card's face fades in over the small one's first moments.
+const GROW_MS = 300
+const growIn = (el, done) => {
+  if (still()) return done()
+  const to = el.scrollHeight
+  el.style.height = `${el.dataset.from}px`
+  el.style.opacity = '0.4'
+  requestAnimationFrame(() => {
+    el.style.transition = `height ${GROW_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease`
+    el.style.height = `${to}px`
+    el.style.opacity = '1'
+  })
+  setTimeout(() => {
+    el.style.height = ''
+    el.style.transition = ''
+    done()
+  }, GROW_MS)
+}
+const growOut = (el, done) => {
+  if (still()) return done()
+  el.style.height = `${el.offsetHeight}px`
+  requestAnimationFrame(() => {
+    el.style.transition = `height 240ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease 60ms`
+    el.style.height = `${el.dataset.from}px`
+    el.style.opacity = '0'
+  })
+  setTimeout(done, 260)
+}
+
+onBeforeUnmount(() => clearTimeout(openTimer))
 
 /* -------------------------------------------------------------- the deck */
 
@@ -463,17 +495,14 @@ const fanned = (depth) => {
         v-else
         tag="ul"
         name="row"
-        class="relative flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto [scrollbar-width:thin]"
-        @scroll.passive="unpeek"
+        class="relative flex min-h-0 flex-1 flex-col gap-2"
       >
         <li
           v-for="card in group.cards"
           :key="card.key"
-          class="group/row relative min-w-0"
-          @pointerenter="peekAt(card, $event)"
-          @pointerleave="unpeek"
-          @focusin="peekAt(card, $event)"
-          @focusout="unpeek"
+          :class="['group/row relative min-w-0', opened?.key === card.key ? 'z-20' : '']"
+          @pointerenter="openAt(card, $event)"
+          @pointerleave="close"
           :style="card.key === leaving ? { transition: 'opacity 200ms ease', opacity: 0 } : undefined"
         >
           <slot name="row" :card="card">
@@ -502,38 +531,52 @@ const fanned = (depth) => {
                 : 'bg-gray-900/5 text-gray-500 hover:bg-gray-900/10 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/15',
             ]"
             :aria-label="card.remember ? 'Dismiss until there are more' : 'Dismiss until the app is opened again'"
-            @click="unpeek(); dismiss(card)"
+            @click="close(); dismiss(card)"
           >
             <X class="size-3.5" />
           </button>
+
+          <!-- The card grown into the phone's (opened, above): over where the
+               small one stands, its own dismiss in its corner. -->
+          <Transition :css="false" @enter="growIn" @leave="growOut">
+            <div
+              v-if="opened?.key === card.key"
+              :data-from="opened.from"
+              :class="[
+                'absolute inset-x-0 overflow-hidden rounded-[28px] shadow-[0_18px_40px_-14px_rgb(15_23_42/0.45)]',
+                opened.up ? 'bottom-0' : 'top-0',
+              ]"
+            >
+              <slot name="card" :card="card" :top="true">
+                <AppHero
+                  :art="art"
+                  :greeting="card.greeting"
+                  :title="card.title"
+                  :detail="card.detail"
+                  :to="card.to"
+                  :inset="card.dismissible"
+                />
+              </slot>
+              <button
+                v-if="card.dismissible"
+                type="button"
+                :class="[
+                  'absolute right-3 top-3 flex size-8 items-center justify-center rounded-full transition-colors',
+                  card.tone === 'accent' || card.tone === 'celebrate'
+                    ? 'bg-white/15 text-white hover:bg-white/25'
+                    : 'bg-gray-900/5 text-gray-500 hover:bg-gray-900/10 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/15',
+                ]"
+                :aria-label="card.remember ? 'Dismiss until there are more' : 'Dismiss until the app is opened again'"
+                @click="close(); dismiss(card)"
+              >
+                <X class="size-4" />
+              </button>
+            </div>
+          </Transition>
         </li>
       </TransitionGroup>
     </div>
 
-    <!-- The card rested on, as the phone shows it (the peek, above). -->
-    <Teleport to="body">
-      <Transition name="peek">
-        <div
-          v-if="peek"
-          class="peek pointer-events-none fixed z-70"
-          :style="{ left: `${peek.left}px`, top: `${peek.top}px`, width: `${PEEK_WIDTH}px` }"
-          aria-hidden="true"
-          inert
-        >
-          <div class="rounded-[28px] shadow-[0_18px_40px_-12px_rgb(15_23_42/0.45)]">
-            <slot name="card" :card="peek.card" :top="true">
-              <AppHero
-                :art="art"
-                :greeting="peek.card.greeting"
-                :title="peek.card.title"
-                :detail="peek.card.detail"
-                :to="peek.card.to"
-              />
-            </slot>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
   </section>
 
   <div
@@ -646,22 +689,6 @@ const fanned = (depth) => {
 </template>
 
 <style scoped>
-/* Laid out flat, the card rested on rises into view where it stands. */
-.peek-enter-active,
-.peek-leave-active {
-  transition:
-    opacity 160ms ease,
-    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-.peek-enter-from,
-.peek-leave-to {
-  opacity: 0;
-  transform: scale(0.94);
-}
-.peek {
-  transform-origin: 50% 20%;
-}
-
 /* Laid out flat: a row put away has faded already, so it leaves at once, out
    of the way, and the rows after it slide up into its place. One arriving
    rises into its own. */
@@ -684,9 +711,7 @@ const fanned = (depth) => {
 @media (prefers-reduced-motion: reduce) {
   .deck-card,
   .row-move,
-  .row-enter-active,
-  .peek-enter-active,
-  .peek-leave-active {
+  .row-enter-active {
     transition: none !important;
   }
 }
