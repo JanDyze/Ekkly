@@ -74,6 +74,53 @@ const fallOf = (layer) => ({
   '--fall': `${(layer.h / layer.speed).toFixed(3)}s`,
 })
 
+// The clouds, each a short stack of rounded pills of different lengths, offset
+// from one another: the top ones the cloud's own white, the lowest a shade
+// cooler, drawn first so it shows only under the rest, which is all the
+// volume a cloud needs here. They were bumpy outlines cut off flat along the
+// foot, and that cut was a hard line across the sky wherever one showed at any
+// size. A pill has no edge to cut and stays tidy at a phone's size or a wide
+// screen's.
+//
+// `x`, `y` are the top left of the top pill in the painting's coordinates, `h`
+// each pill's height, and `rows` the pills from the top down as [offset from
+// x, length]; each sits 0.7 of a pill below the one above, overlapping it.
+const CLOUDS = {
+  // Always there, higher up, so some sky shows between the cards above as well
+  // as at the foot.
+  high: [
+    { x: 440, y: 470, h: 26, rows: [[36, 80], [0, 150], [22, 120]] },
+    { x: -30, y: 650, h: 30, rows: [[52, 96], [0, 210], [34, 168]] },
+    { x: 612, y: 830, h: 30, rows: [[40, 100], [0, 200], [48, 150]] },
+  ],
+  // One each side and a low bank along the horizon, warmer, as the light is
+  // lower there.
+  low: [
+    { x: -40, y: 1150, h: 40, rows: [[60, 140], [0, 280], [34, 226]] },
+    { x: 706, y: 1196, h: 38, warm: true, rows: [[52, 118], [0, 226], [30, 186]] },
+    { x: 90, y: 1460, h: 34, warm: true, rows: [[42, 110], [0, 262], [52, 196]] },
+  ],
+  // More of them when the weather says cloudy, rain or storm (useLiveSky).
+  weather: [
+    { x: 520, y: 290, h: 34, rows: [[62, 120], [0, 262], [42, 214]] },
+    { x: -40, y: 470, h: 36, rows: [[70, 130], [0, 300], [40, 238]] },
+    { x: 470, y: 920, h: 30, rows: [[50, 110], [0, 240], [30, 188]] },
+  ],
+}
+
+/** A cloud's pills, lowest first, so the ones above are drawn over it. */
+const pillsOf = (cloud) =>
+  cloud.rows
+    .map(([dx, length], i, rows) => ({
+      key: i,
+      x: cloud.x + dx,
+      y: cloud.y + i * cloud.h * 0.7,
+      width: length,
+      height: cloud.h,
+      fill: i === rows.length - 1 ? 'var(--scene-cloud-shade)' : cloud.warm ? 'var(--scene-cloud-warm)' : 'var(--scene-cloud)',
+    }))
+    .reverse()
+
 defineProps({
   part: { type: String, default: 'sky' },
 })
@@ -159,40 +206,23 @@ defineProps({
          whole. -->
     <WindowLight mirror x="0" y="0" width="640" height="576" class="scene-window" />
 
-    <!-- Clouds drifting higher up, so some of the sky shows between the
-         cards above as well as at the foot. -->
-    <g style="fill: var(--scene-cloud); opacity: 0.85">
-      <path class="scene-cloud" d="M420 520C430 500 460 494 480 504C496 478 540 474 560 498C584 494 604 506 608 520Z" />
-      <path class="scene-cloud" d="M-20 722C0 690 40 680 70 692C90 650 150 640 180 672C212 664 250 682 262 722Z" />
-      <path class="scene-cloud" d="M600 902C612 872 650 862 676 874C700 836 760 830 790 862C830 850 880 870 900 902Z" />
+    <!-- The clouds (CLOUDS, above): higher up, then low along the horizon. -->
+    <g style="opacity: 0.85">
+      <g v-for="(cloud, i) in CLOUDS.high" :key="`high-${i}`" class="scene-cloud">
+        <rect v-for="pill in pillsOf(cloud)" :key="pill.key" :x="pill.x" :y="pill.y" :width="pill.width" :height="pill.height" :rx="pill.height / 2" :style="{ fill: pill.fill }" />
+      </g>
     </g>
-
-    <!-- Clouds: one each side, and a low bank along the horizon. -->
-    <g class="scene-cloud">
-      <path
-        d="M0 1100C45 1100 72 1150 70 1195C98 1182 152 1195 160 1252C200 1255 236 1286 240 1312H0Z"
-        style="fill: var(--scene-cloud)"
-      />
-      <path d="M0 1262C60 1256 110 1268 140 1290C180 1292 220 1300 240 1312H0Z" style="fill: var(--scene-cloud-shade)" />
+    <g v-for="(cloud, i) in CLOUDS.low" :key="`low-${i}`" class="scene-cloud">
+      <rect v-for="pill in pillsOf(cloud)" :key="pill.key" :x="pill.x" :y="pill.y" :width="pill.width" :height="pill.height" :rx="pill.height / 2" :style="{ fill: pill.fill }" />
     </g>
-    <path
-      class="scene-cloud"
-      d="M887 1150C860 1160 845 1190 848 1225C815 1225 790 1242 785 1276C750 1282 725 1310 718 1346H887Z"
-      style="fill: var(--scene-cloud-warm)"
-    />
-    <path
-      class="scene-cloud"
-      d="M80 1502C110 1480 150 1478 175 1495C200 1470 262 1470 282 1500C330 1490 382 1502 402 1532H80Z"
-      style="fill: var(--scene-cloud-warm)"
-    />
 
     <!-- The weather (useLiveSky), each layer shown only when the sky's
          wrapper says so (data-weather, the rules below): more and heavier
          clouds, a grey veil when it is overcast, rain, and fog. -->
-    <g class="scene-extra-clouds" style="fill: var(--scene-cloud)">
-      <path class="scene-cloud" d="M520 360C540 316 600 300 640 324C668 280 750 276 784 318C830 300 887 320 887 360Z" />
-      <path class="scene-cloud" d="M-20 560C10 520 70 506 110 524C140 480 220 474 252 514C300 500 350 520 362 560Z" />
-      <path class="scene-cloud" d="M480 980C500 946 548 934 580 952C606 916 670 912 700 946C740 934 790 952 800 980Z" />
+    <g class="scene-extra-clouds">
+      <g v-for="(cloud, i) in CLOUDS.weather" :key="`weather-${i}`" class="scene-cloud">
+        <rect v-for="pill in pillsOf(cloud)" :key="pill.key" :x="pill.x" :y="pill.y" :width="pill.width" :height="pill.height" :rx="pill.height / 2" :style="{ fill: pill.fill }" />
+      </g>
     </g>
     <rect class="scene-overcast" width="887" height="1774" style="fill: var(--scene-overcast)" />
     <!-- Each sheet is drawn a repeat larger than the picture all round, so
@@ -558,13 +588,12 @@ defineProps({
 
 /* The sky is drawn for a phone and scaled to fill whatever it stands behind,
    so on a desktop it is three or four times a phone's size, and its clouds
-   came out as slabs: a weather cloud ran half the width of the screen behind
-   the church, its flat foot a hard line across the hill. There each cloud is
-   shrunk where it stands, on its own foot, to about the size it is on a
-   phone; the sky, the light and the rain keep filling the page. */
+   came out as slabs half the width of the screen. There each cloud is shrunk
+   where it stands, on its own foot, to about the size it is on a phone; the
+   sky, the light and the rain keep filling the page. */
 @media (min-width: 1024px) {
   .scene-cloud {
-    transform: scale(0.42);
+    transform: scale(0.5);
     transform-box: fill-box;
     transform-origin: 50% 100%;
   }

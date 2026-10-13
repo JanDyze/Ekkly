@@ -11,6 +11,17 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.15] — 2026-10-13
+
+New clouds in the sky behind the home.
+
+### Changed
+
+- **The clouds are redrawn** as soft stacks of rounded shapes, white with a
+  cooler shade underneath, on the phone and the computer alike. The old ones
+  were lumpy and cut off flat along the bottom. They still follow the time of
+  day and the weather.
+
 ## [0.35.14] — 2026-10-13
 
 The picture behind the home looks right on a computer.
