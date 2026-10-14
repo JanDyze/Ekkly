@@ -11,6 +11,23 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.28] — 2026-10-14
+
+The home on a computer fits on one screen again, with your apps down the
+side. The phone's home is unchanged.
+
+### Changed
+
+- **Your apps are down the left side** of the home on a computer, drawn in
+  the card style your church chose, just as on a phone, with the church on its
+  hill under them.
+- **The home no longer scrolls.** Needs attention, This week and Community
+  each show what fits on the screen. **N more need attention** and
+  Community's **N more** open the whole list in a panel from the side; the
+  week's **N more this week** opens Events.
+- On a smaller screen, Community sits under This week, and the quick actions
+  in the banner show as icons (their names appear when you point at them).
+
 ## [0.35.27] — 2026-10-14
 
 The home on a computer is laid out by what matters most. The phone's home is

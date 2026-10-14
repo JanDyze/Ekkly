@@ -8,6 +8,16 @@
 
 export const versionHistory = [
   {
+    version: '0.35.28',
+    date: '2026-10-14',
+    title: 'Your home on one screen',
+    summary: 'On a computer, your home fits on one screen, with your apps down the side.',
+    highlights: [
+      'Your apps sit down the left in your church’s card style, with the church under them.',
+      'Each list shows what fits; the rest open in a panel from the side.',
+    ],
+  },
+  {
     version: '0.35.27',
     date: '2026-10-14',
     title: 'What needs you, first',

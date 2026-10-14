@@ -1,5 +1,4 @@
 <script setup>
-import { computed } from 'vue'
 import { ChevronRight } from '../../icons'
 import AppArt from '../common/AppArt.vue'
 import HomeCardIcon from './HomeCardIcon.vue'
@@ -21,18 +20,9 @@ import HomeCardIcon from './HomeCardIcon.vue'
 // Every style is flat. Cards are set off the page by a hairline ring and a
 // fill, never a shadow, and answer a pointer or a finger by deepening the ring
 // and the fill rather than by lifting, growing or shrinking.
-//
-// `inline` is the same style kept to one line, for the desktop home, where the
-// apps are a row above the day's lists and a card as tall as a phone's would
-// push them off the screen: the picture and the name side by side, and the
-// style's own mark of it — accent's stripe, illustrated's wash and faint
-// drawing, list's sweep of colour. Orbit has no line of its own and is drawn
-// as compact; masonry, a wash like illustrated, as illustrated.
 
 const props = defineProps({
   variant: { type: String, default: 'accent' },
-  // One line tall, whatever the style (above).
-  inline: { type: Boolean, default: false },
   // What the card opens: a RouterLink, or a button.
   as: { type: [String, Object], default: 'button' },
   // { name, tagline, art, glyph, more, peek, path } — `path` is the key the
@@ -55,48 +45,15 @@ const badgeTone = (urgent) => (urgent ? 'bg-amber-500 text-white' : 'bg-primary 
 const badgeText = (count) => (count > 99 ? '99+' : count)
 
 const press = 'animate-rise transition-[background-color,box-shadow] duration-200 ease-out'
-
-// Kept to one line: which style it is drawn as, and that style's surface, its
-// padding (accent's leaves room for the stripe) and its picture's ground.
-const INLINE = {
-  accent: { surface: 'home-card', pad: 'pl-3.5 pr-3', ground: 'home-tint' },
-  illustrated: { surface: 'home-wash', pad: 'px-3', ground: 'home-chip' },
-  compact: { surface: 'home-card', pad: 'px-3', ground: 'home-tint' },
-  list: { surface: 'home-card', pad: 'px-3', ground: 'home-tint' },
-}
-const inlineStyle = computed(() => ({ orbit: 'compact', masonry: 'illustrated' })[props.variant] || props.variant)
-const inlineLook = computed(() => INLINE[inlineStyle.value] || INLINE.compact)
 </script>
 
 <template>
-  <!-- Any style kept to one line (`inline`), for the desktop home. -->
-  <component
-    v-if="inline"
-    :is="as"
-    :data-morph-card="card.more ? undefined : card.path"
-    :class="['group relative isolate flex h-16 min-w-0 items-center gap-2.5 overflow-hidden rounded-2xl text-left', inlineLook.surface, inlineLook.pad, press]"
-  >
-    <span v-if="inlineStyle === 'accent'" class="home-stripe absolute inset-y-0 left-0 w-1" />
-    <AppArt
-      v-if="inlineStyle === 'illustrated' && card.art && !card.more"
-      :app-key="card.art"
-      flat
-      class="home-hue pointer-events-none absolute -bottom-4 -right-3 -z-10 size-16 opacity-25"
-    />
-    <svg v-if="inlineStyle === 'list'" class="home-hue pointer-events-none absolute inset-y-0 right-0 -z-10 h-full w-20 opacity-15" viewBox="0 0 120 60" preserveAspectRatio="none" aria-hidden="true">
-      <path d="M44 0C24 22 66 34 40 60H120V0Z" fill="currentColor" />
-    </svg>
-    <HomeCardIcon :card="card" :play="play" size="size-9" art="size-6" :ground="inlineLook.ground" />
-    <span :data-morph-label="card.path" class="min-w-0 truncate text-sm font-semibold text-gray-900 dark:text-white">{{ card.name }}</span>
-    <span v-if="badge > 0" :class="[BADGE, badgeTone(urgent)]">{{ badgeText(badge) }}</span>
-  </component>
-
   <!-- 1. Accent lines: flat cards, a stripe of the app's colour. -->
   <component
-    v-else-if="variant === 'accent'"
+    v-if="variant === 'accent'"
     :is="as"
     :data-morph-card="card.more ? undefined : card.path"
-    :class="['home-card group relative flex min-w-0 flex-col items-start gap-2.5 overflow-hidden rounded-2xl p-3.5 pl-4.5 pr-8 text-left', press]"
+    :class="['home-card group relative flex min-w-0 flex-col items-start gap-2.5 overflow-hidden rounded-2xl p-3.5 pl-4.5 pr-8 text-left lg:pr-3.5', press]"
   >
     <span class="home-stripe absolute inset-y-0 left-0 w-1" />
     <HomeCardIcon :card="card" :play="play" />
@@ -104,7 +61,7 @@ const inlineLook = computed(() => INLINE[inlineStyle.value] || INLINE.compact)
       <span :data-morph-label="card.path" class="block w-full truncate text-base font-bold tracking-tight text-gray-900 dark:text-white">{{ card.name }}</span>
       <span v-if="detail" class="mt-0.5 block truncate text-xs text-gray-500 dark:text-gray-400">{{ detail }}</span>
     </span>
-    <ChevronRight v-if="!section" class="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-gray-300 dark:text-gray-500" />
+    <ChevronRight v-if="!section" class="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-gray-300 lg:hidden dark:text-gray-500" />
     <span v-if="badge > 0" :class="[BADGE, badgeTone(urgent), 'absolute right-2.5 top-2.5 z-10']">{{ badgeText(badge) }}</span>
   </component>
 

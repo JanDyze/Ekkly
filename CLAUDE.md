@@ -52,7 +52,9 @@ installable PWA.
   apps (`/home`, `src/views/Apps.vue`) and its All apps page (`/apps`) lay their
   tiles out from it, and the top bar names the app you are in from it. There is no sidebar:
   every app is a screen of its own and the home is the way between them, the
-  top bar's mark leading back to it. A bottom bar (`src/components/BottomBar.vue`)
+  top bar's mark leading back to it. (On a desktop the home lays its own
+  tiles down its left side; that column is the home's, not a sidebar on
+  every page.) A bottom bar (`src/components/BottomBar.vue`)
   shows on phones only for whoever turns it on in Preferences (`useBottomBar`):
   the first four apps on their home either side of Ekkly's round mark, which
   opens the All apps page. Don't add links

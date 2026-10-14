@@ -59,17 +59,17 @@ import { peopleOnService } from '../data/scheduleRoles'
 // open.
 //
 // On a desktop (lg) the same page has the room to show everything at once,
-// and is read top to bottom like a page rather than swiped like a deck: the
-// greeting in the church's colour with the quick actions beside it; the apps
-// in the style the church chose, each kept to one line and six in a row
-// (HomeAppCards' `inline`), because this is the way between them; then Today
-// in proportion to what each part holds — what needs attention, the widest
-// (HomeAttention), the community's news under it (HomeCommunity), and the
-// week beside them (HomeWeek). An issue that covers several records is one
-// row with its records under it, never a row each, and what is on goes in
-// the week and nowhere else, so nothing is said twice. Unlike a phone's it
-// scrolls as a page does, each part a preview with the rest a tap away,
-// rather than columns scrolling inside themselves.
+// and like a phone's it keeps to one screen and never scrolls. The apps are a
+// sidebar down the left, drawn in the style chosen and laid out as on a
+// phone, over the church on its hill; beside them, the greeting in the
+// church's colour with the quick actions, and under it Today: what needs
+// attention, the widest (HomeAttention), the week (HomeWeek), and the
+// community's news (HomeCommunity) beside the week, or under the work where
+// the screen is wide enough. Each list shows the rows that fit whole
+// (useFitCount) and counts the rest, which open in a sheet or their own page.
+// An issue that covers several records is one row with its records under it,
+// never a row each, and what is on goes in the week and nowhere else, so
+// nothing is said twice.
 
 const route = useRoute()
 const router = useRouter()
@@ -85,6 +85,9 @@ onMounted(() => {
 
 const { can, canManage, isAdmin, myMember } = usePermissions()
 const wide = useMediaQuery('(min-width: 1024px)')
+// A desktop with room for the community under the work rather than beside the
+// week: past about 1700px the middle column is wide enough to share.
+const roomy = useMediaQuery('(min-width: 1700px)')
 const { displayName } = useAuth()
 const { church, logoUrl } = useAppSettings()
 const today = useToday()
@@ -459,12 +462,6 @@ const rowDetail = (card) => {
 
 /* ------------------------------------------------------ the desktop page */
 
-// The column everything but the hill keeps to on a desktop. The page itself
-// is the full width, so the hill can run from edge to edge under it rather
-// than stop short at the column's sides. 90rem, not 72: on a wide screen 72
-// left a quarter of the width as bare sky either side of three narrow columns.
-const COLUMN = 'lg:mx-auto lg:w-full lg:max-w-[90rem] lg:px-8'
-
 // What someone who runs things most often comes to the home to start, on a
 // desktop, in the church's banner: each only for whoever may do it, each
 // opening the place it is done with its form already open (`?add=` in People,
@@ -583,24 +580,19 @@ const lineOf = (item) => {
 </script>
 
 <template>
-  <!-- On a phone the home is laid out to fit one screen, so it does not
-       scroll: its bottom padding alone used to tip it over and let the page
-       slide. On a desktop it scrolls as a page does. -->
+  <!-- The home is laid out to fit one screen, so it does not scroll: its
+       bottom padding alone used to tip it over and let the page slide. On a
+       desktop each list shows what fits and opens the rest (useFitCount). -->
   <!-- The page stands in a picture (HomeScene): its sky behind everything,
        and its church on the hill in the room the apps leave at the foot. -->
   <!-- With the bottom bar on, the bar takes the foot of the screen, so the
        home grows to fit rather than leave its apps under the bar: it still
        fits one screen wherever there is room, and scrolls only where there is
        not. -->
-  <div class="home-scene relative h-full overflow-hidden bg-(--scene-sky-3) with-bar:overflow-y-auto with-bar:overscroll-contain lg:overflow-y-auto" v-bind="sky">
-    <!-- On a desktop the page scrolls, and the sky stays where it is behind
-         it, the screen's height, rather than ending a screen down (the
-         style at the foot). On a phone it is the screen's picture, as it was. -->
-    <div class="sky-hold pointer-events-none absolute inset-0 lg:sticky lg:top-0 lg:h-0">
-      <HomeScene part="sky" class="absolute inset-0 size-full lg:bottom-auto lg:h-[100cqh]" />
-    </div>
+  <div class="home-scene relative h-full overflow-hidden bg-(--scene-sky-3) with-bar:overflow-y-auto with-bar:overscroll-contain" v-bind="sky">
+    <HomeScene part="sky" class="pointer-events-none absolute inset-0 size-full" />
 
-    <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:h-auto lg:min-h-full lg:max-w-none lg:gap-6 lg:px-0 lg:pt-5 lg:pb-8">
+    <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:grid lg:h-full lg:max-w-[112rem] lg:grid-cols-[17rem_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)] lg:gap-5 lg:px-6 lg:py-5 2xl:grid-cols-[19rem_minmax(0,1fr)]">
       <!-- On a desktop, the greeting is words on the sky, in the sky's own ink
            (HomeScene): the day, the weather over the church, and the church.
            Search is the top bar's (its magnifying glass, and Ctrl K): a second
@@ -611,7 +603,7 @@ const lineOf = (item) => {
            nowhere to land first. Its logo, the day and the weather in pills,
            the greeting large, and the day's verse across from it, over
            Ekkly's panes of light as on the phone's day card. -->
-      <header v-if="wide" :class="['lg:order-1', COLUMN]">
+      <header v-if="wide" class="@container lg:col-start-2 lg:row-start-1">
         <div class="home-hero relative isolate flex items-center justify-between gap-8 overflow-hidden rounded-[28px] border border-black/15 px-6 py-4 text-white dark:border-black/40">
           <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]" aria-hidden="true">
             <CardPanes />
@@ -624,13 +616,15 @@ const lineOf = (item) => {
               <img :src="logoUrl" alt="" class="size-full object-contain" />
             </span>
             <div class="min-w-0 flex-1">
-              <p class="flex min-w-0 items-center gap-2 text-[13px] font-semibold whitespace-nowrap">
+              <p class="flex min-w-0 items-center gap-2 overflow-hidden text-[13px] font-semibold whitespace-nowrap">
                 <span class="rounded-full bg-white/18 px-2.5 py-0.5">{{ todayLong }}</span>
                 <span v-if="weather" class="inline-flex items-center gap-1.5 rounded-full bg-white/18 px-2.5 py-0.5">
                   <component :is="weatherIcon" class="size-4" />
                   {{ weather.label }}
                 </span>
-                <span v-if="churchName" class="min-w-0 truncate text-white/85">{{ churchName }}</span>
+                <!-- The logo says whose church it is; the name joins it where
+                     there is room for it whole. -->
+                <span v-if="churchName && roomy" class="min-w-0 truncate text-white/85">{{ churchName }}</span>
               </p>
               <h1 class="mt-0.5 truncate text-[26px] font-bold leading-tight tracking-tight">{{ greeting }}</h1>
               <component
@@ -646,35 +640,49 @@ const lineOf = (item) => {
             </div>
           </div>
 
-          <!-- The things most often started from here, two by two. -->
+          <!-- The things most often started from here, two by two; where the
+               banner is narrow (beside the sidebar on a small screen), as
+               their icons alone, named on hover and to a screen reader, so
+               the greeting keeps its room. -->
           <nav v-if="quickActions.length" aria-label="Quick actions" class="grid shrink-0 grid-cols-2 gap-2">
             <RouterLink
               v-for="action in quickActions"
               :key="action.key"
               :to="action.to"
-              class="flex h-9 items-center gap-2 rounded-full bg-white/15 px-3.5 text-[13px] font-semibold whitespace-nowrap text-white ring-1 ring-white/25 transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              :title="action.label"
+              class="flex h-9 items-center justify-center gap-2 rounded-full bg-white/15 px-2.5 text-[13px] font-semibold whitespace-nowrap text-white ring-1 ring-white/25 transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white @[46rem]:justify-start @[46rem]:px-3.5"
             >
               <component :is="action.icon" class="size-4 shrink-0" />
-              {{ action.label }}
+              <span class="sr-only @[46rem]:not-sr-only">{{ action.label }}</span>
             </RouterLink>
           </nav>
         </div>
       </header>
 
       <!-- 1. Today, most important on top: on a phone, the deck. On a desktop,
-           after the apps: what needs attention, with the community under it,
-           beside the week, in proportion to what each holds; a page that
-           scrolls as pages do, each section a preview with the rest a tap
-           away, rather than columns scrolling inside themselves. -->
-      <div :class="['lg:order-3', COLUMN]">
+           under the greeting and beside the apps: what needs attention, with
+           the community under it, beside the week. All of it in the one
+           screen: each list shows the rows that fit whole and counts the
+           rest, which open in a sheet (HomeSheet) or their own page, so
+           nothing scrolls, the page or a box on it. The community takes at
+           most a little under half the column, so the work above it always
+           has the room. -->
+      <div class="lg:col-start-2 lg:row-start-2 lg:min-h-0">
       <AppHeroDeck :cards="cards" scope="home" label="Today" :spread="wide">
         <template #spread="{ urgent, rest, dismiss, leaving }">
-          <div :class="['grid items-start gap-6', showWeek ? 'grid-cols-[minmax(0,1.7fr)_minmax(20rem,1fr)]' : 'grid-cols-1']">
-            <div class="flex min-w-0 flex-col gap-6">
-              <HomeAttention :cards="urgent" :dismiss="dismiss" :leaving="leaving" />
-              <HomeCommunity :cards="rest" :dismiss="dismiss" :leaving="leaving" :detail-of="rowDetail" />
+          <!-- Where the middle is narrow, the work has it to itself and the
+               community shares the week's column; where it is wide, the
+               community sits under the work. Either way a column holding two
+               lists gives each its share by what it holds (flex 0 1 auto). -->
+          <div :class="['grid h-full min-h-0 gap-5', showWeek ? 'grid-cols-[minmax(0,1fr)_minmax(16rem,18rem)] 2xl:grid-cols-[minmax(0,1fr)_20rem]' : 'grid-cols-1']">
+            <div class="flex min-h-0 min-w-0 flex-col gap-5">
+              <HomeAttention class="flex-[0_1_auto]" :cards="urgent" :dismiss="dismiss" :leaving="leaving" />
+              <HomeCommunity v-if="roomy || !showWeek" class="flex-[0_1_auto]" :cards="rest" :dismiss="dismiss" :leaving="leaving" :detail-of="rowDetail" />
             </div>
-            <HomeWeek v-if="showWeek" :days="today.week.value" :events="weekEvents" />
+            <div v-if="showWeek" class="flex min-h-0 min-w-0 flex-col gap-5">
+              <HomeWeek class="flex-[0_1_auto]" :days="today.week.value" :events="weekEvents" />
+              <HomeCommunity v-if="!roomy" class="flex-[0_1_auto]" :cards="rest" :dismiss="dismiss" :leaving="leaving" :detail-of="rowDetail" />
+            </div>
           </div>
         </template>
 
@@ -788,11 +796,15 @@ const lineOf = (item) => {
       </AppHeroDeck>
       </div>
 
-      <!-- 2. The apps kept on the home, and the way to all of them; on a
-           desktop, straight under the greeting -->
+      <!-- 2. The apps kept on the home, and the way to all of them, over the
+           church on its hill. On a desktop the two are a sidebar down the
+           left, the apps drawn as on a phone in the style chosen; on a phone
+           the wrapper is not there (display: contents) and they stand in the
+           page as they always have. -->
+      <div class="contents lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:flex lg:min-h-0 lg:flex-col lg:gap-4">
       <div
         v-if="!allApps.length"
-        :class="['rounded-2xl border border-dashed border-gray-300 p-8 text-center lg:order-2 dark:border-gray-600', COLUMN]"
+        class="rounded-2xl border border-dashed border-gray-300 p-8 text-center dark:border-gray-600"
       >
         <p class="text-sm text-gray-500 dark:text-gray-400">Nothing has been shared with this account yet.</p>
         <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">An administrator grants access by ministry in Settings.</p>
@@ -802,9 +814,9 @@ const lineOf = (item) => {
            themselves (HomeAppCards, useHomeCards). -->
       <HomeAppCards
         v-else
-        :class="['lg:order-2', COLUMN]"
+        class="lg:shrink-0"
         :variant="cardStyle"
-        :inline="wide"
+        :column="wide"
         :apps="primary"
         :others="others"
         :hold="hold"
@@ -819,10 +831,11 @@ const lineOf = (item) => {
            is never shorter than the bar's space, which is what keeps the apps
            above it - while the verse keeps to the part of the room above the
            bar (verse-space), and steps aside by that part's height. -->
-      <!-- On a desktop the hill takes the room left under the columns, the
-           church stepping aside where there is too little (the container
-           queries below), and the verse has moved to the column beside Today. -->
-      <section class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space) lg:order-4 lg:mx-0 lg:mt-0" aria-label="A verse for today">
+      <!-- On a desktop the hill stands at the foot of the sidebar under the
+           apps, about as tall as a phone gives it (a taller room only blew the
+           church up), giving way where there is less (the container queries
+           below); the verse is in the greeting. -->
+      <section class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space) lg:-mb-5 lg:-ml-6 lg:mr-0 lg:mt-auto lg:flex-[0_1_16rem]" aria-label="A verse for today">
         <HomeScene part="land" class="scene pointer-events-none absolute inset-0 size-full" />
 
         <div class="verse-space pointer-events-none absolute inset-x-0 top-0 bottom-(--bottom-bar-space)">
@@ -878,6 +891,7 @@ const lineOf = (item) => {
           </component>
         </div>
       </section>
+      </div>
     </main>
 
     <AppPeek
@@ -912,14 +926,6 @@ const lineOf = (item) => {
 }
 .dark .home-hero {
   background-color: color-mix(in oklab, var(--color-primary) 55%, black);
-}
-
-/* On a desktop the page scrolls, so the sky is held to the screen's height
-   (100cqh, the home's own) while the page moves over it. */
-@media (min-width: 1024px) {
-  .home-scene {
-    container-type: size;
-  }
 }
 
 /* The room under the apps measures itself, so what it holds can step aside

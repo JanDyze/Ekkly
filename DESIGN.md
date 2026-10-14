@@ -87,39 +87,45 @@ CHANGELOG.md.
   apps opens `/apps` (`AllApps.vue`): every app, the five on the home on a shelf, press
   and hold to drag one onto it. The order is the person's, saved to their
   account (`useAppOrder`).
-  On a desktop (`lg`) the same home is read top to bottom, not swiped, as a
-  page that scrolls as pages do, the sky held behind it (each section is a
-  preview with the rest a tap away; nothing on it scrolls inside itself):
-  1. A hero in the church's colour, as the phone's day card is and as every
-     sketch of a desktop home led with: the church's logo, the day and the
-     weather in pills, the greeting large and the day's verse in a line under
-     it, over Ekkly's panes of light; and on its right the quick actions, two
-     by two, each only for whoever may do it — Add a person, Record
-     attendance, New event, New task — opening the place it is done with its
-     form open (`?add=` in People, Tasks and Events). Search stays the top
-     bar's.
-  2. The apps in the style the church chose, each kept to one line and six in
-     a row (`HomeAppCards`/`HomeCard`'s `inline`).
-  3. Today, in proportion to what each part holds (`AppHeroDeck`'s `spread`
-     slot hands over the `warn` cards and the rest):
-     - **Needs attention** (`HomeAttention`), the wide column: one white panel
-       of rows, most pressing first, five shown and "Show all" for the rest.
-       A row is one issue — a status pill (red for something late, amber for
-       something waiting or missing), its headline, a line on it, and the one
-       thing to do about it (`action`). Where an issue covers several records
-       (accounts to link, gatherings not counted, tasks overdue) they are
-       links under it (`records`), three shown and "+N more"; the issue is
-       never repeated as a card for each record.
-     - **Community** (`HomeCommunity`) under it, quieter: one light panel of
-       compact items two across — birthdays (one item naming everyone),
-       serving, who is new, tasks due today — the church's colour only on a
-       celebration.
-     - **This week** (`HomeWeek`) beside them: only the days with something
-       on, a small label over each (today's tinted), a time and a title in
-       two columns, the first six events, and "Open calendar" / "View all".
-     Each picture is the card's own (`TodayPicture`): the photo, the faces it
-     is about, its date, or its drawing (`brand/ekkly/sections/today.mjs`).
-  4. Everything keeps to a 90rem column.
+  On a desktop (`lg`) the same home shows everything at once rather than
+  swiped, and like a phone's it fits one screen and never scrolls — not the
+  page, and not a box on it:
+  1. **A sidebar of the apps** down the left (`HomeAppCards`' `column`), in
+     the style chosen and laid out as on a phone (two across, the orbit, one a
+     row; Compact one a row, since two across there cuts names short), over
+     the church on its hill at the sidebar's foot.
+  2. Beside it, a hero in the church's colour: the church's logo, the day and
+     the weather in pills, the greeting large and the day's verse in a line
+     under it, over Ekkly's panes of light; and on its right the quick
+     actions, two by two, each only for whoever may do it — Add a person,
+     Record attendance, New event, New task — opening the place it is done
+     with its form open (`?add=` in People, Tasks and Events). Where the hero
+     is narrow they are their icons alone, named on hover. Search stays the
+     top bar's.
+  3. Under it, Today (`AppHeroDeck`'s `spread` slot hands over the `warn`
+     cards and the rest):
+     - **Needs attention** (`HomeAttention`, rows of `AttentionRow`), the
+       widest: one white panel, most pressing first. A row is one issue — a
+       status pill (red for something late, amber for something waiting or
+       missing), its headline, a line on it, and the one thing to do about it
+       (`action`). Where an issue covers several records (accounts to link,
+       gatherings not counted, tasks overdue) they are links under it
+       (`records`), three shown (two in a narrow column) and "+N more"; the
+       issue is never repeated as a card for each record.
+     - **This week** (`HomeWeek`) in the column beside it: only the days with
+       something on, a small label over each (today's tinted), a time and a
+       title in two columns, and "Open calendar".
+     - **Community** (`HomeCommunity`), quieter: one light panel of compact
+       items — birthdays (one item naming everyone), serving, who is new,
+       tasks due today — the church's colour only on a celebration. Under the
+       week, or under the work from 1700px, where the middle is wide enough.
+     Each list shows only the rows that fit whole (`useFitCount`: the rest
+     are `invisible`, never cut off half-shown) and counts the rest at its
+     foot: "N more need attention" and Community's "N more" open every row in
+     a sheet from the right (`HomeSheet`); the week's opens Events' upcoming
+     list. Each picture is the card's own (`TodayPicture`): the photo, the
+     faces it is about, its date, or its drawing
+     (`brand/ekkly/sections/today.mjs`).
 - The shell pads the content area (`p-0 sm:p-4 lg:px-8 lg:py-3`) of a page
   that is not yet an app, so **such a page never adds its own outer padding.**
 

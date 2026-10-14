@@ -17,10 +17,9 @@ import { MASONRY_SPANS, orbitPlace } from '../../data/homeCards'
 // above already wears. The cards themselves are HomeCard, which the sections
 // inside every app are drawn with too (AppShortcuts); this lays them out.
 //
-// On a desktop the home asks for them `inline`: whatever the style, each card
-// kept to one line (HomeCard's `inline`) and the six in one row, each as wide
-// as its name and the row filled between them, so the home still fits one
-// screen and no name is cut short to fit an equal column.
+// On a desktop the home asks for them as a `column`: down the sidebar beside
+// the day, in the style chosen and laid out as on a phone (two across, the
+// orbit, one a row), rather than spread into a row across the screen.
 
 const props = defineProps({
   variant: { type: String, default: 'accent' },
@@ -28,8 +27,8 @@ const props = defineProps({
   others: { type: Array, default: () => [] },
   // The home's press-and-hold, as { start, still, swallow } (usePressAndHold).
   hold: { type: Object, default: null },
-  // One line, all six in a row, whatever the style (the desktop home).
-  inline: { type: Boolean, default: false },
+  // Laid out as on a phone whatever the width (the desktop home's sidebar).
+  column: { type: Boolean, default: false },
 })
 
 const router = useRouter()
@@ -84,22 +83,8 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
 </script>
 
 <template>
-  <!-- On the desktop home: the chosen style, one line tall, six in a row. -->
-  <nav v-if="inline" class="flex gap-2.5" aria-label="Your apps">
-    <HomeCard
-      v-for="(card, index) in cards"
-      :key="card.key"
-      :variant="variant"
-      inline
-      :as="RouterLink"
-      :card="card"
-      v-bind="attrsOf(card, index)"
-      class="flex-auto"
-    />
-  </nav>
-
   <!-- 4. Orbit: the apps round a circle, More apps in the middle. -->
-  <nav v-else-if="variant === 'orbit'" class="relative mx-auto aspect-square w-full max-w-88" aria-label="Your apps">
+  <nav v-if="variant === 'orbit'" class="relative mx-auto aspect-square w-full max-w-88" aria-label="Your apps">
     <span class="absolute inset-[13%] rounded-full border border-gray-300/70 dark:border-white/10" />
     <span class="absolute inset-[34%] rounded-full border border-gray-300/50 dark:border-white/10" />
     <HomeCard
@@ -123,7 +108,7 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
 
   <!-- 5. List: one app a row, with a line on what it is for; three across
        on a desktop, where a row the width of the screen would be all gap. -->
-  <nav v-else-if="variant === 'list'" class="flex flex-col gap-2 lg:grid lg:grid-cols-3 lg:gap-2.5" aria-label="Your apps">
+  <nav v-else-if="variant === 'list'" :class="['flex flex-col gap-2', column ? '' : 'lg:grid lg:grid-cols-3 lg:gap-2.5']" aria-label="Your apps">
     <HomeCard
       v-for="(card, index) in cards"
       :key="card.key"
@@ -136,7 +121,7 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
 
   <!-- 6. Masonry: a wide tile and a narrow one, then the other way round.
        On a desktop the spans (3, 2, 2, 3, 3, 2) come to fifteen, one row. -->
-  <nav v-else-if="variant === 'masonry'" class="grid grid-cols-5 gap-2.5 lg:grid-cols-15" aria-label="Your apps">
+  <nav v-else-if="variant === 'masonry'" class="grid grid-cols-5 gap-2.5" :class="column ? '' : 'lg:grid-cols-15'" aria-label="Your apps">
     <HomeCard
       v-for="(card, index) in cards"
       :key="card.key"
@@ -148,8 +133,14 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
     />
   </nav>
 
-  <!-- 1–3. Accent lines, Illustrated and Compact: two across. -->
-  <nav v-else class="grid grid-cols-2 gap-2.5 lg:grid-cols-6" aria-label="Your apps">
+  <!-- 1–3. Accent lines, Illustrated and Compact: two across; in the
+       desktop's sidebar Compact's slim rows go one a row, since two across
+       there cut their names short. -->
+  <nav
+    v-else
+    :class="['grid gap-2.5', column && variant === 'compact' ? 'grid-cols-1' : 'grid-cols-2', column ? '' : 'lg:grid-cols-6']"
+    aria-label="Your apps"
+  >
     <HomeCard
       v-for="(card, index) in cards"
       :key="card.key"
