@@ -102,7 +102,7 @@ CHANGELOG.md.
      same tones (amber for waiting on you, the church's colour for somebody's
      day, white), a label pill, a bold headline, and its picture — the photo,
      the faces it is about, its date, or its own drawing
-     (`brand/ekkly/sections/today.mjs`, `today-<kind>`). Resting on one grows
+     (`brand/ekkly/sections/today.mjs`, `today-<kind>`). Resting on one for two seconds grows
      it in the list into the phone's full card, its height easing open as the
      cards under it move down, and back when the pointer leaves; never laid
      over its neighbours. A column whose cards no longer fit scrolls (the

@@ -172,20 +172,22 @@ const groups = computed(() => [
   { key: 'rest', label: props.restLabel, empty: props.restEmpty, cards: rows.value.filter((card) => card.tone !== 'warn') },
 ])
 
-// Laid out flat, a card is the phone's in small. Rest the pointer on one and,
-// after a beat, it grows where it stands into the phone's full card — the
+// Laid out flat, a card is the phone's in small. Rest the pointer on one for
+// two seconds and it grows where it stands into the phone's full card — the
 // `card` slot, the same face: its headline whole, its faces, its list, its
 // chips — the cards under it moving down to make room as its height eases
 // open, and back up as it eases shut when the pointer leaves. In the list,
 // not laid over it: a card drawn over its neighbours hid them. A column whose
-// cards no longer fit scrolls, as it does on a day with many. The beat is so
-// sweeping down a column does not open every card on the way.
+// cards no longer fit scrolls, as it does on a day with many. Two seconds, so
+// it opens only for someone who has stopped on a card meaning to read it, not
+// for a pointer passing over on its way somewhere, or resting while they read
+// the small one.
 const full = ref(new Set())
 const boxes = new Map()
 const smallHeights = new Map()
 const easing = new Map()
 let openTimer = null
-const OPEN_AFTER = 320
+const OPEN_AFTER = 2000
 const GROW_MS = 300
 const SHRINK_MS = 240
 
