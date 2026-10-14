@@ -266,7 +266,13 @@ const shrink = (key) => {
   ease(key, smallHeights.get(key) || 0, SHRINK_MS, () => {
     open.value = without(open.value, key)
     closing.value = without(closing.value, key)
-    box.style.height = ''
+    // Let go of the height only once the small face is back in the list. Let
+    // go before, the box stood at the full card's height again for a moment,
+    // and the list (a TransitionGroup) saw the cards under it move back up and
+    // slid them a second time.
+    nextTick(() => {
+      if (!open.value.has(key)) box.style.height = ''
+    })
   })
 }
 
