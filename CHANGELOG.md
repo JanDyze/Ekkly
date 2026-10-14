@@ -11,6 +11,24 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.30] — 2026-10-14
+
+The home on a computer is three columns: your day and apps, the work, and
+the week. The phone's home is unchanged.
+
+### Changed
+
+- **The greeting card is at the top of the left column**, above your apps,
+  with the date, the weather, and the quick actions (**Add person**,
+  **Attendance**, **New event**, **New task**). The day's verse sits over the
+  church at the foot of the column, as on a phone.
+- **Three columns, a quarter, a half and a quarter:** your day and apps on
+  the left, Needs attention with Community under it in the middle, and This
+  week on the right. With the greeting out of the way, each list has the
+  full height of the screen, so more of it shows.
+- On a smaller screen the quick actions show as icons (point at one for its
+  name), and app names that would be cut short go onto two lines instead.
+
 ## [0.35.29] — 2026-10-14
 
 ### Changed

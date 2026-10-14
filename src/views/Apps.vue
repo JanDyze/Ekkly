@@ -59,17 +59,16 @@ import { peopleOnService } from '../data/scheduleRoles'
 // open.
 //
 // On a desktop (lg) the same page has the room to show everything at once,
-// and like a phone's it keeps to one screen and never scrolls. The apps are a
-// sidebar down the left, drawn in the style chosen and laid out as on a
-// phone, over the church on its hill; beside them, the greeting in the
-// church's colour with the quick actions, and under it Today: what needs
-// attention, the widest (HomeAttention), the week (HomeWeek), and the
-// community's news (HomeCommunity) beside the week, or under the work where
-// the screen is wide enough. Each list shows the rows that fit whole
-// (useFitCount) and counts the rest, which open in a sheet or their own page.
-// An issue that covers several records is one row with its records under it,
-// never a row each, and what is on goes in the week and nowhere else, so
-// nothing is said twice.
+// and like a phone's it keeps to one screen and never scrolls. It is three
+// columns, a quarter, a half and a quarter. The sidebar reads as a phone does,
+// top to bottom: the day's card in the church's colour with the quick
+// actions, the apps in the style chosen, and the church on its hill with the
+// day's verse. The middle is the work: what needs attention (HomeAttention),
+// with the community's news under it (HomeCommunity). The last is the week
+// (HomeWeek). Each list shows the rows that fit whole (useFitCount) and counts
+// the rest, which open in a sheet or their own page. An issue that covers
+// several records is one row with its records under it, never a row each,
+// and what is on goes in the week and nowhere else, so nothing is said twice.
 
 const route = useRoute()
 const router = useRouter()
@@ -85,9 +84,6 @@ onMounted(() => {
 
 const { can, canManage, isAdmin, myMember } = usePermissions()
 const wide = useMediaQuery('(min-width: 1024px)')
-// A desktop with room for the community under the work rather than beside the
-// week: past about 1700px the middle column is wide enough to share.
-const roomy = useMediaQuery('(min-width: 1700px)')
 const { displayName } = useAuth()
 const { church, logoUrl } = useAppSettings()
 const today = useToday()
@@ -463,21 +459,24 @@ const rowDetail = (card) => {
 /* ------------------------------------------------------ the desktop page */
 
 // What someone who runs things most often comes to the home to start, on a
-// desktop, in the church's banner: each only for whoever may do it, each
+// desktop, on the day's card: each only for whoever may do it, each
 // opening the place it is done with its form already open (`?add=` in People,
 // Tasks and Events; Attendance's list of gatherings still to count).
 const quickActions = computed(() =>
   [
-    canManage('members') && { key: 'person', label: 'Add a person', icon: UserPlus, to: { name: 'Members', query: { add: 'true' } } },
-    canManage('attendance') && { key: 'count', label: 'Record attendance', icon: ClipboardCheck, to: { name: 'AttendanceOwed' } },
-    canManage('events') && { key: 'event', label: 'New event', icon: CalendarPlus, to: { name: 'Events', query: { add: '1' } } },
-    canManage('tasks') && { key: 'task', label: 'New task', icon: NotePencil, to: { name: 'TasksMine', query: { add: '1' } } },
+    canManage('members') && { key: 'person', label: 'Add a person', short: 'Add person', icon: UserPlus, to: { name: 'Members', query: { add: 'true' } } },
+    canManage('attendance') && { key: 'count', label: 'Record attendance', short: 'Attendance', icon: ClipboardCheck, to: { name: 'AttendanceOwed' } },
+    canManage('events') && { key: 'event', label: 'New event', short: 'New event', icon: CalendarPlus, to: { name: 'Events', query: { add: '1' } } },
+    canManage('tasks') && { key: 'task', label: 'New task', short: 'New task', icon: NotePencil, to: { name: 'TasksMine', query: { add: '1' } } },
   ].filter(Boolean)
 )
 
-// The greeting's line on a desktop: the day, and whose church this is.
+// The day's card on a desktop: the day, whose church this is, and the
+// greeting on two lines, as on the phone's day card.
 const todayLong = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
 const churchName = computed(() => church.value?.shortName || church.value?.fullName || '')
+const greetingTime = computed(() => greeting.value.split(', ')[0])
+const greetingName = computed(() => greeting.value.split(', ').slice(1).join(', '))
 
 /* -------------------------------------------------------------- the week */
 
@@ -592,73 +591,7 @@ const lineOf = (item) => {
   <div class="home-scene relative h-full overflow-hidden bg-(--scene-sky-3) with-bar:overflow-y-auto with-bar:overscroll-contain" v-bind="sky">
     <HomeScene part="sky" class="pointer-events-none absolute inset-0 size-full" />
 
-    <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:grid lg:h-full lg:max-w-[112rem] lg:grid-cols-[17rem_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)] lg:gap-5 lg:px-6 lg:py-5 2xl:grid-cols-[19rem_minmax(0,1fr)]">
-      <!-- On a desktop, the greeting is words on the sky, in the sky's own ink
-           (HomeScene): the day, the weather over the church, and the church.
-           Search is the top bar's (its magnifying glass, and Ctrl K): a second
-           search field here said the same thing twice. -->
-      <!-- On a desktop the page leads with one card in the church's colour,
-           as the phone's deck ends on its day card and as every sketch of a
-           desktop home did (a hero in that colour): without it the eye had
-           nowhere to land first. Its logo, the day and the weather in pills,
-           the greeting large, and the day's verse across from it, over
-           Ekkly's panes of light as on the phone's day card. -->
-      <header v-if="wide" class="@container lg:col-start-2 lg:row-start-1">
-        <div class="home-hero relative isolate flex items-center justify-between gap-8 overflow-hidden rounded-[28px] border border-black/15 px-6 py-4 text-white dark:border-black/40">
-          <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]" aria-hidden="true">
-            <CardPanes />
-          </div>
-          <!-- The church, the day and the greeting, and the day's verse in a
-               line under them: one block, so the quick actions beside it never
-               squeeze the greeting. -->
-          <div class="flex min-w-0 flex-1 items-center gap-4">
-            <span v-if="logoUrl" class="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5 ring-1 ring-black/10">
-              <img :src="logoUrl" alt="" class="size-full object-contain" />
-            </span>
-            <div class="min-w-0 flex-1">
-              <p class="flex min-w-0 items-center gap-2 overflow-hidden text-[13px] font-semibold whitespace-nowrap">
-                <span class="rounded-full bg-white/18 px-2.5 py-0.5">{{ todayLong }}</span>
-                <span v-if="weather" class="inline-flex items-center gap-1.5 rounded-full bg-white/18 px-2.5 py-0.5">
-                  <component :is="weatherIcon" class="size-4" />
-                  {{ weather.label }}
-                </span>
-                <!-- The logo says whose church it is; the name joins it where
-                     there is room for it whole. -->
-                <span v-if="churchName && roomy" class="min-w-0 truncate text-white/85">{{ churchName }}</span>
-              </p>
-              <h1 class="mt-0.5 truncate text-[26px] font-bold leading-tight tracking-tight">{{ greeting }}</h1>
-              <component
-                :is="verseTo ? 'RouterLink' : 'div'"
-                v-if="verse"
-                v-bind="verseTo ? { to: verseTo } : {}"
-                :class="['mt-0.5 flex min-w-0 items-baseline gap-2 text-[13px]', verseTo ? 'group' : '']"
-                :title="`${verse.text} — ${verse.reference}`"
-              >
-                <span class="min-w-0 truncate italic text-white/85">{{ verse.text }}</span>
-                <span class="shrink-0 font-semibold text-white group-hover:underline">{{ verse.reference }}</span>
-              </component>
-            </div>
-          </div>
-
-          <!-- The things most often started from here, two by two; where the
-               banner is narrow (beside the sidebar on a small screen), as
-               their icons alone, named on hover and to a screen reader, so
-               the greeting keeps its room. -->
-          <nav v-if="quickActions.length" aria-label="Quick actions" class="grid shrink-0 grid-cols-2 gap-2">
-            <RouterLink
-              v-for="action in quickActions"
-              :key="action.key"
-              :to="action.to"
-              :title="action.label"
-              class="flex h-9 items-center justify-center gap-2 rounded-full bg-white/15 px-2.5 text-[13px] font-semibold whitespace-nowrap text-white ring-1 ring-white/25 transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white @[46rem]:justify-start @[46rem]:px-3.5"
-            >
-              <component :is="action.icon" class="size-4 shrink-0" />
-              <span class="sr-only @[46rem]:not-sr-only">{{ action.label }}</span>
-            </RouterLink>
-          </nav>
-        </div>
-      </header>
-
+    <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:grid lg:h-full lg:max-w-[112rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] lg:grid-rows-[minmax(0,1fr)] lg:gap-5 lg:px-6 lg:py-5">
       <!-- 1. Today, most important on top: on a phone, the deck. On a desktop,
            under the greeting and beside the apps: what needs attention, with
            the community under it, beside the week. All of it in the one
@@ -667,22 +600,21 @@ const lineOf = (item) => {
            nothing scrolls, the page or a box on it. The community takes at
            most a little under half the column, so the work above it always
            has the room. -->
-      <div class="lg:col-start-2 lg:row-start-2 lg:min-h-0">
+      <div class="lg:col-start-2 lg:row-start-1 lg:min-h-0">
       <AppHeroDeck :cards="cards" scope="home" label="Today" :spread="wide">
         <template #spread="{ urgent, rest, dismiss, leaving }">
-          <!-- Where the middle is narrow, the work has it to itself and the
-               community shares the week's column; where it is wide, the
-               community sits under the work. Either way a column holding two
-               lists gives each its share by what it holds (flex 0 1 auto). -->
-          <div :class="['grid h-full min-h-0 gap-5', showWeek ? 'grid-cols-[minmax(0,1fr)_minmax(16rem,18rem)] 2xl:grid-cols-[minmax(0,1fr)_20rem]' : 'grid-cols-1']">
+          <!-- A quarter, a half and a quarter of the page: the sidebar (the
+               page's grid gives it one part in four), then the work with the
+               community under it, then the week. Two parts to one here, with
+               the page's own gap, comes out at exactly half and a quarter.
+               The column holding two lists gives each its share by what it
+               holds (flex 0 1 auto). -->
+          <div :class="['grid h-full min-h-0 gap-5', showWeek ? 'grid-cols-[minmax(0,2fr)_minmax(0,1fr)]' : 'grid-cols-1']">
             <div class="flex min-h-0 min-w-0 flex-col gap-5">
               <HomeAttention class="flex-[0_1_auto]" :cards="urgent" :dismiss="dismiss" :leaving="leaving" />
-              <HomeCommunity v-if="roomy || !showWeek" class="flex-[0_1_auto]" :cards="rest" :dismiss="dismiss" :leaving="leaving" :detail-of="rowDetail" />
+              <HomeCommunity class="flex-[0_1_auto]" :cards="rest" :dismiss="dismiss" :leaving="leaving" :detail-of="rowDetail" />
             </div>
-            <div v-if="showWeek" class="flex min-h-0 min-w-0 flex-col gap-5">
-              <HomeWeek class="flex-[0_1_auto]" :days="today.week.value" :events="weekEvents" />
-              <HomeCommunity v-if="!roomy" class="flex-[0_1_auto]" :cards="rest" :dismiss="dismiss" :leaving="leaving" :detail-of="rowDetail" />
-            </div>
+            <HomeWeek v-if="showWeek" class="max-h-full min-w-0 self-start" :days="today.week.value" :events="weekEvents" />
           </div>
         </template>
 
@@ -801,7 +733,57 @@ const lineOf = (item) => {
            left, the apps drawn as on a phone in the style chosen; on a phone
            the wrapper is not there (display: contents) and they stand in the
            page as they always have. -->
-      <div class="contents lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:flex lg:min-h-0 lg:flex-col lg:gap-4">
+      <div class="contents lg:col-start-1 lg:row-start-1 lg:flex lg:min-h-0 lg:flex-col lg:gap-4">
+      <!-- On a desktop the sidebar leads with the day, as the phone's deck
+           ends on it: one card in the church's colour over Ekkly's panes of
+           light, with the church's logo, the day and the weather, the
+           greeting large on two lines (the time of day, then the name), and
+           the quick actions two by two under it (a row of their icons alone
+           where the sidebar is narrow), each only for whoever may do it and
+           opening the place it is done with its form open (`?add=` in People,
+           Tasks and Events). Search stays the top bar's. The day's
+           verse is on the picture at the sidebar's foot, as on a phone. -->
+      <header v-if="wide" class="@container lg:shrink-0">
+        <div class="home-hero relative isolate overflow-hidden rounded-[24px] border border-black/15 p-4 text-white dark:border-black/40">
+          <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]" aria-hidden="true">
+            <CardPanes />
+          </div>
+          <div class="flex min-w-0 items-center gap-3">
+            <span v-if="logoUrl" class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1 ring-1 ring-black/10">
+              <img :src="logoUrl" alt="" class="size-full object-contain" />
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-[13px] font-semibold">{{ todayLong }}</p>
+              <p class="flex min-w-0 items-center gap-1.5 text-xs text-white/85">
+                <template v-if="weather">
+                  <component :is="weatherIcon" class="size-3.5 shrink-0" />
+                  <span class="shrink-0">{{ weather.label }}</span>
+                  <span v-if="churchName" aria-hidden="true">·</span>
+                </template>
+                <span v-if="churchName" class="min-w-0 truncate">{{ churchName }}</span>
+              </p>
+            </div>
+          </div>
+          <h1 class="mt-3 text-[24px] font-bold leading-[1.15] tracking-tight">
+            {{ greetingTime }}<template v-if="greetingName">,<br /><span class="block truncate">{{ greetingName }}</span></template>
+          </h1>
+
+          <nav v-if="quickActions.length" aria-label="Quick actions" class="mt-3.5 grid grid-cols-4 gap-1.5 @[17rem]:grid-cols-2">
+            <RouterLink
+              v-for="action in quickActions"
+              :key="action.key"
+              :to="action.to"
+              :title="action.label"
+              :aria-label="action.label"
+              class="flex h-8 min-w-0 items-center justify-center gap-1.5 rounded-full bg-white/15 px-2.5 text-xs font-semibold whitespace-nowrap text-white @[17rem]:justify-start ring-1 ring-white/25 transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              <component :is="action.icon" class="size-3.5 shrink-0" />
+              <span class="hidden truncate @[17rem]:inline">{{ action.short }}</span>
+            </RouterLink>
+          </nav>
+        </div>
+      </header>
+
       <div
         v-if="!allApps.length"
         class="rounded-2xl border border-dashed border-gray-300 p-8 text-center dark:border-gray-600"
@@ -833,8 +815,8 @@ const lineOf = (item) => {
            bar (verse-space), and steps aside by that part's height. -->
       <!-- On a desktop the hill stands at the foot of the sidebar under the
            apps, about as tall as a phone gives it (a taller room only blew the
-           church up), giving way where there is less (the container queries
-           below); the verse is in the greeting. -->
+           church up), with the day's verse on it as on a phone; both give way
+           where there is less room (the container queries below). -->
       <section class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space) lg:-mb-5 lg:-ml-6 lg:mr-0 lg:mt-auto lg:flex-[0_1_16rem]" aria-label="A verse for today">
         <HomeScene part="land" class="scene pointer-events-none absolute inset-0 size-full" />
 
@@ -855,7 +837,7 @@ const lineOf = (item) => {
             v-if="verse"
             v-bind="verseTo ? { to: verseTo } : {}"
             :class="[
-              'verse pointer-events-auto absolute left-4 block text-left lg:hidden',
+              'verse pointer-events-auto absolute left-4 block text-left lg:max-w-[calc(100%-6.5rem)]',
               openVerse
                 ? 'verse-open top-3 max-w-[62%]'
                 : 'bottom-[max(0.75rem,calc(env(safe-area-inset-bottom)-var(--bottom-bar-space)))] max-w-[58%] rounded-2xl bg-white/80 px-3.5 py-3 ring-1 ring-white/70 backdrop-blur-md dark:bg-gray-900/70 dark:ring-white/10',

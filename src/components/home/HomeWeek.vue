@@ -53,13 +53,16 @@ const dayLink = (date) => ({ name: 'Events', query: { date } })
 </script>
 
 <template>
-  <section aria-labelledby="home-week" class="flex min-h-0 flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-900 dark:ring-white/10">
-    <header class="flex shrink-0 items-center justify-between gap-4 border-b border-gray-100 px-5 pt-4 pb-3 dark:border-white/10">
-      <h2 id="home-week" class="flex items-center gap-2.5 text-base font-semibold text-gray-900 dark:text-white">
+  <section aria-labelledby="home-week" class="@container flex min-h-0 flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-900 dark:ring-white/10">
+    <header class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 pt-4 pb-3 dark:border-white/10">
+      <h2 id="home-week" class="flex items-center gap-2.5 text-base font-semibold whitespace-nowrap text-gray-900 dark:text-white">
         This week
         <span v-if="total" class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold tabular-nums text-gray-600 dark:bg-white/10 dark:text-gray-300">{{ total }}</span>
       </h2>
-      <RouterLink to="/events/calendar" class="text-sm font-semibold text-primary hover:underline dark:text-primary-light">Open calendar</RouterLink>
+      <!-- "Calendar" alone where the column is narrow, so the heading keeps to one line. -->
+      <RouterLink to="/events/calendar" class="text-sm font-semibold whitespace-nowrap text-primary hover:underline dark:text-primary-light">
+        <span class="hidden @[18rem]:inline">Open calendar</span><span class="@[18rem]:hidden">Calendar</span>
+      </RouterLink>
     </header>
 
     <ol v-if="rows.length" ref="list" class="relative min-h-0 flex-1 overflow-hidden">

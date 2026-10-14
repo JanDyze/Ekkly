@@ -29,7 +29,7 @@ const sheet = ref(false)
 </script>
 
 <template>
-  <section aria-labelledby="home-community" class="@container flex min-h-0 flex-col rounded-[24px] bg-white/85 p-2 ring-1 ring-black/5 dark:bg-gray-900/80 dark:ring-white/10">
+  <section aria-labelledby="home-community" class="@container flex min-h-0 flex-col rounded-[24px] bg-white/95 p-2 ring-1 ring-black/5 dark:bg-gray-900/90 dark:ring-white/10">
     <header class="flex shrink-0 items-center gap-2.5 px-3 pt-2 pb-1.5">
       <h2 id="home-community" class="text-base font-semibold text-gray-900 dark:text-white">Community</h2>
       <span v-if="cards.length" class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold tabular-nums text-gray-600 dark:bg-white/10 dark:text-gray-300">

@@ -53,12 +53,12 @@ const press = 'animate-rise transition-[background-color,box-shadow] duration-20
     v-if="variant === 'accent'"
     :is="as"
     :data-morph-card="card.more ? undefined : card.path"
-    :class="['home-card group relative flex min-w-0 flex-col items-start gap-2.5 overflow-hidden rounded-2xl p-3.5 pl-4.5 pr-8 text-left lg:pr-3.5', press]"
+    :class="['home-card group relative flex min-w-0 flex-col items-start gap-2.5 overflow-hidden rounded-2xl p-3.5 pl-4.5 pr-8 text-left lg:pr-3.5 @max-[17rem]:pl-3.5 @max-[17rem]:pr-2.5', press]"
   >
     <span class="home-stripe absolute inset-y-0 left-0 w-1" />
     <HomeCardIcon :card="card" :play="play" />
     <span class="block w-full min-w-0">
-      <span :data-morph-label="card.path" class="block w-full truncate text-base font-bold tracking-tight text-gray-900 dark:text-white">{{ card.name }}</span>
+      <span :data-morph-label="card.path" class="block w-full truncate text-base font-bold tracking-tight text-gray-900 @max-[17rem]:line-clamp-2 @max-[17rem]:text-sm @max-[17rem]:leading-tight @max-[17rem]:whitespace-normal dark:text-white">{{ card.name }}</span>
       <span v-if="detail" class="mt-0.5 block truncate text-xs text-gray-500 dark:text-gray-400">{{ detail }}</span>
     </span>
     <ChevronRight v-if="!section" class="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-gray-300 lg:hidden dark:text-gray-500" />

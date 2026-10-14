@@ -135,10 +135,12 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
 
   <!-- 1–3. Accent lines, Illustrated and Compact: two across; in the
        desktop's sidebar Compact's slim rows go one a row, since two across
-       there cut their names short. -->
+       there cut their names short, and the sidebar measures itself
+       (@container) so a narrow one sets Accent's names smaller, on two
+       lines if need be (HomeCard). -->
   <nav
     v-else
-    :class="['grid gap-2.5', column && variant === 'compact' ? 'grid-cols-1' : 'grid-cols-2', column ? '' : 'lg:grid-cols-6']"
+    :class="['grid gap-2.5', column && variant === 'compact' ? 'grid-cols-1' : 'grid-cols-2', column ? '@container' : 'lg:grid-cols-6']"
     aria-label="Your apps"
   >
     <HomeCard

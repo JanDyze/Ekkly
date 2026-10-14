@@ -8,6 +8,16 @@
 
 export const versionHistory = [
   {
+    version: '0.35.30',
+    date: '2026-10-14',
+    title: 'Three columns on your home',
+    summary: 'On a computer, your home is your day and apps, the work, and the week, side by side.',
+    highlights: [
+      'Your greeting and quick actions sit at the top of the left column, above your apps.',
+      'What needs attention has the middle, with the week on the right, and more of each fits.',
+    ],
+  },
+  {
     version: '0.35.28',
     date: '2026-10-14',
     title: 'Your home on one screen',
