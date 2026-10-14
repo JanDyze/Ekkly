@@ -11,6 +11,26 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.26] — 2026-10-14
+
+The home on a computer gets quick actions and a clearer week. The phone's
+home is unchanged.
+
+### Added
+
+- **Quick actions** in the banner at the top of the home on a computer:
+  **Add a person**, **Record attendance**, **New event** and **New task**, each
+  opening straight onto its form. You only see the ones you are allowed to do.
+
+### Changed
+
+- **This week reads like a calendar:** each day's date sits down the left,
+  today's in your church's colour, with what is on beside it.
+- **Overdue tasks and tasks due today share one card** on a computer, so the
+  ones due today are no longer hidden behind the late ones.
+- The day's verse sits under your greeting, so the greeting always shows in
+  full.
+
 ## [0.35.25] — 2026-10-14
 
 ### Fixed

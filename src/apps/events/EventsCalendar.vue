@@ -574,6 +574,13 @@ const showFab = computed(
 // Read once, then dropped from the address, so a refresh or the phone's back
 // button does not keep reopening it.
 onMounted(() => {
+  // Or a new event asked for (`?add=1`, the desktop home's quick actions):
+  // the new-event form open on today, read once the same way.
+  if (route.query.add === '1') {
+    handleAddEvent()
+    router.replace({ query: {} })
+    return
+  }
   const asked = String(route.query.date || '')
   if (!/^\d{4}-\d{2}-\d{2}$/.test(asked)) return
   const [year, month, day] = asked.split('-').map(Number)

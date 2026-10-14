@@ -8,6 +8,16 @@
 
 export const versionHistory = [
   {
+    version: '0.35.26',
+    date: '2026-10-14',
+    title: 'Quick actions on your home',
+    summary: 'On a computer, start the things you do most right from your home.',
+    highlights: [
+      'Add a person, record attendance, or start a new event or task from the banner at the top.',
+      'This week now reads like a calendar, with today marked in your church colour.',
+    ],
+  },
+  {
     version: '0.35.20',
     date: '2026-10-13',
     title: 'Your home on a computer',

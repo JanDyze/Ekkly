@@ -91,14 +91,19 @@ CHANGELOG.md.
   like a phone's it fits one screen and never scrolls:
   1. A hero in the church's colour, as the phone's day card is and as every
      sketch of a desktop home led with: the church's logo, the day and the
-     weather in pills, the greeting large, the day's verse across from it,
-     over Ekkly's panes of light. Search stays the top bar's.
+     weather in pills, the greeting large and the day's verse in a line under
+     it, over Ekkly's panes of light; and on its right the quick actions, two
+     by two, each only for whoever may do it — Add a person, Record
+     attendance, New event, New task — opening the place it is done with its
+     form open (`?add=` in People, Tasks and Events). Search stays the top
+     bar's.
   2. The apps in the style the church chose, each kept to one line and six in
      a row (`HomeAppCards`/`HomeCard`'s `inline`).
   3. Three columns, each a heading on the sky over its cards: **Needs you**
      (the `warn` cards) and **Good to know** (`AppHeroDeck`'s `spread`), then
      **This week**, one white card of only the days with something on
-     (`HomeWeek`). Each Today card is the phone's in small (`DeckRow`): the
+     (`HomeWeek`), each day a date block down the left (today's in the
+     church's colour) with what is on beside it. Each Today card is the phone's in small (`DeckRow`): the
      same tones (amber for waiting on you, the church's colour for somebody's
      day, white), a label pill, a bold headline, and its picture — the photo,
      the faces it is about, its date, or its own drawing
@@ -108,7 +113,8 @@ CHANGELOG.md.
      over its neighbours. One movement, not a swap: the small face fades and
      swells as the full face fades in and settles, both from the top. A column whose cards no longer fit scrolls (the
      only scroll on the page).
-     Birthdays are one card naming everyone; what is on is said in the week.
+     Birthdays are one card naming everyone, and overdue tasks and tasks due
+     today one card saying both; what is on is said in the week.
   4. The church on its hill in whatever room is left, the full width of the
      page; everything else keeps to a 90rem column.
 - The shell pads the content area (`p-0 sm:p-4 lg:px-8 lg:py-3`) of a page

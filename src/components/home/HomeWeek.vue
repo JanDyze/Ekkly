@@ -35,6 +35,7 @@ const agenda = computed(() =>
         ...day,
         name: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : date.toLocaleDateString(undefined, { weekday: 'long' }),
         short: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        weekday: date.toLocaleDateString(undefined, { weekday: 'short' }),
         shown: on.slice(0, SHOWN),
         more: Math.max(on.length - SHOWN, 0),
       }
@@ -56,28 +57,39 @@ const keyOf = (event) => `${event.id || event.title}:${event.date}:${event.time 
     </div>
 
     <div class="min-h-0 overflow-y-auto rounded-[20px] border border-gray-200 bg-white px-3 py-3.5 [scrollbar-width:thin] dark:border-gray-700 dark:bg-gray-800">
+      <!-- A day each, its date as a calendar shows it down the left (today's
+           in the church's colour) and what is on beside it, so the week reads
+           down one edge at a glance rather than from small labels. -->
       <ol v-if="agenda.length" class="flex flex-col gap-3">
-        <li v-for="day in agenda" :key="day.date">
+        <li v-for="day in agenda" :key="day.date" class="flex gap-3">
           <RouterLink
             :to="dayLink(day.date)"
-            class="flex items-baseline gap-2 px-1 text-[13px] hover:underline"
+            :aria-label="`${day.name}, ${day.short}, in Events`"
+            :class="[
+              'flex h-12 w-11 shrink-0 flex-col items-center justify-center rounded-xl leading-none transition-colors',
+              day.isToday
+                ? 'bg-primary text-white hover:bg-primary-hover dark:bg-primary-light dark:text-gray-900'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/15',
+            ]"
           >
-            <span :class="['font-semibold', day.isToday ? 'text-primary dark:text-primary-light' : 'text-gray-900 dark:text-white']">{{ day.name }}</span>
-            <span class="text-gray-500 dark:text-gray-400">{{ day.short }}</span>
+            <span class="text-[10px] font-bold uppercase tracking-wide">{{ day.weekday }}</span>
+            <span class="mt-1 text-lg font-bold tabular-nums">{{ day.day }}</span>
           </RouterLink>
-          <ul class="mt-1 flex flex-col">
+          <ul class="flex min-w-0 flex-1 flex-col justify-center">
             <li v-for="event in day.shown" :key="keyOf(event)">
               <RouterLink
                 :to="dayLink(day.date)"
-                class="flex min-w-0 items-center gap-3 rounded-lg px-1 py-0.5 hover:bg-gray-900/[0.04] dark:hover:bg-white/[0.06]"
+                class="flex min-w-0 items-center gap-2.5 rounded-lg px-1.5 py-1 hover:bg-gray-900/[0.04] dark:hover:bg-white/[0.06]"
               >
-                <span class="w-16 shrink-0 text-[13px] tabular-nums text-gray-500 dark:text-gray-400">{{ formatTimeRange(event.time) || 'All day' }}</span>
                 <img v-if="event.photo" :src="event.photo" alt="" class="size-7 shrink-0 rounded-lg object-cover" />
-                <span class="min-w-0 truncate text-sm text-gray-900 dark:text-gray-100">{{ event.title || 'A gathering' }}</span>
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{{ event.title || 'A gathering' }}</span>
+                  <span class="block text-xs tabular-nums text-gray-500 dark:text-gray-400">{{ formatTimeRange(event.time) || 'All day' }}</span>
+                </span>
               </RouterLink>
             </li>
             <li v-if="day.more">
-              <RouterLink :to="dayLink(day.date)" class="block px-1 py-0.5 pl-20 text-[13px] font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+              <RouterLink :to="dayLink(day.date)" class="block px-1.5 py-0.5 text-xs font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
                 {{ day.more }} more
               </RouterLink>
             </li>

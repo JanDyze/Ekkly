@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ChevronDown, ChevronRight, MagnifyingGlass, Plus, X } from '../../icons'
 import AppScreen from '../../components/appframe/AppScreen.vue'
 import TaskQuickAdd from '../../components/tasks/TaskQuickAdd.vue'
@@ -177,6 +177,20 @@ const newTask = () => {
   showEditTask.value = false
   showAddTask.value = true
 }
+
+// A new task asked for in the address (`?add=1`, the desktop home's quick
+// actions): the form open, read once, then dropped from the address so the
+// back button does not keep reopening it.
+const router = useRouter()
+watch(
+  () => route.query.add,
+  (add) => {
+    if (add !== '1') return
+    if (canEdit.value && !showAddTask.value) newTask()
+    router.replace({ query: { ...route.query, add: undefined } })
+  },
+  { immediate: true }
+)
 
 const openTask = (task) => {
   if (!canEdit.value) return

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, shallowRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Cake, CalendarDots, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MicrophoneStage, Moon, Sun } from '../icons'
+import { Cake, CalendarDots, CalendarPlus, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MicrophoneStage, Moon, NotePencil, Sun, UserPlus } from '../icons'
 import AppHeroDeck from '../components/appframe/AppHeroDeck.vue'
 import CardPanes from '../components/appframe/CardPanes.vue'
 import AppArt from '../components/common/AppArt.vue'
@@ -86,7 +86,7 @@ onMounted(() => {
   router.replace({ query: {} })
 })
 
-const { can, isAdmin, myMember } = usePermissions()
+const { can, canManage, isAdmin, myMember } = usePermissions()
 const wide = useMediaQuery('(min-width: 1024px)')
 const { displayName } = useAuth()
 const { church, logoUrl } = useAppSettings()
@@ -258,10 +258,27 @@ const cards = computed(() => {
     })
   }
 
-  // Late first, then due today, never both: two cards about one list.
+  // Late first, then due today, never both: two cards about one list. On a
+  // desktop, where every card is on show at once, the one card says both, so
+  // what is due today is not hidden behind what is late.
   const late = today.myOverdue.value
   const due = today.myDueToday.value
-  if (late.length || due.length) {
+  if (wide.value && late.length && due.length) {
+    list.push({
+      kind: 'tasks',
+      key: `tasks:both:${late.length}:${due.length}`,
+      tone: 'warn',
+      icon: ListChecks,
+      dismissible: true,
+      kicker: 'Overdue',
+      art: 'today-overdue',
+      title: `${plural(late.length, 'task', 'tasks')} overdue, ${due.length} due today`,
+      to: { name: 'TasksMine' },
+      dest: 'tasks',
+      destLabel: 'Tasks',
+      tasks: [...late, ...due],
+    })
+  } else if (late.length || due.length) {
     const tasks = late.length ? late : due
     list.push({
       kind: 'tasks',
@@ -410,6 +427,19 @@ const rowDetail = (card) => {
 // left a quarter of the width as bare sky either side of three narrow columns.
 const COLUMN = 'lg:mx-auto lg:w-full lg:max-w-[90rem] lg:px-8'
 
+// What someone who runs things most often comes to the home to start, on a
+// desktop, in the church's banner: each only for whoever may do it, each
+// opening the place it is done with its form already open (`?add=` in People,
+// Tasks and Events; Attendance's list of gatherings still to count).
+const quickActions = computed(() =>
+  [
+    canManage('members') && { key: 'person', label: 'Add a person', icon: UserPlus, to: { name: 'Members', query: { add: 'true' } } },
+    canManage('attendance') && { key: 'count', label: 'Record attendance', icon: ClipboardCheck, to: { name: 'AttendanceOwed' } },
+    canManage('events') && { key: 'event', label: 'New event', icon: CalendarPlus, to: { name: 'Events', query: { add: '1' } } },
+    canManage('tasks') && { key: 'task', label: 'New task', icon: NotePencil, to: { name: 'TasksMine', query: { add: '1' } } },
+  ].filter(Boolean)
+)
+
 // The greeting's line on a desktop: the day, and whose church this is.
 const todayLong = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
 const churchName = computed(() => church.value?.shortName || church.value?.fullName || '')
@@ -544,35 +574,48 @@ const lineOf = (item) => {
           <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]" aria-hidden="true">
             <CardPanes />
           </div>
-          <div class="flex min-w-0 items-center gap-4">
+          <!-- The church, the day and the greeting, and the day's verse in a
+               line under them: one block, so the quick actions beside it never
+               squeeze the greeting. -->
+          <div class="flex min-w-0 flex-1 items-center gap-4">
             <span v-if="logoUrl" class="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5 ring-1 ring-black/10">
               <img :src="logoUrl" alt="" class="size-full object-contain" />
             </span>
-            <div class="min-w-0">
-              <p class="flex min-w-0 flex-wrap items-center gap-2 text-[13px] font-semibold">
+            <div class="min-w-0 flex-1">
+              <p class="flex min-w-0 items-center gap-2 text-[13px] font-semibold whitespace-nowrap">
                 <span class="rounded-full bg-white/18 px-2.5 py-0.5">{{ todayLong }}</span>
                 <span v-if="weather" class="inline-flex items-center gap-1.5 rounded-full bg-white/18 px-2.5 py-0.5">
                   <component :is="weatherIcon" class="size-4" />
                   {{ weather.label }}
                 </span>
-                <span v-if="churchName" class="truncate text-white/85">{{ churchName }}</span>
+                <span v-if="churchName" class="min-w-0 truncate text-white/85">{{ churchName }}</span>
               </p>
               <h1 class="mt-0.5 truncate text-[26px] font-bold leading-tight tracking-tight">{{ greeting }}</h1>
+              <component
+                :is="verseTo ? 'RouterLink' : 'div'"
+                v-if="verse"
+                v-bind="verseTo ? { to: verseTo } : {}"
+                :class="['mt-0.5 flex min-w-0 items-baseline gap-2 text-[13px]', verseTo ? 'group' : '']"
+                :title="`${verse.text} — ${verse.reference}`"
+              >
+                <span class="min-w-0 truncate italic text-white/85">{{ verse.text }}</span>
+                <span class="shrink-0 font-semibold text-white group-hover:underline">{{ verse.reference }}</span>
+              </component>
             </div>
           </div>
 
-          <component
-            :is="verseTo ? 'RouterLink' : 'div'"
-            v-if="verse"
-            v-bind="verseTo ? { to: verseTo } : {}"
-            :class="['block max-w-md shrink text-right', verseTo ? 'group' : '']"
-          >
-            <blockquote class="line-clamp-2 text-[15px] italic leading-snug text-white/90">{{ verse.text }}</blockquote>
-            <p class="mt-1 text-[13px] text-white/75">
-              <span class="font-semibold text-white group-hover:underline">{{ verse.reference }}</span>
-              · {{ verse.version }}
-            </p>
-          </component>
+          <!-- The things most often started from here, two by two. -->
+          <nav v-if="quickActions.length" aria-label="Quick actions" class="grid shrink-0 grid-cols-2 gap-2">
+            <RouterLink
+              v-for="action in quickActions"
+              :key="action.key"
+              :to="action.to"
+              class="flex h-9 items-center gap-2 rounded-full bg-white/15 px-3.5 text-[13px] font-semibold whitespace-nowrap text-white ring-1 ring-white/25 transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              <component :is="action.icon" class="size-4 shrink-0" />
+              {{ action.label }}
+            </RouterLink>
+          </nav>
         </div>
       </header>
 
