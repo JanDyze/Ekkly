@@ -11,6 +11,14 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.29] — 2026-10-14
+
+### Changed
+
+- **A calmer sky behind the home on a computer:** the large window drawn in
+  the sky is gone, so it no longer shows through behind your apps and lists.
+  The phone's home is unchanged.
+
 ## [0.35.28] — 2026-10-14
 
 The home on a computer fits on one screen again, with your apps down the

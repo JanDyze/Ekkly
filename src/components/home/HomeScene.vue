@@ -202,8 +202,7 @@ defineProps({
 
     <!-- Ekkly's window in the corner, its light falling in toward the page
          (WindowLight), in the sky's own pane colour. On a phone the deck
-         stands over most of it; beside a wide screen's column it shows
-         whole. -->
+         stands over most of it; a desktop leaves it out (the style below). -->
     <WindowLight mirror x="0" y="0" width="640" height="576" class="scene-window" />
 
     <!-- The clouds (CLOUDS, above): higher up, then low along the horizon. -->
@@ -590,12 +589,18 @@ defineProps({
    so on a desktop it is three or four times a phone's size, and its clouds
    came out as slabs half the width of the screen. There each cloud is shrunk
    where it stands, on its own foot, to about the size it is on a phone; the
-   sky, the light and the rain keep filling the page. */
+   sky, the light and the rain keep filling the page.
+   The window goes altogether: on a phone the deck stands over most of it, but
+   on a desktop it came out as a giant pane behind the sidebar and the lists,
+   and only cluttered them. */
 @media (min-width: 1024px) {
   .scene-cloud {
     transform: scale(0.5);
     transform-box: fill-box;
     transform-origin: 50% 100%;
+  }
+  .scene-window {
+    display: none;
   }
 }
 
