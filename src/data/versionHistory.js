@@ -8,6 +8,16 @@
 
 export const versionHistory = [
   {
+    version: '0.35.32',
+    date: '2026-10-15',
+    title: 'Arrange your home',
+    summary: 'On a computer, drag the panels on your home to wherever suits you.',
+    highlights: [
+      'Move your greeting, apps, Needs attention, Community or This week, within a column or across.',
+      'Preferences > Home layout puts everything back.',
+    ],
+  },
+  {
     version: '0.35.31',
     date: '2026-10-15',
     title: 'Quick actions your way',

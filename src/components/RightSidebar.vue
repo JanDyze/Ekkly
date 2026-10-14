@@ -11,6 +11,7 @@ import {
   Settings as SettingsIcon,
   SlidersHorizontal,
   SquaresFour,
+  Layout,
   Rows,
   CloudSun,
   Swap,
@@ -38,6 +39,7 @@ import { getFullName } from '../utils/memberUtils'
 import { useClaimFlow } from '../composables/useClaimFlow'
 import { usePermissions } from '../composables/usePermissions'
 import { useHomeCards } from '../composables/useHomeCards'
+import { useHomeLayout } from '../composables/useHomeLayout'
 import { useBottomBar } from '../composables/useBottomBar'
 import { useLiveSky } from '../composables/useLiveSky'
 import { useMotion } from '../composables/useMotion'
@@ -71,6 +73,9 @@ watch(showPeoplePanel, (open) => {
 // How the home draws its apps, for this person; the sheet says the rest.
 const { style: cardStyle, myChoice: myCardStyle } = useHomeCards()
 const showCardStyles = ref(false)
+
+// The desktop home's panels, where this person has put them.
+const { isDefault: layoutIsDefault, reset: resetLayout } = useHomeLayout()
 
 // The bottom bar, on or off for this person.
 const { bottomBar, setBottomBar } = useBottomBar()
@@ -437,6 +442,18 @@ watch(railIsVisible, (visible) => {
                 <SquaresFour class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
                 <span class="flex-1 text-sm text-gray-700 dark:text-slate-200">App cards</span>
                 <span class="truncate text-xs text-gray-400 dark:text-slate-500">{{ myCardStyle ? homeCardName(cardStyle) : 'Church’s choice' }}</span>
+              </button>
+              <!-- The desktop home's panels, dragged into this person's own
+                   arrangement there (HomeBoard); this puts them back. Only on
+                   a desktop, the one place they can be moved. -->
+              <button
+                class="hidden w-full items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-gray-100 disabled:hover:bg-transparent lg:flex dark:hover:bg-white/5"
+                :disabled="layoutIsDefault"
+                @click="resetLayout"
+              >
+                <Layout class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
+                <span class="flex-1 text-sm text-gray-700 dark:text-slate-200">Home layout</span>
+                <span class="text-xs text-gray-400 dark:text-slate-500">{{ layoutIsDefault ? 'Default' : 'Yours · Reset' }}</span>
               </button>
               <button
                 @click="setBottomBar(!bottomBar)"

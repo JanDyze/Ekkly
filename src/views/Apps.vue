@@ -15,6 +15,8 @@ import HomeWeek from '../components/home/HomeWeek.vue'
 import HomeAttention from '../components/home/HomeAttention.vue'
 import HomeCommunity from '../components/home/HomeCommunity.vue'
 import QuickActionsMenu from '../components/home/QuickActionsMenu.vue'
+import HomeBoard from '../components/home/HomeBoard.vue'
+import { HOME_COLUMNS, useHomeLayout } from '../composables/useHomeLayout'
 import { useHomeCards } from '../composables/useHomeCards'
 import { useLiveSky } from '../composables/useLiveSky'
 import { useAppOrder } from '../composables/useAppOrder'
@@ -61,7 +63,8 @@ import { peopleOnService } from '../data/scheduleRoles'
 //
 // On a desktop (lg) the same page has the room to show everything at once,
 // and like a phone's it keeps to one screen and never scrolls. It is three
-// columns, a quarter, a half and a quarter. The sidebar reads as a phone does,
+// columns, a quarter, a half and a quarter, whose panels anyone can drag into
+// their own arrangement (HomeBoard, useHomeLayout); to begin with, this. The sidebar reads as a phone does,
 // top to bottom: the day's card in the church's colour (the quick actions
 // behind its "+"), the apps in the style chosen, and the church on its hill with the
 // day's verse. The middle is the work: what needs attention (HomeAttention),
@@ -479,6 +482,21 @@ const weekEvents = computed(() =>
     ? [...today.eventsThisWeek.value, ...sampleModule.value.sampleWeekEvents()].sort((a, b) => a.date.localeCompare(b.date) || String(a.time).localeCompare(String(b.time)))
     : today.eventsThisWeek.value
 )
+// The desktop's panels where this person has put them (useHomeLayout), less
+// any whose app is not theirs to open: the week goes with Events.
+const { layout: homeLayout, move: movePanel } = useHomeLayout()
+const boardColumns = computed(() =>
+  HOME_COLUMNS.map((column) => ({
+    ...column,
+    // The left column keeps the church at its foot, so it never stands aside.
+    keep: column.id === 'left',
+    panels: homeLayout.value[column.id].filter((key) => key !== 'week' || showWeek.value),
+  }))
+)
+// How each panel shares its column: the day and the apps keep their height,
+// the lists give way and scroll inside, the work least of all.
+const PANEL_FIT = { attention: 'flex-[0_0.5_auto]', community: 'flex-[0_1_auto]', week: 'flex-[0_1_auto]' }
+
 const showWeek = computed(() => wide.value && allApps.value.some((item) => item.path === '/events'))
 
 /* ------------------------------------------------------------- the verse */
@@ -580,30 +598,87 @@ const lineOf = (item) => {
   <div class="home-scene relative h-full overflow-hidden bg-(--scene-sky-3) with-bar:overflow-y-auto with-bar:overscroll-contain" v-bind="sky">
     <HomeScene part="sky" class="pointer-events-none absolute inset-0 size-full" />
 
-    <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:grid lg:h-full lg:max-w-[112rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] lg:grid-rows-[minmax(0,1fr)] lg:gap-5 lg:px-6 lg:py-5">
+    <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:grid lg:h-full lg:max-w-[112rem] lg:grid-cols-1 lg:grid-rows-[minmax(0,1fr)] lg:gap-5 lg:px-6 lg:py-5">
       <!-- 1. Today, most important on top: on a phone, the deck. On a desktop,
            under the greeting and beside the apps: what needs attention, with
            the community under it, beside the week. All of it in the one
            screen: the page never scrolls, and a list with more than its card
            holds scrolls inside the card. -->
-      <div class="lg:col-start-2 lg:row-start-1 lg:min-h-0">
+      <div class="lg:col-start-1 lg:row-start-1 lg:min-h-0">
       <AppHeroDeck :cards="cards" scope="home" label="Today" :spread="wide">
         <template #spread="{ urgent, rest, dismiss, leaving }">
-          <!-- A quarter, a half and a quarter of the page: the sidebar (the
-               page's grid gives it one part in four), then the work with the
-               community under it, then the week. Two parts to one here, with
-               the page's own gap, comes out at exactly half and a quarter.
-               The column holding two lists gives each its share by what it
-               holds (flex 0 1 auto), the community never more than a little
-               under half, so the work keeps the room; either scrolls inside
-               its own card when it holds more. -->
-          <div :class="['grid h-full min-h-0 gap-5', showWeek ? 'grid-cols-[minmax(0,2fr)_minmax(0,1fr)]' : 'grid-cols-1']">
-            <div class="flex min-h-0 min-w-0 flex-col gap-5">
-              <HomeAttention class="flex-[0_1_auto]" :cards="urgent" :dismiss="dismiss" :leaving="leaving" />
-              <HomeCommunity class="max-h-[42%] flex-[0_1_auto]" :cards="rest" :dismiss="dismiss" :leaving="leaving" :detail-of="rowDetail" />
-            </div>
-            <HomeWeek v-if="showWeek" class="max-h-full min-w-0 self-start" :days="today.week.value" :events="weekEvents" />
-          </div>
+          <!-- The panels, in the arrangement this person chose (HomeBoard,
+               useHomeLayout): three columns, a quarter, a half and a quarter,
+               and any panel dragged to another place. To begin with: the day
+               and the apps down the left, the work with the community under
+               it in the middle, and the week on the right. A list with more
+               than its panel holds scrolls inside the panel, never the page;
+               the work gives way least when a column is full. -->
+          <HomeBoard :columns="boardColumns" :fit="PANEL_FIT" @move="({ key, column, index }) => movePanel(key, column, index)">
+            <template #panel="{ panel }">
+              <!-- The day, as the phone's deck ends on it: one card in the
+                   church's colour over Ekkly's panes of light, with the logo,
+                   the day and the weather, and the greeting large on two lines
+                   (the time of day, then the name). Beside the greeting, one
+                   round button for the quick actions (QuickActionsMenu): four
+                   buttons on the card made it busy. Search stays the top bar's;
+                   the day's verse is on the picture at the left column's foot. -->
+              <header v-if="panel === 'day'" class="relative">
+                <div class="home-hero relative isolate overflow-hidden rounded-[24px] border border-black/15 p-4 text-white dark:border-black/40">
+                  <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]" aria-hidden="true">
+                    <CardPanes />
+                  </div>
+                  <div class="flex min-w-0 items-center gap-3">
+                    <span v-if="logoUrl" class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1 ring-1 ring-black/10">
+                      <img :src="logoUrl" alt="" class="size-full object-contain" />
+                    </span>
+                    <div class="min-w-0 flex-1">
+                      <p class="truncate text-[13px] font-semibold">{{ todayLong }}</p>
+                      <p class="flex min-w-0 items-center gap-1.5 text-xs text-white/85">
+                        <template v-if="weather">
+                          <component :is="weatherIcon" class="size-3.5 shrink-0" />
+                          <span class="shrink-0">{{ weather.label }}</span>
+                          <span v-if="churchName" aria-hidden="true">·</span>
+                        </template>
+                        <span v-if="churchName" class="min-w-0 truncate">{{ churchName }}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <h1 class="mt-3 pr-11 text-[24px] font-bold leading-[1.15] tracking-tight">
+                    {{ greetingTime }}<template v-if="greetingName">,<br /><span class="block truncate">{{ greetingName }}</span></template>
+                  </h1>
+                </div>
+                <!-- Over the card's corner, beside the greeting, rather than in it:
+                     the card clips to its rounded edge, and the menu has to hang
+                     below it. -->
+                <div class="absolute right-4 bottom-4">
+                  <QuickActionsMenu />
+                </div>
+              </header>
+
+              <!-- The apps, drawn as on a phone in the style chosen
+                   (HomeAppCards' `column`, useHomeCards). -->
+              <template v-else-if="panel === 'apps'">
+                <div v-if="!allApps.length" class="rounded-2xl border border-dashed border-gray-300 p-8 text-center dark:border-gray-600">
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Nothing has been shared with this account yet.</p>
+                  <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">An administrator grants access by ministry in Settings.</p>
+                </div>
+                <HomeAppCards v-else :variant="cardStyle" column :apps="primary" :others="others" :hold="hold" />
+              </template>
+
+              <HomeAttention v-else-if="panel === 'attention'" :cards="urgent" :dismiss="dismiss" :leaving="leaving" />
+              <HomeCommunity v-else-if="panel === 'community'" :cards="rest" :dismiss="dismiss" :leaving="leaving" :detail-of="rowDetail" />
+              <HomeWeek v-else-if="panel === 'week'" :days="today.week.value" :events="weekEvents" />
+            </template>
+
+            <!-- The church on its hill stays at the foot of the left column
+                 whatever moves: the room is teleported here from the phone's
+                 layout, below. (The way back to the first arrangement is in
+                 Preferences, where the other choices about the home are.) -->
+            <template #foot-left>
+              <div id="home-left-foot" class="contents" />
+            </template>
+          </HomeBoard>
         </template>
 
         <template #card="{ card }">
@@ -721,49 +796,9 @@ const lineOf = (item) => {
            left, the apps drawn as on a phone in the style chosen; on a phone
            the wrapper is not there (display: contents) and they stand in the
            page as they always have. -->
-      <div class="contents lg:col-start-1 lg:row-start-1 lg:flex lg:min-h-0 lg:flex-col lg:gap-4">
-      <!-- On a desktop the sidebar leads with the day, as the phone's deck
-           ends on it: one card in the church's colour over Ekkly's panes of
-           light, with the church's logo, the day and the weather, the
-           greeting large on two lines (the time of day, then the name), and in
-           its corner one round button for the quick actions
-           (QuickActionsMenu), each only for whoever may do it and opening the
-           place it is done with its form open (`?add=` in People, Tasks and
-           Events): four buttons on the card made it busy. Search stays the top bar's. The day's
-           verse is on the picture at the sidebar's foot, as on a phone. -->
-      <header v-if="wide" class="relative lg:shrink-0">
-        <div class="home-hero relative isolate overflow-hidden rounded-[24px] border border-black/15 p-4 text-white dark:border-black/40">
-          <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]" aria-hidden="true">
-            <CardPanes />
-          </div>
-          <div class="flex min-w-0 items-center gap-3">
-            <span v-if="logoUrl" class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1 ring-1 ring-black/10">
-              <img :src="logoUrl" alt="" class="size-full object-contain" />
-            </span>
-            <div class="min-w-0 flex-1">
-              <p class="truncate text-[13px] font-semibold">{{ todayLong }}</p>
-              <p class="flex min-w-0 items-center gap-1.5 text-xs text-white/85">
-                <template v-if="weather">
-                  <component :is="weatherIcon" class="size-3.5 shrink-0" />
-                  <span class="shrink-0">{{ weather.label }}</span>
-                  <span v-if="churchName" aria-hidden="true">·</span>
-                </template>
-                <span v-if="churchName" class="min-w-0 truncate">{{ churchName }}</span>
-              </p>
-            </div>
-          </div>
-          <h1 class="mt-3 pr-11 text-[24px] font-bold leading-[1.15] tracking-tight">
-            {{ greetingTime }}<template v-if="greetingName">,<br /><span class="block truncate">{{ greetingName }}</span></template>
-          </h1>
-        </div>
-        <!-- Over the card's corner, beside the greeting, rather than in it:
-             the card clips to its rounded edge, and the menu has to hang
-             below it. -->
-        <div class="absolute right-4 bottom-4">
-          <QuickActionsMenu />
-        </div>
-      </header>
+      <div class="contents">
 
+      <template v-if="!wide">
       <div
         v-if="!allApps.length"
         class="rounded-2xl border border-dashed border-gray-300 p-8 text-center dark:border-gray-600"
@@ -776,13 +811,12 @@ const lineOf = (item) => {
            themselves (HomeAppCards, useHomeCards). -->
       <HomeAppCards
         v-else
-        class="lg:shrink-0"
         :variant="cardStyle"
-        :column="wide"
         :apps="primary"
         :others="others"
         :hold="hold"
       />
+      </template>
 
       <!-- 3. The church on its hill, and the day's verse on a card beside
            it, in whatever room the apps leave at the foot of the screen. The
@@ -797,6 +831,7 @@ const lineOf = (item) => {
            apps, about as tall as a phone gives it (a taller room only blew the
            church up), with the day's verse on it as on a phone; both give way
            where there is less room (the container queries below). -->
+      <Teleport defer to="#home-left-foot" :disabled="!wide">
       <section class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space) lg:-mb-5 lg:-ml-6 lg:mr-0 lg:mt-auto lg:flex-[0_1_16rem]" aria-label="A verse for today">
         <HomeScene part="land" class="scene pointer-events-none absolute inset-0 size-full" />
 
@@ -853,6 +888,7 @@ const lineOf = (item) => {
           </component>
         </div>
       </section>
+      </Teleport>
       </div>
     </main>
 

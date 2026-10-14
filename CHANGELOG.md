@@ -11,6 +11,16 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.32] — 2026-10-15
+
+### Added
+
+- **Arrange your home on a computer.** Drag any panel — your greeting, your
+  apps, Needs attention, Community or This week — to another place in its
+  column or into another column. A line shows where it will land, and your
+  arrangement follows you to any device. **Preferences > Home layout** puts
+  everything back. The phone's home is unchanged.
+
 ## [0.35.31] — 2026-10-15
 
 The home on a computer is calmer, and its quick actions are yours to choose.
