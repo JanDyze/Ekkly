@@ -1,9 +1,7 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { CheckCircle } from '../../icons'
-import { useFitCount } from '../../composables/useFitCount'
 import AttentionRow from './AttentionRow.vue'
-import HomeSheet from './HomeSheet.vue'
 
 // The desktop home's action centre: what is waiting on this person, and only
 // that (the deck's `warn` cards; AppHeroDeck's `spread`). One panel of rows
@@ -11,9 +9,7 @@ import HomeSheet from './HomeSheet.vue'
 // pressing first: what is late, then what is waiting.
 //
 // The home keeps to one screen, so the panel takes the height it is given and
-// shows the rows that fit whole (useFitCount); the rest are counted at its
-// foot, and open with every row in a sheet (HomeSheet) rather than in a box
-// that scrolls.
+// its rows scroll inside it, every one of them, rather than the page.
 
 const props = defineProps({
   cards: { type: Array, required: true },
@@ -29,11 +25,6 @@ const sorted = computed(() =>
     .sort((a, b) => (RANK[a.card.severity] ?? 1) - (RANK[b.card.severity] ?? 1) || a.i - b.i)
     .map(({ card }) => card)
 )
-
-const list = ref(null)
-const fit = useFitCount(list, sorted)
-const hidden = computed(() => Math.max(sorted.value.length - fit.value, 0))
-const sheet = ref(false)
 </script>
 
 <template>
@@ -53,28 +44,9 @@ const sheet = ref(false)
       Nothing needs you today.
     </p>
 
-    <ul v-else ref="list" class="relative min-h-0 flex-1 divide-y divide-gray-100 overflow-hidden dark:divide-white/10">
-      <AttentionRow
-        v-for="(card, i) in sorted"
-        :key="card.key"
-        :card="card"
-        :dismiss="dismiss"
-        :leaving="card.key === leaving"
-        :class="i >= fit ? 'invisible' : ''"
-        :aria-hidden="i >= fit ? 'true' : undefined"
-      />
+    <ul v-else class="min-h-0 flex-1 divide-y divide-gray-100 overflow-y-auto overscroll-contain [scrollbar-width:thin] dark:divide-white/10">
+      <AttentionRow v-for="card in sorted" :key="card.key" :card="card" :dismiss="dismiss" :leaving="card.key === leaving" />
     </ul>
 
-    <div v-if="hidden" class="shrink-0 border-t border-gray-100 px-5 py-2.5 dark:border-white/10">
-      <button type="button" class="text-sm font-semibold text-primary hover:underline dark:text-primary-light" @click="sheet = true">
-        {{ hidden }} more {{ hidden === 1 ? 'needs' : 'need' }} attention
-      </button>
-    </div>
-
-    <HomeSheet :open="sheet" title="Needs attention" :count="cards.length" @close="sheet = false">
-      <ul class="@container divide-y divide-gray-100 dark:divide-white/10">
-        <AttentionRow v-for="card in sorted" :key="card.key" :card="card" :dismiss="dismiss" :leaving="card.key === leaving" />
-      </ul>
-    </HomeSheet>
   </section>
 </template>

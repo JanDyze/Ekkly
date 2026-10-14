@@ -11,6 +11,29 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.31] — 2026-10-15
+
+The home on a computer is calmer, and its quick actions are yours to choose.
+The phone's home is unchanged.
+
+### Added
+
+- **Choose your own quick actions.** The **+** beside the greeting opens
+  them; **Edit** lets you pick up to six from everything you are allowed to
+  do — now including **New prayer concern**, **New Sunday school class** and
+  **Add to inventory** — and **Back to the defaults** undoes it. Your choice
+  follows you to any device.
+- **New prayer concern** opens Prayer with the form already open.
+
+### Changed
+
+- **The greeting card shows just the day and the greeting**; the quick
+  actions moved behind its **+**.
+- **Each item in Needs attention is one tap**: the whole row opens it, with
+  no button. The details under the headline are one quiet line.
+- **Lists scroll inside their own card** when they hold more than fits; the
+  page itself never scrolls. The "N more" links and the side panel are gone.
+
 ## [0.35.30] — 2026-10-14
 
 The home on a computer is three columns: your day and apps, the work, and

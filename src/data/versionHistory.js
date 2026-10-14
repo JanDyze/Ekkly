@@ -8,6 +8,17 @@
 
 export const versionHistory = [
   {
+    version: '0.35.31',
+    date: '2026-10-15',
+    title: 'Quick actions your way',
+    summary: 'On a computer, choose the quick actions on your home, and see what needs you at a glance.',
+    highlights: [
+      'Tap + beside your greeting, then Edit, to choose up to six quick actions.',
+      'Each item in Needs attention opens with one tap, with a single quiet line of detail.',
+      'Long lists scroll inside their own card, so the page stays put.',
+    ],
+  },
+  {
     version: '0.35.30',
     date: '2026-10-14',
     title: 'Three columns on your home',

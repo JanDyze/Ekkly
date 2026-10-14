@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, shallowRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Cake, CalendarDots, CalendarPlus, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MicrophoneStage, Moon, NotePencil, Sun, UserPlus } from '../icons'
+import { Cake, CalendarDots, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MicrophoneStage, Moon, Sun, UserPlus } from '../icons'
 import AppHeroDeck from '../components/appframe/AppHeroDeck.vue'
 import CardPanes from '../components/appframe/CardPanes.vue'
 import DeckCard from '../components/appframe/DeckCard.vue'
@@ -14,6 +14,7 @@ import HomeAppCards from '../components/home/HomeAppCards.vue'
 import HomeWeek from '../components/home/HomeWeek.vue'
 import HomeAttention from '../components/home/HomeAttention.vue'
 import HomeCommunity from '../components/home/HomeCommunity.vue'
+import QuickActionsMenu from '../components/home/QuickActionsMenu.vue'
 import { useHomeCards } from '../composables/useHomeCards'
 import { useLiveSky } from '../composables/useLiveSky'
 import { useAppOrder } from '../composables/useAppOrder'
@@ -61,12 +62,12 @@ import { peopleOnService } from '../data/scheduleRoles'
 // On a desktop (lg) the same page has the room to show everything at once,
 // and like a phone's it keeps to one screen and never scrolls. It is three
 // columns, a quarter, a half and a quarter. The sidebar reads as a phone does,
-// top to bottom: the day's card in the church's colour with the quick
-// actions, the apps in the style chosen, and the church on its hill with the
+// top to bottom: the day's card in the church's colour (the quick actions
+// behind its "+"), the apps in the style chosen, and the church on its hill with the
 // day's verse. The middle is the work: what needs attention (HomeAttention),
 // with the community's news under it (HomeCommunity). The last is the week
-// (HomeWeek). Each list shows the rows that fit whole (useFitCount) and counts
-// the rest, which open in a sheet or their own page. An issue that covers
+// (HomeWeek). Each list scrolls inside its own card where it holds more than
+// fits; the page never does. An issue that covers
 // several records is one row with its records under it, never a row each,
 // and what is on goes in the week and nowhere else, so nothing is said twice.
 
@@ -82,7 +83,7 @@ onMounted(() => {
   router.replace({ query: {} })
 })
 
-const { can, canManage, isAdmin, myMember } = usePermissions()
+const { can, isAdmin, myMember } = usePermissions()
 const wide = useMediaQuery('(min-width: 1024px)')
 const { displayName } = useAuth()
 const { church, logoUrl } = useAppSettings()
@@ -458,18 +459,6 @@ const rowDetail = (card) => {
 
 /* ------------------------------------------------------ the desktop page */
 
-// What someone who runs things most often comes to the home to start, on a
-// desktop, on the day's card: each only for whoever may do it, each
-// opening the place it is done with its form already open (`?add=` in People,
-// Tasks and Events; Attendance's list of gatherings still to count).
-const quickActions = computed(() =>
-  [
-    canManage('members') && { key: 'person', label: 'Add a person', short: 'Add person', icon: UserPlus, to: { name: 'Members', query: { add: 'true' } } },
-    canManage('attendance') && { key: 'count', label: 'Record attendance', short: 'Attendance', icon: ClipboardCheck, to: { name: 'AttendanceOwed' } },
-    canManage('events') && { key: 'event', label: 'New event', short: 'New event', icon: CalendarPlus, to: { name: 'Events', query: { add: '1' } } },
-    canManage('tasks') && { key: 'task', label: 'New task', short: 'New task', icon: NotePencil, to: { name: 'TasksMine', query: { add: '1' } } },
-  ].filter(Boolean)
-)
 
 // The day's card on a desktop: the day, whose church this is, and the
 // greeting on two lines, as on the phone's day card.
@@ -581,7 +570,7 @@ const lineOf = (item) => {
 <template>
   <!-- The home is laid out to fit one screen, so it does not scroll: its
        bottom padding alone used to tip it over and let the page slide. On a
-       desktop each list shows what fits and opens the rest (useFitCount). -->
+       desktop a list with more than fits scrolls inside its own card. -->
   <!-- The page stands in a picture (HomeScene): its sky behind everything,
        and its church on the hill in the room the apps leave at the foot. -->
   <!-- With the bottom bar on, the bar takes the foot of the screen, so the
@@ -595,11 +584,8 @@ const lineOf = (item) => {
       <!-- 1. Today, most important on top: on a phone, the deck. On a desktop,
            under the greeting and beside the apps: what needs attention, with
            the community under it, beside the week. All of it in the one
-           screen: each list shows the rows that fit whole and counts the
-           rest, which open in a sheet (HomeSheet) or their own page, so
-           nothing scrolls, the page or a box on it. The community takes at
-           most a little under half the column, so the work above it always
-           has the room. -->
+           screen: the page never scrolls, and a list with more than its card
+           holds scrolls inside the card. -->
       <div class="lg:col-start-2 lg:row-start-1 lg:min-h-0">
       <AppHeroDeck :cards="cards" scope="home" label="Today" :spread="wide">
         <template #spread="{ urgent, rest, dismiss, leaving }">
@@ -608,11 +594,13 @@ const lineOf = (item) => {
                community under it, then the week. Two parts to one here, with
                the page's own gap, comes out at exactly half and a quarter.
                The column holding two lists gives each its share by what it
-               holds (flex 0 1 auto). -->
+               holds (flex 0 1 auto), the community never more than a little
+               under half, so the work keeps the room; either scrolls inside
+               its own card when it holds more. -->
           <div :class="['grid h-full min-h-0 gap-5', showWeek ? 'grid-cols-[minmax(0,2fr)_minmax(0,1fr)]' : 'grid-cols-1']">
             <div class="flex min-h-0 min-w-0 flex-col gap-5">
               <HomeAttention class="flex-[0_1_auto]" :cards="urgent" :dismiss="dismiss" :leaving="leaving" />
-              <HomeCommunity class="flex-[0_1_auto]" :cards="rest" :dismiss="dismiss" :leaving="leaving" :detail-of="rowDetail" />
+              <HomeCommunity class="max-h-[42%] flex-[0_1_auto]" :cards="rest" :dismiss="dismiss" :leaving="leaving" :detail-of="rowDetail" />
             </div>
             <HomeWeek v-if="showWeek" class="max-h-full min-w-0 self-start" :days="today.week.value" :events="weekEvents" />
           </div>
@@ -737,13 +725,13 @@ const lineOf = (item) => {
       <!-- On a desktop the sidebar leads with the day, as the phone's deck
            ends on it: one card in the church's colour over Ekkly's panes of
            light, with the church's logo, the day and the weather, the
-           greeting large on two lines (the time of day, then the name), and
-           the quick actions two by two under it (a row of their icons alone
-           where the sidebar is narrow), each only for whoever may do it and
-           opening the place it is done with its form open (`?add=` in People,
-           Tasks and Events). Search stays the top bar's. The day's
+           greeting large on two lines (the time of day, then the name), and in
+           its corner one round button for the quick actions
+           (QuickActionsMenu), each only for whoever may do it and opening the
+           place it is done with its form open (`?add=` in People, Tasks and
+           Events): four buttons on the card made it busy. Search stays the top bar's. The day's
            verse is on the picture at the sidebar's foot, as on a phone. -->
-      <header v-if="wide" class="@container lg:shrink-0">
+      <header v-if="wide" class="relative lg:shrink-0">
         <div class="home-hero relative isolate overflow-hidden rounded-[24px] border border-black/15 p-4 text-white dark:border-black/40">
           <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]" aria-hidden="true">
             <CardPanes />
@@ -764,23 +752,15 @@ const lineOf = (item) => {
               </p>
             </div>
           </div>
-          <h1 class="mt-3 text-[24px] font-bold leading-[1.15] tracking-tight">
+          <h1 class="mt-3 pr-11 text-[24px] font-bold leading-[1.15] tracking-tight">
             {{ greetingTime }}<template v-if="greetingName">,<br /><span class="block truncate">{{ greetingName }}</span></template>
           </h1>
-
-          <nav v-if="quickActions.length" aria-label="Quick actions" class="mt-3.5 grid grid-cols-4 gap-1.5 @[17rem]:grid-cols-2">
-            <RouterLink
-              v-for="action in quickActions"
-              :key="action.key"
-              :to="action.to"
-              :title="action.label"
-              :aria-label="action.label"
-              class="flex h-8 min-w-0 items-center justify-center gap-1.5 rounded-full bg-white/15 px-2.5 text-xs font-semibold whitespace-nowrap text-white @[17rem]:justify-start ring-1 ring-white/25 transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            >
-              <component :is="action.icon" class="size-3.5 shrink-0" />
-              <span class="hidden truncate @[17rem]:inline">{{ action.short }}</span>
-            </RouterLink>
-          </nav>
+        </div>
+        <!-- Over the card's corner, beside the greeting, rather than in it:
+             the card clips to its rounded edge, and the menu has to hang
+             below it. -->
+        <div class="absolute right-4 bottom-4">
+          <QuickActionsMenu />
         </div>
       </header>
 

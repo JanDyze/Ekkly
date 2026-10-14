@@ -1,9 +1,6 @@
 <script setup>
-import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { X } from '../../icons'
-import { useFitCount } from '../../composables/useFitCount'
-import HomeSheet from './HomeSheet.vue'
 import TodayPicture from './TodayPicture.vue'
 
 // The desktop home's community: what is good to know rather than waiting on
@@ -12,7 +9,8 @@ import TodayPicture from './TodayPicture.vue'
 // AppHeroDeck's `spread`). Set under the action centre and quieter than it:
 // one light panel of compact items, two across where there is room, the
 // church's colour only in the line naming a celebration, so none of it reads
-// as urgent. As many show as fit whole (useFitCount); the rest open in a sheet.
+// as urgent. Where there is more than the panel's share of the column, it
+// scrolls inside the panel, never the page.
 
 const props = defineProps({
   cards: { type: Array, required: true },
@@ -21,11 +19,6 @@ const props = defineProps({
   // The line under a card's headline, as the home words it (Apps.vue).
   detailOf: { type: Function, default: (card) => card.detail },
 })
-
-const list = ref(null)
-const fit = useFitCount(list, () => props.cards)
-const hidden = computed(() => Math.max(props.cards.length - fit.value, 0))
-const sheet = ref(false)
 </script>
 
 <template>
@@ -35,25 +28,16 @@ const sheet = ref(false)
       <span v-if="cards.length" class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold tabular-nums text-gray-600 dark:bg-white/10 dark:text-gray-300">
         {{ cards.length }}
       </span>
-      <button
-        v-if="hidden"
-        type="button"
-        class="ml-auto text-sm font-semibold text-primary hover:underline dark:text-primary-light"
-        @click="sheet = true"
-      >
-        {{ hidden }} more
-      </button>
     </header>
 
     <p v-if="!cards.length" class="px-3 pb-3 text-sm text-gray-600 dark:text-gray-300">Nothing else today.</p>
 
-    <ul v-else ref="list" class="relative grid min-h-0 flex-1 grid-cols-1 content-start gap-0.5 overflow-hidden @2xl:grid-cols-2">
+    <ul v-else class="grid min-h-0 flex-1 grid-cols-1 content-start gap-0.5 overflow-y-auto overscroll-contain [scrollbar-width:thin] @2xl:grid-cols-2">
       <li
-        v-for="(card, i) in cards"
+        v-for="card in cards"
         :key="card.key"
         class="group/row relative min-w-0 transition-opacity duration-200"
-        :class="[card.key === leaving ? 'opacity-0' : '', i >= fit ? 'invisible' : '']"
-        :aria-hidden="i >= fit ? 'true' : undefined"
+        :class="card.key === leaving ? 'opacity-0' : ''"
       >
         <component
           :is="card.to ? RouterLink : 'div'"
@@ -87,26 +71,5 @@ const sheet = ref(false)
         </button>
       </li>
     </ul>
-
-    <HomeSheet :open="sheet" title="Community" :count="cards.length" @close="sheet = false">
-      <ul class="flex flex-col gap-0.5 p-2">
-        <li v-for="card in cards" :key="card.key">
-          <component
-            :is="card.to ? RouterLink : 'div'"
-            :to="card.to || undefined"
-            class="flex min-w-0 items-center gap-3 rounded-2xl px-3 py-2.5 transition-colors hover:bg-gray-900/[0.04] dark:hover:bg-white/[0.06]"
-          >
-            <TodayPicture :card="card" size="sm" />
-            <span class="min-w-0 flex-1">
-              <span :class="['block text-xs font-semibold', card.tone === 'celebrate' ? 'text-primary dark:text-primary-light' : 'text-gray-500 dark:text-gray-400']">
-                {{ card.kicker }}
-              </span>
-              <span class="block text-sm font-semibold text-gray-900 dark:text-white">{{ card.title }}</span>
-              <span v-if="detailOf(card)" class="block text-xs text-gray-500 dark:text-gray-400">{{ detailOf(card) }}</span>
-            </span>
-          </component>
-        </li>
-      </ul>
-    </HomeSheet>
   </section>
 </template>

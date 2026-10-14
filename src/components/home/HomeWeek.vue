@@ -1,8 +1,7 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { formatTimeRange } from '../../utils/sgUtils'
-import { useFitCount } from '../../composables/useFitCount'
 
 // The coming seven days, for the home of all apps on a desktop, as a compact
 // timeline beside the day's work: only the days with something on, each a
@@ -11,11 +10,9 @@ import { useFitCount } from '../../composables/useFitCount'
 // church's colour. The titles and times are what is read, so the day's label
 // is small and said once.
 //
-// A preview, not the calendar, on a home that keeps to one screen: the days
-// and events are one list, as many rows shown as fit whole (useFitCount), a
-// day's label never left without its first event under it, and the rest a
-// link away (View all, and Open calendar for the month). Everything is the
-// home's already (useToday), gated as it is.
+// The home keeps to one screen, so the card takes the height it is given and
+// the week scrolls inside it rather than the page; Open calendar has the
+// month. Everything is the home's already (useToday), gated as it is.
 
 const props = defineProps({
   // useToday's `week`: { date, day, isToday } for the coming seven.
@@ -43,12 +40,6 @@ const rows = computed(() =>
 )
 const total = computed(() => rows.value.filter((row) => !row.day).length)
 
-const list = ref(null)
-const fit = useFitCount(list, rows)
-// A day's label shows only with its first event under it.
-const shown = (i) => i < fit.value && (!rows.value[i].day || i + 1 < fit.value)
-const hidden = computed(() => rows.value.filter((row, i) => !row.day && !shown(i)).length)
-
 const dayLink = (date) => ({ name: 'Events', query: { date } })
 </script>
 
@@ -65,17 +56,15 @@ const dayLink = (date) => ({ name: 'Events', query: { date } })
       </RouterLink>
     </header>
 
-    <ol v-if="rows.length" ref="list" class="relative min-h-0 flex-1 overflow-hidden">
+    <ol v-if="rows.length" class="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:thin]">
       <li
-        v-for="(row, i) in rows"
+        v-for="row in rows"
         :key="row.key"
         :class="[
           'px-5',
           row.day ? 'pt-3 pb-1 not-first:border-t not-first:border-gray-100 dark:not-first:border-white/10' : 'pb-1.5 last:pb-3',
           row.isToday ? 'bg-primary/[0.06] dark:bg-primary-light/10' : '',
-          shown(i) ? '' : 'invisible',
         ]"
-        :aria-hidden="shown(i) ? undefined : 'true'"
       >
         <RouterLink
           v-if="row.day"
@@ -96,10 +85,5 @@ const dayLink = (date) => ({ name: 'Events', query: { date } })
 
     <p v-else class="px-5 py-5 text-sm text-gray-600 dark:text-gray-300">Nothing on the calendar this week.</p>
 
-    <div v-if="hidden > 0" class="shrink-0 border-t border-gray-100 px-5 py-2.5 dark:border-white/10">
-      <RouterLink :to="{ name: 'EventsUpcoming' }" class="text-sm font-semibold text-primary hover:underline dark:text-primary-light">
-        {{ hidden }} more this week
-      </RouterLink>
-    </div>
   </section>
 </template>

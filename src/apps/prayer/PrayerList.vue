@@ -223,6 +223,19 @@ watch(
   { immediate: true }
 )
 
+// The home's quick actions open a new concern here (`?add=1`). The query is
+// dropped once it has, so closing the drawer does not open it again.
+watch(
+  () => route.query.add,
+  (add) => {
+    if (!add) return
+    if (canEdit.value) newConcern()
+    const { add: _drop, ...rest } = route.query
+    router.replace({ query: rest })
+  },
+  { immediate: true }
+)
+
 const saveConcern = async () => {
   try {
     if (showEdit.value && editing.value) {

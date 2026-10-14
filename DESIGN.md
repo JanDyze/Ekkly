@@ -88,16 +88,20 @@ CHANGELOG.md.
   and hold to drag one onto it. The order is the person's, saved to their
   account (`useAppOrder`).
   On a desktop (`lg`) the same home shows everything at once rather than
-  swiped, and like a phone's it fits one screen and never scrolls — not the
-  page, and not a box on it. Three columns, a quarter, a half and a quarter:
+  swiped, and like a phone's it fits one screen: the page never scrolls; a
+  list with more than its card holds scrolls inside the card. Three columns,
+  a quarter, a half and a quarter:
   1. **The sidebar**, read top to bottom as a phone is:
      - the day's card in the church's colour, over Ekkly's panes of light:
-       the logo, the day, the weather and the church's name, the greeting on
-       two lines, and the quick actions two by two — Add person, Attendance,
-       New event, New task — each only for whoever may do it, opening the
-       place it is done with its form open (`?add=` in People, Tasks and
-       Events). Where the sidebar is narrow they are a row of their icons,
-       named on hover. Search stays the top bar's.
+       the logo, the day, the weather and the church's name, and the greeting
+       on two lines — nothing else, so it reads at a glance. Beside the
+       greeting, one round "+" opens the quick actions (`QuickActionsMenu`):
+       Add a person, Record attendance, New event and New task to begin
+       with; "Edit" in the menu lets each person choose their own, up to six,
+       from everything they may do (`data/quickActions.js`, saved to their
+       account by `useQuickActions`). Each opens the place it is done with its
+       form open (`?add=` in People, Tasks, Events, Prayer and Sunday
+       school). Search stays the top bar's.
      - the apps (`HomeAppCards`' `column`), in the style chosen and laid out
        as on a phone (two across, the orbit, one a row; Compact one a row,
        since two across there cuts names short; in a narrow sidebar Accent's
@@ -106,25 +110,22 @@ CHANGELOG.md.
        phone, both giving way where there is too little room.
   2. **The work**, the half: **Needs attention** (`HomeAttention`, rows of
      `AttentionRow`): one white panel, most pressing first. A row is one
-     issue — a status pill (red for something late, amber for something
-     waiting or missing), its headline, a line on it, and the one thing to do
-     about it (`action`). Where an issue covers several records (accounts to
-     link, gatherings not counted, tasks overdue) they are links under it
-     (`records`), three shown (two in a narrow column) and "+N more"; the
-     issue is never repeated as a card for each record. Under it,
+     issue and one link, with no button of its own — a small status pill
+     (red for something late, amber for something waiting or missing), its
+     headline, and one quiet grey line: the first records it covers and how
+     many more (`records`: accounts to link, gatherings not counted, tasks
+     overdue), or its own line where there are none. The issue is never
+     repeated as a card for each record. Under it,
      **Community** (`HomeCommunity`), quieter: compact items — birthdays (one
      item naming everyone), serving, who is new, tasks due today — the
      church's colour only on a celebration. The two share the column by what
-     each holds.
+     each holds, the community never more than a little under half.
   3. **This week** (`HomeWeek`), the last quarter: only the days with
      something on, a small label over each (today's tinted), a time and a
      title in two columns, and "Open calendar" ("Calendar" when narrow).
   `AppHeroDeck`'s `spread` slot hands over the `warn` cards and the rest.
-  Each list shows only the rows that fit whole (`useFitCount`: the rest are
-  `invisible`, never cut off half-shown) and counts the rest at its foot:
-  "N more need attention" and Community's "N more" open every row in a sheet
-  from the right (`HomeSheet`); the week's opens Events' upcoming list. Each
-  picture is the card's own (`TodayPicture`): the photo, the faces it is
+  Each list shows everything, scrolling inside its card when it holds more
+  than fits. Each picture is the card's own (`TodayPicture`): the photo, the faces it is
   about, its date, or its drawing (`brand/ekkly/sections/today.mjs`). The
   sky leaves out the phone's big window (`.scene-window`), which only
   cluttered a desktop.
