@@ -1,8 +1,7 @@
 <script setup>
-import { TransitionGroup, computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { ChevronLeft, ChevronRight, X } from '../../icons'
 import AppHero from './AppHero.vue'
-import DeckRow from './DeckRow.vue'
 import { useSounds } from '../../composables/useSounds'
 
 // An app's first card, when there is more than one thing worth leading with.
@@ -47,15 +46,13 @@ import { useSounds } from '../../composables/useSounds'
 //
 // `spread` is the same deck on a desktop, where nothing has to hide. A swipe
 // is a thumb's gesture: with a mouse it hides every card but the top one
-// behind a move nobody makes. So every card but the last is a small card of
-// its own (the `row` slot, a DeckRow: the phone's card made small), stacked in
-// two columns side by side: what is waiting on you (a `warn` card), and what
-// is good to know, each in the deck's order. The last card, the one that is
-// always true, is the page's to show another way (the home's greeting), so it
-// is left out here. Every card is there; a column never pages, loops or hides
-// one behind a count. An empty column says so in words. Putting a card away
-// works as it does in the deck, and the cards after it close the gap. The
-// section spans two columns of the grid it is put in.
+// behind a move nobody makes. So the deck draws nothing itself there: it hands
+// its cards to the `spread` slot, in the two kinds a desktop lays out apart —
+// `urgent`, the ones waiting on someone (a `warn` card), and `rest`, the ones
+// good to know — with `dismiss` to put one away as the deck does, and
+// `leaving`, the one fading on its way. The last card, the one that is always
+// true, is the page's to show another way (the home's greeting), so it is in
+// neither.
 
 const props = defineProps({
   cards: { type: Array, required: true },
@@ -65,12 +62,6 @@ const props = defineProps({
   scope: { type: String, required: true },
   label: { type: String, default: 'Today' },
   spread: { type: Boolean, default: false },
-  // Laid out flat: the two columns' headings, and what each says when it has
-  // nothing.
-  urgentLabel: { type: String, default: 'Needs you' },
-  restLabel: { type: String, default: 'Good to know' },
-  urgentEmpty: { type: String, default: 'Nothing needs you today.' },
-  restEmpty: { type: String, default: 'Nothing else today.' },
 })
 
 /* ------------------------------------------------------------- dismissing */
@@ -165,137 +156,10 @@ const dismiss = (card) => {
 
 /* --------------------------------------------------------- laid out flat */
 
-// Every card but the last, the one that is always true, in its two groups.
+// Every card but the last, the one that is always true, in its two kinds.
 const rows = computed(() => visible.value.slice(0, -1))
-const groups = computed(() => [
-  { key: 'urgent', label: props.urgentLabel, empty: props.urgentEmpty, cards: rows.value.filter((card) => card.tone === 'warn') },
-  { key: 'rest', label: props.restLabel, empty: props.restEmpty, cards: rows.value.filter((card) => card.tone !== 'warn') },
-])
-
-// Laid out flat, a card is the phone's in small. Rest the pointer on one for a
-// moment and it grows where it stands into the phone's full card — the `card`
-// slot, the same face: its headline whole, its faces, its list, its chips —
-// the cards under it moving down to make room, and back up as it eases shut
-// when the pointer leaves. In the list, not laid over it: a card drawn over
-// its neighbours hid them. A column whose cards no longer fit scrolls, as it
-// does on a day with many. The moment (1.2s) is so it opens for someone who
-// has stopped on a card meaning to read it, not for a pointer passing over.
-//
-// It is one movement, not a swap: as the height eases open, the small card's
-// face fades as it swells a little toward the full card, while the full
-// card's fades in and settles from just smaller, both anchored at the top; closing runs the same the
-// other way, the small face coming back over the full one as it shrinks. The
-// words were swapped in one frame and only the height moved, so the text
-// jumped from one size to the other.
-//
-// `open`: the cards drawn grown (or on their way back); `shown`: those whose
-// full face has faded in; `closing`: those easing back to small; `ready`: the
-// card under the pointer, whose full face is built and painted, all but
-// transparent, while the moment passes, so it is there to cross into the
-// instant the card opens rather than built and painted (its pictures decoded)
-// in the first frames of the movement, which stalled it.
-const open = ref(new Set())
-const ready = ref(new Set())
-const shown = ref(new Set())
-const closing = ref(new Set())
-const boxes = new Map()
-const smallHeights = new Map()
-const easing = new Map()
-let openTimer = null
-const OPEN_AFTER = 1200
-const GROW_MS = 340
-const SHRINK_MS = 280
-
-const with_ = (set, key) => new Set(set).add(key)
-const without = (set, key) => {
-  const next = new Set(set)
-  next.delete(key)
-  return next
-}
-
-const still = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-
-const setBox = (key, el) => {
-  if (el) boxes.set(key, el)
-  else boxes.delete(key)
-}
-
-/** Eases a card's box to `height`, then does `then`. */
-const ease = (key, height, ms, then) => {
-  const box = boxes.get(key)
-  clearTimeout(easing.get(key))
-  if (!box || still()) return then?.()
-  box.style.transition = `height ${ms}ms cubic-bezier(0.22, 1, 0.36, 1)`
-  box.style.height = `${height}px`
-  easing.set(key, setTimeout(() => {
-    box.style.transition = ''
-    then?.()
-  }, ms))
-}
-
-const grow = async (key) => {
-  const box = boxes.get(key)
-  if (!box) return
-  if (open.value.has(key)) {
-    // Caught on its way shut: open again from where it is.
-    closing.value = without(closing.value, key)
-    shown.value = with_(shown.value, key)
-    ease(key, box.scrollHeight, GROW_MS, () => (box.style.height = ''))
-    return
-  }
-  const from = box.offsetHeight
-  smallHeights.set(key, from)
-  box.style.height = `${from}px`
-  // The full face goes in, faded and just smaller, under the small one.
-  open.value = with_(open.value, key)
-  await nextTick()
-  // Reading its height lays the faded full face out, so the cross starts from
-  // it. Then, together, at once: the faces cross and the height eases open.
-  const to = box.scrollHeight
-  shown.value = with_(shown.value, key)
-  ease(key, to, GROW_MS, () => (box.style.height = ''))
-}
-
-const shrink = (key) => {
-  const box = boxes.get(key)
-  if (!box || !open.value.has(key) || closing.value.has(key)) return
-  box.style.height = `${box.offsetHeight}px`
-  void box.offsetHeight
-  closing.value = with_(closing.value, key)
-  shown.value = without(shown.value, key)
-  ease(key, smallHeights.get(key) || 0, SHRINK_MS, () => {
-    open.value = without(open.value, key)
-    closing.value = without(closing.value, key)
-    // Let go of the height only once the small face is back in the list. Let
-    // go before, the box stood at the full card's height again for a moment,
-    // and the list (a TransitionGroup) saw the cards under it move back up and
-    // slid them a second time.
-    nextTick(() => {
-      if (!open.value.has(key)) box.style.height = ''
-    })
-  })
-}
-
-const openAt = (card) => {
-  clearTimeout(openTimer)
-  ready.value = with_(ready.value, card.key)
-  openTimer = setTimeout(() => {
-    if (leaving.value === card.key) return
-    open.value.forEach((key) => key !== card.key && shrink(key))
-    grow(card.key)
-  }, OPEN_AFTER)
-}
-
-const closeCard = (card) => {
-  clearTimeout(openTimer)
-  ready.value = without(ready.value, card.key)
-  shrink(card.key)
-}
-
-onBeforeUnmount(() => {
-  clearTimeout(openTimer)
-  easing.forEach((timer) => clearTimeout(timer))
-})
+const urgentCards = computed(() => rows.value.filter((card) => card.tone === 'warn'))
+const restCards = computed(() => rows.value.filter((card) => card.tone !== 'warn'))
 
 /* -------------------------------------------------------------- the deck */
 
@@ -528,119 +392,8 @@ const fanned = (depth) => {
 </script>
 
 <template>
-  <!-- Laid out flat: two columns side by side, what needs you and what is
-       good to know, each a heading on the home's sky (its ink) over its cards
-       stacked, each card the phone's in small (DeckRow). No panel round them:
-       a card inside a card is a box too many. -->
-  <section
-    v-if="spread"
-    :aria-label="label"
-    class="col-span-2 grid h-full min-h-0 grid-cols-2 grid-rows-[minmax(0,1fr)] items-start gap-5"
-  >
-    <div
-      v-for="group in groups"
-      :key="group.key"
-      class="flex max-h-full min-h-0 flex-col gap-2"
-    >
-      <h3 class="flex items-baseline gap-2 px-1 text-[15px] font-semibold text-(--scene-ink)">
-        {{ group.label }}
-        <span v-if="group.cards.length" class="font-medium tabular-nums opacity-70">{{ group.cards.length }}</span>
-      </h3>
-      <p
-        v-if="!group.cards.length"
-        class="rounded-[20px] border border-dashed border-white/70 bg-white/45 px-4 py-5 text-sm text-gray-600 dark:border-white/15 dark:bg-gray-900/40 dark:text-gray-300"
-      >
-        {{ group.empty }}
-      </p>
-      <TransitionGroup
-        v-else
-        tag="ul"
-        name="row"
-        class="relative flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto [scrollbar-width:thin]"
-      >
-        <li
-          v-for="card in group.cards"
-          :key="card.key"
-          class="group/row relative min-w-0"
-          @pointerenter="openAt(card)"
-          @pointerleave="closeCard(card)"
-          :style="card.key === leaving ? { transition: 'opacity 200ms ease', opacity: 0 } : undefined"
-        >
-          <!-- The small card, or grown into the phone's (full, above); the box
-               round it is what eases from one height to the other. -->
-          <div
-            :ref="(el) => setBox(card.key, el)"
-            :class="['relative overflow-hidden transition-[border-radius] duration-300', open.has(card.key) ? 'rounded-[28px]' : 'rounded-[20px]']"
-          >
-            <!-- The small face: in the list until the card grows, then laid
-                 over the top of the full one while it fades and swells. -->
-            <div
-              :class="[
-                'morph-face origin-top',
-                open.has(card.key) ? 'pointer-events-none absolute inset-x-0 top-0 z-10' : '',
-                shown.has(card.key) ? 'scale-[1.04] opacity-0' : 'scale-100 opacity-100',
-              ]"
-            >
-              <slot name="row" :card="card">
-                <DeckRow
-                  :tone="card.tone"
-                  :icon="card.icon"
-                  :kicker="card.kicker"
-                  :title="card.title"
-                  :detail="card.detail"
-                  :to="card.to"
-                  :dest="card.dest"
-                  :dest-label="card.destLabel"
-                />
-              </slot>
-            </div>
-            <!-- The phone's full face, settling in from just smaller. -->
-            <div
-              v-if="open.has(card.key) || ready.has(card.key)"
-              :class="[
-                'morph-face origin-top',
-                open.has(card.key) ? '' : 'pointer-events-none absolute inset-x-0 top-0',
-                shown.has(card.key) ? 'scale-100 opacity-100' : open.has(card.key) ? 'scale-[0.96] opacity-0' : 'scale-[0.96] opacity-[0.01]',
-              ]"
-              :aria-hidden="open.has(card.key) ? undefined : 'true'"
-            >
-              <slot name="card" :card="card" :top="true">
-                <AppHero
-                  :art="art"
-                  :greeting="card.greeting"
-                  :title="card.title"
-                  :detail="card.detail"
-                  :to="card.to"
-                  :inset="card.dismissible"
-                />
-              </slot>
-            </div>
-          </div>
-
-          <!-- In the card's top corner, in its own tone as on a phone; quiet
-               until the card is pointed at, where there is a pointer to point
-               with, and always there on a touch screen. -->
-          <button
-            v-if="card.dismissible"
-            type="button"
-            :class="[
-              'absolute flex items-center justify-center rounded-full transition focus-visible:opacity-100 group-hover/row:opacity-100 [@media(hover:hover)]:opacity-0',
-              shown.has(card.key) ? 'right-3 top-3 size-8' : 'right-2 top-2 size-7',
-              card.tone === 'accent' || card.tone === 'celebrate'
-                ? 'bg-white/15 text-white hover:bg-white/25'
-                : 'bg-gray-900/5 text-gray-500 hover:bg-gray-900/10 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/15',
-            ]"
-            :aria-label="card.remember ? 'Dismiss until there are more' : 'Dismiss until the app is opened again'"
-            @click="closeCard(card); dismiss(card)"
-          >
-            <X :class="shown.has(card.key) ? 'size-4' : 'size-3.5'" />
-          </button>
-
-        </li>
-      </TransitionGroup>
-    </div>
-
-  </section>
+  <!-- Laid out flat: the cards handed to the page to lay out (above). -->
+  <slot v-if="spread" name="spread" :urgent="urgentCards" :rest="restCards" :dismiss="dismiss" :leaving="leaving" />
 
   <div
     v-else-if="visible.length"
@@ -752,40 +505,8 @@ const fanned = (depth) => {
 </template>
 
 <style scoped>
-/* Laid out flat, the two faces of a card growing or shrinking cross: each
-   eases its opacity and its scale, from the top, alongside the height. The
-   scale classes set the `scale` property, not `transform`, so it is named. */
-.morph-face {
-  transition:
-    opacity 260ms ease,
-    scale 340ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 340ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* Laid out flat: a row put away has faded already, so it leaves at once, out
-   of the way, and the rows after it slide up into its place. One arriving
-   rises into its own. */
-.row-move,
-.row-enter-active {
-  transition:
-    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 240ms ease;
-}
-.row-enter-from {
-  opacity: 0;
-  transform: translateY(6px);
-}
-.row-leave-active {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .deck-card,
-  .morph-face,
-  .row-move,
-  .row-enter-active {
+  .deck-card {
     transition: none !important;
   }
 }

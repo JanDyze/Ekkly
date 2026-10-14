@@ -8,6 +8,17 @@
 
 export const versionHistory = [
   {
+    version: '0.35.27',
+    date: '2026-10-14',
+    title: 'What needs you, first',
+    summary: 'On a computer, your home puts what is waiting on you at the top, one item per issue.',
+    highlights: [
+      'Each item says how pressing it is and has one button for what to do.',
+      'Gatherings, accounts and tasks are grouped under one item, with each one a tap away.',
+      'Birthdays, serving and newcomers sit underneath, with a shorter week beside them.',
+    ],
+  },
+  {
     version: '0.35.26',
     date: '2026-10-14',
     title: 'Quick actions on your home',

@@ -87,8 +87,9 @@ CHANGELOG.md.
   apps opens `/apps` (`AllApps.vue`): every app, the five on the home on a shelf, press
   and hold to drag one onto it. The order is the person's, saved to their
   account (`useAppOrder`).
-  On a desktop (`lg`) the same home is read top to bottom, not swiped, and
-  like a phone's it fits one screen and never scrolls:
+  On a desktop (`lg`) the same home is read top to bottom, not swiped, as a
+  page that scrolls as pages do, the sky held behind it (each section is a
+  preview with the rest a tap away; nothing on it scrolls inside itself):
   1. A hero in the church's colour, as the phone's day card is and as every
      sketch of a desktop home led with: the church's logo, the day and the
      weather in pills, the greeting large and the day's verse in a line under
@@ -99,24 +100,26 @@ CHANGELOG.md.
      bar's.
   2. The apps in the style the church chose, each kept to one line and six in
      a row (`HomeAppCards`/`HomeCard`'s `inline`).
-  3. Three columns, each a heading on the sky over its cards: **Needs you**
-     (the `warn` cards) and **Good to know** (`AppHeroDeck`'s `spread`), then
-     **This week**, one white card of only the days with something on
-     (`HomeWeek`), each day a date block down the left (today's in the
-     church's colour) with what is on beside it. Each Today card is the phone's in small (`DeckRow`): the
-     same tones (amber for waiting on you, the church's colour for somebody's
-     day, white), a label pill, a bold headline, and its picture — the photo,
-     the faces it is about, its date, or its own drawing
-     (`brand/ekkly/sections/today.mjs`, `today-<kind>`). Resting on one for 1.2 seconds grows
-     it in the list into the phone's full card, its height easing open as the
-     cards under it move down, and back when the pointer leaves; never laid
-     over its neighbours. One movement, not a swap: the small face fades and
-     swells as the full face fades in and settles, both from the top. A column whose cards no longer fit scrolls (the
-     only scroll on the page).
-     Birthdays are one card naming everyone, and overdue tasks and tasks due
-     today one card saying both; what is on is said in the week.
-  4. The church on its hill in whatever room is left, the full width of the
-     page; everything else keeps to a 90rem column.
+  3. Today, in proportion to what each part holds (`AppHeroDeck`'s `spread`
+     slot hands over the `warn` cards and the rest):
+     - **Needs attention** (`HomeAttention`), the wide column: one white panel
+       of rows, most pressing first, five shown and "Show all" for the rest.
+       A row is one issue — a status pill (red for something late, amber for
+       something waiting or missing), its headline, a line on it, and the one
+       thing to do about it (`action`). Where an issue covers several records
+       (accounts to link, gatherings not counted, tasks overdue) they are
+       links under it (`records`), three shown and "+N more"; the issue is
+       never repeated as a card for each record.
+     - **Community** (`HomeCommunity`) under it, quieter: one light panel of
+       compact items two across — birthdays (one item naming everyone),
+       serving, who is new, tasks due today — the church's colour only on a
+       celebration.
+     - **This week** (`HomeWeek`) beside them: only the days with something
+       on, a small label over each (today's tinted), a time and a title in
+       two columns, the first six events, and "Open calendar" / "View all".
+     Each picture is the card's own (`TodayPicture`): the photo, the faces it
+     is about, its date, or its drawing (`brand/ekkly/sections/today.mjs`).
+  4. Everything keeps to a 90rem column.
 - The shell pads the content area (`p-0 sm:p-4 lg:px-8 lg:py-3`) of a page
   that is not yet an app, so **such a page never adds its own outer padding.**
 

@@ -11,6 +11,33 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.27] — 2026-10-14
+
+The home on a computer is laid out by what matters most. The phone's home is
+unchanged.
+
+### Changed
+
+- **Needs attention** is the widest part of the home: one list of what is
+  waiting on you, the most pressing first. Each item says how pressing it is
+  (red when it is late, amber when it is waiting), what it is about, and has
+  one button for what to do — **Review**, **Record**, **Open tasks**,
+  **Choose songs**.
+- **One item per issue.** Three gatherings with no attendance are one item
+  with the three gatherings under it, each opening the recorder for that one;
+  the same for accounts waiting to be linked and tasks that are overdue. A
+  long list shows the first few and **+N more**.
+- **Community** sits under it, quieter: birthdays, who is serving, who came
+  for the first time, and tasks due today.
+- **This week** is shorter: a small label for each day, the time and the
+  title of each event lined up, the first six events and **View all** for the
+  rest, and **Open calendar** at the top.
+- **The home scrolls like a normal page** when there is more than fits, with
+  the sky staying behind it. Nothing scrolls inside a box of its own any
+  more, and nothing is cut off.
+- Overdue tasks and tasks due today are separate again: overdue ones need
+  attention, the ones due today are in Community.
+
 ## [0.35.26] — 2026-10-14
 
 The home on a computer gets quick actions and a clearer week. The phone's

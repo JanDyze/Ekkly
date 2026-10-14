@@ -3,101 +3,94 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { formatTimeRange } from '../../utils/sgUtils'
 
-// The coming seven days, for the home of all apps on a desktop, as a short
-// agenda beside Today: only the days with something on, each with what and
-// when, so a glance answers "what is this week" without opening Events. A
-// grid of seven columns said "Nothing on" five times and weighed as much as
-// Today; a list of the days that matter is lighter and says more.
+// The coming seven days, for the home of all apps on a desktop, as a compact
+// timeline beside the day's work: only the days with something on, each a
+// small label over its events, every event a time and a title in the same two
+// columns, so the eye runs down the titles. Today's group is set off in the
+// church's colour. The titles and times are what is read, so the day's label
+// is small and said once, not a large block per day as it was.
 //
-// A day shows its first two things and how many more; the day's link opens
-// all of it in Events, and Open calendar the month. A thing with a photo shows
-// it, small, before its name. Everything is the home's already (useToday),
-// gated as it is.
+// A preview, not the calendar: the first six events of the week, and the rest
+// a link away (View all, and Open calendar for the month). Everything is the
+// home's already (useToday), gated as it is.
 
 const props = defineProps({
   // useToday's `week`: { date, day, isToday } for the coming seven.
   days: { type: Array, required: true },
   // useToday's `eventsThisWeek`, in date and time order.
   events: { type: Array, default: () => [] },
+  limit: { type: Number, default: 6 },
 })
 
-// Two a day: a third on a busy week ran the column past the foot of a
-// laptop's screen.
-const SHOWN = 2
+const total = computed(() => props.events.filter((event) => props.days.some((day) => day.date === event.date)).length)
 
-const agenda = computed(() =>
-  props.days
+// The days with something on, the first `limit` events across them.
+const agenda = computed(() => {
+  let room = props.limit
+  return props.days
     .map((day, i) => {
       const on = props.events.filter((event) => event.date === day.date)
       const [y, m, d] = day.date.split('-').map(Number)
       const date = new Date(y, m - 1, d)
+      const shown = on.slice(0, Math.max(room, 0))
+      room -= shown.length
       return {
         ...day,
         name: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : date.toLocaleDateString(undefined, { weekday: 'long' }),
         short: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-        weekday: date.toLocaleDateString(undefined, { weekday: 'short' }),
-        shown: on.slice(0, SHOWN),
-        more: Math.max(on.length - SHOWN, 0),
+        shown,
       }
     })
     .filter((day) => day.shown.length)
-)
+})
+const hidden = computed(() => total.value - agenda.value.reduce((n, day) => n + day.shown.length, 0))
 
 const dayLink = (date) => ({ name: 'Events', query: { date } })
 const keyOf = (event) => `${event.id || event.title}:${event.date}:${event.time || ''}`
 </script>
 
 <template>
-  <!-- A heading on the home's sky, as Today's columns have, over the week as
-       one card: a list of days reads as one thing, not a card a day. -->
-  <section aria-labelledby="home-week" class="flex min-h-0 flex-col gap-2">
-    <div class="flex items-baseline justify-between gap-4 px-1 text-(--scene-ink)">
-      <h2 id="home-week" class="text-[15px] font-semibold">This week</h2>
-      <RouterLink to="/events/calendar" class="text-[13px] font-semibold underline-offset-2 hover:underline">Open calendar</RouterLink>
-    </div>
+  <section aria-labelledby="home-week" class="overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-900 dark:ring-white/10">
+    <header class="flex items-center justify-between gap-4 px-5 pt-4 pb-3">
+      <h2 id="home-week" class="flex items-center gap-2.5 text-base font-semibold text-gray-900 dark:text-white">
+        This week
+        <span v-if="total" class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold tabular-nums text-gray-600 dark:bg-white/10 dark:text-gray-300">{{ total }}</span>
+      </h2>
+      <RouterLink to="/events/calendar" class="text-sm font-semibold text-primary hover:underline dark:text-primary-light">Open calendar</RouterLink>
+    </header>
 
-    <div class="min-h-0 overflow-y-auto rounded-[20px] border border-gray-200 bg-white px-3 py-3.5 [scrollbar-width:thin] dark:border-gray-700 dark:bg-gray-800">
-      <!-- A day each, its date as a calendar shows it down the left (today's
-           in the church's colour) and what is on beside it, so the week reads
-           down one edge at a glance rather than from small labels. -->
-      <ol v-if="agenda.length" class="flex flex-col gap-3">
-        <li v-for="day in agenda" :key="day.date" class="flex gap-3">
-          <RouterLink
-            :to="dayLink(day.date)"
-            :aria-label="`${day.name}, ${day.short}, in Events`"
-            :class="[
-              'flex h-12 w-11 shrink-0 flex-col items-center justify-center rounded-xl leading-none transition-colors',
-              day.isToday
-                ? 'bg-primary text-white hover:bg-primary-hover dark:bg-primary-light dark:text-gray-900'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/15',
-            ]"
-          >
-            <span class="text-[10px] font-bold uppercase tracking-wide">{{ day.weekday }}</span>
-            <span class="mt-1 text-lg font-bold tabular-nums">{{ day.day }}</span>
-          </RouterLink>
-          <ul class="flex min-w-0 flex-1 flex-col justify-center">
-            <li v-for="event in day.shown" :key="keyOf(event)">
-              <RouterLink
-                :to="dayLink(day.date)"
-                class="flex min-w-0 items-center gap-2.5 rounded-lg px-1.5 py-1 hover:bg-gray-900/[0.04] dark:hover:bg-white/[0.06]"
-              >
-                <img v-if="event.photo" :src="event.photo" alt="" class="size-7 shrink-0 rounded-lg object-cover" />
-                <span class="min-w-0 flex-1">
-                  <span class="block truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{{ event.title || 'A gathering' }}</span>
-                  <span class="block text-xs tabular-nums text-gray-500 dark:text-gray-400">{{ formatTimeRange(event.time) || 'All day' }}</span>
-                </span>
-              </RouterLink>
-            </li>
-            <li v-if="day.more">
-              <RouterLink :to="dayLink(day.date)" class="block px-1.5 py-0.5 text-xs font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-                {{ day.more }} more
-              </RouterLink>
-            </li>
-          </ul>
-        </li>
-      </ol>
+    <ol v-if="agenda.length" class="border-t border-gray-100 dark:border-white/10">
+      <li
+        v-for="day in agenda"
+        :key="day.date"
+        :class="['px-5 py-3 not-first:border-t not-first:border-gray-100 dark:not-first:border-white/10', day.isToday ? 'bg-primary/[0.06] dark:bg-primary-light/10' : '']"
+      >
+        <RouterLink
+          :to="dayLink(day.date)"
+          :class="[
+            'text-xs font-semibold uppercase tracking-wide hover:underline',
+            day.isToday ? 'text-primary dark:text-primary-light' : 'text-gray-500 dark:text-gray-400',
+          ]"
+        >
+          {{ day.name }} · {{ day.short }}
+        </RouterLink>
+        <ul class="mt-1.5 flex flex-col gap-1">
+          <li v-for="event in day.shown" :key="keyOf(event)">
+            <RouterLink :to="dayLink(day.date)" class="group flex min-w-0 items-baseline gap-3 text-sm">
+              <span class="w-[4.5rem] shrink-0 text-xs tabular-nums text-gray-500 dark:text-gray-400">{{ formatTimeRange(event.time) || 'All day' }}</span>
+              <span class="min-w-0 truncate font-medium text-gray-900 group-hover:underline dark:text-gray-100">{{ event.title || 'A gathering' }}</span>
+            </RouterLink>
+          </li>
+        </ul>
+      </li>
+    </ol>
 
-      <p v-else class="px-1 text-sm text-gray-500 dark:text-gray-400">Nothing on the calendar this week.</p>
+    <p v-else class="border-t border-gray-100 px-5 py-5 text-sm text-gray-600 dark:border-white/10 dark:text-gray-300">Nothing on the calendar this week.</p>
+
+    <div v-if="hidden > 0" class="border-t border-gray-100 px-5 py-3 dark:border-white/10">
+      <RouterLink :to="{ name: 'EventsUpcoming' }" class="text-sm font-semibold text-primary hover:underline dark:text-primary-light">
+        View all {{ total }} this week
+      </RouterLink>
     </div>
   </section>
 </template>
