@@ -102,10 +102,11 @@ CHANGELOG.md.
      same tones (amber for waiting on you, the church's colour for somebody's
      day, white), a label pill, a bold headline, and its picture — the photo,
      the faces it is about, its date, or its own drawing
-     (`brand/ekkly/sections/today.mjs`, `today-<kind>`). Resting on one for two seconds grows
+     (`brand/ekkly/sections/today.mjs`, `today-<kind>`). Resting on one for 1.2 seconds grows
      it in the list into the phone's full card, its height easing open as the
      cards under it move down, and back when the pointer leaves; never laid
-     over its neighbours. A column whose cards no longer fit scrolls (the
+     over its neighbours. One movement, not a swap: the small face fades and
+     swells as the full face fades in and settles, both from the top. A column whose cards no longer fit scrolls (the
      only scroll on the page).
      Birthdays are one card naming everyone; what is on is said in the week.
   4. The church on its hill in whatever room is left, the full width of the
