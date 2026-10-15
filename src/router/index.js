@@ -274,6 +274,14 @@ const platformRoutes = [
     component: () => import('../views/PlatformHome.vue'),
     meta: { public: true }
   },
+  // The second front door, tried beside the first: one Sunday told by the
+  // scroll, from the doors opening to the lights going off.
+  {
+    path: '/v2',
+    name: 'PlatformHomeV2',
+    component: () => import('../views/PlatformHomeV2.vue'),
+    meta: { public: true }
+  },
   // The front door's other pages. Pricing and Get started were the two longest
   // parts of the home page; Get started is also where someone comes back to
   // see whether their church was approved, so it needs a link of its own.

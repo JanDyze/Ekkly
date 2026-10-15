@@ -11,6 +11,25 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.38] — 2026-10-15
+
+A second front door to try beside the first, at `/v2`.
+
+### Added
+
+- **A Sunday, told as you scroll.** The new front door opens on the church on
+  its hill in the morning. Scrolling opens its doors and walks you in, then
+  goes through the service: the ushers counting as the pews fill, the band
+  with the words on the screen, the sermon, prayer with the lights down, the
+  offering baskets going along the rows, the notices, and the meeting after.
+  Each part says what the people there still do and what Ekkly keeps for them,
+  with the apps that do it. At the end you step back out, night falls, the
+  doors shut and the window lights up, and that is where you can ask for your
+  church. A bulletin beside it (under it, on a phone) keeps the order of
+  service and the church's clock, and any part of it takes you there. Anyone
+  who has asked their device for less motion sees each part still, without
+  the camera moving between them.
+
 ## [0.35.37] — 2026-10-15
 
 ### Fixed
