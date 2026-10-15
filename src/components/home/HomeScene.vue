@@ -295,10 +295,12 @@ defineProps({
       </linearGradient>
     </defs>
 
-    <!-- Hills behind the church, far to near. -->
+    <!-- Hills behind the church, far to near. Each runs on behind the wing
+         and the front rather than stopping short of them: a hill cut off
+         just before the wing left a straight edge of sky beside it. -->
     <path d="M690 1505C760 1470 820 1452 887 1448V1774H690Z" style="fill: var(--scene-hill-far)" />
     <path
-      d="M-12000 1600L-4000 1600C-1100 1540 -800 1560 -560 1530C-330 1500 -120 1520 0 1478C40 1462 80 1478 112 1502C160 1488 250 1488 300 1510C360 1535 420 1562 482 1574V1774H-12000Z"
+      d="M-12000 1600L-4000 1600C-1100 1540 -800 1560 -560 1530C-330 1500 -120 1520 0 1478C40 1462 80 1478 112 1502C160 1488 250 1488 300 1510C360 1535 420 1562 482 1574C540 1585 620 1592 700 1600V1774H-12000Z"
       style="fill: var(--scene-hill-back)"
     />
     <path
@@ -306,7 +308,7 @@ defineProps({
       style="fill: var(--scene-hill-left)"
     />
     <path
-      d="M-12000 1668L-4000 1668C-1100 1626 -820 1640 -560 1618C-320 1598 -140 1622 0 1600C80 1584 160 1562 240 1562C320 1566 400 1598 470 1614V1774H-12000Z"
+      d="M-12000 1668L-4000 1668C-1100 1626 -820 1640 -560 1618C-320 1598 -140 1622 0 1600C80 1584 160 1562 240 1562C320 1566 400 1598 470 1614C520 1624 560 1630 620 1640V1774H-12000Z"
       style="fill: var(--scene-hill-mid)"
     />
 
@@ -377,8 +379,9 @@ defineProps({
     <path d="M489.7 1609.9L553 1522.9L553 1552.8L489.7 1637.6Z" style="fill: var(--scene-roof-wing)" />
     <path transform="matrix(0.628 0.0072 0 0.8019 519.5 1689.9)" d="M0 0V-50Q0 -72 23 -76Q46 -72 46 -50V0Z" style="fill: var(--scene-door)" />
 
-    <!-- The mound the church stands on, and the bushes around it. -->
-    <path d="M380 1662C460 1652 530 1660 566 1672C624 1612 724 1600 806 1632V1774H380Z" style="fill: var(--scene-hill-near)" />
+    <!-- The mound the church stands on, rising out of the ground at its left
+         rather than starting square, and the bushes around it. -->
+    <path d="M290 1700C330 1676 352 1666 380 1662C460 1652 530 1660 566 1672C624 1612 724 1600 806 1632V1774H290Z" style="fill: var(--scene-hill-near)" />
     <g style="fill: var(--scene-bush)">
       <path d="M-70 1774V1652C-48 1608 2 1588 44 1600C74 1608 92 1632 98 1652C112 1622 150 1602 182 1616C206 1628 212 1654 208 1684V1774Z" />
       <path d="M-520 1774V1690C-500 1650 -450 1636 -410 1652C-390 1620 -340 1610 -305 1632C-280 1646 -272 1672 -276 1700V1774Z" />

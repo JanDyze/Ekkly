@@ -11,6 +11,14 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.37] — 2026-10-15
+
+### Fixed
+
+- **The hills by the church no longer end in straight edges.** The hills
+  behind it now run on behind its side wing, and the mound it stands on
+  rises out of the ground, on your phone and on a computer.
+
 ## [0.35.36] — 2026-10-15
 
 ### Added
