@@ -11,6 +11,20 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.36] — 2026-10-15
+
+### Added
+
+- **The day's verse is a card of its own** on your home on a computer, under
+  Community to begin with, and you can drag it anywhere like the other
+  panels. It opens the chapter in the Bible. On a phone it stays on the
+  church's picture.
+
+### Changed
+
+- **Apps fade away as they scroll down behind the church**, so only the sky
+  shows behind the hill, instead of tiles showing through it with hard edges.
+
 ## [0.35.35] — 2026-10-15
 
 ### Added

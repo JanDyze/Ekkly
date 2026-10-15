@@ -16,6 +16,7 @@ import HomeAttention from '../components/home/HomeAttention.vue'
 import HomeCommunity from '../components/home/HomeCommunity.vue'
 import QuickActionsMenu from '../components/home/QuickActionsMenu.vue'
 import HomeBoard from '../components/home/HomeBoard.vue'
+import HomeVerse from '../components/home/HomeVerse.vue'
 import { HOME_COLUMNS, useHomeLayout } from '../composables/useHomeLayout'
 import { useHomeCards } from '../composables/useHomeCards'
 import { useLiveSky } from '../composables/useLiveSky'
@@ -488,7 +489,7 @@ const { layout: homeLayout, move: movePanel } = useHomeLayout()
 const boardColumns = computed(() =>
   HOME_COLUMNS.map((column) => ({
     ...column,
-    panels: homeLayout.value[column.id].filter((key) => key !== 'week' || showWeek.value),
+    panels: homeLayout.value[column.id].filter((key) => (key !== 'week' || showWeek.value) && (key !== 'verse' || verse.value)),
   }))
 )
 // The church on its hill stands at the foot of the leftmost column with
@@ -518,6 +519,7 @@ const PANEL_FIT = computed(() => ({
   apps: churchOverApps.value ? 'flex-1 min-h-[9rem]' : 'flex-[0_1_auto] min-h-[9rem]',
   attention: 'flex-[0_0.5_auto] min-h-[9rem]',
   community: 'flex-[0_1_auto] min-h-[9rem]',
+  verse: 'flex-[0_0.6_auto] min-h-[8.5rem]',
   week: 'flex-[0_1_auto] min-h-[9rem]',
 }))
 
@@ -649,7 +651,7 @@ const lineOf = (item) => {
                    (the time of day, then the name). Beside the greeting, one
                    round button for the quick actions (QuickActionsMenu): four
                    buttons on the card made it busy. Search stays the top bar's;
-                   the day's verse is on the picture at the left column's foot. -->
+                   the day's verse is a panel of its own (HomeVerse). -->
               <header v-if="panel === 'day'" class="relative">
                 <div class="home-hero relative isolate overflow-hidden rounded-[24px] border border-black/15 p-4 text-white dark:border-black/40">
                   <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]" aria-hidden="true">
@@ -692,7 +694,7 @@ const lineOf = (item) => {
                 </div>
                 <HomeAppCards
                   v-else
-                  :class="['-mx-0.5 -mt-0.5 min-h-0 auto-rows-max overflow-y-auto overscroll-contain p-0.5 [scrollbar-width:thin] *:shrink-0', churchOverApps ? 'pb-(--church-room)' : '']"
+                  :class="['-mx-0.5 -mt-0.5 min-h-0 auto-rows-max overflow-y-auto overscroll-contain p-0.5 [scrollbar-width:thin] *:shrink-0', churchOverApps ? 'apps-fade pb-(--church-room)' : '']"
                   :variant="cardStyle"
                   column
                   :apps="homeApps"
@@ -705,6 +707,9 @@ const lineOf = (item) => {
               <HomeAttention v-else-if="panel === 'attention'" :cards="urgent" :dismiss="dismiss" :leaving="leaving" />
               <HomeCommunity v-else-if="panel === 'community'" :cards="rest" :dismiss="dismiss" :leaving="leaving" :detail-of="rowDetail" />
               <HomeWeek v-else-if="panel === 'week'" :days="today.week.value" :events="weekEvents" />
+              <!-- The day's verse, a panel of its own on a desktop (on a phone
+                   it is on the church's picture). -->
+              <HomeVerse v-else-if="panel === 'verse'" :verse="verse" :to="verseTo" />
             </template>
 
             <!-- The church on its hill, at the foot of the leftmost column: the
@@ -851,7 +856,7 @@ const lineOf = (item) => {
            what it holds, so it would otherwise be squeezed flat, not scrolled. -->
       <HomeAppCards
         v-else
-        :class="showAllApps ? '-mx-0.5 -mt-0.5 min-h-0 shrink auto-rows-max overflow-y-auto overscroll-contain p-0.5 pb-(--church-room) *:shrink-0' : ''"
+        :class="showAllApps ? '-mx-0.5 -mt-0.5 min-h-0 shrink auto-rows-max overflow-y-auto overscroll-contain p-0.5 pb-(--church-room) apps-fade *:shrink-0' : ''"
         :variant="cardStyle"
         :apps="homeApps"
         :others="homeOthers"
@@ -869,10 +874,11 @@ const lineOf = (item) => {
            is never shorter than the bar's space, which is what keeps the apps
            above it - while the verse keeps to the part of the room above the
            bar (verse-space), and steps aside by that part's height. -->
-      <!-- On a desktop the hill stands at the foot of the sidebar under the
-           apps, about as tall as a phone gives it (a taller room only blew the
-           church up), with the day's verse on it as on a phone; both give way
-           where there is less room (the container queries below). -->
+      <!-- On a desktop the hill stands at the foot of the leftmost column,
+           about as tall as a phone gives it (a taller room only blew the
+           church up), giving way where there is less room (the container
+           queries below). The verse is not on it there but a panel of its
+           own (HomeVerse), to be put wherever someone likes it. -->
       <!-- Keyed by its column, so it moves when the column does: a Teleport
            does not follow its target to a new place by itself. -->
       <Teleport :key="footColumn" defer to="#home-left-foot" :disabled="!wide">
@@ -910,7 +916,7 @@ const lineOf = (item) => {
             v-if="verse"
             v-bind="verseTo ? { to: verseTo } : {}"
             :class="[
-              'verse pointer-events-auto absolute left-4 block text-left lg:max-w-[calc(100%-6.5rem)]',
+              'verse pointer-events-auto absolute left-4 block text-left lg:hidden',
               openVerse
                 ? 'verse-open top-3 max-w-[62%]'
                 : 'bottom-[max(0.75rem,calc(env(safe-area-inset-bottom)-var(--bottom-bar-space)))] max-w-[58%] rounded-2xl bg-white/80 px-3.5 py-3 ring-1 ring-white/70 backdrop-blur-md dark:bg-gray-900/70 dark:ring-white/10',
@@ -993,6 +999,19 @@ const lineOf = (item) => {
   .home-scene {
     --church-room: clamp(9rem, 24vh, 15rem);
   }
+}
+
+/* The apps fading out as they go down behind the church: whole above the
+   room it stands in, gone by the time they reach the church itself, so only
+   the sky is seen behind the hill. The tiles fade, not a veil over them, so
+   it is the real sky, whatever the time of day, and no tile's edge stands
+   behind the church like a cliff. */
+.apps-fade {
+  mask-image: linear-gradient(
+    to bottom,
+    #000 calc(100% - var(--church-room) * 1.15),
+    transparent calc(100% - var(--church-room) * 0.6)
+  );
 }
 
 /* The hill rising a little as the apps scroll down behind it (--lift, 0 to

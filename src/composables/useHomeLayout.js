@@ -18,7 +18,7 @@ import { useAuth } from './useAuth'
  * dropped, and a panel it is missing (one added since it was saved) goes
  * where the default has it, so every panel is always somewhere, once.
  */
-export const HOME_PANELS = ['day', 'apps', 'attention', 'community', 'week']
+export const HOME_PANELS = ['day', 'apps', 'attention', 'community', 'verse', 'week']
 
 export const HOME_COLUMNS = [
   { id: 'left', weight: 1 },
@@ -28,7 +28,7 @@ export const HOME_COLUMNS = [
 
 export const DEFAULT_HOME_LAYOUT = {
   left: ['day', 'apps'],
-  middle: ['attention', 'community'],
+  middle: ['attention', 'community', 'verse'],
   right: ['week'],
 }
 

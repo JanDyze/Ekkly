@@ -8,6 +8,16 @@
 
 export const versionHistory = [
   {
+    version: '0.35.36',
+    date: '2026-10-15',
+    title: 'Your verse, where you want it',
+    summary: 'On a computer, the day’s verse is a card you can put anywhere on your home.',
+    highlights: [
+      'It starts under Community and moves like any other panel.',
+      'Apps scrolling behind the church now fade softly into the sky.',
+    ],
+  },
+  {
     version: '0.35.35',
     date: '2026-10-15',
     title: 'Apps behind the hill',

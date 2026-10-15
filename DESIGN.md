@@ -95,13 +95,17 @@ CHANGELOG.md.
   church is in front of them: their list keeps the hill's height free at its
   foot (`--church-room`), so at rest nothing is hidden, and scrolled, the tiles
   go down into the hillside while the hill grows a little from its foot, as if
-  walking toward it. The room lets the pointer through to the tiles behind,
-  but for the verse.
+  walking toward it. The tiles fade out as they near the church (`.apps-fade`,
+  a gradient mask on the list), so only the sky is seen behind the hill and
+  no tile's edge stands behind it like a cliff. The room lets the
+  pointer through to the tiles behind, but for the verse.
   On a desktop (`lg`) the same home shows everything at once rather than
   swiped, and like a phone's it fits one screen: the page never scrolls; a
   list with more than its card holds scrolls inside the card. Three columns,
-  a quarter, a half and a quarter, and five panels in them — the day, the
-  apps, Needs attention, Community and This week — that anyone can drag to
+  a quarter, a half and a quarter, and six panels in them — the day, the
+  apps, Needs attention, Community, the day's verse (`HomeVerse`, under
+  Community to begin with; on a phone it stays on the church's picture) and
+  This week — that anyone can drag to
   another place in their column or into another (`HomeBoard`, saved to their
   account by `useHomeLayout`; Home layout in the account menu puts them
   back). The
