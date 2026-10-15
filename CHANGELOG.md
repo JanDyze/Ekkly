@@ -11,6 +11,14 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.33] — 2026-10-15
+
+### Changed
+
+- **A panel you drag on your home stays solid** instead of turning
+  see-through: it lifts a little on a shadow and follows your pointer, and
+  the place it left shows as an empty outline. Escape puts it back.
+
 ## [0.35.32] — 2026-10-15
 
 ### Added

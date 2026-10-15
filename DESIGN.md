@@ -93,8 +93,10 @@ CHANGELOG.md.
   a quarter, a half and a quarter, and five panels in them — the day, the
   apps, Needs attention, Community and This week — that anyone can drag to
   another place in their column or into another (`HomeBoard`, saved to their
-  account by `useHomeLayout`; Preferences > Home layout puts them back). A
-  line in the church's colour shows where one will land; a column left empty
+  account by `useHomeLayout`; Preferences > Home layout puts them back). The
+  panel in hand is a solid copy lifted on a shadow (the board's own drag;
+  the browser's draws it see-through), the place it left an empty dashed
+  outline, and a line in the church's colour shows where it will land; a column left empty
   gives its width to the others; the church stays at the foot of the left
   column whatever moves; and nothing on the board is selectable, so a press
   that wanders moves the panel rather than highlighting words. To begin with:

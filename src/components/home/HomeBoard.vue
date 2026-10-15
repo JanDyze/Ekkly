@@ -1,24 +1,29 @@
 <script setup>
-import { computed, nextTick, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 
 // The desktop home's panels in their columns, any of them dragged by itself
 // to another place: up or down its column, or across into another. Where it
-// will land shows as a line in the church's colour while it is held, and the
-// panel it came from fades so the eye follows the one in hand. A column with
-// nothing in it gives its width to the others, and comes back, as a place to
-// drop, while a panel is being moved.
+// will land shows as a line in the church's colour, and the place it came
+// from as an empty outline.
 //
-// Native drag and drop: a panel starts moving from anywhere on it, a link or
-// a picture in it included (the drag carries the panel, not the link), and a
-// click is still a click. The text on the board is not selectable, so a
-// press that wanders a little moves the panel rather than highlighting words.
+// The drag is the board's own rather than the browser's: the browser draws a
+// dragged thing see-through, however solid it was, so the panel in hand read
+// as a ghost. Here a copy of the panel, whole and solid and lifted a little
+// on a shadow, follows the pointer. A press only becomes a drag once it has
+// moved a few pixels, so a click on a link or a row is still a click (and
+// the click a drag ends on is swallowed); a press on a button, a menu or a
+// scrollbar is left to what it is. Escape puts the panel back. The text on
+// the board is not selectable, so a press that wanders moves the panel
+// rather than highlighting words.
 //
 // What each panel is, is the caller's (the `panel` slot); where the panels
 // are, and saving it, is the caller's too (useHomeLayout, through `move`).
-// A column's foot (the `foot-<id>` slot) stays at its foot whatever moves.
+// A column's foot (the `foot-<id>` slot) stays at its foot whatever moves. A
+// column with nothing in it gives its width to the others, and comes back,
+// as a place to drop, while a panel is in hand.
 
 const props = defineProps({
-  // [{ id, weight, panels: [key] }], in order across.
+  // [{ id, weight, panels: [key], keep }], in order across.
   columns: { type: Array, required: true },
   // How a panel shares its column: { [key]: classes }.
   fit: { type: Object, default: () => ({}) },
@@ -29,76 +34,167 @@ const held = ref(null)
 const target = ref(null)
 const columnEls = {}
 
-// Empty columns stand aside unless a panel is in hand.
 const shown = computed(() => props.columns.filter((column) => held.value || column.panels.length || column.keep))
 const template = computed(() => shown.value.map((column) => `minmax(0,${column.weight}fr)`).join(' '))
 
 const panelsIn = (id) => [...(columnEls[id]?.querySelectorAll(':scope > [data-panel]') || [])]
 
-const start = (event, key) => {
-  const el = event.currentTarget
-  const box = el.getBoundingClientRect()
-  event.dataTransfer.effectAllowed = 'move'
-  event.dataTransfer.setData('text/plain', key)
-  event.dataTransfer.setDragImage(el, event.clientX - box.left, event.clientY - box.top)
-  // After the browser has taken its picture of the panel as it is.
-  nextTick(() => (held.value = key))
-}
-
-const over = (event, id) => {
-  if (!held.value) return
-  event.preventDefault()
-  event.dataTransfer.dropEffect = 'move'
-  const column = columnEls[id]
-  if (!column) return
-  const top = column.getBoundingClientRect().top
+// Where a pointer at (x, y) would put the panel: the column under it (or the
+// nearest), the place among that column's panels, and where to draw the line.
+const aim = (x, y) => {
+  const ids = shown.value.map((column) => column.id).filter((id) => columnEls[id])
+  if (!ids.length) return null
+  let id = ids.find((each) => {
+    const box = columnEls[each].getBoundingClientRect()
+    return x >= box.left && x <= box.right
+  })
+  if (!id) {
+    id = ids.reduce((best, each) => {
+      const box = columnEls[each].getBoundingClientRect()
+      const gap = Math.min(Math.abs(x - box.left), Math.abs(x - box.right))
+      return !best || gap < best.gap ? { id: each, gap } : best
+    }, null).id
+  }
+  const top = columnEls[id].getBoundingClientRect().top
   const panels = panelsIn(id)
   let index = panels.findIndex((el) => {
     const box = el.getBoundingClientRect()
-    return event.clientY < box.top + box.height / 2
+    return y < box.top + box.height / 2
   })
   if (index < 0) index = panels.length
-  // The line sits in the gap the panel would drop into.
-  let y = 0
-  if (!panels.length) y = 0
-  else if (index === 0) y = panels[0].getBoundingClientRect().top - top - 8
-  else if (index === panels.length) y = panels[index - 1].getBoundingClientRect().bottom - top + 6
-  else y = (panels[index - 1].getBoundingClientRect().bottom + panels[index].getBoundingClientRect().top) / 2 - top - 2
-  target.value = { id, index, y: Math.max(0, y) }
+  let line = 0
+  if (!panels.length) line = 0
+  else if (index === 0) line = panels[0].getBoundingClientRect().top - top - 8
+  else if (index === panels.length) line = panels[index - 1].getBoundingClientRect().bottom - top + 6
+  else line = (panels[index - 1].getBoundingClientRect().bottom + panels[index].getBoundingClientRect().top) / 2 - top - 2
+  return { id, index, y: Math.max(0, line) }
 }
 
-const end = () => {
+/* ------------------------------------------------------------- the drag */
+
+const THRESHOLD = 6
+let press = null
+let ghost = null
+
+const lift = (el, key) => {
+  const box = el.getBoundingClientRect()
+  ghost = el.cloneNode(true)
+  ghost.removeAttribute('data-panel')
+  ghost.setAttribute('aria-hidden', 'true')
+  ghost.setAttribute('inert', '')
+  Object.assign(ghost.style, {
+    position: 'fixed',
+    left: `${box.left}px`,
+    top: `${box.top}px`,
+    width: `${box.width}px`,
+    height: `${box.height}px`,
+    margin: '0',
+    zIndex: '9999',
+    pointerEvents: 'none',
+    borderRadius: '24px',
+    boxShadow: '0 24px 48px -12px rgb(15 23 42 / 0.45), 0 0 0 1px rgb(15 23 42 / 0.06)',
+    transform: 'scale(1.02) rotate(-0.6deg)',
+    transition: 'transform 120ms ease-out, box-shadow 120ms ease-out',
+    cursor: 'grabbing',
+    opacity: '1',
+  })
+  document.body.appendChild(ghost)
+  document.body.style.cursor = 'grabbing'
+  held.value = key
+}
+
+const follow = (x, y) => {
+  if (!ghost) return
+  ghost.style.translate = `${x - press.x}px ${y - press.y}px`
+}
+
+const settle = () => {
+  ghost?.remove()
+  ghost = null
+  document.body.style.cursor = ''
   held.value = null
   target.value = null
+  press = null
+  window.removeEventListener('pointermove', onMove)
+  window.removeEventListener('pointerup', onUp)
+  window.removeEventListener('pointercancel', cancel)
+  window.removeEventListener('keydown', onKey)
 }
 
-const drop = (event, id) => {
-  if (!held.value) return
-  event.preventDefault()
-  const index = target.value?.id === id ? target.value.index : panelsIn(id).length
-  emit('move', { key: held.value, column: id, index })
-  end()
+// The click the drag ends on would follow a link under the pointer.
+const swallowClick = () => {
+  const stop = (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+  window.addEventListener('click', stop, { capture: true, once: true })
+  setTimeout(() => window.removeEventListener('click', stop, { capture: true }), 0)
 }
+
+const onMove = (event) => {
+  if (!press) return
+  if (!held.value) {
+    if (Math.hypot(event.clientX - press.x, event.clientY - press.y) < THRESHOLD) return
+    lift(press.el, press.key)
+  }
+  event.preventDefault()
+  follow(event.clientX, event.clientY)
+  target.value = aim(event.clientX, event.clientY)
+}
+
+const onUp = (event) => {
+  if (held.value) {
+    const at = aim(event.clientX, event.clientY) || target.value
+    if (at) emit('move', { key: held.value, column: at.id, index: at.index })
+    swallowClick()
+  }
+  settle()
+}
+
+const cancel = () => settle()
+const onKey = (event) => {
+  if (event.key === 'Escape') cancel()
+}
+
+const onScrollbar = (event) => {
+  const el = event.target
+  return el instanceof Element && (event.offsetX > el.clientWidth || event.offsetY > el.clientHeight)
+}
+
+const onDown = (event, key) => {
+  if (event.button !== 0 || event.pointerType === 'touch') return
+  if (event.target.closest('button, input, textarea, select, [role="menu"], [role="dialog"]')) return
+  if (onScrollbar(event)) return
+  press = { key, el: event.currentTarget, x: event.clientX, y: event.clientY }
+  window.addEventListener('pointermove', onMove)
+  window.addEventListener('pointerup', onUp)
+  window.addEventListener('pointercancel', cancel)
+  window.addEventListener('keydown', onKey)
+}
+
+onBeforeUnmount(settle)
 </script>
 
 <template>
-  <div class="grid h-full min-h-0 gap-5 select-none" :style="{ gridTemplateColumns: template }">
+  <!-- The browser's own drag (of a link or a picture) is turned off: the
+       board's drag is the only one. -->
+  <div class="grid h-full min-h-0 gap-5 select-none" :style="{ gridTemplateColumns: template }" @dragstart.prevent>
     <div
       v-for="column in shown"
       :key="column.id"
       :ref="(el) => (columnEls[column.id] = el)"
       class="relative flex min-h-0 min-w-0 flex-col gap-4"
-      @dragover="over($event, column.id)"
-      @drop="drop($event, column.id)"
     >
       <div
         v-for="key in column.panels"
         :key="key"
         :data-panel="key"
-        draggable="true"
-        :class="['flex min-h-0 cursor-grab flex-col transition-opacity duration-150 active:cursor-grabbing', fit[key] || 'shrink-0', held === key ? 'opacity-40' : '']"
-        @dragstart="start($event, key)"
-        @dragend="end"
+        :class="[
+          'flex min-h-0 cursor-grab flex-col',
+          fit[key] || 'shrink-0',
+          held === key ? 'rounded-[24px] outline-2 -outline-offset-2 outline-dashed outline-white/60 *:invisible dark:outline-white/30' : '',
+        ]"
+        @pointerdown="onDown($event, key)"
       >
         <slot name="panel" :panel="key" />
       </div>
