@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, shallowRef } from 'vue'
+import { computed, onMounted, ref, shallowRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Cake, CalendarDots, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MicrophoneStage, Moon, Sun, UserPlus } from '../icons'
 import AppHeroDeck from '../components/appframe/AppHeroDeck.vue'
@@ -494,15 +494,32 @@ const boardColumns = computed(() =>
 // The church on its hill stands at the foot of the leftmost column with
 // anything in it, so an emptied column can stand aside like any other.
 const footColumn = computed(() => boardColumns.value.find((column) => column.panels.length)?.id || 'left')
+
+// The church in front of the apps. Where the apps stand right above it and
+// can scroll — every app on a phone, or the apps at the foot of the church's
+// column on a desktop — they run on behind the hill rather than stopping
+// short of it: the list keeps the hill's height free at its foot, so at rest
+// nothing is hidden, and scrolled, the tiles go down into the hillside. As
+// they do, the hill rises a little, as if walking toward the church.
+const churchOverApps = computed(() =>
+  wide.value
+    ? boardColumns.value.find((column) => column.id === footColumn.value)?.panels.at(-1) === 'apps'
+    : showAllApps.value
+)
+const appsLift = ref(0)
+const onAppsScroll = (event) => {
+  appsLift.value = Math.min(event.target.scrollTop / 160, 1)
+}
 // How each panel shares its column: the day keeps its height; the apps and
 // the lists give way and scroll inside, the work least of all, and none of
 // them below a few rows, so a crowded column never folds a panel to its title.
-const PANEL_FIT = {
-  apps: 'flex-[0_1_auto] min-h-[9rem]',
+const PANEL_FIT = computed(() => ({
+  // Over the church, the apps reach down behind it to the column's foot.
+  apps: churchOverApps.value ? 'flex-1 min-h-[9rem]' : 'flex-[0_1_auto] min-h-[9rem]',
   attention: 'flex-[0_0.5_auto] min-h-[9rem]',
   community: 'flex-[0_1_auto] min-h-[9rem]',
   week: 'flex-[0_1_auto] min-h-[9rem]',
-}
+}))
 
 const showWeek = computed(() => wide.value && allApps.value.some((item) => item.path === '/events'))
 
@@ -675,12 +692,13 @@ const lineOf = (item) => {
                 </div>
                 <HomeAppCards
                   v-else
-                  class="-m-0.5 min-h-0 auto-rows-max overflow-y-auto overscroll-contain p-0.5 [scrollbar-width:thin] *:shrink-0"
+                  :class="['-mx-0.5 -mt-0.5 min-h-0 auto-rows-max overflow-y-auto overscroll-contain p-0.5 [scrollbar-width:thin] *:shrink-0', churchOverApps ? 'pb-(--church-room)' : '']"
                   :variant="cardStyle"
                   column
                   :apps="homeApps"
                   :others="homeOthers"
                   :hold="hold"
+                  @scroll.passive="onAppsScroll"
                 />
               </template>
 
@@ -833,11 +851,12 @@ const lineOf = (item) => {
            what it holds, so it would otherwise be squeezed flat, not scrolled. -->
       <HomeAppCards
         v-else
-        :class="showAllApps ? '-m-0.5 min-h-0 shrink auto-rows-max overflow-y-auto overscroll-contain p-0.5 *:shrink-0' : ''"
+        :class="showAllApps ? '-mx-0.5 -mt-0.5 min-h-0 shrink auto-rows-max overflow-y-auto overscroll-contain p-0.5 pb-(--church-room) *:shrink-0' : ''"
         :variant="cardStyle"
         :apps="homeApps"
         :others="homeOthers"
         :hold="hold"
+        @scroll.passive="onAppsScroll"
       />
       </template>
 
@@ -857,8 +876,22 @@ const lineOf = (item) => {
       <!-- Keyed by its column, so it moves when the column does: a Teleport
            does not follow its target to a new place by itself. -->
       <Teleport :key="footColumn" defer to="#home-left-foot" :disabled="!wide">
-      <section :class="showAllApps ? 'max-lg:min-h-32' : ''" class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space) lg:-mb-5 lg:-ml-6 lg:mr-0 lg:mt-auto lg:flex-[0_1_16rem]" aria-label="A verse for today">
-        <HomeScene part="land" class="scene pointer-events-none absolute inset-0 size-full" />
+      <!-- In front of the apps (churchOverApps) the room is drawn over the
+           foot of their list rather than under it: as tall as the list keeps
+           free (--church-room), pulled up over it by that and the gap, and
+           letting the pointer through to the tiles behind but for the verse.
+           The hill lifts with the list's scroll (--lift). -->
+      <section
+        :class="[
+          'verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space) lg:-mb-5 lg:-ml-6 lg:mr-0',
+          churchOverApps
+            ? 'pointer-events-none z-10 flex-none h-(--church-room) max-lg:-mt-[calc(var(--church-room)+1.5rem)] lg:-mt-[calc(var(--church-room)+1rem)]'
+            : 'lg:mt-auto lg:flex-[0_1_16rem]',
+        ]"
+        :style="{ '--lift': churchOverApps ? appsLift : 0 }"
+        aria-label="A verse for today"
+      >
+        <HomeScene part="land" class="scene scene-lift pointer-events-none absolute inset-0 size-full" />
 
         <div class="verse-space pointer-events-none absolute inset-x-0 top-0 bottom-(--bottom-bar-space)">
           <!-- With compact cards there is room under the apps, so the verse
@@ -949,6 +982,31 @@ const lineOf = (item) => {
 }
 .dark .home-hero {
   background-color: color-mix(in oklab, var(--color-primary) 55%, black);
+}
+
+/* How tall the church's room is where it stands in front of the apps
+   (churchOverApps): a phone's, and on a desktop a share of the screen. */
+.home-scene {
+  --church-room: 8rem;
+}
+@media (min-width: 1024px) {
+  .home-scene {
+    --church-room: clamp(9rem, 24vh, 15rem);
+  }
+}
+
+/* The hill rising a little as the apps scroll down behind it (--lift, 0 to
+   1): it grows from its foot rather than moving up, so nothing behind it
+   shows underneath. */
+.scene-lift {
+  scale: calc(1 + var(--lift, 0) * 0.06);
+  transform-origin: 70% 100%;
+  transition: scale 180ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-lift {
+    scale: none;
+  }
 }
 
 /* The room under the apps measures itself, so what it holds can step aside

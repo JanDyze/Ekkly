@@ -11,6 +11,16 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.35] — 2026-10-15
+
+### Added
+
+- **Your apps scroll behind the church.** When your apps scroll — with every
+  app on your phone's home, or on a computer — they slide down behind the
+  hill and the church instead of stopping above them, and the hill rises a
+  little as you go, as if you were walking toward it. Nothing is hidden until
+  you scroll.
+
 ## [0.35.34] — 2026-10-15
 
 ### Added

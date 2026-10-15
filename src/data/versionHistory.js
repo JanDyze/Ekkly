@@ -8,6 +8,15 @@
 
 export const versionHistory = [
   {
+    version: '0.35.35',
+    date: '2026-10-15',
+    title: 'Apps behind the hill',
+    summary: 'Scroll your apps and they slide down behind the church on its hill.',
+    highlights: [
+      'The hill rises a little as you scroll, as if you were walking toward the church.',
+    ],
+  },
+  {
     version: '0.35.34',
     date: '2026-10-15',
     title: 'Every app on your home',

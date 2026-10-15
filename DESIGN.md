@@ -90,6 +90,13 @@ CHANGELOG.md.
   home (App cards > Show every app, `useHomeCards`' `showAll`): no More apps,
   and the apps scroll in their own place so the home still fits the screen;
   the orbit, which holds six, is drawn as Compact's rows then.
+  Wherever the apps stand right above the church and scroll (every app on a
+  phone; the apps at the foot of the church's column on a desktop), the
+  church is in front of them: their list keeps the hill's height free at its
+  foot (`--church-room`), so at rest nothing is hidden, and scrolled, the tiles
+  go down into the hillside while the hill grows a little from its foot, as if
+  walking toward it. The room lets the pointer through to the tiles behind,
+  but for the verse.
   On a desktop (`lg`) the same home shows everything at once rather than
   swiped, and like a phone's it fits one screen: the page never scrolls; a
   list with more than its card holds scrolls inside the card. Three columns,
