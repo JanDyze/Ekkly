@@ -31,19 +31,28 @@ const price = computed(() => formatMoney(total.value))
 // changes (App.vue draws it).
 const { isDark, toggleTheme } = useTheme()
 
-const SECTIONS = [
-  { id: 'features', label: 'What’s inside' },
-  { id: 'how', label: 'How it works' },
-]
+// The second front door (/v2, the Sunday) is a home page too. Its sections
+// are the Sunday itself and the questions, and its logo takes it back to its
+// own top rather than across to the first.
+const homePath = computed(() => (route.path === '/v2' ? '/v2' : '/'))
+
+const SECTIONS = computed(() =>
+  homePath.value === '/v2'
+    ? [{ id: 'sunday', label: 'A Sunday' }]
+    : [
+        { id: 'features', label: 'What’s inside' },
+        { id: 'how', label: 'How it works' },
+      ]
+)
 
 const section = (id) => {
-  if (route.path === '/') document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  else router.push({ path: '/', hash: `#${id}` })
+  if (route.path === homePath.value) document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  else router.push({ path: homePath.value, hash: `#${id}` })
 }
 
 const home = () => {
-  if (route.path === '/') window.scrollTo({ top: 0, behavior: 'smooth' })
-  else router.push('/')
+  if (route.path === homePath.value) window.scrollTo({ top: 0, behavior: 'smooth' })
+  else router.push(homePath.value)
 }
 
 const link = 'hover:text-gray-900 dark:hover:text-white'
@@ -53,7 +62,7 @@ const current = 'text-gray-900 dark:text-white'
 <template>
   <header class="sticky top-0 z-40 border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
     <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
-      <a href="/" class="min-w-0" @click.prevent="home">
+      <a :href="homePath" class="min-w-0" @click.prevent="home">
         <PlatformLogo mark-class="h-8 w-8" text-class="text-2xl" />
       </a>
       <nav class="ml-6 hidden items-center gap-6 text-sm font-medium text-gray-600 md:flex dark:text-gray-300">

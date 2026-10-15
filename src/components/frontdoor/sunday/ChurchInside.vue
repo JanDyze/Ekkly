@@ -213,9 +213,12 @@ const spotB = computed(() => 990 - 110 * Math.sin((props.scene.play || 0) * 0.3 
          rows in front of them. Each row is its people, then the back of
          their pew. -->
     <g v-for="row in byRow" :key="row.r">
+      <!-- Repatched only when they sit, stand or bow, not every frame the
+           camera moves. -->
       <g
         v-for="person in row.people"
         :key="person.key"
+        v-memo="[person.here, scene.stand, scene.bow]"
         :transform="`translate(${person.x} ${person.y - (1 - person.here) * 14 * person.s - scene.stand * 22 * person.s}) scale(${person.s})`"
         :opacity="person.here"
       >
@@ -225,7 +228,7 @@ const spotB = computed(() => 990 - 110 * Math.sin((props.scene.play || 0) * 0.3 
         <circle cx="0" :cy="-66 + scene.bow * 5" r="11" :fill="person.look.style === 'bald' ? person.look.skin : person.look.hair" />
         <circle v-if="person.look.style === 'bun'" cx="0" :cy="-79 + scene.bow * 5" r="5" :fill="person.look.hair" />
       </g>
-      <g :transform="`translate(0 ${row.y})`">
+      <g v-memo="[]" :transform="`translate(0 ${row.y})`">
         <rect :x="800 - row.inner - row.length" :y="-30 * row.s" :width="row.length" :height="36 * row.s" :rx="4 * row.s" fill="#8a5a3b" />
         <rect :x="800 + row.inner" :y="-30 * row.s" :width="row.length" :height="36 * row.s" :rx="4 * row.s" fill="#8a5a3b" />
         <rect :x="800 - row.inner - row.length" :y="-30 * row.s" :width="row.length" :height="6 * row.s" :rx="3 * row.s" fill="#a8714c" />

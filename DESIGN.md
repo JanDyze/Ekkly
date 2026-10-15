@@ -223,13 +223,28 @@ The page skeleton:
 
 ### The front door's pages
 
-The front door is five pages sharing one header and footer
+The front door is six pages sharing one header and footer
 ([FrontDoorHeader.vue](src/components/frontdoor/FrontDoorHeader.vue),
 [FrontDoorFooter.vue](src/components/frontdoor/FrontDoorFooter.vue)):
 
 - **Home** ([PlatformHome.vue](src/views/PlatformHome.vue)): the tour, What's
   inside, How it works, a short word about price with the plan so far, the
   first few questions, and the last call. It sells; the detail lives elsewhere.
+- **The Sunday** ([PlatformHomeV2.vue](src/views/PlatformHomeV2.vue), `/v2`):
+  a second home, tried beside the first. It opens on the church on its hill,
+  and the page is one service told by the scroll
+  ([sunday/](src/components/frontdoor/sunday/), its beats, clock, words and
+  camera in [timeline.js](src/components/frontdoor/sunday/timeline.js)): the
+  doors open, the camera walks in, each part of the service is the moment one
+  app takes a list off somebody, and the doors shut at night on the last call.
+  Every part's title says what the person still does before what Ekkly keeps
+  (BRAND.md, "What Ekkly is for"). The pictures are SVG redrawn through their
+  viewBox, so they stay sharp at every zoom; the camera frames each part in
+  whatever the bulletin (the order of service, a side card on a desktop, a
+  bottom sheet on a phone) leaves free. Everything follows the scroll both
+  ways and nothing idles: the band plays and the family walks only while the
+  reader scrolls. Less motion cuts between the parts at rest. Then the word
+  about price and the questions, as on the first.
 - **Pricing** ([PlatformPricing.vue](src/views/PlatformPricing.vue), `/pricing`):
   the plan builder and every question ([faqs.js](src/components/frontdoor/faqs.js)).
 - **Get started** ([PlatformStart.vue](src/views/PlatformStart.vue), `/start`):

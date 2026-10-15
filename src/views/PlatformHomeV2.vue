@@ -1,6 +1,6 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ArrowRight, CheckCircle2, Clock, X } from '../icons'
 import CookieBanner from '../components/frontdoor/CookieBanner.vue'
 import ChatBubble from '../components/frontdoor/ChatBubble.vue'
@@ -31,7 +31,17 @@ import { vScrollLight } from '../components/frontdoor/scrollLight'
 // until the doors shut at night on the last call (SundayStory). What follows
 // is the short word about price and the first questions, as on the first.
 
+const route = useRoute()
 const router = useRouter()
+
+// Arriving from another page's link to a section ("/v2#faq"): go to it once
+// the page has drawn, then take the hash off, so a reload starts at the top.
+onMounted(async () => {
+  if (!route.hash) return
+  await nextTick()
+  document.getElementById(route.hash.slice(1))?.scrollIntoView({ block: 'start' })
+  router.replace({ hash: '' })
+})
 const { isAuthenticated } = useAuth()
 const { branding, catalog } = usePlatformConfig()
 const rootDomain = import.meta.env.VITE_ROOT_DOMAIN || ''

@@ -226,6 +226,7 @@ const appName = (key) => props.apps[key] || key
 
 <template>
   <section
+    id="sunday"
     ref="root"
     class="relative"
     :style="{ height: `${(LENGTH + 1) * 100}svh`, marginTop: `-${size.head}px` }"
