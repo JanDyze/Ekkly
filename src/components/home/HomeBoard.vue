@@ -18,13 +18,16 @@ import { computed, onBeforeUnmount, ref } from 'vue'
 //
 // What each panel is, is the caller's (the `panel` slot); where the panels
 // are, and saving it, is the caller's too (useHomeLayout, through `move`).
-// A column's foot (the `foot-<id>` slot) stays at its foot whatever moves. A
+// The board's foot (the `foot` slot: the church on its hill) stands at the
+// foot of the column the caller names, the leftmost with anything in it. A
 // column with nothing in it gives its width to the others, and comes back,
 // as a place to drop, while a panel is in hand.
 
 const props = defineProps({
-  // [{ id, weight, panels: [key], keep }], in order across.
+  // [{ id, weight, panels: [key] }], in order across.
   columns: { type: Array, required: true },
+  // The column whose foot holds the `foot` slot.
+  foot: { type: String, default: null },
   // How a panel shares its column: { [key]: classes }.
   fit: { type: Object, default: () => ({}) },
 })
@@ -34,7 +37,7 @@ const held = ref(null)
 const target = ref(null)
 const columnEls = {}
 
-const shown = computed(() => props.columns.filter((column) => held.value || column.panels.length || column.keep))
+const shown = computed(() => props.columns.filter((column) => held.value || column.panels.length))
 const template = computed(() => shown.value.map((column) => `minmax(0,${column.weight}fr)`).join(' '))
 
 const panelsIn = (id) => [...(columnEls[id]?.querySelectorAll(':scope > [data-panel]') || [])]
@@ -214,7 +217,7 @@ onBeforeUnmount(settle)
         aria-hidden="true"
       />
 
-      <slot :name="`foot-${column.id}`" />
+      <slot v-if="column.id === foot" name="foot" />
     </div>
   </div>
 </template>

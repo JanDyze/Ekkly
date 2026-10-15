@@ -86,19 +86,24 @@ CHANGELOG.md.
   just opens the app. More
   apps opens `/apps` (`AllApps.vue`): every app, the five on the home on a shelf, press
   and hold to drag one onto it. The order is the person's, saved to their
-  account (`useAppOrder`).
+  account (`useAppOrder`). Anyone can choose instead to have every app on the
+  home (App cards > Show every app, `useHomeCards`' `showAll`): no More apps,
+  and the apps scroll in their own place so the home still fits the screen;
+  the orbit, which holds six, is drawn as Compact's rows then.
   On a desktop (`lg`) the same home shows everything at once rather than
   swiped, and like a phone's it fits one screen: the page never scrolls; a
   list with more than its card holds scrolls inside the card. Three columns,
   a quarter, a half and a quarter, and five panels in them — the day, the
   apps, Needs attention, Community and This week — that anyone can drag to
   another place in their column or into another (`HomeBoard`, saved to their
-  account by `useHomeLayout`; Preferences > Home layout puts them back). The
+  account by `useHomeLayout`; Home layout in the account menu puts them
+  back). The
   panel in hand is a solid copy lifted on a shadow (the board's own drag;
   the browser's draws it see-through), the place it left an empty dashed
   outline, and a line in the church's colour shows where it will land; a column left empty
-  gives its width to the others; the church stays at the foot of the left
-  column whatever moves; and nothing on the board is selectable, so a press
+  gives its width to the others, and the church stands at the foot of the
+  leftmost column with anything in it; no panel but the day goes below a few
+  rows, the apps included, each scrolling inside itself instead; and nothing on the board is selectable, so a press
   that wanders moves the panel rather than highlighting words. To begin with:
   1. **The sidebar**, read top to bottom as a phone is:
      - the day's card in the church's colour, over Ekkly's panes of light:

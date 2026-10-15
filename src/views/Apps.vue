@@ -488,14 +488,21 @@ const { layout: homeLayout, move: movePanel } = useHomeLayout()
 const boardColumns = computed(() =>
   HOME_COLUMNS.map((column) => ({
     ...column,
-    // The left column keeps the church at its foot, so it never stands aside.
-    keep: column.id === 'left',
     panels: homeLayout.value[column.id].filter((key) => key !== 'week' || showWeek.value),
   }))
 )
-// How each panel shares its column: the day and the apps keep their height,
-// the lists give way and scroll inside, the work least of all.
-const PANEL_FIT = { attention: 'flex-[0_0.5_auto]', community: 'flex-[0_1_auto]', week: 'flex-[0_1_auto]' }
+// The church on its hill stands at the foot of the leftmost column with
+// anything in it, so an emptied column can stand aside like any other.
+const footColumn = computed(() => boardColumns.value.find((column) => column.panels.length)?.id || 'left')
+// How each panel shares its column: the day keeps its height; the apps and
+// the lists give way and scroll inside, the work least of all, and none of
+// them below a few rows, so a crowded column never folds a panel to its title.
+const PANEL_FIT = {
+  apps: 'flex-[0_1_auto] min-h-[9rem]',
+  attention: 'flex-[0_0.5_auto] min-h-[9rem]',
+  community: 'flex-[0_1_auto] min-h-[9rem]',
+  week: 'flex-[0_1_auto] min-h-[9rem]',
+}
 
 const showWeek = computed(() => wide.value && allApps.value.some((item) => item.path === '/events'))
 
@@ -520,6 +527,9 @@ const verseTo = computed(() => {
 const allApps = computed(() => allowedGroups(can, isAdmin.value).flatMap((group) => group.items))
 const { ordered, primary } = useAppOrder(allApps)
 const others = computed(() => ordered.value.slice(primary.value.length))
+// Or every app, for whoever asked for them all (useHomeCards' `showAll`).
+const homeApps = computed(() => (showAllApps.value ? ordered.value : primary.value))
+const homeOthers = computed(() => (showAllApps.value ? [] : others.value))
 
 // Holding an app's tile shows what it is; letting go puts it away, unless
 // the finger slid up to keep it open, when Close does.
@@ -533,7 +543,7 @@ const openHeld = () => {
   if (path) router.push(path)
 }
 
-const { style: cardStyle } = useHomeCards()
+const { style: cardStyle, showAll: showAllApps } = useHomeCards()
 
 // Compact cards leave room under the apps, so the verse is set on the picture
 // itself, whole if it fits, rather than in a card (the verse, below).
@@ -614,7 +624,7 @@ const lineOf = (item) => {
                it in the middle, and the week on the right. A list with more
                than its panel holds scrolls inside the panel, never the page;
                the work gives way least when a column is full. -->
-          <HomeBoard :columns="boardColumns" :fit="PANEL_FIT" @move="({ key, column, index }) => movePanel(key, column, index)">
+          <HomeBoard :columns="boardColumns" :foot="footColumn" :fit="PANEL_FIT" @move="({ key, column, index }) => movePanel(key, column, index)">
             <template #panel="{ panel }">
               <!-- The day, as the phone's deck ends on it: one card in the
                    church's colour over Ekkly's panes of light, with the logo,
@@ -663,7 +673,15 @@ const lineOf = (item) => {
                   <p class="text-sm text-gray-500 dark:text-gray-400">Nothing has been shared with this account yet.</p>
                   <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">An administrator grants access by ministry in Settings.</p>
                 </div>
-                <HomeAppCards v-else :variant="cardStyle" column :apps="primary" :others="others" :hold="hold" />
+                <HomeAppCards
+                  v-else
+                  class="-m-0.5 min-h-0 auto-rows-max overflow-y-auto overscroll-contain p-0.5 [scrollbar-width:thin] *:shrink-0"
+                  :variant="cardStyle"
+                  column
+                  :apps="homeApps"
+                  :others="homeOthers"
+                  :hold="hold"
+                />
               </template>
 
               <HomeAttention v-else-if="panel === 'attention'" :cards="urgent" :dismiss="dismiss" :leaving="leaving" />
@@ -671,11 +689,11 @@ const lineOf = (item) => {
               <HomeWeek v-else-if="panel === 'week'" :days="today.week.value" :events="weekEvents" />
             </template>
 
-            <!-- The church on its hill stays at the foot of the left column
-                 whatever moves: the room is teleported here from the phone's
-                 layout, below. (The way back to the first arrangement is in
-                 Preferences, where the other choices about the home are.) -->
-            <template #foot-left>
+            <!-- The church on its hill, at the foot of the leftmost column: the
+                 room is teleported here from the phone's layout, below. (The
+                 way back to the first arrangement is in Preferences, where the
+                 other choices about the home are.) -->
+            <template #foot>
               <div id="home-left-foot" class="contents" />
             </template>
           </HomeBoard>
@@ -809,11 +827,16 @@ const lineOf = (item) => {
 
       <!-- Drawn in the style the church chose, or the one this person chose for
            themselves (HomeAppCards, useHomeCards). -->
+      <!-- With every app on the home (CardStyleSheet), they scroll in their
+           own place and the church keeps a little room under them. The rows
+           keep the tiles' own height (auto-rows-max, shrink-0): a tile clips
+           what it holds, so it would otherwise be squeezed flat, not scrolled. -->
       <HomeAppCards
         v-else
+        :class="showAllApps ? '-m-0.5 min-h-0 shrink auto-rows-max overflow-y-auto overscroll-contain p-0.5 *:shrink-0' : ''"
         :variant="cardStyle"
-        :apps="primary"
-        :others="others"
+        :apps="homeApps"
+        :others="homeOthers"
         :hold="hold"
       />
       </template>
@@ -831,8 +854,10 @@ const lineOf = (item) => {
            apps, about as tall as a phone gives it (a taller room only blew the
            church up), with the day's verse on it as on a phone; both give way
            where there is less room (the container queries below). -->
-      <Teleport defer to="#home-left-foot" :disabled="!wide">
-      <section class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space) lg:-mb-5 lg:-ml-6 lg:mr-0 lg:mt-auto lg:flex-[0_1_16rem]" aria-label="A verse for today">
+      <!-- Keyed by its column, so it moves when the column does: a Teleport
+           does not follow its target to a new place by itself. -->
+      <Teleport :key="footColumn" defer to="#home-left-foot" :disabled="!wide">
+      <section :class="showAllApps ? 'max-lg:min-h-32' : ''" class="verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space) lg:-mb-5 lg:-ml-6 lg:mr-0 lg:mt-auto lg:flex-[0_1_16rem]" aria-label="A verse for today">
         <HomeScene part="land" class="scene pointer-events-none absolute inset-0 size-full" />
 
         <div class="verse-space pointer-events-none absolute inset-x-0 top-0 bottom-(--bottom-bar-space)">

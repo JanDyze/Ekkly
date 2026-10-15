@@ -8,6 +8,17 @@
 
 export const versionHistory = [
   {
+    version: '0.35.34',
+    date: '2026-10-15',
+    title: 'Every app on your home',
+    summary: 'Choose to see all your apps on your home, and arranging your panels is sturdier.',
+    highlights: [
+      'App cards > Show every app puts all your apps on your home, scrolling in their own space.',
+      'A crowded column keeps every panel readable, and an empty one goes away.',
+      'Home layout, to put the panels back, is in the account menu on a computer.',
+    ],
+  },
+  {
     version: '0.35.32',
     date: '2026-10-15',
     title: 'Arrange your home',

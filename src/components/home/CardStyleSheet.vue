@@ -2,6 +2,7 @@
 import { computed, ref, toRef } from 'vue'
 import { X } from '../../icons'
 import CardStylePicker from './CardStylePicker.vue'
+import ToggleSwitch from '../common/ToggleSwitch.vue'
 import { useFocusTrap } from '../../composables/useFocusTrap'
 import { useHomeCards } from '../../composables/useHomeCards'
 import { useToast } from '../../composables/useToast'
@@ -17,13 +18,21 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const toast = useToast()
-const { myChoice, churchStyle, setMine } = useHomeCards()
+const { myChoice, churchStyle, setMine, showAll, setShowAll } = useHomeCards()
 
 const panel = ref(null)
 // Traps focus and holds the page still underneath while it is open.
 useFocusTrap(panel, toRef(props, 'show'), () => emit('close'))
 
 const followNote = computed(() => `${homeCardName(churchStyle.value)}, as your church set it`)
+
+const toggleAll = async () => {
+  try {
+    await setShowAll(!showAll.value)
+  } catch {
+    toast.error('Could not save that. Please try again.')
+  }
+}
 
 const choose = async (key) => {
   try {
@@ -68,6 +77,16 @@ const choose = async (key) => {
               :follow-note="followNote"
               @update:model-value="choose"
             />
+            <!-- Every app on the home rather than five and More apps; the
+                 apps then scroll in their own place, so the home still fits
+                 the screen. -->
+            <div class="mt-4 flex items-center gap-3 rounded-2xl p-3 ring-1 ring-gray-200 dark:ring-white/10">
+              <span class="min-w-0 flex-1">
+                <span class="block text-sm font-semibold text-gray-900 dark:text-white">Show every app</span>
+                <span class="block text-xs text-gray-500 dark:text-gray-400">Instead of five and More apps. The apps scroll in their own space.</span>
+              </span>
+              <ToggleSwitch :model-value="showAll" label="Show every app" @update:model-value="toggleAll" />
+            </div>
           </div>
         </div>
       </div>

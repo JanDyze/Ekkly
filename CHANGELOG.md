@@ -11,6 +11,25 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.34] — 2026-10-15
+
+### Added
+
+- **Show every app on your home**, on a phone or a computer: **App cards >
+  Show every app** puts all your apps on the home instead of five and **More
+  apps**. They scroll in their own space, so the home still fits the screen.
+
+### Fixed
+
+- **A crowded column on your home no longer squeezes a panel to nothing.**
+  With most panels in one column, Community showed only its title and the
+  app tiles were flattened; now every panel keeps a few rows and scrolls
+  inside itself.
+- **A column you empty goes away**, even the left one: the church and the
+  day's verse now stand at the foot of whichever column is leftmost.
+- **Home layout** (to put the panels back) is now in the account menu on a
+  computer, beside App cards, where it can be found.
+
 ## [0.35.33] — 2026-10-15
 
 ### Changed

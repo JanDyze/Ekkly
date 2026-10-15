@@ -78,13 +78,18 @@ const attrsOf = (card, index, place = {}) => {
   }
 }
 
+// The orbit holds six round a circle; with every app on the home (no More
+// apps to gather the rest), more than that would pile up, so it is drawn as
+// Compact's rows instead.
+const look = computed(() => (props.variant === 'orbit' && props.apps.length > 6 ? 'compact' : props.variant))
+
 const orbitApps = computed(() => cards.value.filter((card) => !card.more))
 const orbitMore = computed(() => cards.value.find((card) => card.more))
 </script>
 
 <template>
   <!-- 4. Orbit: the apps round a circle, More apps in the middle. -->
-  <nav v-if="variant === 'orbit'" class="relative mx-auto aspect-square w-full max-w-88" aria-label="Your apps">
+  <nav v-if="look === 'orbit'" class="relative mx-auto aspect-square w-full max-w-88" aria-label="Your apps">
     <span class="absolute inset-[13%] rounded-full border border-gray-300/70 dark:border-white/10" />
     <span class="absolute inset-[34%] rounded-full border border-gray-300/50 dark:border-white/10" />
     <HomeCard
@@ -108,7 +113,7 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
 
   <!-- 5. List: one app a row, with a line on what it is for; three across
        on a desktop, where a row the width of the screen would be all gap. -->
-  <nav v-else-if="variant === 'list'" :class="['flex flex-col gap-2', column ? '' : 'lg:grid lg:grid-cols-3 lg:gap-2.5']" aria-label="Your apps">
+  <nav v-else-if="look === 'list'" :class="['flex flex-col gap-2', column ? '' : 'lg:grid lg:grid-cols-3 lg:gap-2.5']" aria-label="Your apps">
     <HomeCard
       v-for="(card, index) in cards"
       :key="card.key"
@@ -121,7 +126,7 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
 
   <!-- 6. Masonry: a wide tile and a narrow one, then the other way round.
        On a desktop the spans (3, 2, 2, 3, 3, 2) come to fifteen, one row. -->
-  <nav v-else-if="variant === 'masonry'" class="grid grid-cols-5 gap-2.5" :class="column ? '' : 'lg:grid-cols-15'" aria-label="Your apps">
+  <nav v-else-if="look === 'masonry'" class="grid grid-cols-5 gap-2.5" :class="column ? '' : 'lg:grid-cols-15'" aria-label="Your apps">
     <HomeCard
       v-for="(card, index) in cards"
       :key="card.key"
@@ -140,13 +145,13 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
        lines if need be (HomeCard). -->
   <nav
     v-else
-    :class="['grid gap-2.5', column && variant === 'compact' ? 'grid-cols-1' : 'grid-cols-2', column ? '@container' : 'lg:grid-cols-6']"
+    :class="['grid gap-2.5', column && look === 'compact' ? 'grid-cols-1' : 'grid-cols-2', column ? '@container' : 'lg:grid-cols-6']"
     aria-label="Your apps"
   >
     <HomeCard
       v-for="(card, index) in cards"
       :key="card.key"
-      :variant="variant"
+      :variant="look"
       :as="RouterLink"
       :card="card"
       v-bind="attrsOf(card, index)"

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
-import { Bell, Sun, Moon, X, Users, LogOut, UserCheck, UserPlus, Clock3, ChevronLeft, ChevronRight, SpeakerHigh, SpeakerSlash, Settings, SquaresFour, CloudSun, MagnifyingGlass, Swap } from '../icons';
+import { Bell, Sun, Moon, X, Users, LogOut, UserCheck, UserPlus, Clock3, ChevronLeft, ChevronRight, SpeakerHigh, SpeakerSlash, Settings, SquaresFour, Layout, CloudSun, MagnifyingGlass, Swap } from '../icons';
 import { useSounds } from "../composables/useSounds";
 import { useRouter } from "vue-router";
 import { useTheme } from "../composables/useTheme";
@@ -30,6 +30,7 @@ import AppArt from "./common/AppArt.vue";
 import { NAV_ITEMS } from "../data/navigation";
 import { homeCardName } from "../data/homeCards";
 import { useHomeCards } from "../composables/useHomeCards";
+import { useHomeLayout } from "../composables/useHomeLayout";
 import { useLiveSky } from "../composables/useLiveSky";
 import { useMotion } from "../composables/useMotion";
 import CardStyleSheet from "./home/CardStyleSheet.vue";
@@ -172,6 +173,8 @@ onUnmounted(() => window.removeEventListener('keydown', onSearchKey))
 
 // How the home draws its apps, for this person (useHomeCards).
 const { style: cardStyle, myChoice: myCardStyle } = useHomeCards()
+// The home's panels, where this person has put them.
+const { isDefault: layoutIsDefault, reset: resetLayout } = useHomeLayout()
 const showCardStyles = ref(false)
 // The home's sky following the time and weather over the church.
 const { liveSky, setLiveSky } = useLiveSky()
@@ -484,6 +487,17 @@ const openMyProfile = () => {
                     <SquaresFour class="w-4 h-4 shrink-0 text-primary dark:text-primary-light" />
                     <span class="flex-1 text-[11px] font-bold text-gray-900 dark:text-white">App cards</span>
                     <span class="truncate text-[10px] text-gray-400 dark:text-gray-500">{{ myCardStyle ? homeCardName(cardStyle) : 'Church’s choice' }}</span>
+                  </button>
+                  <!-- The home's panels, dragged into this person's own
+                       arrangement there (HomeBoard); this puts them back. -->
+                  <button
+                    :disabled="layoutIsDefault"
+                    @click="resetLayout"
+                    class="w-full flex items-center gap-2.5 p-2.5 rounded-xl text-left hover:bg-gray-100 disabled:hover:bg-transparent dark:hover:bg-gray-700 dark:disabled:hover:bg-transparent transition-colors"
+                  >
+                    <Layout class="w-4 h-4 shrink-0 text-primary dark:text-primary-light" />
+                    <span class="flex-1 text-[11px] font-bold text-gray-900 dark:text-white">Home layout</span>
+                    <span class="text-[10px] text-gray-400 dark:text-gray-500">{{ layoutIsDefault ? 'Default' : 'Yours · Reset' }}</span>
                   </button>
                   <button
                     @click="setLiveSky(!liveSky)"

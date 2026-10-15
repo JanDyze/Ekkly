@@ -16,9 +16,32 @@ import { useAuth } from './useAuth'
  * apps (useAppOrder), so it follows the person to another device. The device
  * only remembers it as a head start, so the home does not redraw itself once
  * the first snapshot lands.
+ *
+ * Alongside it, whether the home shows every app rather than the five kept
+ * first and More apps (`showAll`): the person's own choice too, kept the same
+ * way, off unless they turn it on.
  */
 const PREF_KEY = 'homeCards'
+const ALL_KEY = 'homeAllApps'
 const cacheKey = (uid) => `ekkly:homeCards:${uid}`
+const allCacheKey = (uid) => `ekkly:homeAllApps:${uid}`
+
+const readAll = (uid) => {
+  try {
+    return localStorage.getItem(allCacheKey(uid)) === '1'
+  } catch {
+    return false
+  }
+}
+
+const writeAll = (uid, value) => {
+  try {
+    if (value) localStorage.setItem(allCacheKey(uid), '1')
+    else localStorage.removeItem(allCacheKey(uid))
+  } catch {
+    // Firestore still has it; only the head start is lost.
+  }
+}
 
 const readCache = (uid) => {
   try {
@@ -38,6 +61,7 @@ const writeCache = (uid, value) => {
 }
 
 const mine = ref(null)
+const allMine = ref(false)
 const uid = ref(null)
 let started = false
 let unsubscribe = null
@@ -56,15 +80,19 @@ export const initHomeCards = () => {
       uid.value = now
       if (!now) {
         mine.value = null
+        allMine.value = false
         return
       }
       mine.value = readCache(now)
+      allMine.value = readAll(now)
       unsubscribe = subscribeToUserPrefs(now, (prefs) => {
         // A failed read keeps what is on screen.
         if (!prefs) return
         const saved = typeof prefs[PREF_KEY] === 'string' ? prefs[PREF_KEY] : null
         mine.value = saved
         writeCache(now, saved)
+        allMine.value = prefs[ALL_KEY] === true
+        writeAll(now, allMine.value)
       })
     },
     { immediate: true }
@@ -93,5 +121,16 @@ export function useHomeCards() {
     else await clearUserPref(uid.value, PREF_KEY)
   }
 
-  return { style, churchStyle, myChoice, setMine }
+  /** Whether the home shows every app, rather than five and More apps. */
+  const showAll = computed(() => allMine.value)
+
+  const setShowAll = async (value) => {
+    allMine.value = !!value
+    if (!uid.value) return
+    writeAll(uid.value, allMine.value)
+    if (value) await saveUserPrefs(uid.value, { [ALL_KEY]: true })
+    else await clearUserPref(uid.value, ALL_KEY)
+  }
+
+  return { style, churchStyle, myChoice, setMine, showAll, setShowAll }
 }
