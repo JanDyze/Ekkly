@@ -1,0 +1,50 @@
+{
+  "hero": {
+    "file": "hero-1f360ec8.mp3",
+    "seconds": 7.34
+  },
+  "doors": {
+    "file": "doors-b23603ff.mp3",
+    "seconds": 6.57
+  },
+  "welcome": {
+    "file": "welcome-6e6f7396.mp3",
+    "seconds": 5.59
+  },
+  "worship": {
+    "file": "worship-50a2b8c3.mp3",
+    "seconds": 7.16
+  },
+  "kids": {
+    "file": "kids-c58763e8.mp3",
+    "seconds": 6.26
+  },
+  "word": {
+    "file": "word-05a50ae0.mp3",
+    "seconds": 5
+  },
+  "prayer": {
+    "file": "prayer-df0f4beb.mp3",
+    "seconds": 5.28
+  },
+  "offering": {
+    "file": "offering-ce619f0f.mp3",
+    "seconds": 4.68
+  },
+  "notices": {
+    "file": "notices-a671d898.mp3",
+    "seconds": 5.87
+  },
+  "after": {
+    "file": "after-ed352669.mp3",
+    "seconds": 4.41
+  },
+  "meeting": {
+    "file": "meeting-21410831.mp3",
+    "seconds": 5.03
+  },
+  "night": {
+    "file": "night-4d6f92d5.mp3",
+    "seconds": 7.18
+  }
+}

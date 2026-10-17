@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import { ChevronRight } from '../../icons'
 import AppArt from '../common/AppArt.vue'
 import HomeCardIcon from './HomeCardIcon.vue'
@@ -38,13 +39,17 @@ const props = defineProps({
   urgent: { type: Boolean, default: false },
   // Change it to play the drawing again.
   play: { type: Number, default: 1 },
+  // Rises into place as the screen opens. Off on the home of all apps, whose
+  // apps are simply there: it is the screen opened most, and tiles arriving
+  // one after another every time only held up the one being reached for.
+  rise: { type: Boolean, default: true },
 })
 
 const BADGE = 'flex h-5.5 min-w-5.5 shrink-0 items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums'
 const badgeTone = (urgent) => (urgent ? 'bg-amber-500 text-white' : 'bg-primary text-white dark:bg-primary-light dark:text-gray-900')
 const badgeText = (count) => (count > 99 ? '99+' : count)
 
-const press = 'animate-rise transition-[background-color,box-shadow] duration-200 ease-out'
+const press = computed(() => `${props.rise ? 'animate-rise ' : ''}transition-[background-color,box-shadow] duration-200 ease-out`)
 </script>
 
 <template>

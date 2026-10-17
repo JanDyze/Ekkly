@@ -40,6 +40,8 @@ export const PEOPLE = (() => {
           y: row.y,
           s: row.s * (random() < 0.12 ? 0.78 : 0.96),
           look: lookFrom(random),
+          // Broader or narrower in the shoulders, so a row is not of copies.
+          build: 0.9 + random() * 0.24,
           order: random(),
           empty: random() < 0.1,
         })
@@ -48,6 +50,16 @@ export const PEOPLE = (() => {
   }
   const filled = seats.filter((seat) => !seat.empty)
   filled.sort((a, b) => a.order - b.order).forEach((seat, rank) => (seat.rank = rank))
+  // Some raise their hands in worship, one or both, each in their own time.
+  // Drawn from a seed of their own, so who sits where, and how they look,
+  // stays as it was.
+  const praising = seeded(31)
+  for (const seat of filled) {
+    const r = praising()
+    seat.hands = r < 0.14 ? 2 : r < 0.32 ? 1 : 0
+    seat.handSide = praising() < 0.5 ? -1 : 1
+    seat.praiseAt = praising() * 0.45
+  }
   return filled
 })()
 

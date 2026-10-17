@@ -6,7 +6,16 @@ let copies = 0
 // What he can be (a state that lasts while the chat is in it) and what he can
 // do (a gesture that plays once).
 export const YUNIT_MOODS = ['idle', 'listening', 'thinking', 'talking', 'happy', 'confused', 'sad', 'sleeping']
-export const YUNIT_ACTIONS = ['wave', 'jump', 'hop', 'nod', 'shake', 'wink', 'surprise', 'celebrate', 'glance', 'peek']
+export const YUNIT_ACTIONS = ['wave', 'jump', 'hop', 'nod', 'shake', 'wink', 'surprise', 'celebrate', 'glance', 'peek', 'waken', 'whoa', 'thereWeGo', 'grumpy', 'rollLeft', 'rollRight', 'stumbleLeft', 'stumbleRight']
+
+// His walk, in the units he is drawn in (250 across): one step of each foot
+// takes `period` ms, and a foot reaches `reach` ahead of where it rests and
+// as far behind, lifting `lift` as it swings through.
+const WALK = { period: 400, reach: 18, lift: 11 }
+// How fast a page must move him while he walks, in his own widths a second,
+// for his planted feet not to slide: each foot travels its whole reach and
+// back (4 × reach) in a step.
+export const WALK_SPEED = (4 * WALK.reach) / WALK.period * 1000 / 250
 </script>
 
 <script setup>
@@ -45,6 +54,34 @@ const props = defineProps({
   sparks: { type: Boolean, default: true },
   // Small things on his own while idle. Off where several stand together.
   fidget: { type: Boolean, default: true },
+  // His arrival, the petals closing round him, when he first appears. Off
+  // where he was on the screen a moment ago and is only being drawn again
+  // (back on the home in the same visit), so he is simply there.
+  arrive: { type: Boolean, default: true },
+  // A lantern in his hand, lit, with its warm light round him: for the dark
+  // (the home in dark mode). It catches as it lights and goes out as it is
+  // put away; nothing flickers in between.
+  lantern: { type: Boolean, default: false },
+  // An umbrella in his hand, open over his head, in Ekkly's four colours: for
+  // the rain over the church (the home's live sky). It pops open as it comes
+  // and folds away as it goes.
+  umbrella: { type: Boolean, default: false },
+  // A raincoat, for the same rain: each petal of his becomes a panel of one
+  // coat in rain-slicker yellow, the colour raincoats are, two-toned as his
+  // petals are, so he keeps his shape while his own colours go under it and
+  // the umbrella's are the only mixed ones; and below his middle it flares
+  // into a hem, as a raincoat does, his feet showing under it.
+  raincoat: { type: Boolean, default: false },
+  // Curled up into a ball for as long as it is true — feet tucked in, petals
+  // hugged round him, eyes shut — as he is for a roll, but held: for rolling
+  // across the page (HomeYunit's hide-and-seek behind a card).
+  curled: { type: Boolean, default: false },
+  // Taps are the page's, not his: he does nothing of his own when tapped
+  // (while hiding behind a card, a tap is what brings him back).
+  tapsOff: { type: Boolean, default: false },
+  // Walking, for as long as it is true: the page moves him across itself at
+  // WALK_SPEED of his width a second, and his feet step to match it.
+  walking: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['wake'])
@@ -117,23 +154,62 @@ const CONFETTI = Array.from({ length: 12 }, (_, i) => {
   }
 })
 
+// What makes his raincoat read as one rather than as a grey YUNIT: a wet
+// shine along the top of each panel, and two toggles down the front.
+const COAT_SHINE = {
+  yellow: 'M30 92Q36 68 56 54',
+  orange: 'M116 30Q140 22 164 30',
+  teal: 'M190 114Q194 134 187 154',
+  blue: 'M42 152Q52 146 64 148',
+}
+const COAT_TOGGLES = [
+  [64, 172],
+  [86, 182],
+]
+
+// His umbrella, drawn upright from its tip (0, 0) down its shaft to the
+// hook he holds, and set in his left hand (the blue petal), leaning right:
+// into the rain, which comes down from the right (HomeScene slants it 14°
+// that way), with the canopy over his head and the shaft behind him. His
+// right hand keeps the lantern. Four panels, one in each of his colours, each
+// fanning out from a point above the tip so that, cut to the dome, they fill
+// it edge to edge.
+const UMBRELLA = {
+  hand: [40, 150],
+  lean: 23,
+  shaft: 212,
+  panels: [
+    { fill: '#ffcb4a', d: 'M0 -60L-200 60L-44 60Z' },
+    { fill: '#ff8d4a', d: 'M0 -60L-44 60L0 60Z' },
+    { fill: '#20b9c2', d: 'M0 -60L0 60L44 60Z' },
+    { fill: '#2290ff', d: 'M0 -60L44 60L200 60Z' },
+  ],
+  // The canopy: a dome with a scalloped rim, which the panels are cut to.
+  dome: 'M-78 46C-78 14 -42 -4 0 -4C42 -4 78 14 78 46Q58 36 39 46Q19 36 0 46Q-19 36 -39 46Q-58 36 -78 46Z',
+}
+
 // ------------------------------------------------------------------ the rig
 
-// Every moving part at rest. y is height (negative is up); sx/sy squash and
+// Every moving part at rest. y is height (negative is up); spin turns him
+// round his middle, for a roll, and curl tucks his feet away into him for
+// it; sx/sy squash and
 // stretch from the feet; lean turns him from the feet; head turns from the
 // neck; open is how open an eye is; happy turns the eyes into smiling arcs;
 // mouth shows the mouth, smile curves it (−1 a frown) and talk opens it;
-// each petal has x, y, turn and opacity; the last four are the burst's forms.
+// each petal has x, y, turn and opacity; then the burst's four forms; and
+// lamp, how lit his lantern is; and step, how far into his walk he is (0
+// standing, 1 striding), so he sets off and stops rather than snapping.
 const REST = {
-  y: 0, sx: 1, sy: 1, lean: 0, grow: 1, bodyA: 1,
+  y: 0, spin: 0, curl: 0, sx: 1, sy: 1, lean: 0, grow: 1, bodyA: 1, step: 0,
   head: 0, headY: 0,
   openL: 1, openR: 1, eyes: 1, happy: 0, lookX: 0, lookY: 0,
-  mouth: 0, smile: 0, talk: 0,
+  mouth: 0, smile: 0, talk: 0, gape: 0,
   yX: 0, yY: 0, yR: 0, yA: 1,
   oX: 0, oY: 0, oR: 0, oA: 1,
   tX: 0, tY: 0, tR: 0, tA: 1,
   bX: 0, bY: 0, bR: 0, bA: 1,
   bang: 1, dots: 0, question: 0, zzz: 0,
+  lamp: 0, brolly: 0, coat: 0, flush: 0,
 }
 
 // How each kind of part moves. Stiff and well damped for eyelids, so a blink
@@ -147,19 +223,26 @@ const SPRINGS = {
   petal: { k: 190, d: 15 },
   fade: { k: 160, d: 26 },
   face: { k: 260, d: 24 },
+  // Stiff and just short of overshooting, so a roll keeps up with its
+  // quarter turns and stops where it lands rather than rocking past it.
+  spin: { k: 520, d: 44 },
 }
 const springOf = (key) => {
+  if (key === 'spin') return SPRINGS.spin
   if (key === 'openL' || key === 'openR') return SPRINGS.blink
   if (key === 'lookX' || key === 'lookY') return SPRINGS.look
   if (key === 'head' || key === 'headY') return SPRINGS.head
   if (/^[yotb][XYR]$/.test(key)) return SPRINGS.petal
-  if (/A$|^(bang|dots|question|zzz|mouth)$/.test(key)) return SPRINGS.fade
-  if (key === 'smile' || key === 'talk' || key === 'eyes' || key === 'happy') return SPRINGS.face
+  if (/A$|^(bang|dots|question|zzz|mouth|flush)$/.test(key)) return SPRINGS.fade
+  if (key === 'smile' || key === 'talk' || key === 'gape' || key === 'eyes' || key === 'happy') return SPRINGS.face
   return SPRINGS.body
 }
 
 const state = {}
 Object.keys(REST).forEach((key) => (state[key] = { x: REST[key], v: 0, spring: springOf(key) }))
+// Already lit if he comes on in the dark: it only catches when the dark
+// comes while he is there.
+state.lamp.x = props.lantern ? 1 : 0
 
 // Where each mood wants him, over rest.
 const MOODS = {
@@ -184,6 +267,53 @@ const LIVELY = new Set(['listening', 'thinking', 'talking', 'sleeping'])
 // rest, and when it ends everything heads back to the mood.
 const flare = (amount) =>
   Object.fromEntries(PETALS.flatMap((petal, i) => [[`${P[i]}X`, petal.out[0] * amount], [`${P[i]}Y`, petal.out[1] * amount]]))
+
+// Knocked off his feet and rolled, `dir` the way he goes (−1 to the left of
+// the page, 1 to the right). He goes over as a ball: a jolt with his eyes wide
+// and his mouth open, then curled up tight (curl: his feet tucked in, his
+// petals hugged round him, his eyes screwed shut) and turned a whole way
+// round in quarters as he goes, uncurled back onto his feet with a squash, a
+// dizzy sway with a "?" over him, and a cross look back at whatever did it.
+// The turn ends where it began (−360° is 0°), and the rig takes it back to
+// nothing without turning him back (tick, below).
+const rolled = (dir) => ({
+  length: 2200,
+  beats: [
+    [0, { eyes: 1.3, mouth: 1, smile: 0, talk: 0.8, sx: 1.1, sy: 0.88, bang: 1 }],
+    [80, { curl: 1, y: 8, sx: 1, sy: 1, openL: 0.06, openR: 0.06, eyes: 1, mouth: 0, talk: 0, bang: 0, ...flare(-14) }],
+    [150, { spin: dir * 90 }],
+    [220, { spin: dir * 180 }],
+    [290, { spin: dir * 270 }],
+    [360, { spin: dir * 360 }],
+    [450, { curl: 0, y: 0, openL: 1, openR: 1, ...flare(0) }],
+    [540, { sx: 1.12, sy: 0.86 }],
+    [680, { sx: 1, sy: 1, head: -9, openR: 0.55, mouth: 1, question: 1, smile: -0.2 }],
+    [800, { head: 8, lookX: 2 }],
+    [1000, { head: -5, lookX: -2 }],
+    [1200, { head: 0, lookX: 0, openR: 1, question: 0 }],
+    [1300, { head: -dir * 7, lookX: -dir * 5, lookY: -1, smile: -0.5 }],
+    [1850, { head: 0, lookX: 0, lookY: 0, smile: 0, mouth: 0 }],
+  ],
+})
+
+// Tripped and stumbling `dir`-wards after something that went from beside
+// him: pitched forward with his hand thrown up, then a few quick steps, each
+// a little hop that brings him more upright, until he has his feet again, and
+// a relieved smile. One way only, never a swing back.
+const stumbled = (dir) => ({
+  length: 1500,
+  beats: [
+    [0, { lean: dir * 18, sx: 0.96, sy: 1.04, eyes: 1.25, mouth: 1, smile: 0, talk: 0.5, tR: 30, tY: -10 }],
+    [110, { lean: dir * 28, y: -10 }],
+    [230, { y: 0, sx: 1.06, sy: 0.94 }],
+    [320, { y: -8, lean: dir * 18, sx: 1, sy: 1 }],
+    [440, { y: 0, lean: dir * 10, sx: 1.05, sy: 0.95 }],
+    [540, { y: -4, lean: dir * 4, sx: 1, sy: 1 }],
+    [650, { y: 0, lean: 0, talk: 0, tR: 0, tY: 0, eyes: 1 }],
+    [760, { smile: 0.5 }],
+    [1250, { smile: 0, mouth: 0 }],
+  ],
+})
 
 const GESTURES = {
   wave: {
@@ -279,6 +409,80 @@ const GESTURES = {
       [1200, { lookX: 0, lookY: 0, head: 0 }],
     ],
   },
+  // Woken gently, by someone coming to talk to him rather than poking him:
+  // his eyes come half open, he blinks, and they open the rest of the way,
+  // with a little stretch. Nothing in it grows past its size at rest — the
+  // conversation is opening right over him, and a start there (the eyes
+  // half again as big, the petals thrown out, a jump) read as his face
+  // stretching under it.
+  waken: {
+    length: 1000,
+    beats: [
+      [0, { openL: 0.45, openR: 0.45, head: 3, sx: 0.98, sy: 1.03 }],
+      [380, { openL: 0.06, openR: 0.06 }],
+      [500, { openL: 1, openR: 1, head: 0, sx: 1, sy: 1 }],
+    ],
+  },
+  // Amazed ("whoa!", at a rainbow): eyes wide, mouth a round "O", leaning
+  // back from it with his petals flung out and the "!" going off, held a
+  // moment, then easing back.
+  whoa: {
+    length: 1500,
+    beats: [
+      [0, { eyes: 1.35, openL: 1.1, openR: 1.1, mouth: 1, smile: 0, gape: 1.15, lean: -7, y: -8, sx: 0.96, sy: 1.05, lookY: -2, bang: 1, ...flare(11) }],
+      [200, { y: 0, sx: 1, sy: 1 }],
+      [1050, { eyes: 1.1, gape: 0.7, lean: -3, ...flare(4) }],
+      [1300, { eyes: 1, openL: 1, openR: 1, gape: 0, mouth: 0, smile: 0, lean: 0, lookY: 0, ...flare(0) }],
+    ],
+  },
+  // Cross, after being tapped too often too fast (onTap): his face flushes
+  // red, his eyes narrow to a scowl over a frown, he huffs a shake of the
+  // head and pulls his petals in tight, sulks a while, and calms, the red
+  // going last. While it lasts, taps do nothing.
+  grumpy: {
+    length: 5400,
+    beats: [
+      [0, { flush: 1, openL: 0.42, openR: 0.42, mouth: 1, smile: -1, talk: 0, headY: 4, head: -6, sx: 1.06, sy: 0.95, bang: 0, lookX: -3, lookY: 1, ...flare(-8) }],
+      [140, { head: 6 }],
+      [280, { head: -4 }],
+      [420, { head: 0 }],
+      [2600, { lookX: 3 }],
+      [3400, { lookX: -2 }],
+      [4300, { flush: 0.45, openL: 0.7, openR: 0.7, smile: -0.4 }],
+      [4900, { flush: 0, openL: 1, openR: 1, smile: 0, mouth: 0, headY: 0, sx: 1, sy: 1, lookX: 0, lookY: 0, ...flare(0) }],
+    ],
+  },
+  // "There we go" (his lantern catching): his mouth through its three
+  // syllables, then a pleased, closed smile and a small nod, done.
+  thereWeGo: {
+    length: 1900,
+    beats: [
+      [0, { mouth: 1, smile: 0.3, talk: 0.75 }],
+      [170, { talk: 0.2 }],
+      [290, { talk: 0.85 }],
+      [470, { talk: 0.25 }],
+      [600, { talk: 0.7 }],
+      [820, { talk: 0, smile: 0.9, happy: 0.7, headY: 4, head: 3 }],
+      [1150, { headY: 0, head: 0 }],
+      [1600, { smile: 0, mouth: 0, happy: 0 }],
+    ],
+  },
+  // The lights coming back on after the dark: screwed-up eyes and a wince,
+  // opening slowly.
+  squint: {
+    length: 1000,
+    beats: [
+      [0, { openL: 0.25, openR: 0.25, head: 5, mouth: 1, smile: -0.3, sx: 1.03, sy: 0.97 }],
+      [500, { openL: 0.6, openR: 0.6 }],
+      [800, { openL: 1, openR: 1, head: 0, smile: 0, mouth: 0, sx: 1, sy: 1 }],
+    ],
+  },
+  // Pushed over by something beside him (the people rail opening into him on
+  // the home, HomeYunit), and stumbling after it when it goes.
+  rollLeft: rolled(-1),
+  rollRight: rolled(1),
+  stumbleLeft: stumbled(-1),
+  stumbleRight: stumbled(1),
   // How he arrives: the body lands, the petals close round him one after
   // another from where they rest, he opens his eyes, the "!" goes off.
   arrive: {
@@ -318,6 +522,10 @@ const confetti = ref(0)
 const play = (name) => {
   const spec = GESTURES[name]
   if (!spec || reduced) return
+  // Cross, nothing else takes his face until he has calmed down: the hop a
+  // happy mood plays on its way in, as the line he was saying ended, put the
+  // "!" over the scowl.
+  if (cross.value && name !== 'grumpy') return
   gesture = { name, spec, start: performance.now(), held: {} }
   if (name === 'celebrate') confetti.value += 1
   wake()
@@ -366,10 +574,29 @@ const onPointerMove = (event) => {
 // A tap plays something different from last time. Asleep, a tap wakes him
 // with a start instead, and tells the page so it can stop him dozing. Either
 // way the gesture comes with its own sound and buzz.
-const TAP = ['wave', 'jump', 'wink', 'celebrate', 'nod', 'surprise', 'hop']
+const TAP = ['wave', 'jump', 'wink', 'celebrate', 'nod', 'surprise', 'hop', 'whoa']
 let lastTap = ''
+// Tapped too often too fast (five in two and a half seconds), he gets cross
+// (grumpy, above) and says so ("nuh-uh"), and taps do nothing until he has
+// calmed down; the pointer says so too (.is-cross).
+const SPAM = { taps: 5, within: 2500, calm: 5200 }
+const cross = ref(false)
+let taps = []
+let crossTimer = null
 const onTap = () => {
-  if (!props.interactive) return
+  if (!props.interactive || cross.value || props.tapsOff) return
+  const now = performance.now()
+  taps = taps.filter((at) => now - at < SPAM.within)
+  taps.push(now)
+  if (taps.length >= SPAM.taps && props.mood !== 'sleeping') {
+    taps = []
+    cross.value = true
+    play('grumpy')
+    feel('grumpy')
+    clearTimeout(crossTimer)
+    crossTimer = setTimeout(() => (cross.value = false), SPAM.calm)
+    return
+  }
   if (props.mood === 'sleeping') {
     play('surprise')
     feel('startle')
@@ -415,7 +642,11 @@ const liveliness = (mood, t, target) => {
 
 const targetsAt = (t) => {
   const target = { ...REST, ...(MOODS[props.mood] || {}) }
-  if (!props.sparks) Object.assign(target, { bang: 0, dots: 0, question: 0, zzz: 0 })
+  if (!props.sparks || cross.value) Object.assign(target, { bang: 0, dots: 0, question: 0, zzz: 0 })
+  target.lamp = props.lantern ? 1 : 0
+  target.brolly = props.umbrella ? 1 : 0
+  target.coat = props.raincoat ? 1 : 0
+  target.step = props.walking ? 1 : 0
   if (props.follow && !OWN_GAZE.has(props.mood)) {
     target.lookX += pointerLook.x
     target.lookY += pointerLook.y
@@ -436,6 +667,8 @@ const targetsAt = (t) => {
     }
   }
 
+  if (props.curled) Object.assign(target, { curl: 1, y: 8, openL: 0.06, openR: 0.06, mouth: 0, talk: 0, bang: 0, ...flare(-14) })
+
   if (t < blinkUntil) {
     target.openL = Math.min(target.openL, 0.05)
     target.openR = Math.min(target.openR, 0.05)
@@ -453,6 +686,16 @@ const bind = (name) => (node) => {
 const f = (n) => Math.round(n * 100) / 100
 const mouthPath = (s) => {
   const { cx, cy } = MOUTH
+  // Agape (gape, the "whoa" face): a round "O", its size the gape. The
+  // smile-and-talk shape below is two curves, and opened wide it only ever
+  // came out a pointed lens.
+  const gape = Math.max(0, s.gape.x)
+  if (gape > 0.05) {
+    const rx = f(7 * gape)
+    const ry = f(9.5 * gape)
+    const y = f(cy + 4 * gape)
+    return `M${f(cx - rx)} ${y}A${rx} ${ry} 0 1 0 ${f(cx + rx)} ${y}A${rx} ${ry} 0 1 0 ${f(cx - rx)} ${y}Z`
+  }
   const smile = s.smile.x
   const talk = Math.max(0, s.talk.x)
   const half = 9 + talk * 2.5
@@ -462,26 +705,84 @@ const mouthPath = (s) => {
   return `M${f(cx - half)} ${f(corner)}Q${cx} ${f(top)} ${f(cx + half)} ${f(corner)}Q${cx} ${f(bottom)} ${f(cx - half)} ${f(corner)}Z`
 }
 
+// Where each foot is in his walk, `p` from 0 to 1 through one step of that
+// foot. For the first half it is planted, and moves back under him at exactly
+// the speed he goes forward, so on the ground it stays where it was put down;
+// for the second it lifts, swings forward past the other and comes down.
+const footAt = (p) => {
+  if (p < 0.5) return [WALK.reach - (p / 0.5) * WALK.reach * 2, 0]
+  const swing = (p - 0.5) / 0.5
+  const eased = swing * swing * (3 - 2 * swing)
+  return [-WALK.reach + eased * WALK.reach * 2, -Math.sin(Math.PI * swing) * WALK.lift]
+}
+
 const draw = (t) => {
   const s = state
   const x = (key) => s[key].x
   if (!el.pose) return
 
+  // His walk: how far into it he is, and where in the step he has got to.
+  // Facing forward is +x here; a page walking him the other way mirrors him.
+  const step = Math.min(1, Math.max(0, x('step')))
+  const gait = (t / WALK.period) % 1
+  // He rises a little over each foot as it passes under him and sinks as it
+  // lands, twice a step, rocks from foot to foot, and leans into the walk.
+  const bob = -Math.abs(Math.sin(Math.PI * 2 * gait)) * 4 * step
+  const waddle = Math.sin(Math.PI * 2 * gait) * 3 * step + 4 * step
+
   el.shadow.setAttribute('transform', `translate(112 222) scale(${f(1 + x('y') / 90)} 1) translate(-112 -222)`)
   el.shadow.style.opacity = f(0.35 * x('bodyA') * (1 + x('y') / 120))
+  // A roll turns him round his middle (the round of his face), the lean and
+  // the squash still from his feet within it.
   el.pose.setAttribute(
     'transform',
-    `translate(0 ${f(x('y'))}) translate(112 221) rotate(${f(x('lean'))}) scale(${f(x('sx') * x('grow'))} ${f(x('sy') * x('grow'))}) translate(-112 -221)`
+    `translate(0 ${f(x('y'))}) rotate(${f(x('spin'))} 110 122) translate(112 221) rotate(${f(x('lean') + waddle)}) scale(${f(x('sx') * x('grow'))} ${f(x('sy') * x('grow'))}) translate(-112 -221)`
   )
+  // Curled up, his feet draw in under him and out of sight, so all that
+  // rolls is round.
+  const curl = Math.min(1, Math.max(0, x('curl')))
+  el.feet.setAttribute('transform', `translate(0 ${f(-curl * 34)}) translate(112 211) scale(${f(1 - curl * 0.6)}) translate(-112 -211)`)
+  el.feet.style.opacity = f(Math.max(0, 1 - curl * 1.4))
+  // Each foot half a step behind the other.
+  ;[0, 0.5].forEach((offset, i) => {
+    const [fx, fy] = footAt((gait + offset) % 1)
+    el[`foot${i}`].setAttribute('transform', `translate(${f(fx * step)} ${f(fy * step)})`)
+  })
   el.pose.style.opacity = f(x('bodyA'))
-  el.head.setAttribute('transform', `translate(0 ${f(x('headY'))}) rotate(${f(x('head'))} 112 185)`)
+  // The bob is the body's alone, so his planted feet stay on the ground.
+  el.head.setAttribute('transform', `translate(0 ${f(x('headY') + bob)}) rotate(${f(x('head'))} 112 185)`)
 
   PETALS.forEach((petal, i) => {
     const k = P[i]
     const node = el[`petal${i}`]
-    node.setAttribute('transform', `translate(${f(x(`${k}X`))} ${f(x(`${k}Y`))}) rotate(${f(x(`${k}R`))} ${petal.pivot[0]} ${petal.pivot[1]})`)
+    // His hand (the teal petal) swings as he walks, and his lantern with it.
+    const swing = k === 't' ? Math.sin(Math.PI * 2 * gait + 1) * 7 * step : 0
+    node.setAttribute('transform', `translate(${f(x(`${k}X`))} ${f(x(`${k}Y`))}) rotate(${f(x(`${k}R`) + swing)} ${petal.pivot[0]} ${petal.pivot[1]})`)
     node.style.opacity = f(Math.min(1, Math.max(0, x(`${k}A`))))
   })
+
+  // The lantern: there as soon as it starts to light, its light growing in,
+  // and the flame catching from nothing with a little pop past full.
+  // The raincoat fades on and off over each of his petals at once.
+  root.value?.style?.setProperty('--y-coat', f(Math.min(1, Math.max(0, x('coat')))))
+
+  // The umbrella: held in his hand and leaning over his head, opening out
+  // from the hand as it comes (the body's spring, so it pops a little past
+  // open and settles).
+  if (el.brolly) {
+    const brolly = Math.max(0, x('brolly'))
+    el.brolly.style.opacity = f(Math.min(1, brolly * 2))
+    el.brolly.setAttribute('transform', `translate(${UMBRELLA.hand[0]} ${UMBRELLA.hand[1]}) rotate(${UMBRELLA.lean}) scale(${f(brolly)}) translate(0 -${UMBRELLA.shaft})`)
+  }
+
+  if (el.flush) el.flush.style.opacity = f(Math.min(1, Math.max(0, x('flush'))) * 0.5)
+
+  if (el.lamp) {
+    const lamp = x('lamp')
+    el.lamp.style.opacity = f(Math.min(1, Math.max(0, lamp * 2)))
+    el.glow.style.opacity = f(Math.min(1, Math.max(0, lamp)))
+    el.flame.setAttribute('transform', `translate(203 181) scale(${f(Math.max(0, lamp))}) translate(-203 -181)`)
+  }
 
   el.face.setAttribute('transform', `translate(${f(x('lookX'))} ${f(x('lookY'))})`)
   const happy = Math.min(1, Math.max(0, x('happy')))
@@ -539,6 +840,20 @@ const tick = (now) => {
   last = now
   const target = targetsAt(now)
 
+  // A whole turn looks the same as none, so once a roll is over the turn is
+  // taken off what he has, not unwound: otherwise heading back to rest would
+  // roll him all the way back.
+  if (!gesture && Math.abs(state.spin.x) >= 180) state.spin.x -= 360 * Math.round(state.spin.x / 360)
+
+  // A slow frame is stepped through in small steps rather than one long one.
+  // Stepped once over a long frame, a stiff spring (his eyelids', above all)
+  // overshoots further each frame instead of settling: over about 32ms the
+  // blink spring grew without end, which drew his eyes as two long lines
+  // reaching out of him whenever opening the conversation (the blur over the
+  // home, the glide) made a few frames slow. Steps of at most 8ms keep every
+  // spring here well inside where it settles.
+  const steps = Math.max(1, Math.ceil(dt / 0.008))
+  const h = dt / steps
   let moving = false
   Object.keys(state).forEach((key) => {
     const part = state[key]
@@ -548,18 +863,19 @@ const tick = (now) => {
       part.v = 0
       return
     }
-    // A damped spring, stepped semi-implicitly so it stays stable at any
-    // frame rate.
+    // A damped spring, stepped semi-implicitly.
     const { k, d } = part.spring
-    part.v += (k * (goal - part.x) - d * part.v) * dt
-    part.x += part.v * dt
+    for (let i = 0; i < steps; i++) {
+      part.v += (k * (goal - part.x) - d * part.v) * h
+      part.x += part.v * h
+    }
     if (Math.abs(goal - part.x) > 0.002 || Math.abs(part.v) > 0.01) moving = true
   })
   draw(now)
 
   // Rest when nothing is moving and nothing is due to, so a still YUNIT
   // costs nothing.
-  if (moving || gesture || LIVELY.has(props.mood) || now < blinkUntil) frame = requestAnimationFrame(tick)
+  if (moving || gesture || props.walking || LIVELY.has(props.mood) || now < blinkUntil) frame = requestAnimationFrame(tick)
   else last = 0
 }
 
@@ -572,20 +888,26 @@ watch(
   () => props.mood,
   (mood, was) => {
     if (mood === 'happy') play('hop')
-    // Not again if a tap has already woken him with one.
-    else if (mood === 'idle' && was === 'sleeping' && gesture?.name !== 'surprise') play('surprise')
+    // Woken by anything but a tap on him (which has already started him
+    // awake, onTap), he comes round gently.
+    else if (mood === 'idle' && was === 'sleeping' && gesture?.name !== 'surprise') {
+      play('waken')
+      feel('waken')
+    }
     wake()
   }
 )
-watch(() => [props.sparks, props.follow], wake)
+watch(() => [props.sparks, props.follow, props.lantern, props.umbrella, props.raincoat, props.walking, props.curled], wake)
 
 onMounted(() => {
   if (reduced) {
     wake()
     return
   }
-  Object.entries(UNARRIVED).forEach(([key, value]) => (state[key].x = value))
-  gesture = { name: 'arrive', spec: { ...GESTURES.arrive, beats: [[0, { ...UNARRIVED, grow: 1, bodyA: 1 }], ...GESTURES.arrive.beats.slice(1)] }, start: performance.now(), held: {} }
+  if (props.arrive) {
+    Object.entries(UNARRIVED).forEach(([key, value]) => (state[key].x = value))
+    gesture = { name: 'arrive', spec: { ...GESTURES.arrive, beats: [[0, { ...UNARRIVED, grow: 1, bodyA: 1 }], ...GESTURES.arrive.beats.slice(1)] }, start: performance.now(), held: {} }
+  }
   wake()
   scheduleBlink()
   scheduleFidget()
@@ -596,10 +918,11 @@ onBeforeUnmount(() => {
   cancelAnimationFrame(frame)
   clearTimeout(blinkTimer)
   clearTimeout(fidgetTimer)
+  clearTimeout(crossTimer)
   window.removeEventListener('pointermove', onPointerMove)
 })
 
-defineExpose({ play })
+defineExpose({ play, cross })
 </script>
 
 <template>
@@ -608,7 +931,7 @@ defineExpose({ play })
     ref="root"
     :type="interactive ? 'button' : undefined"
     :aria-label="interactive ? 'Say hello to YUNIT' : undefined"
-    class="yunit"
+    :class="['yunit', cross && 'is-cross']"
     @click="onTap"
   >
     <svg viewBox="0 0 250 240" :aria-hidden="interactive ? 'true' : undefined" :role="interactive ? undefined : 'img'">
@@ -620,21 +943,82 @@ defineExpose({ play })
           <stop offset=".54" :stop-color="petal.dark" />
           <stop offset="1" :stop-color="petal.dark" />
         </linearGradient>
+        <!-- The lantern's light, warm and soft-edged, and its flame. -->
+        <radialGradient :id="id + 'glow'">
+          <stop offset="0" stop-color="#ffe08a" stop-opacity="0.8" />
+          <stop offset="0.4" stop-color="#ffc24a" stop-opacity="0.35" />
+          <stop offset="1" stop-color="#ffb21e" stop-opacity="0" />
+        </radialGradient>
+        <clipPath :id="id + 'dome'"><path :d="UMBRELLA.dome" /></clipPath>
+        <!-- His raincoat's two tones, split as his petals' are. -->
+        <linearGradient :id="id + 'coat'" x1="0" y1="0" x2="1" y2=".45">
+          <stop offset="0" stop-color="#ffd83d" />
+          <stop offset=".54" stop-color="#ffd83d" />
+          <stop offset=".54" stop-color="#f5bf14" />
+          <stop offset="1" stop-color="#f5bf14" />
+        </linearGradient>
+        <linearGradient :id="id + 'flame'" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="#ff7417" />
+          <stop offset="0.6" stop-color="#ffb21e" />
+          <stop offset="1" stop-color="#ffe08a" />
+        </linearGradient>
       </defs>
 
       <ellipse :ref="bind('shadow')" class="y-shadow" cx="112" cy="222" rx="78" ry="6" />
 
       <g :ref="bind('pose')">
-        <g class="y-feet">
-          <ellipse cx="82" cy="211" rx="16" ry="10" />
-          <ellipse cx="142" cy="211" rx="16" ry="10" />
+        <!-- The lantern's light, behind all of him: drawn over his hand it
+             washed the petal holding it pale. -->
+        <circle :ref="bind('glow')" :fill="`url(#${id}glow)`" cx="203" cy="188" r="125" style="opacity: 0" />
+        <g :ref="bind('feet')" class="y-feet">
+          <ellipse :ref="bind('foot0')" cx="82" cy="211" rx="16" ry="10" />
+          <ellipse :ref="bind('foot1')" cx="142" cy="211" rx="16" ry="10" />
         </g>
 
         <g :ref="bind('head')">
+          <!-- His umbrella, for the rain, behind him: the shaft from his hand
+               (the blue petal) up behind his head, the canopy over it in four
+               panels of his colours, a tip on top. Set in place each frame
+               (draw), so it opens out from the hand. -->
+          <g :ref="bind('brolly')" style="opacity: 0">
+            <line class="y-brolly-shaft" x1="0" y1="0" :x2="0" :y2="UMBRELLA.shaft" />
+            <path class="y-brolly-shaft" :d="`M0 ${UMBRELLA.shaft}q0 12 9 12q8 0 8 -8`" />
+            <g :clip-path="`url(#${id}dome)`">
+              <path v-for="panel in UMBRELLA.panels" :key="panel.fill" :d="panel.d" :fill="panel.fill" />
+            </g>
+            <path class="y-brolly-rim" :d="UMBRELLA.dome" />
+            <circle class="y-brolly-tip" cx="0" cy="-8" r="5" />
+          </g>
+          <!-- His raincoat's hem, flaring out below his middle, behind his
+               face and petals, his feet showing under it. -->
+          <path class="y-coat" :fill="`url(#${id}coat)`" d="M42 164Q110 184 178 164L197 201Q110 222 23 201Z" />
+          <path class="y-coat y-coat-hem" d="M27 198Q110 219 193 198" />
           <circle class="y-body" cx="110" cy="122" r="60" />
+          <!-- His face flushing red, when he is cross (flush). -->
+          <circle :ref="bind('flush')" class="y-flush" cx="110" cy="122" r="58" style="opacity: 0" />
 
           <g v-for="(petal, i) in PETALS" :key="petal.key" :ref="bind(`petal${i}`)">
             <path :fill="`url(#${id}${petal.key})`" :d="petal.d" />
+            <!-- The same petal in his raincoat, over it, faded in for rain. -->
+            <path class="y-coat" :fill="`url(#${id}coat)`" :d="petal.d" />
+            <path class="y-coat y-coat-shine" :d="COAT_SHINE[petal.key]" />
+            <template v-if="petal.key === 'blue'">
+              <rect v-for="[cx, cy] in COAT_TOGGLES" :key="cx" class="y-coat y-coat-toggle" :x="cx - 6" :y="cy - 2.5" width="12" height="5" rx="2.5" />
+            </template>
+            <!-- His lantern, hanging from his hand (the teal petal), so it
+                 swings with every wave: the lantern, then the flame inside
+                 it. Its light is behind him (glow, before his feet). -->
+            <g v-if="petal.key === 'teal'" :ref="bind('lamp')" class="y-lamp" style="opacity: 0">
+              <!-- Drawn small and set large from where it hangs, so it still
+                   reads when he is only a few dozen pixels high. -->
+              <g transform="translate(203 150) scale(1.7) translate(-203 -150)">
+                <path class="y-lamp-handle" d="M196 157Q203 139 210 157" />
+                <rect class="y-lamp-frame" x="192" y="155" width="22" height="6" rx="2" />
+                <rect class="y-lamp-glass" x="194" y="160" width="18" height="24" rx="5" />
+                <path :ref="bind('flame')" :fill="`url(#${id}flame)`" d="M203 164C208.5 171 208.5 177 203 180.5C197.5 177 197.5 171 203 164Z" />
+                <rect class="y-lamp-frame" x="191" y="183" width="24" height="6" rx="2" />
+              </g>
+            </g>
           </g>
 
           <g :ref="bind('face')">
@@ -654,6 +1038,7 @@ defineExpose({ play })
             <path :ref="bind('mouth')" class="y-mouth" style="opacity: 0" d="" />
             </g>
           </g>
+
         </g>
 
         <template v-if="sparks">
@@ -711,6 +1096,14 @@ button.yunit {
   border-radius: 1.5rem;
 }
 
+/* Cross: not to be tapped until he has calmed down. */
+button.yunit.is-cross {
+  cursor: not-allowed;
+}
+.y-flush {
+  fill: #ff4d5a;
+}
+
 button.yunit:focus-visible {
   outline: 2px solid var(--color-primary, currentColor);
   outline-offset: 4px;
@@ -749,6 +1142,60 @@ svg {
   stroke: var(--y-navy);
   stroke-width: 7;
   stroke-linecap: round;
+}
+
+/* His raincoat: rain-slicker yellow over his petals. How far on it is
+   comes from the rig (--y-coat). */
+.y-coat {
+  opacity: var(--y-coat, 0);
+}
+.y-coat-shine {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: calc(var(--y-coat, 0) * 0.45);
+}
+.y-coat-toggle {
+  fill: var(--y-navy);
+}
+.y-coat-hem {
+  fill: none;
+  stroke: #e3a90b;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+/* His umbrella: a navy shaft and tip like his feet, the panels his colours. */
+.y-brolly-shaft {
+  fill: none;
+  stroke: var(--y-navy);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+.y-brolly-rim {
+  fill: none;
+  stroke: rgb(29 58 102 / 0.25);
+  stroke-width: 2;
+}
+.y-brolly-tip {
+  fill: var(--y-navy);
+}
+
+/* His lantern: a navy frame like his feet, warm glass round the flame. */
+.y-lamp-frame {
+  fill: var(--y-navy);
+}
+.y-lamp-handle {
+  fill: none;
+  stroke: var(--y-navy);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.y-lamp-glass {
+  fill: #fff3cf;
+  stroke: var(--y-navy);
+  stroke-width: 2.5;
 }
 
 .y-spark {

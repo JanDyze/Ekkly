@@ -32,7 +32,17 @@ const PRAYER = [
 const TASKS = [
   { says: 'Return the projector to the hall', who: 'Jun', at: 0.15 },
   { says: 'Call this week’s first-timers', who: 'Lyn', at: 0.4 },
-  { says: 'Book the hall for youth night', who: 'Ana', at: 0.65 },
+  { says: 'Book the bus for youth camp', who: 'Ana', at: 0.65 },
+]
+
+// Sunday school's class, counted in at the door.
+const CLASS_SIZE = 14
+const kidsIn = computed(() => Math.min(12, Math.round(Math.min(1, props.u * 1.4) * 12)))
+
+const GROUPS = [
+  { name: 'Grace group', when: 'Wed 7 PM', coming: 8 },
+  { name: 'Young couples', when: 'Thu 7 PM', coming: 6 },
+  { name: 'Men’s Bible study', when: 'Sat 7 AM', coming: 5 },
 ]
 
 const row = 'flex items-center justify-between gap-3 py-2 text-sm'
@@ -82,11 +92,23 @@ const row = 'flex items-center justify-between gap-3 py-2 text-sm'
       </ol>
     </template>
 
+    <template v-else-if="beat === 'kids'">
+      <p class="text-xs font-semibold text-gray-500 dark:text-gray-400">Little Lambs · ages 4 to 6</p>
+      <div class="mt-1 flex items-end justify-between gap-3">
+        <p class="text-3xl font-black tabular-nums">{{ kidsIn }}<span class="text-base font-semibold text-gray-400"> of {{ CLASS_SIZE }}</span></p>
+        <p class="pb-1 text-xs text-gray-500 dark:text-gray-400">here today</p>
+      </div>
+      <p :class="[row, 'border-t border-gray-200 dark:border-gray-800']">
+        <span class="min-w-0 truncate"><span class="font-semibold">Lesson</span> · Noah builds the ark</span>
+        <span class="shrink-0 text-xs text-gray-500 dark:text-gray-400">Used before</span>
+      </p>
+    </template>
+
     <template v-else-if="beat === 'word'">
-      <p class="text-xs font-semibold text-gray-500 dark:text-gray-400">Psalms for ordinary days · part 3</p>
-      <p class="mt-1 font-semibold">This is the day</p>
+      <p class="text-xs font-semibold text-gray-500 dark:text-gray-400">The good news · part 1</p>
+      <p class="mt-1 font-semibold">God is holy, and God is love</p>
       <ul class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-        <li :class="row"><span>Reading · Psalm 118:24</span><span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">On the screen</span></li>
+        <li :class="row"><span>Reading · Romans 5:8</span><span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">On the screen</span></li>
         <li :class="[row, 'border-t border-gray-200 dark:border-gray-800']"><span>Notes · three points</span><span class="text-xs text-gray-500 dark:text-gray-400">Planned Thursday</span></li>
       </ul>
     </template>
@@ -127,7 +149,19 @@ const row = 'flex items-center justify-between gap-3 py-2 text-sm'
     </template>
 
     <template v-else-if="beat === 'after'">
-      <p class="text-xs font-semibold text-gray-500 dark:text-gray-400">Board meeting · action items</p>
+      <ul class="divide-y divide-gray-200 dark:divide-gray-800">
+        <li v-for="group in GROUPS" :key="group.name" :class="row">
+          <span class="min-w-0">
+            <span class="block truncate font-semibold">{{ group.name }}</span>
+            <span class="block text-xs text-gray-500 dark:text-gray-400">{{ group.when }}</span>
+          </span>
+          <span class="shrink-0 text-xs font-semibold text-emerald-600 dark:text-emerald-400">{{ group.coming }} coming</span>
+        </li>
+      </ul>
+    </template>
+
+    <template v-else-if="beat === 'meeting'">
+      <p class="text-xs font-semibold text-gray-500 dark:text-gray-400">Leaders’ meeting · action items</p>
       <ul class="mt-1">
         <li v-for="item in TASKS" :key="item.says" :class="[row, u < item.at && 'invisible']">
           <span class="flex min-w-0 items-center gap-2">

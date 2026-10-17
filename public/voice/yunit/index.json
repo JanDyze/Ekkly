@@ -1,0 +1,22 @@
+{
+  "sunday": {
+    "file": "sunday-a4b77900.mp3",
+    "seconds": 1.64
+  },
+  "birthdays": {
+    "file": "birthdays-2d690c1e.mp3",
+    "seconds": 2.36
+  },
+  "overdue": {
+    "file": "overdue-22b41829.mp3",
+    "seconds": 2.19
+  },
+  "attendance": {
+    "file": "attendance-1c9d2c77.mp3",
+    "seconds": 2.25
+  },
+  "song": {
+    "file": "song-430cc0a3.mp3",
+    "seconds": 3.05
+  }
+}

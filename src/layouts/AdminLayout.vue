@@ -56,7 +56,12 @@ const hidesTopbar = computed(() => Boolean(route.meta?.hideTopbar))
 // bar stays: it names the app, and it is the way back out to the rest of
 // Ekkly (Topbar.vue turns its mark into a back arrow inside an app).
 const isApp = computed(() => route.matched.some((record) => record.meta?.frame === 'app'))
-const bare = computed(() => isFocus.value || isApp.value)
+
+// A page that lays itself out edge to edge under the top bar, with no people
+// rail beside it (meta.ownLayout): the All apps page on a desktop, which has a
+// column of its own down the left and needs the width for the store.
+const isOwnLayout = computed(() => Boolean(route.meta?.ownLayout))
+const bare = computed(() => isFocus.value || isApp.value || isOwnLayout.value)
 
 // The home of all apps lays itself out, edge to edge, like an app's home.
 const isRoot = computed(() => Boolean(route.meta?.root))

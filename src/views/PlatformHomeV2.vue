@@ -1,7 +1,7 @@
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowRight, CheckCircle2, Clock, X } from '../icons'
+import { ArrowRight, ArrowUpRight, CheckCircle2, Clock, X } from '../icons'
 import CookieBanner from '../components/frontdoor/CookieBanner.vue'
 import ChatBubble from '../components/frontdoor/ChatBubble.vue'
 import WelcomeSheet from '../components/frontdoor/WelcomeSheet.vue'
@@ -11,6 +11,7 @@ import FrontDoorFooter from '../components/frontdoor/FrontDoorFooter.vue'
 import FrontDoorFaq from '../components/frontdoor/FrontDoorFaq.vue'
 import SundayStory from '../components/frontdoor/sunday/SundayStory.vue'
 import { FAQS, HOME_FAQS } from '../components/frontdoor/faqs'
+import { GOSPEL, GOSPEL_INTRO, GOSPEL_READ, GOSPEL_VERSE } from '../components/frontdoor/gospel'
 import { TYPE } from '../components/frontdoor/type'
 import { initAuth, useAuth } from '../composables/useAuth'
 import { usePlatformConfig } from '../composables/usePlatformConfig'
@@ -155,6 +156,48 @@ const HEADING_LIGHT = { start: 0.92, end: 0.5 }
       @start="heroPress"
       @hello="welcomeAgain = true"
     />
+
+    <!-- ============================================================= gospel -->
+    <!-- Why Ekkly is built, and the good news it is built for, its words in
+         gospel.js. Straight after the Sunday, which ends on a church free to
+         share it. -->
+    <section id="gospel" class="scroll-mt-20 py-20 lg:py-28">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <div class="mx-auto max-w-3xl text-center">
+          <p :class="[TYPE.eyebrow, 'text-primary dark:text-primary-light']">Why we build {{ branding.name }}</p>
+          <h2 v-scroll-light="HEADING_LIGHT" :class="['lit-heading mt-3', TYPE.title]">What is the gospel?</h2>
+          <p :class="['mt-4 text-gray-600 dark:text-gray-300', TYPE.lead]">{{ GOSPEL_INTRO.replaceAll('{name}', branding.name) }}</p>
+        </div>
+        <ol class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <li v-for="(part, i) in GOSPEL" :key="part.title" class="flex flex-col rounded-2xl bg-gray-50 p-6 dark:bg-gray-900">
+            <span class="text-sm font-black text-primary dark:text-primary-light">{{ i + 1 }}</span>
+            <h3 class="mt-2 text-lg font-black leading-snug">{{ part.title }}</h3>
+            <p class="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-300">{{ part.says }}</p>
+            <blockquote class="mt-5 border-l-2 border-primary/40 pl-3 text-sm italic leading-relaxed text-gray-700 dark:border-primary-light/40 dark:text-gray-200">
+              “{{ part.verse }}”
+              <cite class="mt-1 block text-xs font-semibold not-italic text-gray-500 dark:text-gray-400">{{ part.ref }}</cite>
+            </blockquote>
+          </li>
+        </ol>
+        <figure class="mx-auto mt-14 max-w-3xl text-center">
+          <blockquote class="text-balance text-xl font-bold leading-snug sm:text-2xl">“{{ GOSPEL_VERSE.text }}”</blockquote>
+          <figcaption class="mt-3 text-sm font-semibold text-gray-500 dark:text-gray-400">{{ GOSPEL_VERSE.ref }}</figcaption>
+        </figure>
+        <div class="mt-8 flex flex-col items-center gap-3 text-center">
+          <a
+            :href="GOSPEL_READ.href"
+            target="_blank"
+            rel="noopener"
+            class="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-white transition-colors hover:bg-primary-hover"
+          >
+            {{ GOSPEL_READ.label }}
+            <ArrowUpRight class="h-4 w-4" />
+          </a>
+          <p class="max-w-md text-sm text-gray-500 dark:text-gray-400">{{ GOSPEL_READ.says }}</p>
+        </div>
+        <p class="mt-10 text-center text-xs text-gray-400 dark:text-gray-500">Scripture quoted from the World English Bible, which is in the public domain.</p>
+      </div>
+    </section>
 
     <!-- ============================================================ pricing -->
     <section id="plan" class="scroll-mt-20 py-20 lg:py-28">

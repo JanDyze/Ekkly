@@ -11,6 +11,52 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.39] — 2026-10-17
+
+YUNIT moves onto your home with a voice of his own, the church becomes the
+ground your home stands on, and a lost page is a little parable.
+
+### Added
+
+- **YUNIT lives on your home.** He stands in a panel of his own, bigger, with
+  a button to talk to him, and tells you what needs you, one thing at a time.
+  Put him in any column or on the church's hill, and his words sit above him
+  with his buttons beside him.
+- **His own voice and faces.** He says "ooh", "whoa", "ta-da" and more, softly
+  and quietly, snores when he dozes and baas as a sheep. He looks amazed,
+  pleased, or cross: tap him too many times and he goes red and grumbles, and
+  won't answer until he has calmed down.
+- **He plays when left alone.** Now and then he jumps, waves or looks about,
+  hides behind his bubble and pops out "Ta-da!", or curls into a ball, rolls
+  behind one of your cards and peeks out with a "psst" until you click him.
+- **He follows the sky.** With the live sky on, he carries a lantern at night,
+  wears a yellow raincoat and holds an umbrella into the rain, and after the
+  rain a rainbow shows across the sky: God's promise.
+- **The day's card turns over** to show your quick actions. Click it or its
+  flip button. On a phone, the "+" opens them as a sheet.
+- **Quiet doodles in quiet panels.** Attention, Community and This week keep
+  their height, and when there is little or nothing in them they show a small
+  drawing (a cup of tea, a bench, a hammock) instead of empty space.
+- **Ctrl+F (⌘F on a Mac) opens search.**
+- **YUNIT the Sheep** is now every page that can't be found: he has looked
+  everywhere, walks about, baas, and a "?" tells the parable of the lost
+  sheep.
+- **The Sunday front door** at `/v2` ends with the good news itself, the
+  people in it are drawn with real hands, and parts of it are read aloud.
+- **All apps** is laid out like an app store.
+
+### Changed
+
+- **The church is the ground of your home.** On a computer it runs the full
+  width along the foot of the page, and you choose which column it sits
+  under, so it is never cut off. A panel over it stays out of its way.
+- **A column holds three cards at most**, not counting the church or YUNIT.
+  Dropping a fourth says "This column is full" across the column, and a
+  column already too full is tidied for you.
+- **Moving a card shows where it will go.** While you drag, the other cards
+  slide aside around a dashed outline of it, and it glides into place.
+- **There are no clouds** anywhere in Ekkly's skies.
+
 ## [0.35.38] — 2026-10-15
 
 A second front door to try beside the first, at `/v2`.

@@ -17,8 +17,15 @@ import { useAuth } from './useAuth'
  * A saved arrangement is read forgivingly: a panel it does not know is
  * dropped, and a panel it is missing (one added since it was saved) goes
  * where the default has it, so every panel is always somewhere, once.
+ *
+ * YUNIT (`yunit`) has a place among the panels like any of them, anywhere
+ * in any column, though he is carried there himself rather than dragged as
+ * a panel is (HomeYunit). The church on its hill (`church`) is different: it
+ * stands at the foot of a column, always, and is moved only from column to
+ * column (`place`). It is kept as the column it is in, and an arrangement
+ * that does not name one has it where the default puts it.
  */
-export const HOME_PANELS = ['day', 'apps', 'attention', 'community', 'verse', 'week']
+export const HOME_PANELS = ['day', 'apps', 'attention', 'community', 'verse', 'week', 'yunit']
 
 export const HOME_COLUMNS = [
   { id: 'left', weight: 1 },
@@ -26,10 +33,17 @@ export const HOME_COLUMNS = [
   { id: 'right', weight: 1 },
 ]
 
+// What stands at the foot of a column rather than among its panels: the
+// church, under the apps on the left to begin with.
+export const HOME_FEET = ['church']
+
+// YUNIT starts under the week, at the foot of the right-hand column, beside
+// the people rail.
 export const DEFAULT_HOME_LAYOUT = {
   left: ['day', 'apps'],
   middle: ['attention', 'community', 'verse'],
-  right: ['week'],
+  right: ['week', 'yunit'],
+  church: 'left',
 }
 
 const PREF_KEY = 'homeLayout'
@@ -46,6 +60,9 @@ const clean = (value) => {
   }
   for (const key of HOME_PANELS) {
     if (!seen.has(key)) layout[columnOf(DEFAULT_HOME_LAYOUT, key)].push(key)
+  }
+  for (const key of HOME_FEET) {
+    layout[key] = HOME_COLUMNS.some((column) => column.id === value[key]) ? value[key] : DEFAULT_HOME_LAYOUT[key]
   }
   return layout
 }
@@ -129,8 +146,15 @@ export function useHomeLayout() {
     return save(next)
   }
 
+  /** Stands `key` (the church) at the foot of `column`. */
+  const place = (key, column) => {
+    if (!HOME_FEET.includes(key) || !HOME_COLUMNS.some((each) => each.id === column)) return Promise.resolve()
+    if (layout.value[key] === column) return Promise.resolve()
+    return save({ ...clean(layout.value), [key]: column })
+  }
+
   /** Back to the arrangement everyone starts with. */
   const reset = () => save(null)
 
-  return { layout, isDefault, move, reset }
+  return { layout, isDefault, move, place, reset }
 }

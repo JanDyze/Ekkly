@@ -188,12 +188,14 @@ export default defineConfig(({ mode }) => ({
         // The search-by-meaning worker is for whoever turns it on, not for
         // every install: cached the first time it runs (below) instead. The
         // same for Inventory's cut-out worker (870 KB), for whoever photographs
-        // an item.
+        // an item. The front door's narration (public/voice) is for visitors
+        // who press play, never for a church's installed app.
         globIgnores: [
           '**/firebase-messaging-sw.js',
           'icons/events/**',
           '**/embedWorker-*.js',
           '**/removeBackgroundWorker-*.js',
+          'voice/**',
         ],
         navigateFallback: '/index.html',
         // /__/auth/ is Firebase's sign-in handler, reverse-proxied onto this

@@ -5,8 +5,10 @@ import { useAuth } from './useAuth'
 import { usePermissions } from './usePermissions'
 
 /**
- * The desktop home's quick actions (src/data/quickActions.js): everyone starts
- * with the same few, and anyone can choose their own from the menu itself.
+ * The home's quick actions (src/data/quickActions.js): everyone starts with
+ * the same few, and anyone can choose their own where they are shown — the
+ * back of the desktop's day card (QuickActionsBack), or the phone's sheet
+ * (QuickActionsMenu).
  *
  * Kept against the account like the home's card style (useHomeCards), so the
  * choice follows the person to another device, with the device remembering it

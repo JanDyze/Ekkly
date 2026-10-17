@@ -1,6 +1,7 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import { X } from '../../icons'
+import PanelRest from './PanelRest.vue'
 import TodayPicture from './TodayPicture.vue'
 
 // The desktop home's community: what is good to know rather than waiting on
@@ -10,7 +11,8 @@ import TodayPicture from './TodayPicture.vue'
 // one light panel of compact items, two across where there is room, the
 // church's colour only in the line naming a celebration, so none of it reads
 // as urgent. Where there is more than the panel's share of the column, it
-// scrolls inside the panel, never the page.
+// scrolls inside the panel, never the page; with little in it, it keeps its
+// height, the room left saying so (PanelRest).
 
 const props = defineProps({
   cards: { type: Array, required: true },
@@ -22,7 +24,7 @@ const props = defineProps({
 </script>
 
 <template>
-  <section aria-labelledby="home-community" class="@container flex min-h-0 flex-col rounded-[24px] bg-white/95 p-2 ring-1 ring-black/5 dark:bg-gray-900/90 dark:ring-white/10">
+  <section aria-labelledby="home-community" class="@container flex min-h-0 flex-1 flex-col rounded-[24px] bg-white/95 p-2 ring-1 ring-black/5 dark:bg-gray-900/90 dark:ring-white/10">
     <header class="flex shrink-0 items-center gap-2.5 px-3 pt-2 pb-1.5">
       <h2 id="home-community" class="text-base font-semibold text-gray-900 dark:text-white">Community</h2>
       <span v-if="cards.length" class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold tabular-nums text-gray-600 dark:bg-white/10 dark:text-gray-300">
@@ -30,9 +32,9 @@ const props = defineProps({
       </span>
     </header>
 
-    <p v-if="!cards.length" class="px-3 pb-3 text-sm text-gray-600 dark:text-gray-300">Nothing else today.</p>
+    <PanelRest v-if="!cards.length" doodle="bench" title="A quiet day" line="No birthdays, first visits or serving today." />
 
-    <ul v-else class="grid min-h-0 flex-1 grid-cols-1 content-start gap-0.5 overflow-y-auto overscroll-contain [scrollbar-width:thin] @2xl:grid-cols-2">
+    <ul v-else :class="['grid min-h-0 grid-cols-1 content-start gap-0.5 overflow-y-auto overscroll-contain [scrollbar-width:thin] @2xl:grid-cols-2', cards.length <= 3 ? 'shrink-0' : 'flex-1']">
       <li
         v-for="card in cards"
         :key="card.key"
@@ -71,5 +73,6 @@ const props = defineProps({
         </button>
       </li>
     </ul>
+    <PanelRest v-if="cards.length && cards.length <= 3" few doodle="bench" title="That’s all for today." />
   </section>
 </template>

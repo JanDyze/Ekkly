@@ -60,7 +60,7 @@ const cards = computed(() => {
 
 /** Every card is a link: to its app, or for More apps to every app (/apps). */
 const attrsOf = (card, index, place = {}) => {
-  const style = { '--hue': card.hue, animationDelay: `${120 + index * 30}ms`, ...place }
+  const style = { '--hue': card.hue, ...place }
   if (card.more) {
     return {
       to: '/apps',
@@ -97,6 +97,7 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
       :key="card.key"
       variant="orbit"
       :as="RouterLink"
+      :rise="false"
       :card="card"
       v-bind="attrsOf(card, index, orbitPlace(index, orbitApps.length))"
       class="w-[26%]"
@@ -105,6 +106,7 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
       v-if="orbitMore"
       variant="orbit"
       :as="RouterLink"
+      :rise="false"
       :card="orbitMore"
       v-bind="attrsOf(orbitMore, orbitApps.length)"
       class="left-[38%] top-[38%] w-[24%]"
@@ -119,6 +121,7 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
       :key="card.key"
       variant="list"
       :as="RouterLink"
+      :rise="false"
       :card="card"
       v-bind="attrsOf(card, index)"
     />
@@ -132,6 +135,7 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
       :key="card.key"
       variant="masonry"
       :as="RouterLink"
+      :rise="false"
       :card="card"
       v-bind="attrsOf(card, index)"
       :class="MASONRY_SPANS[index % MASONRY_SPANS.length]"
@@ -153,6 +157,7 @@ const orbitMore = computed(() => cards.value.find((card) => card.more))
       :key="card.key"
       :variant="look"
       :as="RouterLink"
+      :rise="false"
       :card="card"
       v-bind="attrsOf(card, index)"
     />

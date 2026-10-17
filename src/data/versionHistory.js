@@ -8,6 +8,18 @@
 
 export const versionHistory = [
   {
+    version: '0.35.39',
+    date: '2026-10-17',
+    title: 'YUNIT moves in',
+    summary: 'YUNIT lives on your home now, with a voice of his own, and the church is the ground it stands on.',
+    highlights: [
+      'He tells you what needs you, plays when left alone, and follows the sky: umbrella, lantern, rainbow.',
+      'Click the day’s card to turn it over for your quick actions.',
+      'A column holds three cards, and dragging one shows where it will land.',
+      'Ctrl+F opens search.',
+    ],
+  },
+  {
     version: '0.35.36',
     date: '2026-10-15',
     title: 'Your verse, where you want it',

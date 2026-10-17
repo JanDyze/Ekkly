@@ -48,7 +48,7 @@ CHANGELOG.md.
   home, an app's screens, floating buttons and anything pinned to the foot
   add it themselves (`pb-bar`, `bottom-bar`, or the variable directly), so
   nothing ends up behind it. `with-bar:` styles what changes shape while it
-  is on. The top bar's magnifying glass (and Ctrl+K)
+  is on. The top bar's magnifying glass (and Ctrl+K, Ctrl+F, or "/")
   opens one search over everything (`SearchSheet`, `useGlobalSearch`): words
   first, meaning too once the person lets the small model onto their device.
 - **The home of all apps** leads with a Today deck (`AppHeroDeck`, fed by
@@ -70,7 +70,14 @@ CHANGELOG.md.
   follows the time and weather over the church's own town instead of the
   theme: dawn, day, dusk or night from that day's sunrise and sunset, and
   clouds, rain, a storm or fog from Open-Meteo, all as `data-sky` and
-  `data-weather` on its wrapper. The
+  `data-weather` on its wrapper. To see a sky that is not overhead today,
+  add `?weather=rain` (clear, cloudy, rain, storm, fog) or `?sky=night`
+  (dawn, day, dusk, night) to the address: that page only, nothing kept.
+  YUNIT has the same: `?yunit=wave,hide,jump` plays his actions one after
+  another (any of `YUNIT_ACTIONS`, `hide` for hide-and-seek behind his
+  bubble, `roam` for behind a card), with
+  their sounds; `?yunit-mood=sleeping` holds him in a mood (any of
+  `YUNIT_MOODS`); `?yunit-say=…` has him say a line. The
   verse steps aside on a screen too short for it, so the home never scrolls and a More apps tile. A section's tile inside an app is the
   same card in the same style (`HomeCard`, laid out by `AppShortcuts`),
   its artwork in full colour and a colour of its own given out in turn
@@ -85,7 +92,21 @@ CHANGELOG.md.
   front-door headline and wins; letting go runs it backwards. A tap still
   just opens the app. More
   apps opens `/apps` (`AllApps.vue`): every app, the five on the home on a shelf, press
-  and hold to drag one onto it. The order is the person's, saved to their
+  and hold to drag one onto it. On a desktop it has a layout of its own,
+  an app store's on a computer, under Ekkly's top bar (which names it and
+  leads home, so the page has no header of its own; on a phone it takes the
+  whole screen, useFocusMode): down the left, always in view, the search,
+  Browse (All apps, each group with its count, Not on your
+  plan for an administrator — picking one shows only that group) and under
+  it the five on the home as rows, dragged into order by a grip on each
+  (a mouse drags at once; a phone presses and holds), Reset beside their
+  heading; beside them the store — the spotlight as a featured banner
+  (headline, wins as chips, Open and a star, the artwork large on its
+  plate), then each group as a heading with a line saying what it is for and
+  its apps as app-store rows, as many columns as fit: the plate, the name,
+  its tagline and its plain description. On both sizes the whole row opens
+  the app, with no Open button, and a star at its end says whether it is on
+  the home — filled, it is; outlined, a press puts it there. The order is the person's, saved to their
   account (`useAppOrder`). Anyone can choose instead to have every app on the
   home (App cards > Show every app, `useHomeCards`' `showAll`): no More apps,
   and the apps scroll in their own place so the home still fits the screen;
@@ -95,10 +116,127 @@ CHANGELOG.md.
   church is in front of them: their list keeps the hill's height free at its
   foot (`--church-room`), so at rest nothing is hidden, and scrolled, the tiles
   go down into the hillside while the hill grows a little from its foot, as if
-  walking toward it. The tiles fade out as they near the church (`.apps-fade`,
-  a gradient mask on the list), so only the sky is seen behind the hill and
-  no tile's edge stands behind it like a cliff. The room lets the
-  pointer through to the tiles behind, but for the verse.
+  walking toward it. On a phone the tiles fade out as they near the church
+  (`.apps-fade`, a gradient mask on the list), so only the sky is seen
+  behind the hill and no tile's edge stands behind it like a cliff. On a
+  desktop the apps panel stays solid to the column's foot, the church's land
+  drawn in front of it: faded, the sky and its rainbow showed through the
+  card. The room lets the pointer through to the tiles behind, but for the
+  verse. The church can be turned off in Preferences ("Church picture",
+  `useHomeChurch`, per person): on a desktop it is then gone from the board,
+  and on a phone the room under the apps stays, on plain sky, for the verse
+  and YUNIT.
+  The home's apps are simply there when it opens: they do not rise into
+  place one after another as an app's sections do (`HomeCard`'s `rise`,
+  off in `HomeAppCards`), since it is the screen opened most.
+  **YUNIT is on the home** wherever the church has him (`HomeYunit`), as a
+  character standing on it, never a card or a panel. He stands large, so he
+  is what is seen there. On a phone a frosted "Talk to YUNIT" button stands
+  beside him, and what he says pops up over him. On a desktop his place is a
+  whole row of a column, so a button alone left it looking empty: there he
+  talks in a bubble that never goes (ringed in his colours, `yunit-ring`)
+  — what he is saying, or between times the last thing he offered to be
+  asked — and beside him are that question as a chip and "Talk"; the bubble
+  opens the conversation too. His place is a size container: in a narrow
+  column (left or right) the bubble runs the full width above him and the
+  two buttons stand one above the other beside him; in a wide one the bubble
+  stands beside him, the buttons under it. He is drawn over the bubble, so
+  his umbrella lies over it. Where his place is just above the church, he
+  stands on its hill instead (`perch`, a spot in the footer, below): on
+  the ground left of the church, never in front of it, the church set a
+  little right of its column's middle so the two of them are centred; his
+  bubble and its buttons stay in his place, just over the hill, the buttons
+  in a row or, under 20rem, one above the other. His place is as tall as he and
+  his bubble are, and keeps that height while he is lifted out of it. The
+  box to write in comes with the conversation (it is there at rest, unseen,
+  so the button can focus it at once and a phone's keyboard comes up).
+  Talked to, he shrinks to make room for it. Left alone, he plays: every
+  twenty to forty-five seconds one thing (a jump, a wave, a peek, a look
+  about, or hide-and-seek: behind his bubble's card on a desktop, ducking
+  out of sight on a phone or on the hill, then popping out "Ta-da!"; or,
+  on a desktop, curling into a ball and rolling off to peek from behind a
+  card chosen at random, whispering "psst", and staying there until he is
+  clicked, when he rolls home and pops out "Ta-da!"), only
+  while someone is there and nothing else is going on, and dozes only after
+  five minutes of quiet. Faces of his own for some of what he says: "whoa!"
+  wide-eyed with a round "O" (`whoa`, at a rainbow, and among his tap
+  reactions), "there we go" mouthed and then a pleased smile (`thereWeGo`,
+  as his lantern catches). Tapped five times in two and a half seconds he
+  gets cross (`grumpy`): his face flushes red, he scowls and frowns and
+  says "nuh-uh" or groans, and taps do nothing (the pointer says so) until he calms,
+  about five seconds on. Asleep and talked to, he
+  wakes gently (`waken`), never with the start a tap gives him: the
+  conversation opens over him. On a phone he stands at the foot of the screen (above
+  the bottom bar when it is on), in the church's room to the left of the
+  church and no wider than the verse card, so the church is always whole;
+  the room keeps his height free (`--foot-space`, `--yunit-foot`), so no
+  app goes behind him. On a desktop he has a place on the board like a
+  panel's, anywhere in any column (`yunit` in `useHomeLayout`; a gap his
+  height, handed to him as `anchor`). At rest he stands inside it, in the
+  page's own flow (a Teleport into it), so he goes wherever the panels
+  round it go and is never left standing on one; he is lifted out over the
+  home only while carried or talked to. He stands at its
+  right-hand end (`side`), the button to talk to him to his left. Last in a
+  column, his place is pinned to its foot however short the panels above
+  are, so he stands on the bottom of the screen; last in the church's
+  column, just above the church. He starts under the week, beside the people
+  rail. He is moved by picking him up: pressed and moved, he is startled and
+  carried with his button under the pointer while the board shows the line
+  he would land on, as for a panel (`HomeBoard`'s `hold`, `aimAt` and
+  `drop`), and he lands with a jump; a press that does not move is still a
+  tap on him. His button is a handle too: pressed and moved it carries him,
+  and a click that does not move opens the conversation. His speech bubble is drawn on the page itself,
+  following him, over the top bar (z-75), so it is never hidden under the
+  bar or cut off by the top of the home. In the
+  column next to the rail, the rail opening squeezes the board and carries
+  him left, and he is bowled over: a jolt, then curled into a ball (his feet
+  tucked in, his petals hugged round him, his eyes shut) and rolled a whole
+  turn as he goes, uncurled dizzy with a "?" and a glare back at the rail
+  (`rollLeft` in `YunitMascot`, with his startle sound); when it closes he
+  stumbles after it, a few hopping steps that each bring him upright
+  (`stumbleRight`). In the dark he holds a lit lantern, its warm light
+  round him; when the dark comes while he is there he starts, says "Oh! It's
+  gone dark. Hang on, I've got a lantern." and it catches, and when the
+  light comes back he squints and it goes out. Which dark: with Live sky on
+  he follows the sky over the church, not the theme — his lantern is for
+  the night there ("Oh! Night's fallen.", and "the sun's up" at dawn) — and
+  in its rain or storm he wears a raincoat and holds an umbrella: the coat
+  in rain-slicker yellow over each of his petals, so he keeps his shape,
+  with a wet shine, two toggles and a hem flaring below his middle
+  (`raincoat`), and the umbrella in four panels of his colours, held in
+  his left hand behind him and tipped into the rain, which slants down from
+  the right (`umbrella`), his place leaving room above him for it. He says
+  "Oh! Rain. Good thing I brought an umbrella." when it starts while he is
+  there. When a rainbow comes out after it (`data-rainbow`) he celebrates
+  and says "Look, a rainbow! After the rain, God's promise." With Live sky
+  off he goes by the theme as before. His bubble's
+  corner and his conversation keep to his end. The first time the home opens in a visit he
+  arrives, waves and says hello in a speech bubble with one thing he can be
+  asked (`data/yunitTips.js`, only what this person can see); tapping him
+  has him say another, and the bubble goes after a few seconds or at a tap
+  elsewhere. Tapping the box dims and blurs the home behind him, and the
+  conversation rises from where he stands as speech bubbles — his white,
+  the person's in the church's colour — with nothing round them: no sheet,
+  its top edge fading as it scrolls, and his name and round buttons (sound,
+  new chat, his page, close) floating at the top. On a phone he stays where he stood; on a desktop he slides down from his place to the foot of the screen, in his column, and back up to it when it closes.
+  It keeps to what the keyboard leaves, and the box is the same element at
+  rest and open, so the keyboard stays up as it opens (no `useFocusTrap`,
+  which would move the focus; the page is held with `useScrollLock`). A tap
+  on the dimmed home or the open space above the bubbles closes it. Before
+  anything is said it opens on his hello and the things to ask. The quick
+  actions are not his (they only open a form): on a desktop the day's card
+  turns over to them (a card-flip, its button the "Swap" icon in the card's
+  corner; the back, `QuickActionsBack`, the same colour, the actions two
+  across, "Edit" to choose them); on a phone, whose deck clips what hangs
+  off a card, its "+" raises them as a sheet from the foot of the screen
+  (`QuickActionsMenu` `sheet`). His sounds include his own
+  recorded voice (`utils/yunitFeedback.js`, `src/assets/sounds/yunit`),
+  played a third faster and softened, and quiet, a sound under the page:
+  the full list of what he says and when is at the top of
+  `utils/yunitFeedback.js`.
+  The conversation is `YunitThread` (`floating`), the same one his page
+  draws, and the same conversation (`useYunitChat`), carried on at
+  `/yunit`.
   On a desktop (`lg`) the same home shows everything at once rather than
   swiped, and like a phone's it fits one screen: the page never scrolls; a
   list with more than its card holds scrolls inside the card. Three columns,
@@ -110,10 +248,47 @@ CHANGELOG.md.
   account by `useHomeLayout`; Home layout in the account menu puts them
   back). The
   panel in hand is a solid copy lifted on a shadow (the board's own drag;
-  the browser's draws it see-through), the place it left an empty dashed
-  outline, and a line in the church's colour shows where it will land; a column left empty
-  gives its width to the others, and the church stands at the foot of the
-  leftmost column with anything in it; no panel but the day goes below a few
+  the browser's draws it see-through). While it is in hand the board is
+  laid out as it would be let go there: its place an empty dashed outline
+  its own size that moves to where it would land, the other panels sliding
+  aside to make room, and let go, the copy glides down into the outline.
+  Every change to the arrangement slides (FLIP), never jumps. A column
+  holds **three cards at most**; YUNIT and the church are not cards. A card
+  carried to a column with its three already is refused: the column dims
+  behind a dashed outline, "This column is full" large in its middle over
+  everything in it, the card in hand gone see-through over it, and let go
+  there it goes back where it was. A column holding more (from before the
+  limit) is tidied as the home opens: its last card goes to the column with
+  the fewest (`HomeBoard`'s `tidy`). The church's room gives way when its
+  column's panels need it, the church then the background behind them,
+  except under YUNIT standing on its hill; a column left empty
+  gives its width to the others. The church on its hill stands at the foot
+  of a column, always at the very bottom, and is moved only from column to
+  column, by taking hold of the church itself (`data-foot-grab`), its place
+  marked by a dashed outline at the column's foot (`useHomeLayout`'s
+  `church`, the left to begin with). On a desktop its land is a **footer the
+  width of the page**, not a picture in a column, so it never ends in a cut:
+  low hills run from edge to edge (`HomeScene`'s `footer`: the far land on
+  the left, mirrored on the right), and the church rises from them under
+  its column, slid along to that column's middle as measured from the
+  board, and again whenever the column moves or changes size (the rail, a
+  column emptying, the church carried). The church's column keeps the
+  church's height free at its foot (its room); every other column's panels
+  end just above the low hills (`--hill-band`, the foot of the board). The
+  footer is behind the panels, as the sky is, so the hills never run over a
+  panel; where the apps reach down behind the church, the same land is drawn
+  again in front of them, cut to the church's column only, so the church
+  stands before them there. The church's room lets touches through but for
+  the church itself, which is what is taken hold of to move it. Needs
+  attention, Community and This week share out their column's height (as
+  tall as what they hold, the room left over theirs too, giving way to 9rem
+  only in a short column), so none is a sliver however little it holds,
+  and a busy week grows: empty, a small
+  doodle of a quiet moment in soft grey with one touch of the church's
+  colour (a cup of tea with a heart of steam, a bench with a bird on it, a
+  hammock and a "z"; never an app's icon) over a light line ("All clear!",
+  "A quiet day", "A quiet week"); with three or fewer rows, the room under
+  them holds the doodle small and faint with a short line (`PanelRest`); no panel but the day goes below a few
   rows, the apps included, each scrolling inside itself instead; and nothing on the board is selectable, so a press
   that wanders moves the panel rather than highlighting words. To begin with:
   1. **The sidebar**, read top to bottom as a phone is:
@@ -130,7 +305,12 @@ CHANGELOG.md.
      - the apps (`HomeAppCards`' `column`), in the style chosen and laid out
        as on a phone (two across, the orbit, one a row; Compact one a row,
        since two across there cuts names short; in a narrow sidebar Accent's
-       names a size down, on two lines if need be).
+       names a size down, on two lines if need be), in a white panel headed
+       "Apps" like the board's others, with "See all" beside the heading for
+       the All apps page (as the week has "Open calendar"), the tiles
+       scrolling inside it; while
+       there are more below, a chevron at its foot says so and takes the list
+       down a screen. They simply appear: no tile rises in.
      - the church on its hill at the foot, with the day's verse on it as on a
        phone, both giving way where there is too little room.
   2. **The work**, the half: **Needs attention** (`HomeAttention`, rows of
@@ -168,6 +348,7 @@ Route `meta` options that change the shell:
 | `hideTopbar: true` | Top bar hidden, people rail kept | A page with its own header that you still browse from (Bible) |
 | `frame: 'app'` | Top bar kept on the app's home (named for the app, its mark a back arrow to all apps); no people rail. The app's home is a launcher (`AppHero` or `AppHeroDeck`, then `AppShortcut`s) and every screen sits in `AppScreen`, from `src/components/appframe/` | An app of its own inside Ekkly (Schedules, People). One centred column on every screen; sections are a step off the home, with a back arrow, not tabs |
 | `root: true` | Unpadded, people rail kept | The home of all apps only |
+| `ownLayout: true` | Top bar kept; unpadded; no people rail | A page with a column of its own down the side that needs the width (All apps on a desktop; on a phone it asks for focus with `useFocusMode`) |
 
 ## Anatomy of a list page
 
@@ -231,20 +412,57 @@ The front door is six pages sharing one header and footer
   inside, How it works, a short word about price with the plan so far, the
   first few questions, and the last call. It sells; the detail lives elsewhere.
 - **The Sunday** ([PlatformHomeV2.vue](src/views/PlatformHomeV2.vue), `/v2`):
-  a second home, tried beside the first. It opens on the church on its hill,
-  and the page is one service told by the scroll
+  a second home, tried beside the first. It opens on a title: the camera close
+  on the church's great window, which is Ekkly's mark, with the name beside it
+  as the logo has it, the promise under it, and the ways on — watch the Sunday
+  with a voice, start a church, scroll through it, see the price, read the
+  questions. The bar above holds back while the title is up. Scrolling, or
+  Watch, draws back from the mark to the whole church, one picture rather than
+  one faded into another, and the page is one service told by the scroll
   ([sunday/](src/components/frontdoor/sunday/), its beats, clock, words and
   camera in [timeline.js](src/components/frontdoor/sunday/timeline.js)): the
   doors open, the camera walks in, each part of the service is the moment one
   app takes a list off somebody, and the doors shut at night on the last call.
-  Every part's title says what the person still does before what Ekkly keeps
-  (BRAND.md, "What Ekkly is for"). The pictures are SVG redrawn through their
-  viewBox, so they stay sharp at every zoom; the camera frames each part in
-  whatever the bulletin (the order of service, a side card on a desktop, a
-  bottom sheet on a phone) leaves free. Everything follows the scroll both
-  ways and nothing idles: the band plays and the family walks only while the
-  reader scrolls. Less motion cuts between the parts at rest. Then the word
-  about price and the questions, as on the first.
+  Inside, the cross is the centre of the back wall, never Ekkly's mark: Christ
+  is the focus of a church, and Ekkly only a tool in it. The cross seen
+  through the open doors is the hall's own
+  ([hall.js](src/components/frontdoor/sunday/hall.js)), drawn where the hall
+  is seen through the doorway, so it carries on unbroken as the camera walks
+  in and back out. The people are a
+  church at worship, not extras: some raise their hands as the songs swell, the
+  band's hands are on their instruments, and the pastor preaches the gospel in
+  a sentence the reader can see (Romans 5:8). The family on the cover
+  ([FamilyFigure.vue](src/components/frontdoor/sunday/FamilyFigure.vue)) is
+  the standard every person here is drawn to: limbs shaped as limbs are, and
+  hands shaped as hands, never a guessed shape such as a stroked line with a
+  ball on it. Every arm and hand comes from
+  [limbs.js](src/components/frontdoor/sunday/limbs.js). The title says what Ekkly is
+  too, a ministry that keeps the lists so the people can share the gospel,
+  make disciples and worship God (BRAND.md, "What Ekkly is for"), and the night
+  ends on the same. The story's words are
+  in the picture as subtitles, the narration
+  ([voice.js](src/components/frontdoor/sunday/voice.js)) a sentence at a time,
+  each saying what the person still does before what Ekkly keeps (BRAND.md,
+  "What Ekkly is for"); they follow the narrator when Watch plays it and the
+  scroll when it does not. Watch starts the pictures before the voice: from
+  the title the camera draws back to the church in silence and the narrator
+  begins once it is in view, and from anywhere else the first line waits a
+  moment as the camera sets off. The card beside the picture (a bottom sheet on a
+  phone) shows rather than tells: the part of the service, the apps in use and
+  a look at them, and the main button at its foot. The pictures are SVG redrawn
+  through their viewBox, so they stay sharp at every zoom; the camera frames
+  each part in what the card and the subtitles leave free. Everything follows
+  the scroll both ways and nothing idles: the band plays and the family walks
+  only while the reader scrolls. Nobody stands waiting on the cover for the
+  reader to move: the path is empty, and the family walk in from off the foot
+  of the picture as the reader goes on (as the cover's line is said, when it
+  plays, the doors' part carrying on at their pace) and up to the door. Less
+  motion cuts between the parts at rest, the family standing on the path on
+  the cover, as the cover art has them. Straight after the
+  Sunday comes "What is the gospel?" (#gospel, its words in
+  [gospel.js](src/components/frontdoor/gospel.js), quoted from the World
+  English Bible), the reason Ekkly is built, which the title and the bar link
+  to; then the word about price and the questions, as on the first.
 - **Pricing** ([PlatformPricing.vue](src/views/PlatformPricing.vue), `/pricing`):
   the plan builder and every question ([faqs.js](src/components/frontdoor/faqs.js)).
 - **Get started** ([PlatformStart.vue](src/views/PlatformStart.vue), `/start`):
@@ -626,6 +844,37 @@ placeholder until the real answer lands rather than the default, or the page
 publishes another congregation's words for as long as the network takes. The
 public page does this off `ready` from [usePublicSite](src/composables/usePublicSite.js);
 over ink, the placeholder is `bg-white/15` rather than grey.
+
+### An address that leads nowhere (404)
+
+Every address the app does not know, on a church's address and the
+platform's alike, signed in or out, gets **YUNIT the Sheep looking for it**
+([NotFound.vue](src/views/NotFound.vue), `LostYunit`), in an open field of
+rolling hills (`components/notfound/LostField.vue`) with a signpost
+pointing both ways. The field follows the theme; in the dark his lantern is
+lit and the field lies dark but for the pool of its light, which goes with
+him. He is dressed as a lamb (`components/yunit/YunitLamb.vue`: one round
+of cream fleece, as YUNIT is one round, his face on it, floppy ears, navy
+blob feet as YUNIT's, his fleece white lumps lying over one another, his
+colours four irregular patches of dyed wool in it — one of each, of
+different sizes, woven in with cream over them, never on his face, never
+under his topknot, somewhere new each time he is drawn — and again as the
+panes of his lantern). "YUNIT the Sheep looked everywhere.", "Take me home"
+(the home of all apps when signed in to a church, the front page
+otherwise) and "Go back". He walks from spot to spot searching
+(`walking`: his legs step and stay planted, so the page moves him at
+`LAMB_WALK_SPEED` of his width a second, never a glide), looks about, and
+now and then says how it is going ("Not here.", "Is it behind the
+signpost? No."); a tap in the dark sends him to look there; a tap on him
+makes him hop and say "Baa!", his mouth open round, bleating if the app's
+sounds are on (`utils/bleat.js`, the recording in
+`src/assets/sounds/baa.mp3`). A small "?" in the corner (`LostAbout`) says
+the page is inspired by the parable of the lost sheep and links to Luke
+15:3–7: in the church's Bible for someone signed in to one, online
+otherwise. With less motion asked for he stands still. The lost little
+lamb that used to share the page (`LostSheep`) is kept but no longer
+shown. The page used to redirect to the home, which left someone wondering
+why their link had not opened what it said.
 
 ### Empty states
 

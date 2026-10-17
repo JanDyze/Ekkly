@@ -8,7 +8,7 @@
 // must never stand behind them:
 //
 //   sky  — the sky, Ekkly's window in its corner with the light falling
-//          through it (WindowLight), and the clouds. It fills the
+//          through it (WindowLight); never any clouds. It fills the
 //          whole page behind everything, from the top.
 //   land — the hills, the bushes and the church. It stands in the room left
 //          under the apps, sized to that room's height, so the church is
@@ -63,6 +63,51 @@ const RAIN = [
 
 // The rainbow's bands, outermost first, softened from the pure hues so it
 // reads as light in the sky rather than a sticker on it.
+// The land's far pieces, left of the church: hills, bushes, the ground.
+// The footer (`footer`) has them again on the right, mirrored about x 740,
+// so the land runs on that way as it does this. About there, the ends the
+// hills have at the church (straight down, hidden behind it on the left)
+// land behind it on the right too, at its side wall: mirrored further out
+// they stood in the open as square edges.
+const HILL_BACK = 'M-12000 1600L-4000 1600C-1100 1540 -800 1560 -560 1530C-330 1500 -120 1520 0 1478C40 1462 80 1478 112 1502C160 1488 250 1488 300 1510C360 1535 420 1562 482 1574C540 1585 620 1592 700 1600V1774H-12000Z'
+const HILL_LEFT = 'M-12000 1590L-4000 1590C-1150 1530 -900 1520 -680 1500C-460 1480 -260 1520 -120 1494C-60 1482 -20 1470 0 1470C50 1468 96 1502 120 1562V1774H-12000Z'
+const HILL_MID = 'M-12000 1668L-4000 1668C-1100 1626 -820 1640 -560 1618C-320 1598 -140 1622 0 1600C80 1584 160 1562 240 1562C320 1566 400 1598 470 1614C520 1624 560 1630 620 1640V1774H-12000Z'
+const BUSHES = [
+  'M-70 1774V1652C-48 1608 2 1588 44 1600C74 1608 92 1632 98 1652C112 1622 150 1602 182 1616C206 1628 212 1654 208 1684V1774Z',
+  'M-520 1774V1690C-500 1650 -450 1636 -410 1652C-390 1620 -340 1610 -305 1632C-280 1646 -272 1672 -276 1700V1774Z',
+  'M-1060 1774V1692C-1040 1656 -994 1642 -956 1656C-930 1630 -884 1626 -856 1648C-834 1666 -830 1690 -834 1712V1774Z',
+]
+const TEAL_BUSHES = [
+  'M392 1700C390 1658 418 1626 452 1628C482 1632 494 1662 490 1700Z',
+  'M-210 1774V1714C-196 1686 -164 1674 -136 1684C-112 1692 -102 1716 -104 1740V1774Z',
+  'M-760 1774V1720C-744 1690 -708 1680 -680 1692C-658 1702 -650 1724 -652 1746V1774Z',
+]
+const GROUND = 'M-12000 1712L-4000 1712C-1100 1672 -800 1690 -560 1700C-320 1710 -120 1676 0 1700C120 1662 252 1662 382 1702C462 1722 522 1742 562 1774H-12000Z'
+// A path turned left to right about x = `about`: every x (and every H) is
+// mirrored, every y (and every V) kept. Absolute commands only, as above.
+const mirror = (d, about = 740) => {
+  let command = ''
+  let index = 0
+  return d.replace(/([MLCQHVZ])|(-?\d*\.?\d+)/g, (token, letter) => {
+    if (letter) {
+      command = letter
+      index = 0
+      return letter
+    }
+    const value = Number(token)
+    const isX = command === 'H' || (command !== 'V' && index % 2 === 0)
+    index++
+    return String(isX ? 2 * about - value : value)
+  })
+}
+const RIGHT = {
+  hills: [HILL_BACK, HILL_LEFT, HILL_MID].map((d) => mirror(d)),
+  bushes: BUSHES.map((d) => mirror(d)),
+  // Not the one at the church's foot, which sits on its mound.
+  teal: TEAL_BUSHES.slice(1).map((d) => mirror(d)),
+  ground: mirror(GROUND),
+}
+
 const RAINBOW = ['#ef8a80', '#f5b062', '#f6dc6a', '#8fcf8a', '#6fb3e8', '#8a8fd8', '#b58ad0']
 
 // One repeat of a sheet, down the rain's slant of 14°, and how long it takes
@@ -74,55 +119,21 @@ const fallOf = (layer) => ({
   '--fall': `${(layer.h / layer.speed).toFixed(3)}s`,
 })
 
-// The clouds, each a short stack of rounded pills of different lengths, offset
-// from one another: the top ones the cloud's own white, the lowest a shade
-// cooler, drawn first so it shows only under the rest, which is all the
-// volume a cloud needs here. They were bumpy outlines cut off flat along the
-// foot, and that cut was a hard line across the sky wherever one showed at any
-// size. A pill has no edge to cut and stays tidy at a phone's size or a wide
-// screen's.
-//
-// `x`, `y` are the top left of the top pill in the painting's coordinates, `h`
-// each pill's height, and `rows` the pills from the top down as [offset from
-// x, length]; each sits 0.7 of a pill below the one above, overlapping it.
-const CLOUDS = {
-  // Always there, higher up, so some sky shows between the cards above as well
-  // as at the foot.
-  high: [
-    { x: 440, y: 470, h: 26, rows: [[36, 80], [0, 150], [22, 120]] },
-    { x: -30, y: 650, h: 30, rows: [[52, 96], [0, 210], [34, 168]] },
-    { x: 612, y: 830, h: 30, rows: [[40, 100], [0, 200], [48, 150]] },
-  ],
-  // One each side and a low bank along the horizon, warmer, as the light is
-  // lower there.
-  low: [
-    { x: -40, y: 1150, h: 40, rows: [[60, 140], [0, 280], [34, 226]] },
-    { x: 706, y: 1196, h: 38, warm: true, rows: [[52, 118], [0, 226], [30, 186]] },
-    { x: 90, y: 1460, h: 34, warm: true, rows: [[42, 110], [0, 262], [52, 196]] },
-  ],
-  // More of them when the weather says cloudy, rain or storm (useLiveSky).
-  weather: [
-    { x: 520, y: 290, h: 34, rows: [[62, 120], [0, 262], [42, 214]] },
-    { x: -40, y: 470, h: 36, rows: [[70, 130], [0, 300], [40, 238]] },
-    { x: 470, y: 920, h: 30, rows: [[50, 110], [0, 240], [30, 188]] },
-  ],
-}
-
-/** A cloud's pills, lowest first, so the ones above are drawn over it. */
-const pillsOf = (cloud) =>
-  cloud.rows
-    .map(([dx, length], i, rows) => ({
-      key: i,
-      x: cloud.x + dx,
-      y: cloud.y + i * cloud.h * 0.7,
-      width: length,
-      height: cloud.h,
-      fill: i === rows.length - 1 ? 'var(--scene-cloud-shade)' : cloud.warm ? 'var(--scene-cloud-warm)' : 'var(--scene-cloud)',
-    }))
-    .reverse()
+// No clouds, ever: the sky is clear blue light, whatever the weather says
+// (the weather is told by the veil, the rain and the fog alone).
 
 defineProps({
   part: { type: String, default: 'sky' },
+  // The land drawn on past the church to the right, its hill, bush and
+  // ground sloping down to nothing, rather than stopping at the painting's
+  // edge in a straight line. For a desktop, where the church's room ends at
+  // a column's edge, in the open, and not at the screen's. A phone's room
+  // runs to the screen's edge, and keeps the church at it.
+  reach: { type: Boolean, default: false },
+  // The land as a footer the width of the page (a desktop's home): it runs
+  // on to the right of the church as far as it does to the left, so it can
+  // be set under any column without an end showing.
+  footer: { type: Boolean, default: false },
 })
 </script>
 
@@ -182,6 +193,15 @@ defineProps({
       <mask id="scene-rainbow-fade" maskUnits="userSpaceOnUse" x="0" y="900" width="887" height="700">
         <rect x="0" y="900" width="887" height="700" fill="url(#scene-rainbow-fade-g)" />
       </mask>
+      <!-- The wide screen's rainbow fades out down its sides the same way. -->
+      <linearGradient id="scene-rainbow-wide-fade-g" x1="0" y1="200" x2="0" y2="520" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#fff" />
+        <stop offset="0.55" stop-color="#fff" stop-opacity="0.75" />
+        <stop offset="1" stop-color="#fff" stop-opacity="0" />
+      </linearGradient>
+      <mask id="scene-rainbow-wide-fade" maskUnits="userSpaceOnUse" x="0" y="0" width="887" height="600">
+        <rect x="0" y="0" width="887" height="600" fill="url(#scene-rainbow-wide-fade-g)" />
+      </mask>
     </defs>
 
     <rect width="887" height="1774" fill="url(#scene-sky)" />
@@ -191,11 +211,24 @@ defineProps({
          (useLiveSky's data-rainbow): seven soft bands, red outermost, rising
          from behind the hills, so the promise sits over the church. Faint, as
          the rest of the weather is: the picture stays behind the apps. -->
-    <g class="scene-rainbow" mask="url(#scene-rainbow-fade)" fill="none" stroke-width="9">
+    <g class="scene-rainbow scene-rainbow-tall" mask="url(#scene-rainbow-fade)" fill="none" stroke-width="9">
       <path
         v-for="(colour, i) in RAINBOW"
         :key="colour"
         :d="`M${480 - (520 - i * 9)} 1560 A${520 - i * 9} ${520 - i * 9} 0 0 1 ${480 + (520 - i * 9)} 1560`"
+        :stroke="colour"
+      />
+    </g>
+    <!-- A wide screen shows only the top of this sky (it is drawn for a
+         phone and scaled to fill the width), where the rainbow above is long
+         gone below the edge. There it has a rainbow of its own, arching from
+         the screen's lower corners right over the top, behind the panels,
+         showing in the sky between them. -->
+    <g class="scene-rainbow scene-rainbow-wide" mask="url(#scene-rainbow-wide-fade)" fill="none" stroke-width="8">
+      <path
+        v-for="(colour, i) in RAINBOW"
+        :key="colour"
+        :d="`M${443 - (430 - i * 8)} 560 A${430 - i * 8} ${430 - i * 8} 0 0 1 ${443 + (430 - i * 8)} 560`"
         :stroke="colour"
       />
     </g>
@@ -205,24 +238,9 @@ defineProps({
          stands over most of it; a desktop leaves it out (the style below). -->
     <WindowLight mirror x="0" y="0" width="640" height="576" class="scene-window" />
 
-    <!-- The clouds (CLOUDS, above): higher up, then low along the horizon. -->
-    <g style="opacity: 0.85">
-      <g v-for="(cloud, i) in CLOUDS.high" :key="`high-${i}`" class="scene-cloud">
-        <rect v-for="pill in pillsOf(cloud)" :key="pill.key" :x="pill.x" :y="pill.y" :width="pill.width" :height="pill.height" :rx="pill.height / 2" :style="{ fill: pill.fill }" />
-      </g>
-    </g>
-    <g v-for="(cloud, i) in CLOUDS.low" :key="`low-${i}`" class="scene-cloud">
-      <rect v-for="pill in pillsOf(cloud)" :key="pill.key" :x="pill.x" :y="pill.y" :width="pill.width" :height="pill.height" :rx="pill.height / 2" :style="{ fill: pill.fill }" />
-    </g>
-
     <!-- The weather (useLiveSky), each layer shown only when the sky's
-         wrapper says so (data-weather, the rules below): more and heavier
-         clouds, a grey veil when it is overcast, rain, and fog. -->
-    <g class="scene-extra-clouds">
-      <g v-for="(cloud, i) in CLOUDS.weather" :key="`weather-${i}`" class="scene-cloud">
-        <rect v-for="pill in pillsOf(cloud)" :key="pill.key" :x="pill.x" :y="pill.y" :width="pill.width" :height="pill.height" :rx="pill.height / 2" :style="{ fill: pill.fill }" />
-      </g>
-    </g>
+         wrapper says so (data-weather, the rules below): a grey veil when it
+         is overcast, rain, and fog. No clouds. -->
     <rect class="scene-overcast" width="887" height="1774" style="fill: var(--scene-overcast)" />
     <!-- Each sheet is drawn a repeat larger than the picture all round, so
          moving it by one repeat never shows an edge. -->
@@ -245,7 +263,7 @@ defineProps({
   <svg
     v-else
     class="home-scene-land"
-    viewBox="-12000 1240 12887 534"
+    :viewBox="footer ? '-12000 1240 25800 534' : reach ? '-12000 1240 13240 534' : '-12000 1240 12887 534'"
     preserveAspectRatio="xMaxYMax slice"
     aria-hidden="true"
   >
@@ -298,19 +316,18 @@ defineProps({
     <!-- Hills behind the church, far to near. Each runs on behind the wing
          and the front rather than stopping short of them: a hill cut off
          just before the wing left a straight edge of sky beside it. -->
-    <path d="M690 1505C760 1470 820 1452 887 1448V1774H690Z" style="fill: var(--scene-hill-far)" />
-    <path
-      d="M-12000 1600L-4000 1600C-1100 1540 -800 1560 -560 1530C-330 1500 -120 1520 0 1478C40 1462 80 1478 112 1502C160 1488 250 1488 300 1510C360 1535 420 1562 482 1574C540 1585 620 1592 700 1600V1774H-12000Z"
-      style="fill: var(--scene-hill-back)"
-    />
-    <path
-      d="M-12000 1590L-4000 1590C-1150 1530 -900 1520 -680 1500C-460 1480 -260 1520 -120 1494C-60 1482 -20 1470 0 1470C50 1468 96 1502 120 1562V1774H-12000Z"
-      style="fill: var(--scene-hill-left)"
-    />
-    <path
-      d="M-12000 1668L-4000 1668C-1100 1626 -820 1640 -560 1618C-320 1598 -140 1622 0 1600C80 1584 160 1562 240 1562C320 1566 400 1598 470 1614C520 1624 560 1630 620 1640V1774H-12000Z"
-      style="fill: var(--scene-hill-mid)"
-    />
+    <!-- Past the painting's edge (887) each piece on the right slopes away to
+         nothing, for a room that shows more of the land than the painting
+         had (`reach`); within it, every piece is as it was painted. -->
+    <path d="M690 1505C760 1470 820 1452 887 1448C962 1445 1034 1482 1098 1560C1130 1600 1150 1690 1162 1774H690Z" style="fill: var(--scene-hill-far)" />
+    <path :d="HILL_BACK" style="fill: var(--scene-hill-back)" />
+    <path :d="HILL_LEFT" style="fill: var(--scene-hill-left)" />
+    <path :d="HILL_MID" style="fill: var(--scene-hill-mid)" />
+    <template v-if="footer">
+      <path :d="RIGHT.hills[0]" style="fill: var(--scene-hill-back)" />
+      <path :d="RIGHT.hills[1]" style="fill: var(--scene-hill-left)" />
+      <path :d="RIGHT.hills[2]" style="fill: var(--scene-hill-mid)" />
+    </template>
 
     <!-- The church, drawn in two-point perspective: its front faces down the
          hill to the left and its side runs back to the right, every level
@@ -383,23 +400,23 @@ defineProps({
          rather than starting square, and the bushes around it. -->
     <path d="M290 1700C330 1676 352 1666 380 1662C460 1652 530 1660 566 1672C624 1612 724 1600 806 1632V1774H290Z" style="fill: var(--scene-hill-near)" />
     <g style="fill: var(--scene-bush)">
-      <path d="M-70 1774V1652C-48 1608 2 1588 44 1600C74 1608 92 1632 98 1652C112 1622 150 1602 182 1616C206 1628 212 1654 208 1684V1774Z" />
-      <path d="M-520 1774V1690C-500 1650 -450 1636 -410 1652C-390 1620 -340 1610 -305 1632C-280 1646 -272 1672 -276 1700V1774Z" />
-      <path d="M-1060 1774V1692C-1040 1656 -994 1642 -956 1656C-930 1630 -884 1626 -856 1648C-834 1666 -830 1690 -834 1712V1774Z" />
-      <path d="M752 1774V1684C752 1646 782 1620 814 1626C820 1590 846 1562 887 1556V1774Z" />
+      <path v-for="d in BUSHES" :key="d" :d="d" />
+      <template v-if="footer">
+        <path v-for="d in RIGHT.bushes" :key="d" :d="d" />
+      </template>
+      <path d="M752 1774V1684C752 1646 782 1620 814 1626C820 1590 846 1562 887 1556C932 1552 964 1584 968 1628C998 1636 1016 1672 1018 1774Z" />
     </g>
     <g style="fill: var(--scene-bush-teal)">
-      <path d="M392 1700C390 1658 418 1626 452 1628C482 1632 494 1662 490 1700Z" />
-      <path d="M-210 1774V1714C-196 1686 -164 1674 -136 1684C-112 1692 -102 1716 -104 1740V1774Z" />
-      <path d="M-760 1774V1720C-744 1690 -708 1680 -680 1692C-658 1702 -650 1724 -652 1746V1774Z" />
+      <path v-for="d in TEAL_BUSHES" :key="d" :d="d" />
+      <template v-if="footer">
+        <path v-for="d in RIGHT.teal" :key="d" :d="d" />
+      </template>
     </g>
 
     <!-- The near ground, darkest, across the whole width. -->
-    <path
-      d="M-12000 1712L-4000 1712C-1100 1672 -800 1690 -560 1700C-320 1710 -120 1676 0 1700C120 1662 252 1662 382 1702C462 1722 522 1742 562 1774H-12000Z"
-      style="fill: var(--scene-ground)"
-    />
-    <path d="M300 1774C380 1720 482 1700 602 1720C682 1690 782 1652 887 1650V1774Z" style="fill: var(--scene-ground-deep)" />
+    <path :d="GROUND" style="fill: var(--scene-ground)" />
+    <path v-if="footer" :d="RIGHT.ground" style="fill: var(--scene-ground)" />
+    <path d="M300 1774C380 1720 482 1700 602 1720C682 1690 782 1652 887 1650C990 1648 1100 1694 1210 1774Z" style="fill: var(--scene-ground-deep)" />
 
     <!-- Rain and fog over the church as well (see the sky above). No grey
          veil here: this layer's top edge is in the middle of the sky, and a
@@ -412,12 +429,12 @@ defineProps({
         :style="fallOf(layer)"
         x="-12120"
         y="1000"
-        width="13127"
+        :width="footer ? 26040 : 13480"
         height="774"
         :fill="`url(#scene-rain-land-${layer.key})`"
       />
     </g>
-    <rect class="scene-haze" x="-12000" y="1380" width="12887" height="394" fill="url(#scene-rain-land-haze)" />
+    <rect class="scene-haze" x="-12000" y="1380" :width="footer ? 25800 : 13240" height="394" fill="url(#scene-rain-land-haze)" />
   </svg>
 </template>
 
@@ -432,9 +449,6 @@ defineProps({
   --scene-horizon: #f8f5e6;
   --scene-glow: #fef6e3;
   --scene-pane: #a9d6f3;
-  --scene-cloud: #f2f7f6;
-  --scene-cloud-shade: #def0f9;
-  --scene-cloud-warm: #fdf9ee;
   --scene-hill-far: #8fcee6;
   --scene-hill-back: #82c4e4;
   --scene-hill-left: #5eaade;
@@ -471,9 +485,6 @@ defineProps({
   --scene-horizon: #34364f;
   --scene-glow: #4a4152;
   --scene-pane: #2a4568;
-  --scene-cloud: #2c3d5a;
-  --scene-cloud-shade: #24344f;
-  --scene-cloud-warm: #383a54;
   --scene-hill-far: #26476a;
   --scene-hill-back: #2a4c70;
   --scene-hill-left: #1c3a5b;
@@ -529,7 +540,7 @@ defineProps({
   --scene-ink-halo: rgb(255 255 255 / 0.95);
 }
 
-/* Dawn and dusk (useLiveSky), over the day's land: the sky and its clouds
+/* Dawn and dusk (useLiveSky), over the day's land: the sky
    warm, and at dusk the church's window starts to show. */
 .home-scene[data-sky='dawn'] {
   --scene-sky-1: #6f86c9;
@@ -539,9 +550,6 @@ defineProps({
   --scene-horizon: #fde2c6;
   --scene-glow: #ffd8a8;
   --scene-pane: #c2cbf0;
-  --scene-cloud: #fbe9e6;
-  --scene-cloud-shade: #efd6da;
-  --scene-cloud-warm: #fde9d8;
 }
 .home-scene[data-sky='dusk'] {
   --scene-sky-1: #3c4f93;
@@ -551,9 +559,6 @@ defineProps({
   --scene-horizon: #fbbf86;
   --scene-glow: #ffb36b;
   --scene-pane: #8b8fd0;
-  --scene-cloud: #f6c9b8;
-  --scene-cloud-shade: #e2a6a4;
-  --scene-cloud-warm: #fbd2b0;
   --scene-window-glow: 0.3;
 }
 
@@ -577,6 +582,24 @@ defineProps({
   opacity: 0.42;
   animation: scene-rainbow-in 4s ease-out both;
 }
+/* Each screen its own rainbow (above): a phone's over the church, a wide
+   screen's over the top. */
+.scene-rainbow-wide {
+  visibility: hidden;
+}
+@media (min-width: 1024px) {
+  .scene-rainbow-tall {
+    visibility: hidden;
+  }
+  /* Drawn at three or four times a phone's size and seen only between the
+     panels, it is a touch stronger than a phone's, or it is not seen at all. */
+  .scene-rainbow-wide {
+    visibility: visible;
+  }
+  .home-scene[data-rainbow] .scene-rainbow-wide {
+    opacity: 0.7;
+  }
+}
 @keyframes scene-rainbow-in {
   from {
     opacity: 0;
@@ -589,33 +612,21 @@ defineProps({
 }
 
 /* The sky is drawn for a phone and scaled to fill whatever it stands behind,
-   so on a desktop it is three or four times a phone's size, and its clouds
-   came out as slabs half the width of the screen. There each cloud is shrunk
-   where it stands, on its own foot, to about the size it is on a phone; the
-   sky, the light and the rain keep filling the page.
-   The window goes altogether: on a phone the deck stands over most of it, but
-   on a desktop it came out as a giant pane behind the sidebar and the lists,
-   and only cluttered them. */
+   so on a desktop it is three or four times a phone's size. The window goes
+   altogether there: on a phone the deck stands over most of it, but on a
+   desktop it came out as a giant pane behind the sidebar and the lists, and
+   only cluttered them. */
 @media (min-width: 1024px) {
-  .scene-cloud {
-    transform: scale(0.5);
-    transform-box: fill-box;
-    transform-origin: 50% 100%;
-  }
   .scene-window {
     display: none;
   }
 }
 
-.scene-extra-clouds,
 .scene-overcast,
 .scene-rain,
 .scene-haze {
   display: none;
 }
-.home-scene[data-weather='cloudy'] .scene-extra-clouds,
-.home-scene[data-weather='rain'] .scene-extra-clouds,
-.home-scene[data-weather='storm'] .scene-extra-clouds,
 .home-scene[data-weather='cloudy'] .scene-overcast,
 .home-scene[data-weather='rain'] .scene-overcast,
 .home-scene[data-weather='storm'] .scene-overcast,

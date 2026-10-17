@@ -7,7 +7,9 @@ CHANGELOG.md has the history.
 
 **What it is for:** a tool that takes the redundant, messy work off a
 church — the lists kept twice, the spreadsheets, the notes nobody can find —
-so its people have more time for the ministry itself. It is never a
+so its people have more time for the ministry itself. Ekkly is itself a
+ministry, built to glorify God and exalt Jesus by freeing a church's people
+to share the gospel, make disciples and worship. It is never a
 replacement for a person's job or a ministry: it does not shepherd, pray,
 preach, welcome or decide. Nothing it says, and no card it shows, should
 suggest otherwise (BRAND.md, "What Ekkly is for").

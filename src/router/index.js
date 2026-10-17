@@ -217,11 +217,13 @@ const churchRoutes = [
         // Every app, behind More apps on the home and the bottom bar's mark.
         // A page rather than a drawer, so it can be linked to and gone back
         // to. No capability, like the home: it lists only what each person
-        // may open. focus: it carries its own way back, and a bar round it
-        // would be a second list of apps beside the first.
+        // may open. On a phone it takes the whole screen (it asks for that
+        // itself, useFocusMode) and carries its own way back; on a desktop
+        // Ekkly's top bar stays over it, its mark the way home. ownLayout:
+        // no padding round it and no people rail beside it on any size.
         path: 'apps',
         name: 'AllApps',
-        meta: { focus: true },
+        meta: { ownLayout: true },
         component: () => import('../views/AllApps.vue')
       },
       // Finances is an app of its own (src/apps/finances).
@@ -255,12 +257,15 @@ const churchRoutes = [
       }
     ]
   },
-  // Anything unrecognised lands on the dashboard rather than an empty shell —
-  // a bookmark or home-screen shortcut to a page that has since been removed
-  // (/finances, say) would otherwise render nothing at all.
+  // Anything unrecognised — a mistyped address, or a bookmark to a page that
+  // has since been removed (/finances, say) — gets the lost little sheep,
+  // which says so and leads back to the flock: the home for someone signed
+  // in, the front page otherwise. Public, so it answers signed out too.
   {
     path: '/:pathMatch(.*)*',
-    redirect: HOME
+    name: 'NotFound',
+    meta: { flock: 'church' },
+    component: () => import('../views/NotFound.vue')
   }
 ]
 
@@ -330,9 +335,12 @@ const platformRoutes = [
     component: () => import('../views/QrCode.vue'),
     meta: { public: true }
   },
+  // The lost little sheep here too, leading back to the front door.
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/'
+    name: 'PlatformNotFound',
+    meta: { flock: 'platform', public: true },
+    component: () => import('../views/NotFound.vue')
   }
 ]
 

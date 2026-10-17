@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { formatTimeRange } from '../../utils/sgUtils'
+import PanelRest from './PanelRest.vue'
 
 // The coming seven days, for the home of all apps on a desktop, as a compact
 // timeline beside the day's work: only the days with something on, each a
@@ -12,7 +13,8 @@ import { formatTimeRange } from '../../utils/sgUtils'
 //
 // The home keeps to one screen, so the card takes the height it is given and
 // the week scrolls inside it rather than the page; Open calendar has the
-// month. Everything is the home's already (useToday), gated as it is.
+// month. With little on, it keeps its height, the room left saying so
+// (PanelRest). Everything is the home's already (useToday), gated as it is.
 
 const props = defineProps({
   // useToday's `week`: { date, day, isToday } for the coming seven.
@@ -44,7 +46,7 @@ const dayLink = (date) => ({ name: 'Events', query: { date } })
 </script>
 
 <template>
-  <section aria-labelledby="home-week" class="@container flex min-h-0 flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-900 dark:ring-white/10">
+  <section aria-labelledby="home-week" class="@container flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-900 dark:ring-white/10">
     <header class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 pt-4 pb-3 dark:border-white/10">
       <h2 id="home-week" class="flex items-center gap-2.5 text-base font-semibold whitespace-nowrap text-gray-900 dark:text-white">
         This week
@@ -56,7 +58,7 @@ const dayLink = (date) => ({ name: 'Events', query: { date } })
       </RouterLink>
     </header>
 
-    <ol v-if="rows.length" class="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:thin]">
+    <ol v-if="rows.length" :class="['min-h-0 overflow-y-auto overscroll-contain [scrollbar-width:thin]', total <= 3 ? 'shrink-0' : 'flex-1']">
       <li
         v-for="row in rows"
         :key="row.key"
@@ -83,7 +85,8 @@ const dayLink = (date) => ({ name: 'Events', query: { date } })
       </li>
     </ol>
 
-    <p v-else class="px-5 py-5 text-sm text-gray-600 dark:text-gray-300">Nothing on the calendar this week.</p>
+    <PanelRest v-if="rows.length && total <= 3" few doodle="hammock" title="The rest of the week is open." />
+    <PanelRest v-if="!rows.length" doodle="hammock" title="A quiet week" line="Nothing on the calendar yet." />
 
   </section>
 </template>

@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { CalendarBlank, CheckSquare, ClipboardText, PaperPlaneRight, User } from '../../../../icons'
 import YunitMascot from '../../../yunit/YunitMascot.vue'
 import { useSceneTimeline } from '../../../frontdoor/useSceneTimeline'
-import YunitName from './YunitName.vue'
+import YunitName from '../../../yunit/YunitWordmark.vue'
 
 // Scene: meeting him. YUNIT's page before anything is said: him, large, a
 // wave once he has arrived, what he is for, and four ways to start for

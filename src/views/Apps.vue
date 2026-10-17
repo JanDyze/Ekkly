@@ -1,7 +1,7 @@
 <script setup>
-import { computed, onMounted, ref, shallowRef } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Cake, CalendarDots, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MicrophoneStage, Moon, Sun, UserPlus } from '../icons'
+import { Cake, CalendarDots, CaretDown, ClipboardCheck, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSun, KeyRound, ListChecks, MicrophoneStage, Moon, Sun, Swap, UserPlus } from '../icons'
 import AppHeroDeck from '../components/appframe/AppHeroDeck.vue'
 import CardPanes from '../components/appframe/CardPanes.vue'
 import DeckCard from '../components/appframe/DeckCard.vue'
@@ -15,11 +15,15 @@ import HomeWeek from '../components/home/HomeWeek.vue'
 import HomeAttention from '../components/home/HomeAttention.vue'
 import HomeCommunity from '../components/home/HomeCommunity.vue'
 import QuickActionsMenu from '../components/home/QuickActionsMenu.vue'
+import QuickActionsBack from '../components/home/QuickActionsBack.vue'
 import HomeBoard from '../components/home/HomeBoard.vue'
 import HomeVerse from '../components/home/HomeVerse.vue'
+import HomeYunit from '../components/home/HomeYunit.vue'
 import { HOME_COLUMNS, useHomeLayout } from '../composables/useHomeLayout'
 import { useHomeCards } from '../composables/useHomeCards'
+import { useHomeChurch } from '../composables/useHomeChurch'
 import { useLiveSky } from '../composables/useLiveSky'
+import { feel } from '../utils/yunitFeedback'
 import { useAppOrder } from '../composables/useAppOrder'
 import { usePressAndHold } from '../composables/usePressAndHold'
 import BirthdayCard from '../components/members/BirthdayCard.vue'
@@ -41,7 +45,7 @@ import { peopleOnService } from '../data/scheduleRoles'
 // and its own way between its sections, so this is the one place to go
 // between them — there is no bottom bar or sidebar any more.
 //
-// Two things on it:
+// Three things on it:
 //
 //   1. Today, as a deck of cards (AppHeroDeck) drawn from every app: an
 //      account waiting to be linked, whose birthday it is, when you are next
@@ -57,6 +61,13 @@ import { peopleOnService } from '../data/scheduleRoles'
 //      Holding one of the five shows what that app is, full screen, until
 //      the finger lifts (AppPeek) — for People, a short story of what it
 //      does — and sliding up keeps it open; a tap still just opens it.
+//   3. YUNIT, wherever the church has him (HomeYunit): a character standing
+//      large beside a button to talk to him — on a phone at the foot of the
+//      screen, left of the church; on a desktop at the foot of the last
+//      column, beside the people rail, which shoves him when it opens. He
+//      says hello as the home opens, and written to, his conversation rises
+//      from him over the dimmed home. The quick actions are the "+" on the
+//      day's card, a phone's as a desktop's (QuickActionsMenu).
 //
 // Everything is gated on the capability of the app it comes from (useToday,
 // allowedGroups), so nobody sees a card or a tile for something they cannot
@@ -470,6 +481,13 @@ const todayLong = new Date().toLocaleDateString(undefined, { weekday: 'long', mo
 const churchName = computed(() => church.value?.shortName || church.value?.fullName || '')
 const greetingTime = computed(() => greeting.value.split(', ')[0])
 const greetingName = computed(() => greeting.value.split(', ').slice(1).join(', '))
+// The day's card turned over, to its quick actions (QuickActionsBack): by
+// its button, or by a click anywhere on it — on the back, anywhere but an
+// action or its own buttons.
+const dayFlipped = ref(false)
+const onDayBack = (event) => {
+  if (!event.target.closest('a, button')) dayFlipped.value = false
+}
 
 /* -------------------------------------------------------------- the week */
 
@@ -484,29 +502,47 @@ const weekEvents = computed(() =>
     : today.eventsThisWeek.value
 )
 // The desktop's panels where this person has put them (useHomeLayout), less
-// any whose app is not theirs to open: the week goes with Events.
-const { layout: homeLayout, move: movePanel } = useHomeLayout()
+// any whose app is not theirs to open: the week goes with Events, YUNIT with
+// his app.
+const { layout: homeLayout, move: movePanel, place: placeFoot } = useHomeLayout()
 const boardColumns = computed(() =>
   HOME_COLUMNS.map((column) => ({
     ...column,
-    panels: homeLayout.value[column.id].filter((key) => (key !== 'week' || showWeek.value) && (key !== 'verse' || verse.value)),
+    panels: homeLayout.value[column.id].filter(
+      (key) => (key !== 'week' || showWeek.value) && (key !== 'verse' || verse.value) && (key !== 'yunit' || hasYunit.value)
+    ),
   }))
 )
-// The church on its hill stands at the foot of the leftmost column with
-// anything in it, so an emptied column can stand aside like any other.
-const footColumn = computed(() => boardColumns.value.find((column) => column.panels.length)?.id || 'left')
+// The church on its hill stands at the foot of whichever column this person
+// has put it in (useHomeLayout's `church`; the left to begin with), and
+// always at the foot: it is dragged from column to column, never up one.
+const footColumn = computed(() => homeLayout.value.church)
+// The columns on the page: any with a panel in it, and the church's.
+// The church can be turned off in Preferences (useHomeChurch): it is a picture
+// and nothing more. Off, a desktop has no church at any column's foot, and a
+// phone keeps the room under its apps, for the verse and YUNIT, on plain sky.
+const { homeChurch } = useHomeChurch()
+const standingColumns = computed(() => boardColumns.value.filter((column) => column.panels.length || (homeChurch.value && column.id === footColumn.value)))
 
 // The church in front of the apps. Where the apps stand right above it and
-// can scroll — every app on a phone, or the apps at the foot of the church's
+// scroll — every app on a phone, or the apps panel last in the church's
 // column on a desktop — they run on behind the hill rather than stopping
 // short of it: the list keeps the hill's height free at its foot, so at rest
 // nothing is hidden, and scrolled, the tiles go down into the hillside. As
-// they do, the hill rises a little, as if walking toward the church.
-const churchOverApps = computed(() =>
-  wide.value
-    ? boardColumns.value.find((column) => column.id === footColumn.value)?.panels.at(-1) === 'apps'
-    : showAllApps.value
-)
+// they do, the hill rises a little, as if walking toward the church. On a
+// desktop the whole panel reaches down to the column's foot, solid, the
+// church's land drawn in front of it (the footer's front copy): it used to
+// fade out there (.apps-fade, still a phone's), which let the sky, rainbow
+// and all, show through the card.
+const churchOverApps = computed(() => {
+  if (!homeChurch.value) return false
+  if (!wide.value) return showAllApps.value
+  return !yunitOverChurch.value && boardColumns.value.find((column) => column.id === footColumn.value)?.panels.at(-1) === 'apps'
+})
+// YUNIT standing just above the church, last in its column on a desktop:
+// then the apps end above him, not behind the hill, and he keeps the foot of
+// the column the church would otherwise be pushed down to.
+const yunitOverChurch = computed(() => wide.value && homeChurch.value && yunitColumn.value?.id === footColumn.value && yunitLast.value)
 const appsLift = ref(0)
 const onAppsScroll = (event) => {
   appsLift.value = Math.min(event.target.scrollTop / 160, 1)
@@ -515,15 +551,172 @@ const onAppsScroll = (event) => {
 // the lists give way and scroll inside, the work least of all, and none of
 // them below a few rows, so a crowded column never folds a panel to its title.
 const PANEL_FIT = computed(() => ({
-  // Over the church, the apps reach down behind it to the column's foot.
+  // Over the church, the apps panel reaches down behind it to the column's foot.
   apps: churchOverApps.value ? 'flex-1 min-h-[9rem]' : 'flex-[0_1_auto] min-h-[9rem]',
-  attention: 'flex-[0_0.5_auto] min-h-[9rem]',
-  community: 'flex-[0_1_auto] min-h-[9rem]',
+  // These three share out the column's height between them: as tall as what
+  // they hold, a busy week taller, and the room left over given to them too,
+  // so an empty one is never a sliver (its room saying so, PanelRest); and
+  // giving way, to 9rem, only where the column is short.
+  attention: 'flex-[1_0.5_auto] min-h-[9rem]',
+  community: 'flex-[1_1_auto] min-h-[9rem]',
   verse: 'flex-[0_0.6_auto] min-h-[8.5rem]',
-  week: 'flex-[0_1_auto] min-h-[9rem]',
+  week: 'flex-[1_1_auto] min-h-[9rem]',
+  // YUNIT's place keeps his height, and last in a column it is pushed down
+  // to the column's foot, so he stands on the bottom of the screen however
+  // short the panels above him are, rather than under them part way up.
+  // His height is his and his bubble's (HomeYunit), never less than his own.
+  yunit: yunitLast.value ? 'mt-auto shrink-0' : 'shrink-0',
 }))
 
 const showWeek = computed(() => wide.value && allApps.value.some((item) => item.path === '/events'))
+
+/* ------------------------------------------------------------------ YUNIT */
+
+// YUNIT on the home (HomeYunit), wherever the church has him. On a phone he
+// stands at the foot of the church's room, left of the church; the room keeps
+// his height free (--foot-space, below), as it does the bottom bar's, so no
+// app goes behind him, and the home grows a scroll for it where there is no
+// room, as it does for the bar. On a desktop he has a place among the panels
+// like any of them (useHomeLayout; under the week to begin with, at the foot
+// of the right-hand column, beside the people rail), anywhere in any column:
+// a place his and his bubble's height (yunitSpot), which he stands in. Last in a column he
+// stands at its foot, and last in the church's column, just above the
+// church, which always keeps the very bottom. He is carried to another
+// place himself (HomeYunit), the board showing where he would land as it does
+// for a panel (board.aimAt, movePanel). Only in the last column, the one the
+// people rail opens into, does it bowl him over.
+const hasYunit = computed(() => allApps.value.some((item) => item.path === '/yunit'))
+const yunitDocked = computed(() => !wide.value && hasYunit.value)
+const yunitSpot = ref(null)
+// Where he stands on the church's hill when his place is just above it.
+const yunitPerch = ref(null)
+const yunitOnHill = computed(() => yunitOverChurch.value && homeChurch.value)
+
+/* ---------------------------------------------------------- the footer */
+
+// On a desktop the church's land is a footer the width of the page, not a
+// picture in one column: the hills run from edge to edge, so nothing ends in
+// a square cut, and the church rises from them under whichever column it has
+// been put in (footColumn). Under the other columns there are only the low
+// hills, and their panels end just above them (--hill-band). The church's
+// column keeps the church's height free at its foot (the room, below).
+//
+// The drawing is 534 high and 25800 across (HomeScene's `footer`), the
+// church's middle at x 650 of it; it is drawn at the footer's height and
+// slid along so that middle is under the middle of the church's column,
+// measured from the board itself and again whenever the column changes size
+// or place (the rail opening, a column emptying, the church moved). With
+// YUNIT standing on the hill beside it, the church is set a little right of
+// the middle, so the two of them are.
+const footerOn = computed(() => wide.value && homeChurch.value)
+const footer = ref(null)
+const footerAt = ref(null)
+const LAND = { high: 534, wide: 25800, left: -12000, middle: 650, withYunit: 520 }
+let footerWatch = null
+const measureFooter = () => {
+  const box = footer.value?.getBoundingClientRect()
+  const column = document.querySelector('[data-foot-body]')?.closest('[data-column]')
+  if (!box || !column) return
+  const r = column.getBoundingClientRect()
+  footerAt.value = { high: box.height, middle: r.left + r.width / 2 - box.left, left: r.left - box.left, right: box.right - r.right }
+}
+// The church's column, as a cut of the footer's width (the land in front).
+const churchClip = computed(() => (footerAt.value ? `inset(-50% ${footerAt.value.right}px 0 ${footerAt.value.left}px)` : 'inset(0 100% 0 0)'))
+// Where the church itself is in its room, to take hold of it by: its width,
+// about its middle (the drawing's 489 to 866, its middle 650, or 520 with
+// YUNIT beside it), as a share of the room's height (534 of the drawing).
+const churchGrip = computed(() => {
+  const middle = yunitOnHill.value ? LAND.withYunit : LAND.middle
+  return {
+    left: `calc(50% + var(--church-room) * ${489 - middle} / 534)`,
+    width: 'calc(var(--church-room) * 377 / 534)',
+  }
+})
+const watchFooter = () => {
+  footerWatch?.disconnect()
+  footerWatch = null
+  if (!footerOn.value || !footer.value) return
+  const column = document.querySelector('[data-foot-body]')?.closest('[data-column]')
+  footerWatch = new ResizeObserver(measureFooter)
+  footerWatch.observe(footer.value)
+  if (column) footerWatch.observe(column)
+  measureFooter()
+}
+// Started once the home is mounted: the board's columns are read from what is
+// set up further down (the apps the person has), and a watcher reads its
+// sources the moment it is made.
+onMounted(() => {
+  watch([footerOn, footer, footColumn, () => boardColumns.value.map((column) => column.panels.length).join()], () => nextTick(watchFooter))
+  nextTick(watchFooter)
+})
+onBeforeUnmount(() => footerWatch?.disconnect())
+const landStyle = computed(() => {
+  const at = footerAt.value
+  if (!at) return { visibility: 'hidden' }
+  const scale = at.high / LAND.high
+  const middle = yunitOnHill.value ? LAND.withYunit : LAND.middle
+  return {
+    width: `${LAND.wide * scale}px`,
+    height: `${at.high}px`,
+    left: `${at.middle - (middle - LAND.left) * scale}px`,
+    // The hill's lift (scene-lift) grows from under the church.
+    transformOrigin: `${(middle - LAND.left) * scale}px 100%`,
+  }
+})
+// YUNIT on the hill, left of the church: his middle at x 282 of the drawing
+// and his feet at y 1690, on the ground rising to the church's mound and
+// clear of its wing (x 494); never in front of the church.
+const perchStyle = computed(() => {
+  const at = footerAt.value
+  if (!at) return { display: 'none' }
+  const scale = at.high / LAND.high
+  const him = Math.min(96, at.high * 0.55)
+  return {
+    width: `${him}px`,
+    height: `${him}px`,
+    left: `${at.middle + (282 - LAND.withYunit) * scale - him / 2}px`,
+    bottom: `${(1774 - 1690) * scale - him * 0.04}px`,
+  }
+})
+const board = ref(null)
+
+// A column holding more than three cards (from before columns had a limit)
+// is tidied: its last card goes to the column with the fewest (HomeBoard's
+// tidy), one at a time until it has three, or nothing would take it. Looked
+// at as the home opens and after any change to the layout.
+let tidyTimer = null
+const tidyBoard = () => {
+  clearTimeout(tidyTimer)
+  tidyTimer = setTimeout(() => {
+    if (!wide.value) return
+    const move = board.value?.tidy()
+    if (move) movePanel(move.key, move.column, move.index)
+  }, 400)
+}
+onMounted(() => {
+  watch(() => boardColumns.value.map((column) => `${column.id}:${column.panels.join()}`).join('|') + homeLayout.value.church, tidyBoard)
+  tidyBoard()
+})
+onBeforeUnmount(() => {
+  clearTimeout(tidyTimer)
+})
+const yunitColumn = computed(() => boardColumns.value.find((column) => column.panels.includes('yunit')) || null)
+const yunitLast = computed(() => yunitColumn.value?.panels.at(-1) === 'yunit')
+const yunitBesideRail = computed(() => !!yunitColumn.value && standingColumns.value.at(-1)?.id === yunitColumn.value.id)
+const yunitAnchor = computed(() => (wide.value ? yunitSpot.value : null))
+
+// YUNIT in hand: the board leaves his place as an outline, offers every
+// column, and shows the line he would land on; let go, he moves there.
+const onYunitDrag = ({ x, y }) => {
+  board.value?.hold('yunit')
+  board.value?.aimAt(x, y)
+}
+const onYunitPlace = ({ x, y }) => {
+  // Put down where he will not fit, he goes back, and says so.
+  if (board.value?.aimAt(x, y)?.full) feel('refuse')
+  const at = board.value?.drop()
+  if (at) movePanel('yunit', at.id, at.index)
+}
 
 /* ------------------------------------------------------------- the verse */
 
@@ -563,6 +756,38 @@ const openHeld = () => {
 }
 
 const { style: cardStyle, showAll: showAllApps } = useHomeCards()
+
+// The desktop's apps panel, and whether its list has more below than shows:
+// measured as it scrolls, as it or its tiles change size, and as the apps on
+// it change.
+const appsList = ref(null)
+const appsMore = ref(false)
+const measureApps = () => {
+  const el = appsList.value?.$el
+  appsMore.value = !!el && el.scrollHeight - el.scrollTop - el.clientHeight > 4
+}
+// Its scroll also lifts the hill, where the panel runs on behind the church.
+const onDeskAppsScroll = (event) => {
+  measureApps()
+  if (churchOverApps.value) onAppsScroll(event)
+}
+const scrollAppsDown = () => {
+  const el = appsList.value?.$el
+  el?.scrollBy({ top: el.clientHeight * 0.8, behavior: 'smooth' })
+}
+let appsObserver = null
+watch(appsList, (list) => {
+  appsObserver?.disconnect()
+  const el = list?.$el
+  if (el && typeof ResizeObserver !== 'undefined') {
+    appsObserver = new ResizeObserver(measureApps)
+    appsObserver.observe(el)
+    ;[...el.children].forEach((child) => appsObserver.observe(child))
+  }
+  measureApps()
+})
+watch(homeApps, () => nextTick(measureApps))
+onBeforeUnmount(() => appsObserver?.disconnect())
 
 // Compact cards leave room under the apps, so the verse is set on the picture
 // itself, whole if it fits, rather than in a card (the verse, below).
@@ -624,10 +849,40 @@ const lineOf = (item) => {
        home grows to fit rather than leave its apps under the bar: it still
        fits one screen wherever there is room, and scrolls only where there is
        not. -->
-  <div class="home-scene relative h-full overflow-hidden bg-(--scene-sky-3) with-bar:overflow-y-auto with-bar:overscroll-contain" v-bind="sky">
+  <!-- YUNIT at the foot of a phone's home takes room there as the bar does,
+       so the home grows a scroll the same way where it has to. -->
+  <div
+    :class="[
+      'home-scene relative h-full bg-(--scene-sky-3) with-bar:overflow-y-auto with-bar:overscroll-contain',
+      hasYunit ? 'with-yunit' : '',
+      yunitDocked ? 'overflow-y-auto overscroll-contain' : 'overflow-hidden',
+    ]"
+    v-bind="sky"
+    :style="footerOn ? { '--hill-band': 'calc(var(--church-room) * 0.34)' } : null"
+  >
     <HomeScene part="sky" class="pointer-events-none absolute inset-0 size-full" />
 
-    <main class="relative mx-auto flex h-full w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:grid lg:h-full lg:max-w-[112rem] lg:grid-cols-1 lg:grid-rows-[minmax(0,1fr)] lg:gap-5 lg:px-6 lg:py-5">
+    <!-- On a desktop, the church's land as a footer the width of the page
+         (the footer, above), behind the panels as the sky is, so the hills
+         never run over a panel. YUNIT, standing on the hill, stands in it;
+         nothing of the board is over him there (the church's room lets
+         touches through, but for the church itself). -->
+    <div
+      v-if="footerOn"
+      ref="footer"
+      class="pointer-events-none absolute inset-x-0 bottom-0 h-(--church-room) overflow-x-clip"
+      :style="{ '--lift': churchOverApps ? appsLift : 0 }"
+      aria-hidden="true"
+    >
+      <HomeScene part="land" footer class="scene-lift land-slide absolute bottom-0 max-w-none" :style="landStyle" />
+      <div v-if="yunitOnHill" ref="yunitPerch" class="land-slide pointer-events-none absolute z-20" :style="perchStyle" />
+    </div>
+
+    <!-- Its foot keeps the footer's low hills clear on a desktop (--hill-band),
+         so a panel ends above them rather than over them. -->
+    <main
+      :class="[yunitDocked ? 'h-auto min-h-full' : 'h-full', footerOn ? 'lg:pb-(--hill-band)' : 'lg:pb-5']"
+      class="relative mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:grid lg:h-full lg:max-w-[112rem] lg:grid-cols-1 lg:grid-rows-[minmax(0,1fr)] lg:gap-5 lg:px-6 lg:pt-5">
       <!-- 1. Today, most important on top: on a phone, the deck. On a desktop,
            under the greeting and beside the apps: what needs attention, with
            the community under it, beside the week. All of it in the one
@@ -643,17 +898,29 @@ const lineOf = (item) => {
                it in the middle, and the week on the right. A list with more
                than its panel holds scrolls inside the panel, never the page;
                the work gives way least when a column is full. -->
-          <HomeBoard :columns="boardColumns" :foot="footColumn" :fit="PANEL_FIT" @move="({ key, column, index }) => movePanel(key, column, index)">
+          <HomeBoard
+            ref="board"
+            :columns="boardColumns"
+            :foot="homeChurch ? footColumn : null"
+            :fit="PANEL_FIT"
+            @move="({ key, column, index }) => movePanel(key, column, index)"
+            @place="({ key, column }) => placeFoot(key, column)"
+          >
             <template #panel="{ panel }">
               <!-- The day, as the phone's deck ends on it: one card in the
                    church's colour over Ekkly's panes of light, with the logo,
                    the day and the weather, and the greeting large on two lines
                    (the time of day, then the name). Beside the greeting, one
-                   round button for the quick actions (QuickActionsMenu): four
-                   buttons on the card made it busy. Search stays the top bar's;
+                   round button turns the card over to its quick actions
+                   (QuickActionsBack): four buttons on the card made it busy. Search stays the top bar's;
                    the day's verse is a panel of its own (HomeVerse). -->
-              <header v-if="panel === 'day'" class="relative">
-                <div class="home-hero relative isolate overflow-hidden rounded-[24px] border border-black/15 p-4 text-white dark:border-black/40">
+              <!-- Two-sided: the day on the front, and turned over by the button
+                   in its corner (a card-flip, not a menu hanging off it), its
+                   quick actions on the back, the same size and colour. Only
+                   the side showing takes a touch or the keyboard. -->
+              <header v-if="panel === 'day'" class="day-flip relative">
+                <div :class="['day-flip-inner relative', dayFlipped && 'is-flipped']">
+                <div class="day-face home-hero relative isolate cursor-pointer overflow-hidden rounded-[24px] border border-black/15 p-4 text-white dark:border-black/40" :inert="dayFlipped || undefined" @click="dayFlipped = true">
                   <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]" aria-hidden="true">
                     <CardPanes />
                   </div>
@@ -677,12 +944,27 @@ const lineOf = (item) => {
                     {{ greetingTime }}<template v-if="greetingName">,<br /><span class="block truncate">{{ greetingName }}</span></template>
                   </h1>
                 </div>
-                <!-- Over the card's corner, beside the greeting, rather than in it:
-                     the card clips to its rounded edge, and the menu has to hang
-                     below it. -->
-                <div class="absolute right-4 bottom-4">
-                  <QuickActionsMenu />
+                <div class="day-face day-back home-hero relative isolate cursor-pointer overflow-hidden rounded-[24px] border border-black/15 p-4 dark:border-black/40" :inert="!dayFlipped || undefined" @click="onDayBack">
+                  <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]" aria-hidden="true">
+                    <CardPanes />
+                  </div>
+                  <QuickActionsBack />
                 </div>
+                </div>
+                <!-- In the card's corner, on whichever side shows, turning it: by
+                     the greeting on the front, at the top of the back, clear of
+                     its actions. -->
+                <button
+                  type="button"
+                  :class="dayFlipped ? 'top-3 right-3' : 'right-4 bottom-4'"
+                  class="absolute z-10 flex size-9 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/25 transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  :aria-label="dayFlipped ? 'Back to the day' : 'Quick actions'"
+                  :title="dayFlipped ? 'Back to the day' : 'Quick actions'"
+                  :aria-pressed="dayFlipped"
+                  @click="dayFlipped = !dayFlipped"
+                >
+                  <Swap class="size-5" />
+                </button>
               </header>
 
               <!-- The apps, drawn as on a phone in the style chosen
@@ -692,16 +974,51 @@ const lineOf = (item) => {
                   <p class="text-sm text-gray-500 dark:text-gray-400">Nothing has been shared with this account yet.</p>
                   <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">An administrator grants access by ministry in Settings.</p>
                 </div>
-                <HomeAppCards
+                <!-- In a panel of their own, headed as the board's other
+                     panels are, the tiles scrolling inside it where there are
+                     more than fit. While there are more below, a chevron at
+                     its foot says so, and takes the list down a screen. -->
+                <section
                   v-else
-                  :class="['-mx-0.5 -mt-0.5 min-h-0 auto-rows-max overflow-y-auto overscroll-contain p-0.5 [scrollbar-width:thin] *:shrink-0', churchOverApps ? 'apps-fade pb-(--church-room)' : '']"
-                  :variant="cardStyle"
-                  column
-                  :apps="homeApps"
-                  :others="homeOthers"
-                  :hold="hold"
-                  @scroll.passive="onAppsScroll"
-                />
+                  aria-labelledby="home-apps"
+                  class="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-900 dark:ring-white/10"
+                >
+                  <!-- "See all" opens the All apps page, every app in a grid
+                       with room to find one, as "Open calendar" opens the
+                       month from the week. -->
+                  <header class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 pt-4 pb-3 dark:border-white/10">
+                    <h2 id="home-apps" class="text-base font-semibold text-gray-900 dark:text-white">Apps</h2>
+                    <RouterLink :to="{ name: 'AllApps' }" class="text-sm font-semibold whitespace-nowrap text-primary hover:underline dark:text-primary-light">
+                      See all
+                    </RouterLink>
+                  </header>
+                  <HomeAppCards
+                    ref="appsList"
+                    :class="['min-h-0 auto-rows-max overflow-y-auto overscroll-contain p-3 [scrollbar-width:thin] *:shrink-0', churchOverApps ? 'pb-(--church-room)' : '']"
+                    :variant="cardStyle"
+                    column
+                    :apps="homeApps"
+                    :others="homeOthers"
+                    :hold="hold"
+                    @scroll.passive="onDeskAppsScroll"
+                  />
+                  <Transition enter-from-class="opacity-0" leave-to-class="opacity-0" enter-active-class="transition-opacity duration-200" leave-active-class="transition-opacity duration-150">
+                    <div
+                      v-if="appsMore"
+                      :class="['pointer-events-none absolute inset-x-0 flex h-14 items-end justify-center pb-2', churchOverApps ? 'apps-more-over' : 'apps-more bottom-0']"
+                    >
+                      <button
+                        type="button"
+                        class="pointer-events-auto flex size-8 items-center justify-center rounded-full bg-white text-gray-500 ring-1 ring-gray-200 transition-colors hover:text-gray-900 hover:ring-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:ring-white/15 dark:hover:text-white"
+                        aria-label="More apps below"
+                        title="More apps below"
+                        @click="scrollAppsDown"
+                      >
+                        <CaretDown class="size-4" />
+                      </button>
+                    </div>
+                  </Transition>
+                </section>
               </template>
 
               <HomeAttention v-else-if="panel === 'attention'" :cards="urgent" :dismiss="dismiss" :leaving="leaving" />
@@ -710,6 +1027,11 @@ const lineOf = (item) => {
               <!-- The day's verse, a panel of its own on a desktop (on a phone
                    it is on the church's picture). -->
               <HomeVerse v-else-if="panel === 'verse'" :verse="verse" :to="verseTo" />
+              <!-- YUNIT's place: at rest he stands in it (HomeYunit), and it
+                   is as tall as he and his bubble are; lifted out, it keeps
+                   that height until he is back. Not hidden from screen
+                   readers, since his bubble's buttons are in it. -->
+              <div v-else-if="panel === 'yunit'" ref="yunitSpot" class="@container flex h-full min-h-26 flex-col justify-end" />
             </template>
 
             <!-- The church on its hill, at the foot of the leftmost column: the
@@ -804,12 +1126,15 @@ const lineOf = (item) => {
             </template>
 
             <!-- Whose church this is: its own logo, on white so any logo reads
-                 on any church colour, and its name. -->
+                 on any church colour, and its name; and at its end the "+"
+                 for the quick actions, as the desktop's day card has,
+                 opening as a sheet from the foot of the screen. -->
             <div class="flex min-w-0 items-center gap-3">
               <span class="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 ring-1 ring-gray-200 dark:ring-gray-700">
                 <img :src="logoUrl" alt="" class="size-full object-contain" />
               </span>
-              <span class="min-w-0 truncate text-[15px] font-semibold text-white/90">{{ card.churchName }}</span>
+              <span class="min-w-0 flex-1 truncate text-[15px] font-semibold text-white/90">{{ card.churchName }}</span>
+              <QuickActionsMenu sheet class="shrink-0" />
             </div>
           </DeckCard>
 
@@ -856,7 +1181,7 @@ const lineOf = (item) => {
            what it holds, so it would otherwise be squeezed flat, not scrolled. -->
       <HomeAppCards
         v-else
-        :class="showAllApps ? '-mx-0.5 -mt-0.5 min-h-0 shrink auto-rows-max overflow-y-auto overscroll-contain p-0.5 pb-(--church-room) apps-fade *:shrink-0' : ''"
+        :class="showAllApps ? ['-mx-0.5 -mt-0.5 min-h-0 shrink auto-rows-max overflow-y-auto overscroll-contain p-0.5 *:shrink-0', churchOverApps ? 'pb-(--church-room) apps-fade' : ''] : ''"
         :variant="cardStyle"
         :apps="homeApps"
         :others="homeOthers"
@@ -881,25 +1206,51 @@ const lineOf = (item) => {
            own (HomeVerse), to be put wherever someone likes it. -->
       <!-- Keyed by its column, so it moves when the column does: a Teleport
            does not follow its target to a new place by itself. -->
-      <Teleport :key="footColumn" defer to="#home-left-foot" :disabled="!wide">
+      <Teleport v-if="!wide || homeChurch" :key="footColumn" defer to="#home-left-foot" :disabled="!wide">
       <!-- In front of the apps (churchOverApps) the room is drawn over the
            foot of their list rather than under it: as tall as the list keeps
            free (--church-room), pulled up over it by that and the gap, and
            letting the pointer through to the tiles behind but for the verse.
            The hill lifts with the list's scroll (--lift). -->
+      <!-- On a desktop the church is moved by taking hold of it (HomeBoard,
+           data-foot-grab: the church and its mound, not the sky). Where YUNIT
+           shares its column he stands just above it, the one pushed down to
+           the foot (his place's mt-auto) and the church under him, so it no
+           longer takes the room above itself. -->
       <section
+        data-foot-body
         :class="[
-          'verse-room relative -mx-4 -mt-2 min-h-0 flex-1 with-bar:min-h-(--bottom-bar-space) lg:-mb-5 lg:-ml-6 lg:mr-0',
+          'verse-room relative -mx-4 -mt-2 min-h-(--foot-space) flex-1 lg:pointer-events-none lg:-mb-(--hill-band)',
           churchOverApps
             ? 'pointer-events-none z-10 flex-none h-(--church-room) max-lg:-mt-[calc(var(--church-room)+1.5rem)] lg:-mt-[calc(var(--church-room)+1rem)]'
-            : 'lg:mt-auto lg:flex-[0_1_16rem]',
+            : // On a desktop the room only keeps the church's height free at
+              // the foot of its column; the church is drawn in the footer. It
+              // gives way when the column's panels need the room (the church
+              // is not counted toward a column's limit): they go on down over
+              // it, the church staying the background behind them, never over
+              // them. Not with YUNIT standing on the hill there, though: then
+              // the room is his too, and giving way slid his bubble and its
+              // buttons down over him.
+              yunitOverChurch
+              ? 'lg:-mt-3 lg:flex-none lg:h-(--church-room)'
+              : 'lg:mt-auto lg:min-h-0 lg:flex-[0_1_var(--church-room)]',
         ]"
         :style="{ '--lift': churchOverApps ? appsLift : 0 }"
         aria-label="A verse for today"
       >
-        <HomeScene part="land" class="scene scene-lift pointer-events-none absolute inset-0 size-full" />
+        <!-- On a phone, the church on its hill here; a desktop draws it in
+             the footer, the width of the page. -->
+        <HomeScene v-if="homeChurch && !wide" part="land" class="scene scene-lift pointer-events-none absolute inset-0 size-full" />
+        <div
+          v-if="wide"
+          data-foot-grab
+          class="pointer-events-auto absolute bottom-0 z-10 h-[85%] cursor-grab"
+          :style="churchGrip"
+          title="Drag the church to another column"
+          aria-hidden="true"
+        />
 
-        <div class="verse-space pointer-events-none absolute inset-x-0 top-0 bottom-(--bottom-bar-space)">
+        <div class="verse-space pointer-events-none absolute inset-x-0 top-0 bottom-(--foot-space)">
           <!-- With compact cards there is room under the apps, so the verse
                needs no card: it is set on the picture itself, in the open sky
                to the left of the church, whole if it fits (eight lines at
@@ -919,7 +1270,7 @@ const lineOf = (item) => {
               'verse pointer-events-auto absolute left-4 block text-left lg:hidden',
               openVerse
                 ? 'verse-open top-3 max-w-[62%]'
-                : 'bottom-[max(0.75rem,calc(env(safe-area-inset-bottom)-var(--bottom-bar-space)))] max-w-[58%] rounded-2xl bg-white/80 px-3.5 py-3 ring-1 ring-white/70 backdrop-blur-md dark:bg-gray-900/70 dark:ring-white/10',
+                : 'bottom-[max(0.75rem,calc(env(safe-area-inset-bottom)-var(--foot-space)))] max-w-[58%] rounded-2xl bg-white/80 px-3.5 py-3 ring-1 ring-white/70 backdrop-blur-md dark:bg-gray-900/70 dark:ring-white/10',
             ]"
           >
             <blockquote
@@ -956,6 +1307,36 @@ const lineOf = (item) => {
       </div>
     </main>
 
+    <!-- Where the apps reach down behind the church (churchOverApps), the
+         same land again in front of them, cut to the church's own column, so
+         the church stands before the apps there and nowhere else covers a
+         panel. Drawn the same as the footer behind it, so no edge shows. -->
+    <div
+      v-if="footerOn && churchOverApps"
+      class="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-(--church-room) overflow-x-clip"
+      :style="{ '--lift': appsLift, clipPath: churchClip }"
+      aria-hidden="true"
+    >
+      <HomeScene part="land" footer class="scene-lift land-slide absolute bottom-0 max-w-none" :style="landStyle" />
+    </div>
+
+    <!-- YUNIT: on a phone at the foot of the church's room, left of the
+         church; on a desktop told where his place on the board is: at the
+         right-hand end of his own, or left of the church in the church's
+         column. -->
+    <HomeYunit
+      v-if="hasYunit"
+      :name="name"
+      :anchor="yunitAnchor"
+      :perch="yunitOnHill ? yunitPerch : null"
+      :side="wide ? 'right' : 'left'"
+      :beside-rail="wide && yunitBesideRail"
+      :sky="sky['data-sky'] ? { phase: sky['data-sky'], weather: sky['data-weather'], rainbow: sky['data-rainbow'] !== undefined } : null"
+      :movable="wide"
+      @drag="onYunitDrag"
+      @place="onYunitPlace"
+    />
+
     <AppPeek
       :app="held?.item"
       :from="held?.el"
@@ -983,6 +1364,33 @@ const lineOf = (item) => {
 /* The desktop's hero, in the church's colour (the primary token) as the
    phone's day card is, and as that card does, a deeper shade of it on a dark
    page, where the token is the lighter one made for text. */
+/* The day's card, two-sided: turned over about its upright middle, its
+   back facing away until it is. */
+.day-flip {
+  perspective: 1400px;
+}
+/* Both sides in the one place, the card as tall as the taller. */
+.day-flip-inner {
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.day-flip-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+.day-face {
+  grid-area: 1 / 1;
+  backface-visibility: hidden;
+}
+.day-back {
+  transform: rotateY(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .day-flip-inner {
+    transition: none;
+  }
+}
+
 .home-hero {
   background-color: var(--color-primary);
 }
@@ -994,6 +1402,19 @@ const lineOf = (item) => {
    (churchOverApps): a phone's, and on a desktop a share of the screen. */
 .home-scene {
   --church-room: 8rem;
+  /* What the foot of a phone's home keeps free under the apps: the bottom
+     bar's room when it is on, and YUNIT's when he is there (HomeYunit). */
+  --foot-space: var(--bottom-bar-space);
+}
+/* YUNIT's place on a phone: clear of the home indicator, or above the bottom
+   bar when it is on (--yunit-foot, which HomeYunit stands on), and his own
+   height, the mascot beside the button to talk to him, with a little air
+   above him. A desktop gives him a place of his own on the board instead. */
+@media (width < 64rem) {
+  .home-scene.with-yunit {
+    --yunit-foot: max(0.75rem, env(safe-area-inset-bottom), calc(var(--bottom-bar-space) + 0.5rem));
+    --foot-space: calc(var(--yunit-foot) + 5.5rem);
+  }
 }
 @media (min-width: 1024px) {
   .home-scene {
@@ -1012,6 +1433,34 @@ const lineOf = (item) => {
     #000 calc(100% - var(--church-room) * 1.15),
     transparent calc(100% - var(--church-room) * 0.6)
   );
+}
+
+/* The foot of the apps panel while there are more apps below: the tiles
+   fading under the chevron that says so, into the panel's own white. */
+.apps-more {
+  background: linear-gradient(to bottom, transparent, var(--color-white) 70%);
+}
+.dark .apps-more {
+  background: linear-gradient(to bottom, transparent, var(--color-gray-900) 70%);
+}
+/* Where the panel fades out behind the church, the chevron stands just above
+   the fade (.apps-fade), where it can still be seen and pressed. */
+.apps-more-over {
+  bottom: calc(var(--church-room) * 1.15);
+}
+
+/* The footer's land and YUNIT on it slide along with the church's column
+   when it moves (the rail opening, the church carried to another). */
+.land-slide,
+.scene-lift.land-slide {
+  transition:
+    left 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    scale 180ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .land-slide {
+    transition: none;
+  }
 }
 
 /* The hill rising a little as the apps scroll down behind it (--lift, 0 to

@@ -133,6 +133,7 @@ const pageTitle = computed(() => {
     Members: 'People',
     MemberDetails: 'Person',
     MinuteDetails: 'Minutes',
+    AllApps: 'All apps',
     PrayerConcerns: 'Prayer Concerns'
   };
   // Fall back to the route name so new pages are labelled correctly
@@ -157,13 +158,19 @@ const { swipeTarget: notifSwipe, swipeStyle: notifStyle } = useSwipeDismiss({
 const notifPanelRef = ref(null)
 useFocusTrap(notifPanelRef, isNotifOpen, () => { isNotifOpen.value = false }, { trap: false })
 
-// Search everything (SearchSheet). Ctrl+K or ⌘K anywhere, and "/" when the
-// caret is not already in a field, the way most apps open their search.
-// Shared (useSearchSheet), so a desktop's home can open it from its own field.
+// Search everything (SearchSheet). Ctrl+K or ⌘K anywhere, Ctrl+F or ⌘F too
+// (in place of the browser's find on the page, since what someone looking
+// for something wants is the church's records, not the words on one screen),
+// and "/" when the caret is not already in a field, the way most apps open
+// their search. Shared (useSearchSheet), so a desktop's home can open it from
+// its own field. The bar is hidden on some screens, never removed
+// (AdminLayout), so these work on every one.
 const { open: showSearch } = useSearchSheet()
 const onSearchKey = (event) => {
   const typing = event.target?.closest?.('input, textarea, select, [contenteditable="true"]')
-  if ((event.key === 'k' && (event.ctrlKey || event.metaKey)) || (event.key === '/' && !typing)) {
+  // A browser filling in a form sends a keydown with no key.
+  const key = (event.key || '').toLowerCase()
+  if (((key === 'k' || key === 'f') && (event.ctrlKey || event.metaKey) && !event.altKey) || (event.key === '/' && !typing)) {
     event.preventDefault()
     showSearch.value = true
   }

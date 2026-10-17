@@ -31,14 +31,15 @@ const price = computed(() => formatMoney(total.value))
 // changes (App.vue draws it).
 const { isDark, toggleTheme } = useTheme()
 
-// The second front door (/v2, the Sunday) is a home page too. Its sections
-// are the Sunday itself and the questions, and its logo takes it back to its
-// own top rather than across to the first.
+// The second front door (/v2, the Sunday) is a home page too. The Sunday is
+// the page itself, so it needs no link of its own; the gospel, the questions
+// and Pricing are the ways past it, and its logo takes it back to its own top
+// rather than across to the first.
 const homePath = computed(() => (route.path === '/v2' ? '/v2' : '/'))
 
 const SECTIONS = computed(() =>
   homePath.value === '/v2'
-    ? [{ id: 'sunday', label: 'A Sunday' }]
+    ? [{ id: 'gospel', label: 'The gospel' }]
     : [
         { id: 'features', label: 'What’s inside' },
         { id: 'how', label: 'How it works' },
@@ -55,12 +56,19 @@ const home = () => {
   else router.push(homePath.value)
 }
 
+// The Sunday is drawn under a deep navy bar, the same as its card, so the
+// bar stays quiet over the picture; the other front door pages keep theirs.
+const sunday = computed(() => route.path === '/v2')
+
 const link = 'hover:text-gray-900 dark:hover:text-white'
 const current = 'text-gray-900 dark:text-white'
 </script>
 
 <template>
-  <header class="sticky top-0 z-40 border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
+  <header
+    :class="['front-door-bar sticky top-0 z-40 border-b', sunday ? 'dark border-slate-800 bg-slate-900' : 'border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950']"
+    :style="sunday ? { '--color-primary': 'inherit', '--color-primary-hover': 'inherit' } : null"
+  >
     <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
       <a :href="homePath" class="min-w-0" @click.prevent="home">
         <PlatformLogo mark-class="h-8 w-8" text-class="text-2xl" />
@@ -81,7 +89,9 @@ const current = 'text-gray-900 dark:text-white'
         >
           Pricing
         </RouterLink>
+        <!-- Not on the Sunday, whose pictures do not change with it. -->
         <button
+          v-if="!sunday"
           type="button"
           :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
           :title="isDark ? 'Light mode' : 'Dark mode'"
@@ -116,3 +126,18 @@ const current = 'text-gray-900 dark:text-white'
     </div>
   </header>
 </template>
+
+<style>
+/* On the Sunday the bar holds back while the story's title is up
+   (SundayStory sets .sunday-opening on the page), so the logo and the ways on
+   are on the screen once; it comes in with the church. Not scoped, because
+   the class it answers to is on <html>: Vue's :global() would make the whole
+   rule global and hide the page, not the bar. */
+.front-door-bar {
+  transition: opacity 0.4s ease;
+}
+.sunday-opening .front-door-bar {
+  opacity: 0;
+  pointer-events: none;
+}
+</style>

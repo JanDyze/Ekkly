@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   ChevronLeft,
   ChevronRight,
+  Church,
   ChevronRight as Chevron,
   Clock3,
   LogOut,
@@ -42,6 +43,7 @@ import { useHomeCards } from '../composables/useHomeCards'
 import { useHomeLayout } from '../composables/useHomeLayout'
 import { useBottomBar } from '../composables/useBottomBar'
 import { useLiveSky } from '../composables/useLiveSky'
+import { useHomeChurch } from '../composables/useHomeChurch'
 import { useMotion } from '../composables/useMotion'
 import { homeCardName } from '../data/homeCards'
 import CardStyleSheet from './home/CardStyleSheet.vue'
@@ -82,6 +84,7 @@ const { bottomBar, setBottomBar } = useBottomBar()
 
 // The home's sky following the time and weather over the church.
 const { liveSky, setLiveSky } = useLiveSky()
+const { homeChurch, setHomeChurch } = useHomeChurch()
 
 // How much moves between pages: full, simple or off, a tap at a time.
 const { motionLabel, nextMotion } = useMotion()
@@ -474,6 +477,18 @@ watch(railIsVisible, (visible) => {
                 <CloudSun class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
                 <span class="flex-1 text-sm text-gray-700 dark:text-slate-200">Live sky</span>
                 <span class="text-xs text-gray-400 dark:text-slate-500">{{ liveSky ? 'On' : 'Off' }}</span>
+              </button>
+              <!-- The church on its hill on the home: a picture only, so
+                   anyone may have the room instead (useHomeChurch). -->
+              <button
+                @click="setHomeChurch(!homeChurch)"
+                role="switch"
+                :aria-checked="homeChurch"
+                class="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
+              >
+                <Church class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
+                <span class="flex-1 text-sm text-gray-700 dark:text-slate-200">Church picture</span>
+                <span class="text-xs text-gray-400 dark:text-slate-500">{{ homeChurch ? 'On' : 'Off' }}</span>
               </button>
               <button
                 @click="nextMotion"

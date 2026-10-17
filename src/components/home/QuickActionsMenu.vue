@@ -1,30 +1,43 @@
 <script setup>
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { Check, Plus } from '../../icons'
 import { useQuickActions } from '../../composables/useQuickActions'
+import { useScrollLock } from '../../composables/useScrollLock'
 
-// The desktop home's quick actions behind one round button in the corner of
-// the day's card, so the card says the day and the greeting and nothing else
-// until asked: four buttons on the card itself read as clutter. The menu opens
-// under the button with each action named in full; a click outside it, Escape,
-// or following one closes it.
+// The home's quick actions behind one round button in the corner of the
+// day's card, so the card says the day and the greeting and nothing else
+// until asked: four buttons on the card itself read as clutter. On a desktop
+// the menu opens under the button; on a phone (`sheet`), whose day card is
+// one of a swiped deck that clips whatever hangs off it, it rises from the
+// foot of the screen over a dimmed page, which holds still under it. Each
+// action is named in full; a tap outside, Escape, or following one closes
+// it.
 //
 // Everyone starts with the same few (data/quickActions.js), and "Edit" at the
 // menu's foot turns it into the whole list of what this person may do, each
 // ticked on or off, saved to their account as they go (useQuickActions).
+
+const props = defineProps({
+  // Open as a sheet from the foot of the screen (a phone) rather than a menu
+  // under the button.
+  sheet: { type: Boolean, default: false },
+})
 
 const { actions, available, chosen, isDefault, setMine, toggle, max } = useQuickActions()
 
 const open = ref(false)
 const editing = ref(false)
 const root = ref(null)
+const panel = ref(null)
+useScrollLock(computed(() => open.value && props.sheet))
 
 const close = () => {
   open.value = false
 }
+// The sheet is drawn on the page itself, outside the button's own box.
 const onPointer = (event) => {
-  if (!root.value?.contains(event.target)) close()
+  if (!root.value?.contains(event.target) && !panel.value?.contains(event.target)) close()
 }
 const onKey = (event) => {
   if (event.key === 'Escape') close()
@@ -58,16 +71,25 @@ const full = (key) => !chosen.value.includes(key) && chosen.value.length >= max
       <Plus class="size-5 transition-transform duration-200" :class="open ? 'rotate-45' : ''" />
     </button>
 
+    <Teleport to="body" :disabled="!sheet">
+    <div v-if="open && sheet" class="fixed inset-0 z-[70] bg-gray-950/40" aria-hidden="true" />
     <Transition
-      enter-active-class="transition duration-150 ease-out"
-      enter-from-class="opacity-0 -translate-y-1 scale-95"
-      leave-active-class="transition duration-100 ease-in"
-      leave-to-class="opacity-0 -translate-y-1 scale-95"
+      :enter-active-class="sheet ? 'transition duration-200 ease-out' : 'transition duration-150 ease-out'"
+      :enter-from-class="sheet ? 'opacity-0 translate-y-4' : 'opacity-0 -translate-y-1 scale-95'"
+      :leave-active-class="sheet ? 'transition duration-150 ease-in' : 'transition duration-100 ease-in'"
+      :leave-to-class="sheet ? 'opacity-0 translate-y-4' : 'opacity-0 -translate-y-1 scale-95'"
     >
       <div
         v-if="open"
-        class="absolute right-0 top-11 z-30 w-64 origin-top-right rounded-2xl bg-white p-1.5 shadow-lg ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/10"
+        ref="panel"
+        :class="[
+          'bg-white p-1.5 ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/10',
+          sheet
+            ? 'fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[71] mx-auto max-w-md rounded-3xl p-2'
+            : 'absolute right-0 top-11 z-30 w-64 origin-top-right rounded-2xl shadow-lg',
+        ]"
       >
+        <p v-if="sheet && !editing" class="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Start something</p>
         <!-- The actions, each opening its place. -->
         <ul v-if="!editing" role="menu" aria-label="Quick actions">
           <li v-for="action in actions" :key="action.key" role="none">
@@ -135,5 +157,6 @@ const full = (key) => !chosen.value.includes(key) && chosen.value.length >= max
         </div>
       </div>
     </Transition>
+    </Teleport>
   </div>
 </template>

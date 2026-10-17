@@ -1,7 +1,9 @@
 import { CalendarPlus, ChalkboardTeacher, ClipboardCheck, HandsPraying, NotePencil, Package, UserPlus } from '../icons'
 
-// The things someone can start from the desktop home's quick actions (the
-// button in the corner of the day's card, QuickActionsMenu). Each opens the
+// The things someone can start from the home's quick actions: on a desktop
+// the back of the day's card, turned over (QuickActionsBack), on a phone the
+// sheet its "+" raises (QuickActionsMenu). `area` is the app each belongs to.
+// Each opens the
 // place it is done with its form already open, and each is offered only to
 // whoever may do it there (`area`, as in lib/capabilities.js: its manage
 // capability). A new one needs only a line here and the app answering its

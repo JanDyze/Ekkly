@@ -222,7 +222,31 @@ const phaseAt = (now, sunrise, sunset) => {
   return 'night'
 }
 
+// A sky to look at rather than the real one, for seeing what the home does
+// in weather that is not falling today: `?weather=rain` (or clear, cloudy,
+// storm, fog, or rainbow: clear just after rain) and `?sky=night` (or dawn,
+// day, dusk) on the address. Only while live sky is on, and only on that
+// page; nothing is kept.
+const PREVIEW_WEATHER = ['clear', 'cloudy', 'rain', 'storm', 'fog', 'rainbow']
+const PREVIEW_SKY = ['dawn', 'day', 'dusk', 'night']
+const previewOf = () => {
+  try {
+    const query = new URLSearchParams(window.location.search)
+    const weather = query.get('weather')
+    const sky = query.get('sky')
+    const known = PREVIEW_WEATHER.includes(weather) ? weather : null
+    return {
+      weather: known === 'rainbow' ? 'clear' : known,
+      rainbow: known === 'rainbow',
+      sky: PREVIEW_SKY.includes(sky) ? sky : null,
+    }
+  } catch {
+    return { weather: null, rainbow: false, sky: null }
+  }
+}
+
 export function useLiveSky() {
+  const preview = previewOf()
   const { church } = useAppSettings()
   const now = ref(Date.now())
 
@@ -244,12 +268,12 @@ export function useLiveSky() {
   /** What the scene's wrapper carries: nothing when live sky is off. */
   const sky = computed(() => {
     if (!enabled.value) return {}
-    const phase = phaseAt(now.value, report.value?.sunrise, report.value?.sunset)
+    const phase = preview.sky || phaseAt(now.value, report.value?.sunrise, report.value?.sunset)
     return {
       'data-sky': phase,
-      'data-weather': report.value?.weather || 'clear',
+      'data-weather': preview.weather || report.value?.weather || 'clear',
       // A rainbow needs the sun: just after the rain, and not at night.
-      'data-rainbow': report.value?.rainbow && phase !== 'night' ? '' : undefined,
+      'data-rainbow': (preview.rainbow || report.value?.rainbow) && phase !== 'night' ? '' : undefined,
     }
   })
 
@@ -260,15 +284,16 @@ export function useLiveSky() {
   const weather = computed(() => {
     if (!enabled.value || !report.value) return null
     const phase = sky.value['data-sky']
+    const kind = sky.value['data-weather']
     return {
-      kind: report.value.weather,
+      kind,
       night: phase === 'night',
       label:
         sky.value['data-rainbow'] !== undefined
           ? 'After the rain'
-          : report.value.weather === 'clear' && phase === 'night'
+          : kind === 'clear' && phase === 'night'
             ? 'Clear night'
-            : LABELS[report.value.weather] || '',
+            : LABELS[kind] || '',
       temperature: report.value.temperature ?? null,
     }
   })

@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { askYunit, confirmAction } from '../api/yunitService'
 import { feel } from '../utils/yunitFeedback'
 
@@ -48,7 +48,8 @@ const REACTIONS = {
 
 let settleTimer = null
 let sleepTimer = null
-const SLEEP_AFTER = 90000
+// Five minutes of quiet before he dozes: until then he plays (HomeYunit).
+const SLEEP_AFTER = 300000
 
 const busy = () => phase.value === 'thinking' || phase.value === 'talking'
 const settleIn = (ms) => {
@@ -63,7 +64,10 @@ const stir = () => {
   clearTimeout(sleepTimer)
   if (phase.value === 'sleeping') phase.value = 'idle'
   sleepTimer = setTimeout(() => {
-    if (phase.value === 'idle' && !sending.value) phase.value = 'sleeping'
+    if (phase.value === 'idle' && !sending.value) {
+      phase.value = 'sleeping'
+      feel('doze')
+    }
   }, SLEEP_AFTER)
 }
 
@@ -77,6 +81,8 @@ const mood = computed(() => {
 const react = (name) => {
   const reaction = REACTIONS[name] || REACTIONS.plain
   phase.value = reaction.mood
+  // Not a sound for every line he finishes saying: that was too much.
+  if (reaction.mood === 'confused') feel('puzzled')
   if (reaction.gesture) gesture(reaction.gesture)
   settleIn(reaction.for)
 }
@@ -204,6 +210,41 @@ const clear = () => {
   stir()
 }
 
+// A line of his own rather than an answer (his hello on the home): he talks
+// for as long as it takes to come up, then is pleased to see whoever it was
+// for, and settles. A question asked meanwhile takes over, as it should.
+let speakTimer = null
+const speak = (ms) => {
+  if (sending.value) return
+  stir()
+  clearTimeout(speakTimer)
+  clearTimeout(settleTimer)
+  phase.value = 'talking'
+  speakTimer = setTimeout(() => {
+    if (phase.value === 'talking' && !sending.value) react('happy')
+  }, ms)
+}
+
 export function useYunitChat() {
-  return { messages, draft, sending, focused, mood, doing, cue, send: () => ask(), ask, confirm, cancel, clear, stir, gesture }
+  return { messages, draft, sending, focused, mood, doing, cue, send: () => ask(), ask, confirm, cancel, clear, stir, gesture, speak }
+}
+
+/**
+ * Keeps the newest answer in view while it arrives, in whatever scrolls the
+ * conversation (`scroller`, a ref to it), unless the person has scrolled up
+ * to read something earlier.
+ */
+export function useFollowReplies(scroller) {
+  const nearBottom = () => {
+    const el = scroller.value
+    return !el || el.scrollHeight - el.scrollTop - el.clientHeight < 160
+  }
+  watch(
+    () => JSON.stringify(messages.value.map((m) => [m.text.length, m.cards?.length, m.actions?.map((a) => a.state)])),
+    async () => {
+      const follow = nearBottom()
+      await nextTick()
+      if (follow && scroller.value) scroller.value.scrollTo({ top: scroller.value.scrollHeight, behavior: 'smooth' })
+    }
+  )
 }

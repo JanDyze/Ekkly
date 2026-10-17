@@ -2,7 +2,7 @@
 import { PaperPlaneRight } from '../../../../icons'
 import YunitMascot from '../../../yunit/YunitMascot.vue'
 import { prefersStill } from '../../../frontdoor/useSceneTimeline'
-import YunitName from './YunitName.vue'
+import YunitName from '../../../yunit/YunitWordmark.vue'
 
 // YUNIT's page mid-conversation, drawn once for every scene that talks to
 // him: him small in the header with what he is doing under his name, the

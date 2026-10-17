@@ -209,6 +209,28 @@ talking while the reply arrives, then happy, puzzled or sorry as the reply
 asks, and asleep after a long quiet. Idle, he blinks, follows the pointer and
 now and then glances round or hops; he never breathes or bobs.
 
+He is on the home too ([HomeYunit.vue](src/components/home/HomeYunit.vue)),
+as himself, never boxed in a card or a panel: on a phone he stands at the
+foot of the church's room beside the church, never in front of it; on a
+desktop wherever he has been put among the panels, and picked up and carried
+to move him. Beside the people rail, its opening bowls him over: he curls
+into a ball, rolls, and uncurls dizzy and cross; its closing leaves him
+stumbling after it. In the dark he carries a lit lantern, and notices when
+the dark comes ("Oh! It's gone dark."). Written to, he comes to the foot of
+the screen (on a desktop sliding down from his place) and his conversation
+rises from him as speech bubbles over the dimmed home. The first time the
+home opens in a visit he
+arrives and waves, and says hello in a speech bubble: who he is, the first
+time ever on that phone, and after that one thing he can be asked. Tapped,
+he says the next; tapped awake, that he must have nodded off. Now and then
+he pipes up by himself with one thing he can be asked, aloud as well as in
+his bubble when his sounds are on: a few times a visit at most, only to
+someone there, and never over a conversation. His voice is Kokoro's
+`am_michael`, a little quick (`src/data/yunitVoice.js`, spoken into
+`public/voice/yunit/` by `scripts/make-yunit-voice.mjs`). What he says
+there is practical, like everything he says: he finds and keeps records,
+and never greets as a church would or speaks as its pastor.
+
 ## Shape and motion
 
 - **The window is the motif.** The arch is the mark's own outline. The front
@@ -228,6 +250,13 @@ now and then glances round or hops; he never breathes or bobs.
   finished state for `prefers-reduced-motion`.
 
 ## What Ekkly is for
+
+Ekkly is a ministry. It is built to glorify God and to exalt Jesus Christ:
+it keeps a church's lists so that its people can give their time to what
+Jesus sent His church to do — share the gospel, make disciples and worship
+Him. Say so plainly where Ekkly speaks for itself (the front door does, and
+sets out the gospel), and never let the tool stand where the Lord should: in
+any picture of a church, the cross is the centre, never Ekkly's mark.
 
 A tool, not a replacement. Ekkly takes the redundant and messy work off a
 church — the roll kept in three notebooks, the offering counted into a
