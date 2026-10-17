@@ -47,7 +47,7 @@ const handleExport = () => {
 </script>
 
 <template>
-  <AppScreen title="Statement" :subtitle="subtitle" :back="{ name: 'FinancesHome' }" root="/finances">
+  <AppScreen title="Statement" :subtitle="subtitle" :back="{ name: 'FinancesHome' }" root="/finances" desk>
     <template #action>
       <button
         type="button"
@@ -59,7 +59,10 @@ const handleExport = () => {
       </button>
     </template>
 
-    <div class="mb-3 flex items-center gap-1">
+    <!-- A statement is a document, read down a page: on a desktop it keeps
+         a page's width in the middle of the screen rather than stretching
+         its figures out to the far side of it. -->
+    <div class="mb-3 flex items-center gap-1 lg:mx-auto lg:max-w-4xl">
       <button
         type="button"
         class="rounded-xl p-2 text-gray-500 transition-colors hover:bg-gray-200/70 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -81,8 +84,8 @@ const handleExport = () => {
       </button>
     </div>
 
-    <div v-if="loading" class="h-64 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
-    <div v-else class="overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:bg-gray-800 dark:ring-gray-700/70">
+    <div v-if="loading" class="h-64 animate-pulse rounded-2xl bg-gray-100 lg:mx-auto lg:max-w-4xl dark:bg-gray-800" />
+    <div v-else class="overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 lg:mx-auto lg:max-w-4xl dark:bg-gray-800 dark:ring-gray-700/70">
       <StatementView :statement="statement" />
     </div>
   </AppScreen>

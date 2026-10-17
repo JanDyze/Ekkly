@@ -58,7 +58,7 @@ const subtitle = computed(() => (loading.value ? '' : `${formatMoney(balancesTod
 </script>
 
 <template>
-  <AppScreen title="Accounts" :subtitle="subtitle" :back="{ name: 'FinancesHome' }" root="/finances">
+  <AppScreen title="Accounts" :subtitle="subtitle" :back="{ name: 'FinancesHome' }" root="/finances" desk>
     <div v-if="loading" class="flex flex-col gap-2">
       <div v-for="n in 3" :key="n" class="h-14 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
     </div>

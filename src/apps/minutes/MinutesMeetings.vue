@@ -255,7 +255,7 @@ const handleCancelMinute = () => {
 
 <template>
   <div class="relative h-full">
-    <AppScreen title="Meetings" :subtitle="subtitle" :back="{ name: 'MinutesHome' }" root="/minutes">
+    <AppScreen title="Meetings" :subtitle="subtitle" :back="{ name: 'MinutesHome' }" root="/minutes" desk>
       <!-- Opened from the floating button rather than always sitting there. -->
       <MinutesToolbar
         :search-query="searchQuery"

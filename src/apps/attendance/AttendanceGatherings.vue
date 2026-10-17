@@ -10,6 +10,7 @@ import { useToast } from '../../composables/useToast'
 import AttendanceListItem from '../../components/attendance/AttendanceListItem.vue'
 import AttendanceFab from '../../components/attendance/AttendanceFab.vue'
 import AppScreen from '../../components/appframe/AppScreen.vue'
+import { DESK_ROWS } from '../../components/appframe/deskGrid'
 import AttendanceContextMenu from '../../components/attendance/AttendanceContextMenu.vue'
 import EventStatusSheet from '../../components/events/EventStatusSheet.vue'
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue'
@@ -64,7 +65,7 @@ const toggleMobileView = () => {
 const showGrid = computed(() => mobileView.value === 'grid')
 // Two cards across: a gathering has a title to fit, where a person is mostly
 // a face, and the app's column is a phone's width on every screen.
-const gridClass = 'grid grid-cols-2 gap-2 p-2'
+const gridClass = 'grid grid-cols-2 gap-2 p-2 lg:grid-cols-[repeat(auto-fill,minmax(12rem,1fr))]'
 
 const subtitle = computed(() => {
   if (loading.value) return ''
@@ -249,7 +250,7 @@ const unskipRow = async () => {
 
 <template>
   <div class="relative h-full">
-    <AppScreen title="Gatherings" :subtitle="subtitle" :back="{ name: 'AttendanceHome' }" root="/attendance">
+    <AppScreen title="Gatherings" :subtitle="subtitle" :back="{ name: 'AttendanceHome' }" root="/attendance" desk>
       <!-- Loading: the shape of whichever view is on. -->
       <div
         v-if="loading"
@@ -300,7 +301,8 @@ const unskipRow = async () => {
           <div
             :class="[
               'overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:bg-gray-800 dark:ring-gray-700/70',
-              showGrid ? gridClass : 'divide-y divide-gray-100 dark:divide-gray-700/60',
+              // On a desktop the rows are cards across the width (DESK_ROWS).
+              showGrid ? gridClass : ['divide-y divide-gray-100 dark:divide-gray-700/60', DESK_ROWS],
             ]"
           >
             <AttendanceListItem

@@ -83,7 +83,7 @@ const SHOWN = 10
 </script>
 
 <template>
-  <AppScreen title="To record" :subtitle="subtitle" :back="{ name: 'AttendanceHome' }" root="/attendance">
+  <AppScreen title="To record" :subtitle="subtitle" :back="{ name: 'AttendanceHome' }" root="/attendance" desk>
     <div v-if="loading" class="flex flex-col gap-2">
       <div v-for="n in 5" :key="n" class="h-14 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
     </div>

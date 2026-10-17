@@ -167,7 +167,7 @@ const SOFT =
 </script>
 
 <template>
-  <AppScreen :title="item?.name || (missing ? 'Not found' : '')" :subtitle="subtitle" :back="{ name: 'InventoryAll' }" root="/inventory">
+  <AppScreen :title="item?.name || (missing ? 'Not found' : '')" :subtitle="subtitle" :back="{ name: 'InventoryAll' }" root="/inventory" desk>
     <template #action>
       <RouterLink
         v-if="canEdit && item"
@@ -188,7 +188,10 @@ const SOFT =
       <ListRow title="This item is not on the list" subtitle="It may have been deleted." :to="{ name: 'InventoryAll' }" />
     </ListGroup>
 
-    <div v-else-if="item" class="flex flex-col gap-5">
+    <!-- On a desktop, two columns: the thing itself and what can be done
+         with it on the left, held in view, and its record on the right. -->
+    <div v-else-if="item" class="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(18rem,26rem)_minmax(0,1fr)] lg:items-start lg:gap-6">
+      <div class="flex flex-col gap-5 lg:sticky lg:top-20">
       <!-- The picture, and whether it is here. -->
       <section class="overflow-hidden rounded-3xl bg-white ring-1 ring-gray-200/70 dark:bg-gray-800 dark:ring-gray-700/70">
         <ItemThumb :item="item" size="aspect-[4/3] w-full" large />
@@ -218,9 +221,11 @@ const SOFT =
           Needs repair
         </button>
       </div>
+      </div>
 
+      <div class="flex flex-col gap-5">
       <!-- Who has it now. -->
-      <ListGroup v-if="item.loans.length" title="Out now" :count="item.loans.length">
+      <ListGroup v-if="item.loans.length" title="Out now" :count="item.loans.length" flat>
         <div v-for="loan in item.loans" :key="loan.id" class="px-4 py-3">
           <p class="truncate text-[15px] font-medium text-gray-900 dark:text-white">{{ borrowerLine(loan, item) }}</p>
           <p :class="['mt-0.5 text-sm', loanState(loan, today) === 'overdue' ? 'font-medium text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400']">
@@ -248,7 +253,7 @@ const SOFT =
       </ListGroup>
 
       <!-- The rest of its record. -->
-      <ListGroup title="Details">
+      <ListGroup title="Details" flat>
         <div v-for="row in details" :key="row.key" class="flex gap-3 px-4 py-3 text-[15px]">
           <span class="w-24 shrink-0 text-gray-500 dark:text-gray-400">{{ row.label }}</span>
           <span
@@ -263,7 +268,7 @@ const SOFT =
       </ListGroup>
 
       <!-- Who had it before: the last few, newest first. -->
-      <ListGroup v-if="item.history.length" title="Lent before" :count="item.history.length">
+      <ListGroup v-if="item.history.length" title="Lent before" :count="item.history.length" flat>
         <ListRow
           v-for="entry in item.history.slice(0, 5)"
           :key="`${entry.id}:${entry.returned}`"
@@ -281,6 +286,7 @@ const SOFT =
         <Trash class="size-4" />
         Delete item
       </button>
+      </div>
     </div>
 
     <LendSheet :show="showLend" :item="item" :saving="saving" @close="showLend = false" @save="lend" />

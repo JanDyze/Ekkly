@@ -44,7 +44,7 @@ const subtitle = computed(() => {
 </script>
 
 <template>
-  <AppScreen title="Action items" :subtitle="subtitle" :back="{ name: 'MinutesHome' }" root="/minutes">
+  <AppScreen title="Action items" :subtitle="subtitle" :back="{ name: 'MinutesHome' }" root="/minutes" desk>
     <!-- Waiting, or every one the minutes hold. -->
     <div class="mb-4 inline-flex rounded-xl bg-gray-200/70 p-1 dark:bg-gray-800" role="tablist" aria-label="Which action items">
       <button

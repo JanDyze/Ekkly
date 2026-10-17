@@ -11,6 +11,26 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.45] — 2026-10-17
+
+Seven more apps laid out for a computer: Tasks, Attendance, Events, Finances,
+Gallery, Inventory and Minutes.
+
+### Changed
+
+- **Tasks is a table on a computer:** tick the box at a row's start, with who
+  has it, the ministry, when it is due and how pressing it is in columns,
+  late ones in red, and the task opening beside the list.
+- **The book is a ledger:** money in, money out and the balance after each
+  entry in columns of their own. The statement keeps a page's width.
+- **Lists are cards across the screen** in these apps: gatherings by month,
+  what is still to count, what is coming up, every week's services, the
+  meetings, action items and decisions, every item, what is borrowed or
+  broken, and the albums still needing photos.
+- **An album's photos fill the width,** and **an item's page** has its
+  picture on the left and its record on the right.
+- On a phone, nothing changes.
+
 ## [0.35.44] — 2026-10-17
 
 ### Changed

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, inject } from 'vue'
+import { DESK_ROWS } from './deskGrid'
 // A group of rows inside an app's screens: a small heading, then the rows in
 // one white block, the way a phone's settings read.
 //
@@ -39,9 +40,7 @@ const grid = computed(() => desk.value && !props.flat)
     <div
       :class="[
         'divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70',
-        grid
-          ? 'lg:grid lg:grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] lg:gap-3 lg:divide-y-0 lg:overflow-visible lg:rounded-none lg:bg-transparent lg:ring-0 lg:*:rounded-2xl lg:*:bg-white lg:*:ring-1 lg:*:ring-gray-200/70 dark:lg:bg-transparent dark:lg:*:bg-gray-800 dark:lg:*:ring-gray-700/70'
-          : '',
+        grid ? DESK_ROWS : '',
       ]"
     >
       <slot />

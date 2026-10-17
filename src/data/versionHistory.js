@@ -8,6 +8,17 @@
 
 export const versionHistory = [
   {
+    version: '0.35.45',
+    date: '2026-10-17',
+    title: 'More apps, made for a computer',
+    summary: 'Tasks, Attendance, Events, Finances, Gallery, Inventory and Minutes use the whole screen on a computer.',
+    highlights: [
+      'Tasks is a table, with who, ministry and due date in columns.',
+      'The book is a ledger: money in, money out and the balance.',
+      'Lists are cards across the screen; albums fill it with photos.',
+    ],
+  },
+  {
     version: '0.35.43',
     date: '2026-10-17',
     title: 'People, made for a computer',

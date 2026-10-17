@@ -116,7 +116,7 @@ const onCreate = (details) => {
       :title="kind || 'Albums'"
       :subtitle="subtitle"
       :back="kind ? { name: 'GalleryKinds' } : { name: 'GalleryHome' }"
-      root="/gallery"
+      root="/gallery" desk
     >
       <!-- Opened from the floating button rather than always sitting there. -->
       <GalleryToolbar

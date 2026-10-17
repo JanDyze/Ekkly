@@ -29,7 +29,7 @@ const subtitle = computed(() => {
 </script>
 
 <template>
-  <AppScreen title="Needs repair" :subtitle="subtitle" :back="{ name: 'InventoryHome' }" root="/inventory">
+  <AppScreen title="Needs repair" :subtitle="subtitle" :back="{ name: 'InventoryHome' }" root="/inventory" desk>
     <ItemList
       :items="needsRepair"
       :loading="loading"

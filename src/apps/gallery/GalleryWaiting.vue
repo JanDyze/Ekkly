@@ -80,7 +80,7 @@ const openAlbum = (album) => router.push({ name: 'GalleryAlbum', params: { id: a
 
 <template>
   <div class="relative h-full">
-    <AppScreen title="Needs photos" :subtitle="subtitle" :back="{ name: 'GalleryHome' }" root="/gallery">
+    <AppScreen title="Needs photos" :subtitle="subtitle" :back="{ name: 'GalleryHome' }" root="/gallery" desk>
       <GalleryToolbar
         :search-query="searchQuery"
         :open="searchOpen"

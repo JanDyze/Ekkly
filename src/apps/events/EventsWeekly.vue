@@ -82,7 +82,7 @@ const note = computed(() => {
 </script>
 
 <template>
-  <AppScreen title="Every week" :subtitle="subtitle" :back="{ name: 'EventsHome' }" root="/events">
+  <AppScreen title="Every week" :subtitle="subtitle" :back="{ name: 'EventsHome' }" root="/events" desk>
     <div v-if="schedulesLoading" class="flex flex-col gap-2">
       <div v-for="n in 7" :key="n" class="h-12 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
     </div>

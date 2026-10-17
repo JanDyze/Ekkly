@@ -113,7 +113,7 @@ const dayOf = (event) => ({ name: 'Events', query: { date: event.date } })
 </script>
 
 <template>
-  <AppScreen title="Coming up" :subtitle="subtitle" :back="{ name: 'EventsHome' }" root="/events">
+  <AppScreen title="Coming up" :subtitle="subtitle" :back="{ name: 'EventsHome' }" root="/events" desk>
     <div v-if="loading" class="flex flex-col gap-2">
       <div v-for="n in 6" :key="n" class="h-14 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
     </div>

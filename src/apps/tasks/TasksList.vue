@@ -3,6 +3,8 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronDown, ChevronRight, MagnifyingGlass, Plus, X } from '../../icons'
 import AppScreen from '../../components/appframe/AppScreen.vue'
+import TaskTable from '../../components/tasks/TaskTable.vue'
+import { useMediaQuery } from '../../composables/useMediaQuery'
 import TaskQuickAdd from '../../components/tasks/TaskQuickAdd.vue'
 import TaskListItem from '../../components/tasks/TaskListItem.vue'
 import TaskDrawer from '../../components/tasks/TaskDrawer.vue'
@@ -50,6 +52,10 @@ const myMemberId = computed(() => (myMember.value ? memberKey(myMember.value) : 
 
 // Ticking a box is not editing: the person a task was handed to has to be able
 // to say it is done without also being trusted to rewrite the list.
+// On a desktop the list is a table (TaskTable): who, the ministry, when it
+// is due and how pressing in columns, rather than wrapped under each title.
+const desk = useMediaQuery('(min-width: 1024px)')
+
 const canComplete = (task) => canEdit.value || isAssignedTo(task, myMemberId.value)
 
 /** Who the app records as having ticked something off. */
@@ -280,7 +286,7 @@ const emptyLine = computed(() => {
 </script>
 
 <template>
-  <AppScreen :title="title" :subtitle="subtitle" :back="back" root="/tasks" fill wide>
+  <AppScreen :title="title" :subtitle="subtitle" :back="back" root="/tasks" fill wide desk>
     <template #action>
       <button
         v-if="canEdit && mode !== 'done'"
@@ -295,12 +301,14 @@ const emptyLine = computed(() => {
     </template>
 
     <div class="flex min-h-0 flex-1">
-      <div class="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pb-6">
-        <div class="mx-auto flex max-w-2xl flex-col gap-4">
+      <!-- The table's column names stay at the top of this list, which scrolls
+           on its own under the screen's header (--screen-head: none over it). -->
+      <div class="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pb-6 [--screen-head:0px]">
+        <div class="mx-auto flex max-w-2xl flex-col gap-4 lg:max-w-none">
           <!-- Search, and the box to add one: above the list, never scrolled
                away from. -->
-          <div class="flex flex-col gap-2">
-            <label class="relative block">
+          <div class="flex flex-col gap-2 lg:flex-row lg:items-start">
+            <label class="relative block lg:flex-1">
               <MagnifyingGlass class="pointer-events-none absolute left-3.5 top-1/2 size-4.5 -translate-y-1/2 text-gray-400" />
               <input
                 id="tasks-search"
@@ -313,7 +321,7 @@ const emptyLine = computed(() => {
                 class="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
             </label>
-            <TaskQuickAdd v-if="canEdit && mode !== 'done'" class="mb-0!" @add="quickAdd" />
+            <TaskQuickAdd v-if="canEdit && mode !== 'done'" class="mb-0! lg:flex-1" @add="quickAdd" />
           </div>
 
           <div v-if="loading" class="flex flex-col gap-2">
@@ -334,7 +342,35 @@ const emptyLine = computed(() => {
               {{ mode === 'mine' ? 'You are all caught up.' : 'Everything here has been ticked off.' }}
             </p>
 
+            <!-- On a desktop, the whole list as one table, done ones at its
+                 foot once shown. -->
+            <template v-if="desk">
+              <TaskTable
+                v-if="openCount || mode === 'done' || showDone"
+                :groups="openGroups"
+                :done="doneTasks"
+                :show-done="mode === 'done' || showDone"
+                :today="today"
+                :selected-id="selectedTaskId"
+                :can-edit="canEdit"
+                :can-complete="canComplete"
+                @open="openTask"
+                @toggle="toggleDone"
+              />
+              <button
+                v-if="mode !== 'done' && doneTasks.length"
+                type="button"
+                class="flex items-center gap-1.5 self-start px-1 text-xs font-bold uppercase tracking-wide text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                :aria-expanded="showDone"
+                @click="showDone = !showDone"
+              >
+                <component :is="showDone ? ChevronDown : ChevronRight" class="size-4" />
+                {{ showDone ? 'Hide' : 'Show' }} the {{ doneTasks.length }} done
+              </button>
+            </template>
+
             <!-- One block per due date, late first and in red. -->
+            <template v-else>
             <section v-for="group in openGroups" :key="group.key">
               <h2
                 :class="[
@@ -400,6 +436,7 @@ const emptyLine = computed(() => {
                 />
               </div>
             </section>
+            </template>
           </template>
         </div>
       </div>

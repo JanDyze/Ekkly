@@ -22,7 +22,7 @@ const subtitle = computed(() => {
 </script>
 
 <template>
-  <AppScreen title="To write up" :subtitle="subtitle" :back="{ name: 'MinutesHome' }" root="/minutes">
+  <AppScreen title="To write up" :subtitle="subtitle" :back="{ name: 'MinutesHome' }" root="/minutes" desk>
     <div v-if="loading" class="flex flex-col gap-2">
       <div v-for="n in 4" :key="n" class="h-16 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
     </div>

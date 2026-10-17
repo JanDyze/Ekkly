@@ -49,7 +49,7 @@ const openPhoto = (album, photo) => {
 </script>
 
 <template>
-  <AppScreen ref="screen" title="Recent photos" :subtitle="subtitle" :back="{ name: 'GalleryHome' }" root="/gallery">
+  <AppScreen ref="screen" title="Recent photos" :subtitle="subtitle" :back="{ name: 'GalleryHome' }" root="/gallery" desk>
     <div v-if="photosLoading || loading" class="flex flex-col gap-5">
       <section v-for="i in 2" :key="i">
         <div class="mb-2 h-3 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>

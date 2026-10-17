@@ -33,7 +33,7 @@ const subtitle = computed(() => (loading.value || !rows.value.length ? '' : plur
 </script>
 
 <template>
-  <AppScreen title="By kind" :subtitle="subtitle" :back="{ name: 'GalleryHome' }" root="/gallery">
+  <AppScreen title="By kind" :subtitle="subtitle" :back="{ name: 'GalleryHome' }" root="/gallery" desk>
     <div
       v-if="loading"
       class="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70"

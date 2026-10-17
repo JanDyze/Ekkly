@@ -62,7 +62,7 @@ const open = (id) => router.push({ name: 'MinuteDetails', params: { id } })
 </script>
 
 <template>
-  <AppScreen title="Decisions" :subtitle="subtitle" :back="{ name: 'MinutesHome' }" root="/minutes">
+  <AppScreen title="Decisions" :subtitle="subtitle" :back="{ name: 'MinutesHome' }" root="/minutes" desk>
     <div class="relative mb-4">
       <MagnifyingGlass class="pointer-events-none absolute left-3 top-1/2 size-4.5 -translate-y-1/2 text-gray-400" />
       <input

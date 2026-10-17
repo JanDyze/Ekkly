@@ -3,6 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft, ChevronRight, MagnifyingGlass, Plus, SearchX } from '../../icons'
 import AppScreen from '../../components/appframe/AppScreen.vue'
+import DeskTable from '../../components/appframe/DeskTable.vue'
+import { useMediaQuery } from '../../composables/useMediaQuery'
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue'
 import EntryDrawer from '../../components/finances/EntryDrawer.vue'
 import { useFinanceOverview } from '../../composables/useFinanceOverview'
@@ -69,6 +71,20 @@ const rows = computed(() =>
     .reverse()
     .filter(({ entry }) => matchesEntryQuery(entry, searchQuery.value))
 )
+
+// On a desktop the month is a ledger, as a treasurer keeps one on paper: the
+// money in and the money out in columns of their own, the balance after each
+// line in the last, rather than each entry's figures stacked at its end.
+const desk = useMediaQuery('(min-width: 1024px)')
+const ledgerColumns = [
+  { key: 'date', label: 'Date', width: '4.5rem' },
+  { key: 'entry', label: 'Entry', width: 'minmax(12rem, 2fr)' },
+  { key: 'line', label: 'Statement line', width: 'minmax(10rem, 1.6fr)', min: 900 },
+  { key: 'where', label: 'Account', width: 'minmax(6rem, 0.8fr)', min: 1080 },
+  { key: 'in', label: 'Money in', width: '7.5rem', align: 'right' },
+  { key: 'out', label: 'Money out', width: '7.5rem', align: 'right' },
+  { key: 'balance', label: 'Balance', width: '8rem', align: 'right', min: 680 },
+]
 
 const subtitle = computed(() => {
   if (loading.value) return formatMonthLabel(monthKey.value)
@@ -173,7 +189,7 @@ const closeSearch = () => {
 </script>
 
 <template>
-  <AppScreen title="Book" :subtitle="subtitle" :back="{ name: 'FinancesHome' }" root="/finances">
+  <AppScreen title="Book" :subtitle="subtitle" :back="{ name: 'FinancesHome' }" root="/finances" desk>
     <template #action>
       <button
         type="button"
@@ -195,7 +211,7 @@ const closeSearch = () => {
     </template>
 
     <!-- Which month is being read -->
-    <div class="mb-3 flex items-center gap-1">
+    <div class="mb-3 flex items-center gap-1 lg:mx-auto lg:max-w-md">
       <button
         type="button"
         class="rounded-xl p-2 text-gray-500 transition-colors hover:bg-gray-200/70 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -248,6 +264,41 @@ const closeSearch = () => {
         <template v-else>Nothing to show for this month.</template>
       </p>
     </div>
+
+    <DeskTable
+      v-else-if="desk"
+      :label="`Entries for ${formatMonthLabel(monthKey)}`"
+      :columns="ledgerColumns"
+      :rows="rows"
+      :row-key="(row) => row.entry.id"
+      :row-class="(row) => ['border-l-4', spineClass(row.entry)]"
+      :clickable="canManage"
+      @row-click="(row) => openEdit(row.entry)"
+    >
+      <template #cell-date="{ row }">
+        <span class="text-xs font-medium tabular-nums text-gray-500 dark:text-gray-400">{{ formatEntryDate(row.entry.date) }}</span>
+      </template>
+      <template #cell-entry="{ row }">
+        <span class="block truncate font-semibold text-gray-900 dark:text-white">{{ row.entry.description }}</span>
+        <span v-if="row.entry.payee" class="block truncate text-xs text-gray-500 dark:text-gray-400">{{ row.entry.payee }}</span>
+      </template>
+      <template #cell-line="{ row }">
+        <span class="block truncate text-gray-600 dark:text-gray-300">{{ categoryLabel(row.entry) }}</span>
+      </template>
+      <template #cell-where="{ row }">
+        <span class="block truncate text-gray-500 dark:text-gray-400">{{ whereLabel(row.entry) }}</span>
+      </template>
+      <template #cell-in="{ row }">
+        <span v-if="row.entry.direction === 'in'" class="font-semibold tabular-nums text-green-700 dark:text-green-400">{{ formatAmount(row.entry.amount) }}</span>
+      </template>
+      <template #cell-out="{ row }">
+        <span v-if="row.entry.direction === 'out'" class="font-semibold tabular-nums text-red-600 dark:text-red-400">{{ formatAmount(row.entry.amount) }}</span>
+        <span v-else-if="row.entry.direction === 'transfer'" class="tabular-nums text-gray-500 dark:text-gray-400" title="Moved between accounts">{{ formatAmount(row.entry.amount) }}</span>
+      </template>
+      <template #cell-balance="{ row }">
+        <span class="tabular-nums text-gray-500 dark:text-gray-400">{{ formatAmount(row.balance) }}</span>
+      </template>
+    </DeskTable>
 
     <!-- The entries, in one white block, each with its colour on its edge. -->
     <ul

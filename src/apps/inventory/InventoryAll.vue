@@ -39,7 +39,7 @@ const empty = computed(() => ({
 </script>
 
 <template>
-  <AppScreen title="All items" :subtitle="subtitle" :back="{ name: 'InventoryHome' }" root="/inventory">
+  <AppScreen title="All items" :subtitle="subtitle" :back="{ name: 'InventoryHome' }" root="/inventory" desk>
     <template #action>
       <RouterLink
         v-if="canEdit"

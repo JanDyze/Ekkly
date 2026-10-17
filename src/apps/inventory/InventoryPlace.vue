@@ -27,7 +27,7 @@ const subtitle = computed(() => (loading.value ? '' : `${here.value.length} ${he
 </script>
 
 <template>
-  <AppScreen :title="title" :subtitle="subtitle" :back="{ name: 'InventoryPlaces' }" root="/inventory">
+  <AppScreen :title="title" :subtitle="subtitle" :back="{ name: 'InventoryPlaces' }" root="/inventory" desk>
     <ItemList
       v-model:query="query"
       :items="here"

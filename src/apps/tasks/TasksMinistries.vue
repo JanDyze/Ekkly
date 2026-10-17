@@ -17,7 +17,7 @@ const lineOf = (group) =>
 </script>
 
 <template>
-  <AppScreen title="By ministry" :subtitle="loading ? '' : plural(byMinistry.filter((g) => g.name).length, 'ministry', 'ministries')" :back="{ name: 'TasksHome' }" root="/tasks">
+  <AppScreen title="By ministry" :subtitle="loading ? '' : plural(byMinistry.filter((g) => g.name).length, 'ministry', 'ministries')" :back="{ name: 'TasksHome' }" root="/tasks" desk>
     <div v-if="loading" class="flex flex-col gap-2">
       <div v-for="n in 5" :key="n" class="h-14 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
     </div>
