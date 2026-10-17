@@ -11,6 +11,19 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.41] — 2026-10-17
+
+On a computer, every part of an app keeps the rest of the app beside it.
+
+### Changed
+
+- **Sections down the left.** Inside any app on a computer, the app's other
+  sections stand down the left of the screen as the same cards its home shows,
+  the one you are in ringed in its colour. Going from Birthdays to Ministries,
+  or from the Calendar to Worship, is one click instead of back and in again.
+- **The way home to the app** is at the top of them, in the church's colour.
+- On a phone, nothing changes.
+
 ## [0.35.40] — 2026-10-17
 
 On a computer, every app opens the way your home does: everything on one

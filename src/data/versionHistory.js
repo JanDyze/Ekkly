@@ -8,13 +8,14 @@
 
 export const versionHistory = [
   {
-    version: '0.35.40',
+    version: '0.35.41',
     date: '2026-10-17',
     title: 'Apps that use the whole screen',
     summary: 'On a computer, every app opens the way your home does: everything at once, on one screen.',
     highlights: [
       'The app’s main card and its sections down the left, what needs you beside them.',
       'A list from inside the app on the right: birthdays, the line-up, your tasks and more.',
+      'Inside an app, its other sections stay down the left, one click away.',
       'Nothing changes on a phone.',
     ],
   },

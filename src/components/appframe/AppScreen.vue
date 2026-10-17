@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft } from '../../icons'
 import AppArt from '../common/AppArt.vue'
+import AppRail from './AppRail.vue'
 import { interiorVars } from './churchInterior'
 
 // One screen of an app inside Ekkly: its home, or a section one step off it.
@@ -107,9 +108,15 @@ defineExpose({ scroller, hidden })
        With the bottom bar on, though, the bar takes the foot of the screen,
        so a home that no longer fits above it scrolls rather than leave its
        last tiles under the bar. -->
+  <!-- A section stands beside its app's rail on a desktop (AppRail): the way
+       home to the app and every other section, down the left. The screen
+       itself scrolls beside it, so the rail holds still. -->
+  <div :class="hasHeader ? 'flex h-full bg-gray-50 dark:bg-gray-900' : 'contents'">
+  <AppRail v-if="hasHeader" />
   <div
     ref="scroller"
     :class="[
+      hasHeader ? 'min-w-0 flex-1' : '',
       // The room is drawn on an app's home only. A section is somewhere
       // things are read — a roll, a month, a record — and windows and pews
       // behind its rows pulled the eye off them, so it stands on plain ground.
@@ -183,6 +190,7 @@ defineExpose({ scroller, hidden })
     >
       <slot />
     </main>
+  </div>
   </div>
 </template>
 

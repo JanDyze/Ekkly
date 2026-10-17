@@ -193,7 +193,10 @@ screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
    live list from inside it in an `AppSidePanel` (People's coming birthdays,
    Schedules' next line-up, Tasks' open tasks). One screen, the page never
    scrolling; a list holding more scrolls inside its panel. A card the side
-   list already says is left off the desktop's deck (`wide`). Every screen sits in `AppScreen`, which gives a section its
+   list already says is left off the desktop's deck (`wide`). A section on a
+   desktop stands beside the app's rail (`AppRail`, drawn by `AppScreen`):
+   the way home to the app and every section, read off the app's routes —
+   any screen at `depth: 1` with a `meta.title` and `meta.art` is on it. Every screen sits in `AppScreen`, which gives a section its
    back arrow and hide-on-scroll header, shows the section's artwork in full
    colour beside its title, and stands the app's home inside a church
    (`churchInterior.js`: windows, light, pews, all barely there; a section
