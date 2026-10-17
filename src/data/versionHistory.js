@@ -8,6 +8,13 @@
 
 export const versionHistory = [
   {
+    version: '0.35.49',
+    date: '2026-10-17',
+    title: 'Where you are',
+    summary: 'On a computer, pages deep inside an app show the way you came, over their title.',
+    highlights: ['“People › Ministries” over a ministry, each part a link back.'],
+  },
+  {
     version: '0.35.48',
     date: '2026-10-17',
     title: 'YUNIT swirls',

@@ -11,6 +11,14 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.49] — 2026-10-17
+
+### Added
+
+- **The way back, over the title.** On a computer, a page two steps or more
+  into an app — a ministry, a Sunday, a sermon, a session, a lesson — shows
+  the way you came over its name ("People › Ministries"), each part a link.
+
 ## [0.35.48] — 2026-10-17
 
 ### Changed

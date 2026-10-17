@@ -151,7 +151,12 @@ const HINT = 'mt-1 text-xs text-gray-500 dark:text-gray-400'
 </script>
 
 <template>
-  <AppScreen :title="title" :back="back" root="/inventory">
+  <AppScreen
+    :title="title"
+    :back="back"
+    :trail="item ? [{ label: 'All items', to: { name: 'InventoryAll' } }, { label: item.name, to: { name: 'InventoryItem', params: { id: item.id } } }] : null"
+    root="/inventory"
+  >
     <ListGroup v-if="missing">
       <ListRow title="This item is not on the list" subtitle="It may have been deleted." :to="{ name: 'InventoryAll' }" />
     </ListGroup>

@@ -117,6 +117,7 @@ const handleConfirmation = async () => {
       :title="session?.lesson?.title || t('sessionReport')"
       :subtitle="group?.name || ''"
       :back="{ name: 'SmallGroupDetails', params: { id: groupId } }"
+      :trail="[{ label: 'Groups', to: { name: 'SmallGroupsAll' } }, { label: group?.name || '', to: { name: 'SmallGroupDetails', params: { id: groupId } } }]"
       root="/small-groups"
       class="print-main"
     >
