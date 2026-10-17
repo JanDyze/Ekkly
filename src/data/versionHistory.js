@@ -8,13 +8,14 @@
 
 export const versionHistory = [
   {
-    version: '0.35.46',
+    version: '0.35.47',
     date: '2026-10-17',
     title: 'Every app, made for a computer',
     summary: 'On a computer, every app now uses the whole screen instead of a phone’s column.',
     highlights: [
       'People and Tasks are tables; the book is a ledger.',
       'Lists are cards across the screen; a record spreads its details side by side.',
+      'A Sunday in Schedules shows every team side by side.',
       'Videos keeps the video in view beside its list and its settings.',
     ],
   },

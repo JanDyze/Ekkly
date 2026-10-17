@@ -11,6 +11,14 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.47] — 2026-10-17
+
+### Changed
+
+- **A Sunday in Schedules shows every team side by side on a computer:**
+  worship, the songs, preaching, ushers and welcome each a column, the whole
+  Sunday on one screen.
+
 ## [0.35.46] — 2026-10-17
 
 The last seven apps laid out for a computer, so no app in Ekkly looks like a

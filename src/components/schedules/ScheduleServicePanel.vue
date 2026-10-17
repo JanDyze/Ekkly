@@ -101,17 +101,19 @@ const myRoleNames = computed(() => props.myRoles.map((role) => role.name).join('
 </script>
 
 <template>
-  <div class="flex flex-col gap-5">
+  <!-- On a desktop the teams stand side by side, each a column of its own,
+       rather than one long list down the middle of the screen. -->
+  <div class="flex flex-col gap-5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] lg:items-start">
     <!-- Your own part in it, in one line -->
     <p
       v-if="isMine && !isPast"
-      class="rounded-2xl bg-primary/10 px-4 py-3 text-[15px] font-medium text-primary dark:bg-primary-light/15 dark:text-primary-light"
+      class="lg:col-span-full rounded-2xl bg-primary/10 px-4 py-3 text-[15px] font-medium text-primary dark:bg-primary-light/15 dark:text-primary-light"
     >
       You’re serving as {{ myRoleNames }}<template v-if="isLeading && !songs.length"> · no songs picked yet</template>
     </p>
 
     <template v-for="group in groups" :key="group.key || 'loose'">
-      <ListGroup :title="group.name">
+      <ListGroup :title="group.name" flat>
         <template v-if="group.editable && group.key && !isPast" #action>
           <button
             type="button"
@@ -180,7 +182,7 @@ const myRoleNames = computed(() => props.myRoles.map((role) => role.name).join('
       </ListGroup>
 
       <!-- The songs, right after the people singing them -->
-      <ListGroup v-if="group.key === 'worship'" title="Songs" :count="songs.length || null">
+      <ListGroup v-if="group.key === 'worship'" title="Songs" :count="songs.length || null" flat>
         <ListRow
           v-for="(entry, index) in songs"
           :key="`${entry.songId}-${index}`"

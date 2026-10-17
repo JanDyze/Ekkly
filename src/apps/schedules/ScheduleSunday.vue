@@ -140,6 +140,7 @@ const handleClear = async (when) => {
     :subtitle="sunday?.theme || formatMonthLabel(month)"
     :back="{ name: 'SchedulesHome' }"
     root="/schedules"
+    desk
   >
     <!-- The whole Sunday, for whoever plans every team; each team's own Plan
          is on its group below. -->
