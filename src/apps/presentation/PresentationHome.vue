@@ -1,13 +1,12 @@
 <script setup>
 import { computed } from 'vue'
 import { BookOpen, Megaphone, MusicNotes, ProjectorScreen, Slideshow, TextT, VideoCamera } from '../../icons'
-import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
+import AppHome from '../../components/appframe/AppHome.vue'
+import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
 import DateTile from '../../components/appframe/DateTile.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DeckChips from '../../components/appframe/DeckChips.vue'
-import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import { usePresentationOverview } from '../../composables/usePresentationOverview'
 import { useMembers } from '../../composables/useMembers'
@@ -44,6 +43,7 @@ const {
   canRun,
   canFixWords,
   canSeeSongs,
+  upcoming,
   next,
   nextService,
   thisWeek,
@@ -51,6 +51,7 @@ const {
   wordsMissing,
   sermonOn,
   leaderOf,
+  summarise,
 } = usePresentationOverview()
 const { members } = useMembers()
 
@@ -211,6 +212,27 @@ const alwaysCard = computed(() => {
   }
 })
 
+/* -------------------------------------------------------------- the side */
+
+// Beside the cards on a desktop (AppHome's `side`): every service planned
+// from here on, each with what it holds and how many of its slides would come
+// up blank, so the booth can see the coming weeks, not only this Sunday.
+const comingServices = computed(() =>
+  upcoming.value.slice(0, 12).map((sunday) => {
+    const service = summarise(sunday)
+    const { songs, readings } = service.counts
+    return {
+      key: service.date,
+      to: present(service.date),
+      date: service.date,
+      title: sunday.theme || formatServiceDate(service.date),
+      line: [plural(songs, 'song'), readings ? plural(readings, 'reading') : ''].filter(Boolean).join(' · '),
+      aside: service.blanks.length ? `${service.blanks.length} blank` : service.prepared ? 'Ready' : '',
+      tone: service.blanks.length ? 'warn' : 'accent',
+    }
+  })
+)
+
 /* -------------------------------------------------------------- the doors */
 
 // A door is its name, with a count on the corner only for what is waiting on
@@ -242,72 +264,77 @@ const doors = computed(() => [
 </script>
 
 <template>
-  <AppScreen>
-    <div class="flex flex-col gap-4">
-      <!-- 1. What the booth should see to this week, most important on top -->
-      <AppHeroDeck :cards="cards" scope="presentation" label="Presentation this week" class="animate-rise">
-        <template #card="{ card }">
-          <!-- Something about this Sunday: its date, the way a calendar shows it. -->
-          <DeckCard
-            v-if="card.kind === 'dated'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <template #leading>
-              <DateTile :date="card.date" class="size-14! rounded-2xl!" />
-            </template>
-            <DeckChips v-if="card.chips?.length" :tone="card.tone" :items="card.chips" :max="3" />
-          </DeckCard>
-
-          <!-- The next service, in the order it runs. -->
-          <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
-            <template #art>
-              <CardPanes />
-            </template>
-            <!-- The Presentation artwork, on white because its orange and
-                 blue are Ekkly's and need a white ground on a coloured card. -->
-            <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-                <AppArt app-key="presentation" :play="1" class="size-10" />
-              </span>
-            </template>
-            <!-- Each thing in the order as its kind, so the shape of the
-                 service reads at a glance; one that would come up blank is
-                 an empty frame. -->
-            <template v-if="!loading && strip.length" #default>
-              <ol class="flex items-center gap-1.5" aria-label="The order of service">
-                <li
-                  v-for="item in strip.slice(0, STRIP)"
-                  :key="item.key"
-                  :title="item.title"
-                  :class="[
-                    'flex size-8 shrink-0 items-center justify-center rounded-[10px]',
-                    item.blank ? 'border-2 border-dashed border-white/50 text-white/60' : 'bg-white/18 text-white',
-                  ]"
-                >
-                  <component :is="item.icon" class="size-4" aria-hidden="true" />
-                  <span class="sr-only">{{ item.title }}</span>
-                </li>
-                <li
-                  v-if="strip.length > STRIP"
-                  class="ml-0.5 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white"
-                >
-                  +{{ strip.length - STRIP }}
-                </li>
-              </ol>
-              <p v-if="caption" class="mt-2 truncate text-xs text-white/80">{{ caption }}</p>
-            </template>
-          </DeckCard>
+  <AppHome :cards="cards" scope="presentation" label="Presentation this week" :doors="doors" name="Presentation">
+    <!-- 1. What the booth should see to this week, most important on top -->
+    <template #card="{ card }">
+      <!-- Something about this Sunday: its date, the way a calendar shows it. -->
+      <DeckCard
+        v-if="card.kind === 'dated'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <template #leading>
+          <DateTile :date="card.date" class="size-14! rounded-2xl!" />
         </template>
-      </AppHeroDeck>
+        <DeckChips v-if="card.chips?.length" :tone="card.tone" :items="card.chips" :max="3" />
+      </DeckCard>
 
-      <!-- 2. The doors -->
-      <AppShortcuts :doors="doors" label="Presentation" />
-    </div>
-  </AppScreen>
+      <!-- The next service, in the order it runs. -->
+      <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
+        <template #art>
+          <CardPanes />
+        </template>
+        <!-- The Presentation artwork, on white because its orange and
+             blue are Ekkly's and need a white ground on a coloured card. -->
+        <template #trailing>
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+            <AppArt app-key="presentation" :play="1" class="size-10" />
+          </span>
+        </template>
+        <!-- Each thing in the order as its kind, so the shape of the
+             service reads at a glance; one that would come up blank is
+             an empty frame. -->
+        <template v-if="!loading && strip.length" #default>
+          <ol class="flex items-center gap-1.5" aria-label="The order of service">
+            <li
+              v-for="item in strip.slice(0, STRIP)"
+              :key="item.key"
+              :title="item.title"
+              :class="[
+                'flex size-8 shrink-0 items-center justify-center rounded-[10px]',
+                item.blank ? 'border-2 border-dashed border-white/50 text-white/60' : 'bg-white/18 text-white',
+              ]"
+            >
+              <component :is="item.icon" class="size-4" aria-hidden="true" />
+              <span class="sr-only">{{ item.title }}</span>
+            </li>
+            <li
+              v-if="strip.length > STRIP"
+              class="ml-0.5 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white"
+            >
+              +{{ strip.length - STRIP }}
+            </li>
+          </ol>
+          <p v-if="caption" class="mt-2 truncate text-xs text-white/80">{{ caption }}</p>
+        </template>
+      </DeckCard>
+    </template>
+
+    <template #side>
+      <AppSidePanel
+        title="Coming services"
+        :rows="comingServices"
+        :loading="loading"
+        :link="{ to: { name: 'Services' }, label: 'See all' }"
+        doodle="hammock"
+        few="Nothing planned after these."
+        :empty="{ title: 'Nothing planned yet', line: 'Services show here once Schedules plans them.' }"
+      />
+    </template>
+  </AppHome>
 </template>

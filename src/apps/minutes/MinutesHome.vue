@@ -1,18 +1,17 @@
 <script setup>
 import { computed } from 'vue'
 import { CalendarCheck, ListChecks, NotePencil } from '../../icons'
-import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
+import AppHome from '../../components/appframe/AppHome.vue'
+import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
 import DateTile from '../../components/appframe/DateTile.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DeckChips from '../../components/appframe/DeckChips.vue'
-import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import { useMinutesOverview } from '../../composables/useMinutesOverview'
 import { usePermissions } from '../../composables/usePermissions'
 import { getDisplayName } from '../../utils/memberUtils'
-import { meetingWhen } from '../../utils/minuteSummary'
+import { meetingWhen, minuteProgress } from '../../utils/minuteSummary'
 import { daysBetween, todayKey } from '../../utils/taskUtils'
 
 // The Minutes app's home, built the way People's and Tasks' are. One screen,
@@ -35,6 +34,7 @@ import { daysBetween, todayKey } from '../../utils/taskUtils'
 const {
   loading,
   canEdit,
+  meetings,
   lastMeeting,
   nextMeeting,
   toWriteUp,
@@ -43,6 +43,7 @@ const {
   startingId,
   openMeeting,
   dayOf,
+  idOf,
 } = useMinutesOverview()
 const { myMember } = usePermissions()
 
@@ -152,6 +153,29 @@ const alwaysCard = computed(() => {
   }
 })
 
+/* -------------------------------------------------------------- the side */
+
+// Beside the cards on a desktop (AppHome's `side`): the meetings held lately,
+// newest first, each with how far its minutes got (amber while they are still
+// notes), so the last few are a click away rather than a search.
+const recentMeetings = computed(() =>
+  meetings.value
+    .filter((m) => dayOf(m) <= today)
+    .slice(0, 20)
+    .map((m) => {
+      const progress = minuteProgress(m)
+      return {
+        key: String(idOf(m)),
+        to: { name: 'MinuteDetails', params: { id: idOf(m) } },
+        date: dayOf(m),
+        title: m.title || 'Meeting',
+        line: progress.label,
+        aside: progress.tone === 'attention' ? 'To write up' : '',
+        tone: 'warn',
+      }
+    })
+)
+
 /* -------------------------------------------------------------- the doors */
 
 // A door is its name, with a count on the corner only for what is waiting on
@@ -178,62 +202,68 @@ const doors = computed(() => [
 </script>
 
 <template>
-  <AppScreen>
-    <div class="flex flex-col gap-4">
-      <!-- 1. What needs doing, most important on top -->
-      <AppHeroDeck :cards="cards" scope="minutes" label="Minutes this week" class="animate-rise">
-        <template #card="{ card }">
-          <!-- The next meeting, dated the way a calendar shows it. A scheduled
-               one is made into a record by the tap, so it is a button. -->
-          <DeckCard
-            v-if="card.kind === 'next'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.meeting.isScheduled ? null : { name: 'MinuteDetails', params: { id: card.meeting.firestoreId || card.meeting.id } }"
-            :action="card.meeting.isScheduled"
-            :inset="card.dismissible"
-            :aria-busy="startingId === card.meeting.id || undefined"
-            @click="card.meeting.isScheduled && openMeeting(card.meeting)"
-          >
-            <template #leading>
-              <DateTile :date="card.date" highlight />
-            </template>
-          </DeckCard>
-
-          <DeckCard
-            v-else-if="card.tone !== 'accent'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <DeckChips v-if="card.chips?.length" :tone="card.tone" :items="card.chips" :max="3" />
-          </DeckCard>
-
-          <!-- The last meeting, and how much it settled. -->
-          <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
-            <template #art>
-              <CardPanes />
-            </template>
-            <!-- The Minutes artwork, on white because its orange and blue are
-                 Ekkly's and need a white ground on a coloured card. -->
-            <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-                <AppArt app-key="minutes" :play="1" class="size-10" />
-              </span>
-            </template>
-          </DeckCard>
+  <AppHome :cards="cards" scope="minutes" label="Minutes this week" :doors="doors" name="Minutes">
+    <!-- 1. What needs doing, most important on top -->
+    <template #card="{ card }">
+      <!-- The next meeting, dated the way a calendar shows it. A scheduled
+           one is made into a record by the tap, so it is a button. -->
+      <DeckCard
+        v-if="card.kind === 'next'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.meeting.isScheduled ? null : { name: 'MinuteDetails', params: { id: card.meeting.firestoreId || card.meeting.id } }"
+        :action="card.meeting.isScheduled"
+        :inset="card.dismissible"
+        :aria-busy="startingId === card.meeting.id || undefined"
+        @click="card.meeting.isScheduled && openMeeting(card.meeting)"
+      >
+        <template #leading>
+          <DateTile :date="card.date" highlight />
         </template>
-      </AppHeroDeck>
+      </DeckCard>
 
-      <!-- 2. The doors -->
-      <AppShortcuts :doors="doors" label="Minutes" />
-    </div>
-  </AppScreen>
+      <DeckCard
+        v-else-if="card.tone !== 'accent'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <DeckChips v-if="card.chips?.length" :tone="card.tone" :items="card.chips" :max="3" />
+      </DeckCard>
+
+      <!-- The last meeting, and how much it settled. -->
+      <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
+        <template #art>
+          <CardPanes />
+        </template>
+        <!-- The Minutes artwork, on white because its orange and blue are
+             Ekkly's and need a white ground on a coloured card. -->
+        <template #trailing>
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+            <AppArt app-key="minutes" :play="1" class="size-10" />
+          </span>
+        </template>
+      </DeckCard>
+    </template>
+
+    <template #side>
+      <AppSidePanel
+        title="Lately"
+        :rows="recentMeetings"
+        :loading="loading"
+        :count="false"
+        :link="{ to: { name: 'MinutesMeetings' }, label: 'See all' }"
+        doodle="tea"
+        few="That’s every meeting so far."
+        :empty="{ title: 'No meetings yet', line: 'Each meeting shows here once it is held.' }"
+      />
+    </template>
+  </AppHome>
 </template>

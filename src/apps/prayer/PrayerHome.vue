@@ -1,13 +1,12 @@
 <script setup>
 import { computed } from 'vue'
-import { Bell, ChatCircleText, CheckCircle, HandsPraying } from '../../icons'
-import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
+import { Bell, ChatCircleText, CheckCircle, HandHeart, HandsPraying } from '../../icons'
+import AppHome from '../../components/appframe/AppHome.vue'
+import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DeckChips from '../../components/appframe/DeckChips.vue'
 import DeckFaces from '../../components/appframe/DeckFaces.vue'
-import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
 import { usePrayerOverview, dayLabel, raisedOn } from '../../composables/usePrayerOverview'
@@ -38,6 +37,7 @@ const {
   today,
   personOf,
   open,
+  praying,
   pressing,
   urgent,
   newThisWeek,
@@ -200,6 +200,28 @@ const heroFaces = computed(() =>
 )
 const keyOf = (member) => member.firestoreId || member.id
 
+/* -------------------------------------------------------------- the side */
+
+// Beside the cards on a desktop (AppHome's `side`): every request being
+// prayed for now, the newest first, each with who it is for and when it was
+// raised, the urgent ones marked, so the whole list can be prayed down from
+// one screen.
+const prayingNow = computed(() =>
+  praying.value.map((concern) => {
+    const person = personOf(concern)
+    return {
+      key: String(idOf(concern)),
+      to: openOne('PrayerNow', concern),
+      member: person,
+      icon: person ? null : HandHeart,
+      title: concern.title || 'Prayer concern',
+      line: [person ? getDisplayName(person) : concern.memberName, dayLabel(raisedOn(concern), today)].filter(Boolean).join(' · '),
+      aside: concern.priority === 'urgent' ? 'Urgent' : '',
+      tone: 'urgent',
+    }
+  })
+)
+
 /* -------------------------------------------------------------- the doors */
 
 // A door is its name, with a count on the corner only for what asks to be
@@ -230,70 +252,75 @@ const doors = computed(() => {
 </script>
 
 <template>
-  <AppScreen>
-    <div class="flex flex-col gap-4">
-      <!-- 1. What to pray for this week, most pressing on top -->
-      <AppHeroDeck :cards="cards" scope="prayer" label="Prayer this week" class="animate-rise">
-        <template #card="{ card }">
-          <DeckCard
-            v-if="card.tone !== 'accent'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <!-- One concern: the face of who it is for. Several: what they
-                 are, a few of them. -->
-            <DeckFaces v-if="!card.chips.length && card.faces.length" :tone="card.tone" :members="card.faces" />
-            <DeckChips v-else-if="card.chips.length" :tone="card.tone" :items="card.chips" :max="3" />
-          </DeckCard>
+  <AppHome :cards="cards" scope="prayer" label="Prayer this week" :doors="doors" name="Prayer">
+    <!-- 1. What to pray for this week, most pressing on top -->
+    <template #card="{ card }">
+      <DeckCard
+        v-if="card.tone !== 'accent'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <!-- One concern: the face of who it is for. Several: what they
+             are, a few of them. -->
+        <DeckFaces v-if="!card.chips.length && card.faces.length" :tone="card.tone" :members="card.faces" />
+        <DeckChips v-else-if="card.chips.length" :tone="card.tone" :items="card.chips" :max="3" />
+      </DeckCard>
 
-          <!-- How many needs the church is holding, and the people in them. -->
-          <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
-            <template #art>
-              <CardPanes />
-            </template>
-            <template v-if="card.ready" #title>
-              <span class="text-5xl font-bold tabular-nums tracking-tight">{{ card.total.toLocaleString() }}</span>
-              <span class="ml-2 text-lg font-semibold text-white/80">{{ card.total === 1 ? 'need' : 'needs' }}</span>
-            </template>
-            <!-- The Prayer artwork, on white because its orange and blue are
-                 Ekkly's and need a white ground on a coloured card. -->
-            <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-                <AppArt app-key="prayer" :play="1" class="size-10" />
-              </span>
-            </template>
-            <!-- The people being prayed for, along the foot. -->
-            <template v-if="card.ready && heroFaces.length" #default>
-              <div class="flex items-center">
-                <div class="flex -space-x-2.5">
-                  <MemberAvatar
-                    v-for="member in heroFaces"
-                    :key="keyOf(member)"
-                    :member="member"
-                    alt=""
-                    size="h-10 w-10"
-                    plain-class="ring-2 ring-white/70"
-                  />
-                </div>
-                <span
-                  v-if="prayedFor.length > HERO_FACES"
-                  class="ml-2 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white"
-                >
-                  +{{ (prayedFor.length - HERO_FACES).toLocaleString() }}
-                </span>
-              </div>
-            </template>
-          </DeckCard>
+      <!-- How many needs the church is holding, and the people in them. -->
+      <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
+        <template #art>
+          <CardPanes />
         </template>
-      </AppHeroDeck>
+        <template v-if="card.ready" #title>
+          <span class="text-5xl font-bold tabular-nums tracking-tight">{{ card.total.toLocaleString() }}</span>
+          <span class="ml-2 text-lg font-semibold text-white/80">{{ card.total === 1 ? 'need' : 'needs' }}</span>
+        </template>
+        <!-- The Prayer artwork, on white because its orange and blue are
+             Ekkly's and need a white ground on a coloured card. -->
+        <template #trailing>
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+            <AppArt app-key="prayer" :play="1" class="size-10" />
+          </span>
+        </template>
+        <!-- The people being prayed for, along the foot. -->
+        <template v-if="card.ready && heroFaces.length" #default>
+          <div class="flex items-center">
+            <div class="flex -space-x-2.5">
+              <MemberAvatar
+                v-for="member in heroFaces"
+                :key="keyOf(member)"
+                :member="member"
+                alt=""
+                size="h-10 w-10"
+                plain-class="ring-2 ring-white/70"
+              />
+            </div>
+            <span
+              v-if="prayedFor.length > HERO_FACES"
+              class="ml-2 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white"
+            >
+              +{{ (prayedFor.length - HERO_FACES).toLocaleString() }}
+            </span>
+          </div>
+        </template>
+      </DeckCard>
+    </template>
 
-      <!-- 2. The doors -->
-      <AppShortcuts :doors="doors" label="Prayer" />
-    </div>
-  </AppScreen>
+    <template #side>
+      <AppSidePanel
+        title="Praying now"
+        :rows="prayingNow"
+        :loading="loading"
+        :link="{ to: { name: 'PrayerNow' }, label: 'See all' }"
+        doodle="tea"
+        few="That’s everything on the list."
+        :empty="{ title: 'Nothing on the list', line: 'Each request shows here as it is raised.' }"
+      />
+    </template>
+  </AppHome>
 </template>

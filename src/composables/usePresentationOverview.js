@@ -237,5 +237,6 @@ export function usePresentationOverview() {
     sermonOn,
     leaderOf,
     daysUntil,
+    summarise,
   }
 }

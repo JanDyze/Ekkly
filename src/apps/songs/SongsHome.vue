@@ -1,18 +1,18 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { MusicNotes, Sparkle, TextT } from '../../icons'
-import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
+import AppHome from '../../components/appframe/AppHome.vue'
+import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
+import SongThumb from './SongThumb.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
 import DateTile from '../../components/appframe/DateTile.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DeckChips from '../../components/appframe/DeckChips.vue'
-import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import { useSongsOverview } from '../../composables/useSongsOverview'
 import { usePermissions } from '../../composables/usePermissions'
 import { getDisplayName } from '../../utils/memberUtils'
-import { parseIso } from '../../utils/lineupUtils'
+import { formatShortDate, parseIso } from '../../utils/lineupUtils'
 import { getYoutubeThumbnail } from '../../utils/songUtils'
 import { daysBetween } from '../../utils/taskUtils'
 
@@ -39,9 +39,11 @@ const {
   canEdit,
   canPlanWorship,
   seesSundays,
+  comingSets,
   nextSet,
   nextGaps,
   leaderOf,
+  setOf,
   mostSung,
   newUnsung,
   sungThisYear,
@@ -187,6 +189,33 @@ const heroSongs = computed(() => {
     .slice(0, HERO_SONGS)
 })
 
+/* -------------------------------------------------------------- the side */
+
+// Beside the cards on a desktop (AppHome's `side`): the songs of the coming
+// Sundays, each Sunday a small label over its set, each song with its key and
+// whether its words are on the list, so a worship leader can look a month of
+// sets over at once.
+const comingSongs = computed(() =>
+  seesSundays.value
+    ? comingSets.value.slice(0, 4).flatMap((sunday) => [
+        {
+          key: `day:${sunday.date}`,
+          heading: [formatShortDate(sunday.date), leaderOf(sunday)].filter(Boolean).join(' · '),
+          today: daysBetween(today, sunday.date) <= 6,
+        },
+        ...setOf(sunday).map((row) => ({
+          key: row.id,
+          to: row.song ? { name: 'SongDetails', params: { id: row.song.id } } : null,
+          song: row.song,
+          title: row.title,
+          line: row.musicKey ? `Key of ${row.musicKey}` : '',
+          aside: row.notOnList ? 'Not on the list' : row.noLyrics ? 'No words' : '',
+          tone: 'warn',
+        })),
+      ])
+    : []
+)
+
 /* -------------------------------------------------------------- the doors */
 
 // A door is its name, with a count on the corner only for what is waiting on
@@ -225,105 +254,114 @@ const doors = computed(() => {
 </script>
 
 <template>
-  <AppScreen>
-    <div class="flex flex-col gap-4">
-      <!-- 1. What the songs need this week, most important on top -->
-      <AppHeroDeck :cards="cards" scope="songs" label="Songs this week" class="animate-rise">
-        <template #card="{ card }">
-          <!-- This week's Sunday, dated the way a calendar shows it, its
-               songs and their keys along the foot. -->
-          <DeckCard
-            v-if="card.kind === 'sunday'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            inset
-          >
-            <template #leading>
-              <DateTile :date="card.date" highlight />
-            </template>
-            <DeckChips :tone="card.tone" :items="card.chips" :max="3" />
-          </DeckCard>
-
-          <!-- The songs without words: how much of the list has them. -->
-          <DeckCard
-            v-else-if="card.kind === 'lyrics'"
-            tone="plain"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            inset
-          >
-            <div class="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
-              <div class="h-full rounded-full bg-primary dark:bg-primary-light" :style="{ width: `${Math.round(card.share * 100)}%` }" />
-            </div>
-            <p class="mt-1.5 text-xs tabular-nums text-gray-500 dark:text-gray-400">
-              {{ card.done.toLocaleString() }} of {{ card.total.toLocaleString() }} have lyrics
-            </p>
-          </DeckCard>
-
-          <DeckCard
-            v-else-if="card.tone !== 'accent'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <DeckChips v-if="card.chips?.length" :tone="card.tone" :items="card.chips" :max="3" />
-          </DeckCard>
-
-          <!-- The song list: its number, large, and its songs along the foot. -->
-          <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
-            <template #art>
-              <CardPanes />
-            </template>
-            <template v-if="card.ready" #title>
-              <span class="text-5xl font-bold tabular-nums tracking-tight">{{ card.total.toLocaleString() }}</span>
-              <span class="ml-2 text-lg font-semibold text-white/80">{{ card.total === 1 ? 'song' : 'songs' }}</span>
-            </template>
-            <!-- The Songs artwork, on white because its orange and blue are
-                 Ekkly's and need a white ground on a coloured card (BRAND.md). -->
-            <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-                <AppArt app-key="songs" :play="1" class="size-10" />
-              </span>
-            </template>
-            <!-- The songs themselves, by their recordings' pictures. -->
-            <template v-if="card.ready && heroSongs.length" #default>
-              <div class="flex items-center">
-                <div class="flex -space-x-3">
-                  <img
-                    v-for="song in heroSongs"
-                    :key="song.id"
-                    :src="song.src"
-                    alt=""
-                    loading="lazy"
-                    class="h-10 w-16 rounded-xl object-cover ring-2 ring-white/70"
-                    @error="failed[song.id] = true"
-                  />
-                </div>
-                <span
-                  v-if="card.total > heroSongs.length"
-                  class="ml-2 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white"
-                >
-                  +{{ (card.total - heroSongs.length).toLocaleString() }}
-                </span>
-              </div>
-            </template>
-          </DeckCard>
+  <AppHome :cards="cards" scope="songs" label="Songs this week" :doors="doors" name="Songs">
+    <!-- 1. What the songs need this week, most important on top -->
+    <template #card="{ card }">
+      <!-- This week's Sunday, dated the way a calendar shows it, its
+           songs and their keys along the foot. -->
+      <DeckCard
+        v-if="card.kind === 'sunday'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        inset
+      >
+        <template #leading>
+          <DateTile :date="card.date" highlight />
         </template>
-      </AppHeroDeck>
+        <DeckChips :tone="card.tone" :items="card.chips" :max="3" />
+      </DeckCard>
 
-      <!-- 2. The doors -->
-      <AppShortcuts :doors="doors" label="Songs" />
-    </div>
-  </AppScreen>
+      <!-- The songs without words: how much of the list has them. -->
+      <DeckCard
+        v-else-if="card.kind === 'lyrics'"
+        tone="plain"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        inset
+      >
+        <div class="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+          <div class="h-full rounded-full bg-primary dark:bg-primary-light" :style="{ width: `${Math.round(card.share * 100)}%` }" />
+        </div>
+        <p class="mt-1.5 text-xs tabular-nums text-gray-500 dark:text-gray-400">
+          {{ card.done.toLocaleString() }} of {{ card.total.toLocaleString() }} have lyrics
+        </p>
+      </DeckCard>
+
+      <DeckCard
+        v-else-if="card.tone !== 'accent'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <DeckChips v-if="card.chips?.length" :tone="card.tone" :items="card.chips" :max="3" />
+      </DeckCard>
+
+      <!-- The song list: its number, large, and its songs along the foot. -->
+      <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
+        <template #art>
+          <CardPanes />
+        </template>
+        <template v-if="card.ready" #title>
+          <span class="text-5xl font-bold tabular-nums tracking-tight">{{ card.total.toLocaleString() }}</span>
+          <span class="ml-2 text-lg font-semibold text-white/80">{{ card.total === 1 ? 'song' : 'songs' }}</span>
+        </template>
+        <!-- The Songs artwork, on white because its orange and blue are
+             Ekkly's and need a white ground on a coloured card (BRAND.md). -->
+        <template #trailing>
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+            <AppArt app-key="songs" :play="1" class="size-10" />
+          </span>
+        </template>
+        <!-- The songs themselves, by their recordings' pictures. -->
+        <template v-if="card.ready && heroSongs.length" #default>
+          <div class="flex items-center">
+            <div class="flex -space-x-3">
+              <img
+                v-for="song in heroSongs"
+                :key="song.id"
+                :src="song.src"
+                alt=""
+                loading="lazy"
+                class="h-10 w-16 rounded-xl object-cover ring-2 ring-white/70"
+                @error="failed[song.id] = true"
+              />
+            </div>
+            <span
+              v-if="card.total > heroSongs.length"
+              class="ml-2 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white"
+            >
+              +{{ (card.total - heroSongs.length).toLocaleString() }}
+            </span>
+          </div>
+        </template>
+      </DeckCard>
+    </template>
+
+    <template #side>
+      <AppSidePanel
+        title="Coming Sundays"
+        :rows="comingSongs"
+        :loading="loading || sundaysLoading"
+        :link="{ to: { name: 'SongsSunday' }, label: 'See all' }"
+        doodle="hammock"
+        few="Nothing planned after these."
+        :empty="{ title: 'No songs planned yet', line: 'Each Sunday’s songs show here once they are chosen.' }"
+      >
+        <template #picture="{ row }">
+          <SongThumb :url="row.song?.youtubeUrl || ''" />
+        </template>
+      </AppSidePanel>
+    </template>
+  </AppHome>
 </template>

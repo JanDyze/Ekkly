@@ -185,7 +185,15 @@ screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
      so a tile that repeats them only makes the grid slower to read.
    Every app's home is built this way now, Presentation and Videos included
    (the older `AppHero`, `AppActionsSheet` and `SectionGlyph` are no longer
-   on any home). Every screen sits in `AppScreen`, which gives a section its
+   on any home), and through one component, `AppHome`: hand it the deck's
+   `cards` and its `#card` slot, and the `doors`. On a desktop it lays them
+   out as the home of all apps is laid out: the always-true card and the
+   sections down the left, the other cards as the phone's own in Needs
+   attention and Good to know, and in a third column the app's `#side`, one
+   live list from inside it in an `AppSidePanel` (People's coming birthdays,
+   Schedules' next line-up, Tasks' open tasks). One screen, the page never
+   scrolling; a list holding more scrolls inside its panel. A card the side
+   list already says is left off the desktop's deck (`wide`). Every screen sits in `AppScreen`, which gives a section its
    back arrow and hide-on-scroll header, shows the section's artwork in full
    colour beside its title, and stands the app's home inside a church
    (`churchInterior.js`: windows, light, pews, all barely there; a section

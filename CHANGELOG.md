@@ -11,6 +11,27 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.40] — 2026-10-17
+
+On a computer, every app opens the way your home does: everything on one
+screen, laid out in panels, with nothing hidden behind a swipe.
+
+### Changed
+
+- **Every app's home on a computer is a board.** Its main card, in the
+  church's colour, stands at the top left with the app's sections under it.
+  Beside them, what needs you and what is good to know, each as the same card
+  you see on a phone, two or three across. The page never scrolls; a panel
+  with more in it scrolls inside itself.
+- **A list from inside each app stands on the right**, so the thing you would
+  open first is already there: the coming birthdays in People, the next
+  Sunday's line-up in Schedules, the next two weeks in Events, your open
+  tasks, the last counts in Attendance, the latest entries in the book, the
+  newest albums, what is out on loan, the latest meetings, the prayer list,
+  the coming services, this week's small groups, the coming Sundays' songs
+  and messages, and what this month's video announces.
+- On a phone, nothing changes.
+
 ## [0.35.39] — 2026-10-17
 
 YUNIT moves onto your home with a voice of his own, the church becomes the

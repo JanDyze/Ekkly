@@ -1,12 +1,11 @@
 <script setup>
 import { computed } from 'vue'
 import { ClipboardCheck, HandWaving } from '../../icons'
-import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
+import AppHome from '../../components/appframe/AppHome.vue'
+import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DateTile from '../../components/appframe/DateTile.vue'
-import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
 import DeckChips from '../../components/appframe/DeckChips.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
@@ -124,6 +123,29 @@ const cards = computed(() => {
   return list
 })
 
+/* -------------------------------------------------------------- the side */
+
+// Beside the cards on a desktop (AppHome's `side`): the last gatherings
+// counted, newest first, each with how many came and how full it was against
+// who it was for, so a turnout can be read against the ones before it.
+const recentCounts = computed(() =>
+  [...recorded.value]
+    .reverse()
+    .slice(0, 20)
+    .map((row) => {
+      const count = row.totalAttendees ?? row.attendees?.length ?? 0
+      const expected = row.expectedAttendees || 0
+      return {
+        key: String(row.occurrenceKey || row.id),
+        to: { name: 'RecordAttendance', query: { key: String(row.occurrenceKey || row.id) } },
+        date: row.date,
+        title: row.eventTitle || 'A gathering',
+        line: plural(count, 'person', 'people'),
+        aside: expected ? `${Math.min(100, Math.round((count / expected) * 100))}%` : '',
+      }
+    })
+)
+
 /* -------------------------------------------------------------- the doors */
 
 // A door is its name and nothing more, unless something behind it is waiting
@@ -155,100 +177,106 @@ const FACES = 6
 </script>
 
 <template>
-  <AppScreen>
-    <div class="flex flex-col gap-4">
-      <!-- 1. What matters about attendance, most important on top -->
-      <AppHeroDeck :cards="cards" scope="attendance" label="Attendance today" class="animate-rise">
-        <template #card="{ card }">
-          <!-- A gathering still to count: its date, the way a calendar shows it. -->
-          <DeckCard
-            v-if="card.kind === 'dated'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <template #leading>
-              <DateTile :date="card.date" class="size-14! rounded-2xl!" />
-            </template>
-            <DeckChips :tone="card.tone" :items="card.chips" />
-          </DeckCard>
-
-          <!-- People gone quiet: their faces. -->
-          <DeckCard
-            v-else-if="card.kind === 'quiet'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <div class="flex items-center">
-              <div class="flex -space-x-2.5">
-                <MemberAvatar
-                  v-for="member in card.members.slice(0, FACES)"
-                  :key="keyOf(member)"
-                  :member="member"
-                  alt=""
-                  size="h-9 w-9"
-                  plain-class="ring-2 ring-white dark:ring-gray-800"
-                />
-              </div>
-              <span v-if="card.members.length > FACES" class="ml-2 text-sm font-semibold tabular-nums text-gray-500 dark:text-gray-400">
-                +{{ card.members.length - FACES }}
-              </span>
-            </div>
-          </DeckCard>
-
-          <!-- How many the church saw: its number, large, and the last few
-               gatherings drawn along the foot. -->
-          <DeckCard
-            v-else
-            tone="accent"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-          >
-            <template #art>
-              <CardPanes />
-            </template>
-            <!-- The Attendance artwork, on white because its orange and blue
-                 are Ekkly's and need a white ground on a coloured card. -->
-            <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-                <AppArt app-key="attendance" :play="1" class="size-10" />
-              </span>
-            </template>
-            <template v-if="reach" #title>
-              <span class="text-5xl font-bold tabular-nums tracking-tight">{{ reach.count.toLocaleString() }}</span>
-              <span class="ml-2 text-lg font-semibold text-white/80">{{ reach.count === 1 ? 'person' : 'people' }}</span>
-            </template>
-            <!-- The last few turnouts, oldest on the left, the latest solid. -->
-            <template v-if="recentBars.length" #default>
-              <div class="flex h-12 items-end gap-1.5" aria-hidden="true">
-                <span
-                  v-for="bar in [...recentBars].reverse()"
-                  :key="bar.key"
-                  :class="['flex-1 rounded-t-md', bar.isLatest ? 'bg-white' : 'bg-white/35']"
-                  :style="{ height: `${bar.width}%` }"
-                />
-              </div>
-              <p class="mt-1.5 truncate text-xs text-white/80">
-                Last: {{ recentBars[0].title }} · {{ recentBars[0].count }} on {{ recentBars[0].dateLabel }}
-              </p>
-            </template>
-          </DeckCard>
+  <AppHome :cards="cards" scope="attendance" label="Attendance today" :doors="doors" name="Attendance">
+    <!-- 1. What matters about attendance, most important on top -->
+    <template #card="{ card }">
+      <!-- A gathering still to count: its date, the way a calendar shows it. -->
+      <DeckCard
+        v-if="card.kind === 'dated'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <template #leading>
+          <DateTile :date="card.date" class="size-14! rounded-2xl!" />
         </template>
-      </AppHeroDeck>
+        <DeckChips :tone="card.tone" :items="card.chips" />
+      </DeckCard>
 
-      <!-- 2. The doors -->
-      <AppShortcuts :doors="doors" label="Attendance" />
-    </div>
-  </AppScreen>
+      <!-- People gone quiet: their faces. -->
+      <DeckCard
+        v-else-if="card.kind === 'quiet'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <div class="flex items-center">
+          <div class="flex -space-x-2.5">
+            <MemberAvatar
+              v-for="member in card.members.slice(0, FACES)"
+              :key="keyOf(member)"
+              :member="member"
+              alt=""
+              size="h-9 w-9"
+              plain-class="ring-2 ring-white dark:ring-gray-800"
+            />
+          </div>
+          <span v-if="card.members.length > FACES" class="ml-2 text-sm font-semibold tabular-nums text-gray-500 dark:text-gray-400">
+            +{{ card.members.length - FACES }}
+          </span>
+        </div>
+      </DeckCard>
+
+      <!-- How many the church saw: its number, large, and the last few
+           gatherings drawn along the foot. -->
+      <DeckCard
+        v-else
+        tone="accent"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+      >
+        <template #art>
+          <CardPanes />
+        </template>
+        <!-- The Attendance artwork, on white because its orange and blue
+             are Ekkly's and need a white ground on a coloured card. -->
+        <template #trailing>
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+            <AppArt app-key="attendance" :play="1" class="size-10" />
+          </span>
+        </template>
+        <template v-if="reach" #title>
+          <span class="text-5xl font-bold tabular-nums tracking-tight">{{ reach.count.toLocaleString() }}</span>
+          <span class="ml-2 text-lg font-semibold text-white/80">{{ reach.count === 1 ? 'person' : 'people' }}</span>
+        </template>
+        <!-- The last few turnouts, oldest on the left, the latest solid. -->
+        <template v-if="recentBars.length" #default>
+          <div class="flex h-12 items-end gap-1.5" aria-hidden="true">
+            <span
+              v-for="bar in [...recentBars].reverse()"
+              :key="bar.key"
+              :class="['flex-1 rounded-t-md', bar.isLatest ? 'bg-white' : 'bg-white/35']"
+              :style="{ height: `${bar.width}%` }"
+            />
+          </div>
+          <p class="mt-1.5 truncate text-xs text-white/80">
+            Last: {{ recentBars[0].title }} · {{ recentBars[0].count }} on {{ recentBars[0].dateLabel }}
+          </p>
+        </template>
+      </DeckCard>
+    </template>
+
+    <template #side>
+      <AppSidePanel
+        title="Last counted"
+        :rows="recentCounts"
+        :loading="loading"
+        :count="false"
+        :link="{ to: { name: 'Attendance' }, label: 'See all' }"
+        doodle="bench"
+        few="That’s every count so far."
+        :empty="{ title: 'Nothing counted yet', line: 'Each gathering shows here once it is counted.' }"
+      />
+    </template>
+  </AppHome>
 </template>

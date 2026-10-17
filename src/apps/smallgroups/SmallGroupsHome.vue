@@ -1,13 +1,12 @@
 <script setup>
 import { computed } from 'vue'
-import { CalendarCheck, ClockCounterClockwise, NotePencil, UserPlus } from '../../icons'
-import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
+import { CalendarCheck, ClockCounterClockwise, NotePencil, UserPlus, UsersThree } from '../../icons'
+import AppHome from '../../components/appframe/AppHome.vue'
+import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DeckChips from '../../components/appframe/DeckChips.vue'
 import DeckFaces from '../../components/appframe/DeckFaces.vue'
-import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import { useSmallGroupsOverview } from '../../composables/useSmallGroupsOverview'
 import { usePermissions } from '../../composables/usePermissions'
@@ -178,6 +177,35 @@ const alwaysCard = computed(() => {
   }
 })
 
+/* -------------------------------------------------------------- the side */
+
+// Beside the cards on a desktop (AppHome's `side`): the groups in the order
+// they next meet, today's first, each with when and where and how many are in
+// it, so the week of small groups reads down one column. A group with no set
+// day goes last.
+const nextMeetingOf = (group) => {
+  if (typeof group.meetingDay !== 'number') return ''
+  const date = new Date()
+  date.setHours(0, 0, 0, 0)
+  date.setDate(date.getDate() + ((group.meetingDay - date.getDay() + 7) % 7))
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+const groupsByDay = computed(() =>
+  active.value
+    .map((group) => ({ group, on: nextMeetingOf(group) }))
+    .sort((a, b) => (a.on || '9999').localeCompare(b.on || '9999') || String(a.group.name).localeCompare(String(b.group.name)))
+    .map(({ group, on }) => ({
+      key: String(idOf(group)),
+      to: groupTo(group),
+      date: on,
+      weekday: true,
+      icon: on ? null : UsersThree,
+      title: group.name || 'Small group',
+      line: [formatTimeRange(group.meetingTime), group.location].filter(Boolean).join(' · '),
+      aside: plural(sizeOf(group), 'person', 'people'),
+    }))
+)
+
 /* -------------------------------------------------------------- the doors */
 
 // A door is its name, with a count on the corner only for the sessions of
@@ -198,43 +226,48 @@ const doors = computed(() => [
 </script>
 
 <template>
-  <AppScreen>
-    <div class="flex flex-col gap-4">
-      <!-- 1. What needs doing, most important on top -->
-      <AppHeroDeck :cards="cards" scope="smallgroups" label="Small groups this week" class="animate-rise">
-        <template #card="{ card }">
-          <DeckCard
-            v-if="card.tone !== 'accent'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <DeckFaces v-if="card.faces" :tone="card.tone" v-bind="card.faces" />
-            <DeckChips v-else-if="card.chips?.length" :tone="card.tone" :items="card.chips" :max="3" />
-          </DeckCard>
+  <AppHome :cards="cards" scope="smallgroups" label="Small groups this week" :doors="doors" name="Small groups">
+    <!-- 1. What needs doing, most important on top -->
+    <template #card="{ card }">
+      <DeckCard
+        v-if="card.tone !== 'accent'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <DeckFaces v-if="card.faces" :tone="card.tone" v-bind="card.faces" />
+        <DeckChips v-else-if="card.chips?.length" :tone="card.tone" :items="card.chips" :max="3" />
+      </DeckCard>
 
-          <!-- Your group, or the church's groups. -->
-          <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
-            <template #art>
-              <CardPanes />
-            </template>
-            <!-- The Small groups artwork, on white because its orange and blue
-                 are Ekkly's and need a white ground on a coloured card. -->
-            <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-                <AppArt app-key="smallgroups" :play="1" class="size-10" />
-              </span>
-            </template>
-          </DeckCard>
+      <!-- Your group, or the church's groups. -->
+      <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
+        <template #art>
+          <CardPanes />
         </template>
-      </AppHeroDeck>
+        <!-- The Small groups artwork, on white because its orange and blue
+             are Ekkly's and need a white ground on a coloured card. -->
+        <template #trailing>
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+            <AppArt app-key="smallgroups" :play="1" class="size-10" />
+          </span>
+        </template>
+      </DeckCard>
+    </template>
 
-      <!-- 2. The doors -->
-      <AppShortcuts :doors="doors" label="Small groups" />
-    </div>
-  </AppScreen>
+    <template #side>
+      <AppSidePanel
+        title="This week’s groups"
+        :rows="groupsByDay"
+        :loading="loading"
+        :link="{ to: { name: 'SmallGroupsAll' }, label: 'See all' }"
+        doodle="bench"
+        few="That’s every group."
+        :empty="{ title: 'No groups yet', line: 'Each group shows here once it is started.' }"
+      />
+    </template>
+  </AppHome>
 </template>

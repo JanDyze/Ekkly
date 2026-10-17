@@ -1,14 +1,15 @@
 <script setup>
 import { computed } from 'vue'
-import { CalendarCheck, Hourglass, ListChecks, UserCircleDashed } from '../../icons'
-import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
+import { CalendarCheck, Flag, Hourglass, ListChecks, UserCircleDashed } from '../../icons'
+import AppHome from '../../components/appframe/AppHome.vue'
+import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
+import { assigneeLabel, compareTasks, dueLabel, isDueToday, isFlagged, isOverdue } from '../../utils/taskUtils'
 import CardPanes from '../../components/appframe/CardPanes.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DeckChips from '../../components/appframe/DeckChips.vue'
-import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import { useTasksOverview } from '../../composables/useTasksOverview'
+import { useMediaQuery } from '../../composables/useMediaQuery'
 import { usePermissions } from '../../composables/usePermissions'
 import { getDisplayName } from '../../utils/memberUtils'
 
@@ -54,6 +55,8 @@ const greeting = computed(() => {
 })
 
 /* -------------------------------------------------------------- the deck */
+
+const wide = useMediaQuery('(min-width: 1024px)')
 
 const cards = computed(() => {
   const list = []
@@ -101,7 +104,8 @@ const cards = computed(() => {
     })
   }
 
-  if (myMemberId.value && myThisWeek.value.length) {
+  // Not on a desktop, where every task of yours is listed beside the cards.
+  if (myMemberId.value && myThisWeek.value.length && !wide.value) {
     list.push({
       key: `week:${myThisWeek.value.map((t) => t.id).join(',')}`,
       tone: 'plain',
@@ -151,6 +155,25 @@ const alwaysCard = computed(() => ({
   to: { name: 'Tasks' },
 }))
 
+/* -------------------------------------------------------------- the side */
+
+// Beside the cards on a desktop (AppHome's `side`): every task of yours still
+// open, the soonest due first, each with when it is due (red when late), so
+// the week's list is on the screen rather than a tap away. Someone not on the
+// roll has nothing of their own, and sees what is open across the church.
+const sideTasks = computed(() => {
+  const list = myMemberId.value ? mine.value : open.value
+  return [...list].sort(compareTasks).map((task) => ({
+    key: String(task.id),
+    to: { name: myMemberId.value ? 'TasksMine' : 'Tasks', query: { q: task.title || '' } },
+    icon: isFlagged(task) ? Flag : ListChecks,
+    title: task.title || 'Untitled',
+    line: myMemberId.value ? task.ministry || '' : [assigneeLabel(task), task.ministry].filter(Boolean).join(' · '),
+    aside: dueLabel(task.dueDate),
+    tone: isOverdue(task) ? 'urgent' : isDueToday(task) ? 'warn' : '',
+  }))
+})
+
 /* -------------------------------------------------------------- the doors */
 
 // A door is its name, with a count on the corner only for what is on you —
@@ -166,44 +189,49 @@ const doors = computed(() => [
 </script>
 
 <template>
-  <AppScreen>
-    <div class="flex flex-col gap-4">
-      <!-- 1. What needs doing, most important on top -->
-      <AppHeroDeck :cards="cards" scope="tasks" label="Tasks today" class="animate-rise">
-        <template #card="{ card }">
-          <DeckCard
-            v-if="card.tone !== 'accent'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <DeckChips v-if="card.chips?.length" :tone="card.tone" :items="card.chips" :max="3" />
-          </DeckCard>
+  <AppHome :cards="cards" scope="tasks" label="Tasks today" :doors="doors" name="Tasks">
+    <!-- 1. What needs doing, most important on top -->
+    <template #card="{ card }">
+      <DeckCard
+        v-if="card.tone !== 'accent'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <DeckChips v-if="card.chips?.length" :tone="card.tone" :items="card.chips" :max="3" />
+      </DeckCard>
 
-          <!-- What is open across the church, and what got done. -->
-          <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
-            <template #art>
-              <!-- Ekkly's panes of light in the corner, as on the home's day
-                   card. -->
-              <CardPanes />
-            </template>
-            <!-- The Tasks artwork, on white because its orange and blue are
-                 Ekkly's and need a white ground on a coloured card. -->
-            <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-                <AppArt app-key="tasks" :play="1" class="size-10" />
-              </span>
-            </template>
-          </DeckCard>
+      <!-- What is open across the church, and what got done. -->
+      <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
+        <template #art>
+          <!-- Ekkly's panes of light in the corner, as on the home's day
+               card. -->
+          <CardPanes />
         </template>
-      </AppHeroDeck>
+        <!-- The Tasks artwork, on white because its orange and blue are
+             Ekkly's and need a white ground on a coloured card. -->
+        <template #trailing>
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+            <AppArt app-key="tasks" :play="1" class="size-10" />
+          </span>
+        </template>
+      </DeckCard>
+    </template>
 
-      <!-- 2. The doors -->
-      <AppShortcuts :doors="doors" label="Tasks" />
-    </div>
-  </AppScreen>
+    <template #side>
+      <AppSidePanel
+        :title="myMemberId ? 'Yours' : 'Open'"
+        :rows="sideTasks"
+        :loading="loading"
+        :link="{ to: { name: myMemberId ? 'TasksMine' : 'Tasks' }, label: 'See all' }"
+        doodle="tea"
+        few="Nothing else on you."
+        :empty="myMemberId ? { title: 'Nothing on you', line: 'No task of yours is open.' } : { title: 'Nothing open', line: 'Every task is done.' }"
+      />
+    </template>
+  </AppHome>
 </template>

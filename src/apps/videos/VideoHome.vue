@@ -1,9 +1,8 @@
 <script setup>
 import { computed } from 'vue'
-import { ArrowUpDown, CalendarX, FilmSlate } from '../../icons'
-import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
-import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
+import { ArrowUpDown, CalendarX, FilmSlate, FilmStrip } from '../../icons'
+import AppHome from '../../components/appframe/AppHome.vue'
+import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
 import DateTile from '../../components/appframe/DateTile.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
@@ -180,6 +179,26 @@ const alwaysCard = computed(() => {
   }
 })
 
+/* -------------------------------------------------------------- the side */
+
+// Beside the cards on a desktop (AppHome's `side`): what this month's video
+// announces, in the order it plays, each with the line over it in the video
+// ("Coming up", "Every week", "Called off"), so what it says can be read
+// before it is watched.
+const inThisMonth = computed(() =>
+  announcements(thisMonthScenes.value).map((scene) => ({
+    key: String(scene.id),
+    to: monthTo(thisMonth),
+    date: scene.date || '',
+    photo: scene.date ? '' : scene.photo || '',
+    icon: FilmStrip,
+    title: scene.title || 'Announcement',
+    line: scene.eyebrow || '',
+    aside: scene.eyebrow === 'Called off' || scene.eyebrow === 'Postponed' ? scene.eyebrow : '',
+    tone: 'urgent',
+  }))
+)
+
 /* -------------------------------------------------------------- the doors */
 
 // A door is its name, with a count on a month only for the events that came
@@ -197,74 +216,79 @@ const doors = computed(() => {
 </script>
 
 <template>
-  <AppScreen>
-    <div class="flex flex-col gap-4">
-      <!-- 1. What needs doing, most important on top -->
-      <AppHeroDeck :cards="cards" scope="videos" label="Videos this week" class="animate-rise">
-        <template #card="{ card }">
-          <!-- The video for the first gathering, dated the way a calendar
-               shows it, and what it announces. -->
-          <DeckCard
-            v-if="card.kind === 'due'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            inset
-          >
-            <template #leading>
-              <DateTile :date="card.date" highlight />
-            </template>
-            <DeckChips v-if="card.chips.length" :items="card.chips" :max="3" />
-          </DeckCard>
-
-          <DeckCard
-            v-else-if="card.tone !== 'accent'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <DeckChips v-if="card.chips?.length" :tone="card.tone" :items="card.chips" :max="3" />
-          </DeckCard>
-
-          <!-- This month's video, and the first things it says. -->
-          <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
-            <template #art>
-              <CardPanes />
-            </template>
-            <!-- The Videos artwork, on white because its orange and blue are
-                 Ekkly's and need a white ground on a coloured card. -->
-            <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-                <AppArt app-key="videos" :play="1" class="size-10" />
-              </span>
-            </template>
-            <!-- One line, each title giving up width as it fills, the way
-                 DeckChips lays its chips, in white on the church's colour. -->
-            <ul v-if="card.preview.length" class="flex min-w-0 gap-1.5">
-              <li
-                v-for="scene in card.preview"
-                :key="scene.id"
-                class="min-w-0 max-w-40 shrink truncate rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium text-white"
-              >
-                {{ scene.title || 'Announcement' }}
-              </li>
-              <li v-if="card.more" class="shrink-0 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white">
-                +{{ card.more }}
-              </li>
-            </ul>
-          </DeckCard>
+  <AppHome :cards="cards" scope="videos" label="Videos this week" :doors="doors" name="Videos">
+    <!-- 1. What needs doing, most important on top -->
+    <template #card="{ card }">
+      <!-- The video for the first gathering, dated the way a calendar
+           shows it, and what it announces. -->
+      <DeckCard
+        v-if="card.kind === 'due'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        inset
+      >
+        <template #leading>
+          <DateTile :date="card.date" highlight />
         </template>
-      </AppHeroDeck>
+        <DeckChips v-if="card.chips.length" :items="card.chips" :max="3" />
+      </DeckCard>
 
-      <!-- 2. The doors -->
-      <AppShortcuts :doors="doors" label="Videos" />
-    </div>
-  </AppScreen>
+      <DeckCard
+        v-else-if="card.tone !== 'accent'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <DeckChips v-if="card.chips?.length" :tone="card.tone" :items="card.chips" :max="3" />
+      </DeckCard>
+
+      <!-- This month's video, and the first things it says. -->
+      <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
+        <template #art>
+          <CardPanes />
+        </template>
+        <!-- The Videos artwork, on white because its orange and blue are
+             Ekkly's and need a white ground on a coloured card. -->
+        <template #trailing>
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+            <AppArt app-key="videos" :play="1" class="size-10" />
+          </span>
+        </template>
+        <!-- One line, each title giving up width as it fills, the way
+             DeckChips lays its chips, in white on the church's colour. -->
+        <ul v-if="card.preview.length" class="flex min-w-0 gap-1.5">
+          <li
+            v-for="scene in card.preview"
+            :key="scene.id"
+            class="min-w-0 max-w-40 shrink truncate rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium text-white"
+          >
+            {{ scene.title || 'Announcement' }}
+          </li>
+          <li v-if="card.more" class="shrink-0 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white">
+            +{{ card.more }}
+          </li>
+        </ul>
+      </DeckCard>
+    </template>
+
+    <template #side>
+      <AppSidePanel
+        :title="`In ${monthName(thisMonth)}’s video`"
+        :rows="inThisMonth"
+        :loading="loading"
+        :link="{ to: monthTo(thisMonth), label: 'Watch' }"
+        doodle="hammock"
+        few="That’s the whole video."
+        :empty="{ title: 'Nothing to announce yet', line: 'The month’s gatherings show here as they go on the calendar.' }"
+      />
+    </template>
+  </AppHome>
 </template>

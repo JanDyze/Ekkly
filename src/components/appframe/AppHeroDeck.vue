@@ -52,7 +52,8 @@ import { useSounds } from '../../composables/useSounds'
 // good to know — with `dismiss` to put one away as the deck does, and
 // `leaving`, the one fading on its way. The last card, the one that is always
 // true, is the page's to show another way (the home's greeting), so it is in
-// neither.
+// neither; an app's home (AppHome) shows it as it is, as `hero`, at the top
+// of its sidebar.
 
 const props = defineProps({
   cards: { type: Array, required: true },
@@ -160,6 +161,7 @@ const dismiss = (card) => {
 const rows = computed(() => visible.value.slice(0, -1))
 const urgentCards = computed(() => rows.value.filter((card) => card.tone === 'warn'))
 const restCards = computed(() => rows.value.filter((card) => card.tone !== 'warn'))
+const heroCard = computed(() => visible.value.at(-1) || null)
 
 /* -------------------------------------------------------------- the deck */
 
@@ -393,7 +395,7 @@ const fanned = (depth) => {
 
 <template>
   <!-- Laid out flat: the cards handed to the page to lay out (above). -->
-  <slot v-if="spread" name="spread" :urgent="urgentCards" :rest="restCards" :dismiss="dismiss" :leaving="leaving" />
+  <slot v-if="spread" name="spread" :urgent="urgentCards" :rest="restCards" :hero="heroCard" :dismiss="dismiss" :leaving="leaving" />
 
   <div
     v-else-if="visible.length"

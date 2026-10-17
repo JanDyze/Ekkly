@@ -1,9 +1,8 @@
 <script setup>
 import { computed } from 'vue'
 import { BookOpenText, Microphone, UsersFour, UsersThree } from '../../icons'
-import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
-import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
+import AppHome from '../../components/appframe/AppHome.vue'
+import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
 import DateTile from '../../components/appframe/DateTile.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
@@ -37,6 +36,8 @@ const {
   sundayIsSoon,
   daysToSunday,
   themeOn,
+  comingDates,
+  sermonWaiting,
   preachersOn,
   scheduledTeachersOn,
   sermonOn,
@@ -206,6 +207,28 @@ const alwaysCard = computed(() => {
   }
 })
 
+/* -------------------------------------------------------------- the side */
+
+// Beside the cards on a desktop (AppHome's `side`): the coming Sundays'
+// messages, each with who preaches and whether anything is written yet (amber
+// where someone is set to preach and nothing is), so the run of a series can
+// be read ahead, not one Sunday at a time.
+const comingMessages = computed(() =>
+  comingDates.value.slice(0, 10).map((date) => {
+    const sermon = sermonOn(date)
+    const preachers = preachersOn(date)
+    return {
+      key: date,
+      to: { name: 'TeachingSermon', params: { date } },
+      date,
+      title: sermon?.title || themeOn(date) || 'No message yet',
+      line: preachers.length ? namesOf(preachers) : 'Nobody set to preach',
+      aside: sermonWaiting(date) ? 'Not written' : '',
+      tone: 'warn',
+    }
+  })
+)
+
 /* -------------------------------------------------------------- the doors */
 
 // A door is its name, with a count only for what is waiting on you — amber
@@ -237,87 +260,93 @@ const doors = computed(() => {
 </script>
 
 <template>
-  <AppScreen>
-    <div class="flex flex-col gap-4">
-      <!-- 1. What needs doing before Sunday, most important on top -->
-      <AppHeroDeck :cards="cards" scope="teaching" label="Teaching this week" class="animate-rise">
-        <template #card="{ card }">
-          <!-- Your own message or lesson: the Sunday it is for. -->
-          <DeckCard
-            v-if="card.kind === 'dated'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            inset
-          >
-            <template #leading>
-              <DateTile :date="card.date" highlight />
-            </template>
-          </DeckCard>
-
-          <!-- Who it is about: their faces. -->
-          <DeckCard
-            v-else-if="card.kind === 'people'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            inset
-          >
-            <DeckFaces v-if="card.members.length" :tone="card.tone" :members="card.members" :caption="card.caption" />
-          </DeckCard>
-
-          <!-- Which classes: their names. -->
-          <DeckCard
-            v-else-if="card.kind === 'chips'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            inset
-          >
-            <DeckChips :tone="card.tone" :items="card.chips" :max="3" />
-          </DeckCard>
-
-          <DeckCard
-            v-else-if="card.kind === 'plain'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            inset
-          />
-
-          <!-- This coming Sunday: the message, and everyone teaching it. -->
-          <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
-            <template #art>
-              <CardPanes />
-            </template>
-            <!-- The Teaching artwork, on white because its orange and blue
-                 are Ekkly's and need a white ground on a coloured card. -->
-            <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-                <AppArt app-key="teaching" :play="1" class="size-10" />
-              </span>
-            </template>
-            <template v-if="card.members?.length || card.caption" #default>
-              <DeckFaces tone="accent" :members="card.members || []" :caption="card.caption" />
-            </template>
-          </DeckCard>
+  <AppHome :cards="cards" scope="teaching" label="Teaching this week" :doors="doors" name="Teaching">
+    <!-- 1. What needs doing before Sunday, most important on top -->
+    <template #card="{ card }">
+      <!-- Your own message or lesson: the Sunday it is for. -->
+      <DeckCard
+        v-if="card.kind === 'dated'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        inset
+      >
+        <template #leading>
+          <DateTile :date="card.date" highlight />
         </template>
-      </AppHeroDeck>
+      </DeckCard>
 
-      <!-- 2. The doors -->
-      <AppShortcuts :doors="doors" label="Teaching" />
-    </div>
-  </AppScreen>
+      <!-- Who it is about: their faces. -->
+      <DeckCard
+        v-else-if="card.kind === 'people'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        inset
+      >
+        <DeckFaces v-if="card.members.length" :tone="card.tone" :members="card.members" :caption="card.caption" />
+      </DeckCard>
+
+      <!-- Which classes: their names. -->
+      <DeckCard
+        v-else-if="card.kind === 'chips'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        inset
+      >
+        <DeckChips :tone="card.tone" :items="card.chips" :max="3" />
+      </DeckCard>
+
+      <DeckCard
+        v-else-if="card.kind === 'plain'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        inset
+      />
+
+      <!-- This coming Sunday: the message, and everyone teaching it. -->
+      <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
+        <template #art>
+          <CardPanes />
+        </template>
+        <!-- The Teaching artwork, on white because its orange and blue
+             are Ekkly's and need a white ground on a coloured card. -->
+        <template #trailing>
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+            <AppArt app-key="teaching" :play="1" class="size-10" />
+          </span>
+        </template>
+        <template v-if="card.members?.length || card.caption" #default>
+          <DeckFaces tone="accent" :members="card.members || []" :caption="card.caption" />
+        </template>
+      </DeckCard>
+    </template>
+
+    <template #side>
+      <AppSidePanel
+        title="Coming Sundays"
+        :rows="comingMessages"
+        :loading="loading"
+        :count="false"
+        :link="{ to: { name: 'TeachingSermons' }, label: 'See all' }"
+        doodle="hammock"
+        few="Nothing set after these."
+        :empty="{ title: 'Nothing planned yet', line: 'Coming Sundays show here once Schedules plans them.' }"
+      />
+    </template>
+  </AppHome>
 </template>

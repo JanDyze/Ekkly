@@ -1,12 +1,11 @@
 <script setup>
 import { computed } from 'vue'
 import { CalendarX, Clock, FilmSlate, Flag, MapPin, Sparkle } from '../../icons'
-import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
+import AppHome from '../../components/appframe/AppHome.vue'
+import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DateTile from '../../components/appframe/DateTile.vue'
-import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
 import DeckChips from '../../components/appframe/DeckChips.vue'
 import DeckWeek from '../../components/appframe/DeckWeek.vue'
 import AppArt from '../../components/common/AppArt.vue'
@@ -250,6 +249,30 @@ const cards = computed(() => {
   return list
 })
 
+/* -------------------------------------------------------------- the side */
+
+// Beside the cards on a desktop (AppHome's `side`): every gathering of the
+// next two weeks, each by its day, as the home of all apps keeps the week
+// beside its work (HomeWeek). One called off stays in its place, marked, so
+// nobody reads its absence as a gap.
+const fortnight = computed(() => {
+  const until = dateOf(today)
+  until.setDate(until.getDate() + 13)
+  return ahead.value
+    .filter((e) => dateOf(e.date) <= until)
+    .map((e) => ({
+      key: `${e.id || e.title}:${e.date}:${e.time || ''}`,
+      to: dayOf(e.date),
+      date: e.date,
+      weekday: true,
+      past: isCalledOff(e),
+      title: e.title || 'A gathering',
+      line: [clockLabel(e.time) || 'All day', e.location].filter(Boolean).join(' · '),
+      aside: isCalledOff(e) ? 'Called off' : '',
+      tone: 'urgent',
+    }))
+})
+
 /* -------------------------------------------------------------- the doors */
 
 // A door is its name and nothing more. What is on this week and what comes
@@ -263,71 +286,75 @@ const doors = computed(() => [
 </script>
 
 <template>
-  <AppScreen>
-    <div class="flex flex-col gap-4">
-      <!-- 1. What is on, and what has changed, most important on top -->
-      <AppHeroDeck :cards="cards" scope="events" label="Events today" class="animate-rise">
-        <template #card="{ card }">
-          <!-- Something on a day: its date, the way a calendar shows it. -->
-          <DeckCard
-            v-if="card.kind === 'dated'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <template #leading>
-              <DateTile :date="card.date" class="size-14! rounded-2xl!" />
-            </template>
-            <DeckWeek v-if="card.week" :days="week" :mark="card.date" />
-            <DeckChips v-else :tone="card.tone" :items="card.chips" />
-          </DeckCard>
-
-          <!-- This month's video: the Videos artwork, as it opens there. -->
-          <DeckCard
-            v-else-if="card.kind === 'video'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <template #leading>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light">
-                <AppArt app-key="videos" flat class="size-9" />
-              </span>
-            </template>
-            <DeckChips :items="card.chips" :max="3" />
-          </DeckCard>
-
-          <!-- What is on next, and the week ahead along its foot. -->
-          <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
-            <template #art>
-              <CardPanes />
-            </template>
-            <!-- The Events artwork, on white because its orange and blue are
-                 Ekkly's and need a white ground on a coloured card. -->
-            <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-                <AppArt app-key="events" :play="1" class="size-10" />
-              </span>
-            </template>
-            <!-- The coming seven days: each one's letter and date, and a dot for
-                 each thing on it, today ringed. -->
-            <template v-if="!loading" #default>
-              <DeckWeek tone="accent" :days="week" />
-            </template>
-          </DeckCard>
+  <AppHome :cards="cards" scope="events" label="Events today" :doors="doors" name="Events">
+    <!-- 1. What is on, and what has changed, most important on top -->
+    <template #card="{ card }">
+      <!-- Something on a day: its date, the way a calendar shows it. -->
+      <DeckCard
+        v-if="card.kind === 'dated'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <template #leading>
+          <DateTile :date="card.date" class="size-14! rounded-2xl!" />
         </template>
-      </AppHeroDeck>
+        <DeckWeek v-if="card.week" :days="week" :mark="card.date" />
+        <DeckChips v-else :tone="card.tone" :items="card.chips" />
+      </DeckCard>
 
-      <!-- 2. The doors -->
-      <AppShortcuts :doors="doors" label="Events" />
-    </div>
-  </AppScreen>
+      <!-- This month's video: the Videos artwork, as it opens there. -->
+      <DeckCard
+        v-else-if="card.kind === 'video'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <template #leading>
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light">
+            <AppArt app-key="videos" flat class="size-9" />
+          </span>
+        </template>
+        <DeckChips :items="card.chips" :max="3" />
+      </DeckCard>
+
+      <!-- What is on next, and the week ahead along its foot. -->
+      <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
+        <template #art>
+          <CardPanes />
+        </template>
+        <!-- The Events artwork, on white because its orange and blue are
+             Ekkly's and need a white ground on a coloured card. -->
+        <template #trailing>
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+            <AppArt app-key="events" :play="1" class="size-10" />
+          </span>
+        </template>
+        <!-- The coming seven days: each one's letter and date, and a dot for
+             each thing on it, today ringed. -->
+        <template v-if="!loading" #default>
+          <DeckWeek tone="accent" :days="week" />
+        </template>
+      </DeckCard>
+    </template>
+
+    <template #side>
+      <AppSidePanel
+        title="Next two weeks"
+        :rows="fortnight"
+        :loading="loading"
+        :link="{ to: { name: 'Events' }, label: 'Open calendar', short: 'Calendar' }"
+        few="The rest is open."
+        :empty="{ title: 'A quiet fortnight', line: 'Nothing on the calendar for the next two weeks.' }"
+      />
+    </template>
+  </AppHome>
 </template>

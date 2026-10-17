@@ -1,9 +1,8 @@
 <script setup>
 import { computed } from 'vue'
 import { ArrowsLeftRight, Camera, Clock, Warning } from '../../icons'
-import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
-import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
+import AppHome from '../../components/appframe/AppHome.vue'
+import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DeckChips from '../../components/appframe/DeckChips.vue'
@@ -33,6 +32,7 @@ const {
   items,
   loading,
   canEdit,
+  loans,
   overdue,
   dueSoon,
   mine,
@@ -200,6 +200,23 @@ const pictured = computed(() =>
     .slice(0, SHOWN)
 )
 
+/* -------------------------------------------------------------- the side */
+
+// Beside the cards on a desktop (AppHome's `side`): everything out on loan,
+// what is late first, each by its picture with who has it and when it is due
+// back, so whoever keeps the things can see the whole of what is out at once.
+const outOnLoan = computed(() =>
+  loans.value.map(({ item, loan, state }) => ({
+    key: `${item.id}:${loan.id}`,
+    to: { name: 'InventoryItem', params: { id: item.id } },
+    item,
+    title: item.name || 'Something',
+    line: [loan.to ? `With ${loan.to}` : '', loanDueLabel(loan, today)].filter(Boolean).join(' · '),
+    aside: state === 'overdue' ? 'Late' : state === 'soon' ? 'Due soon' : '',
+    tone: state === 'overdue' ? 'urgent' : 'warn',
+  }))
+)
+
 /* -------------------------------------------------------------- the doors */
 
 // A door is its name, with a count on the corner only for what is waiting —
@@ -242,108 +259,117 @@ const doors = computed(() => {
 </script>
 
 <template>
-  <AppScreen>
-    <div class="flex flex-col gap-4">
-      <!-- 1. What needs doing, most important on top -->
-      <AppHeroDeck :cards="cards" scope="inventory" label="Inventory this week" class="animate-rise">
-        <template #card="{ card }">
-          <!-- Loans: which things, and who has them. -->
-          <DeckCard
-            v-if="card.kind === 'loans'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            inset
-          >
-            <DeckChips :tone="card.tone" :items="card.chips" :max="2" />
-          </DeckCard>
+  <AppHome :cards="cards" scope="inventory" label="Inventory this week" :doors="doors" name="Inventory">
+    <!-- 1. What needs doing, most important on top -->
+    <template #card="{ card }">
+      <!-- Loans: which things, and who has them. -->
+      <DeckCard
+        v-if="card.kind === 'loans'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        inset
+      >
+        <DeckChips :tone="card.tone" :items="card.chips" :max="2" />
+      </DeckCard>
 
-          <!-- Something of yours: its picture is the headline's companion. -->
-          <DeckCard
-            v-else-if="card.kind === 'item'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            inset
-          >
-            <template #leading>
-              <ItemThumb :item="card.item" size="size-14 rounded-2xl" />
-            </template>
-          </DeckCard>
-
-          <!-- A pile of things: their pictures, or their names when they
-               have none to show. -->
-          <DeckCard
-            v-else-if="card.kind === 'items'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            inset
-          >
-            <div v-if="card.items?.some((item) => item.thumb)" class="flex items-center gap-1.5">
-              <ItemThumb v-for="item in card.items.slice(0, 5)" :key="item.id" :item="item" size="size-10 rounded-xl" />
-              <span v-if="card.items.length > 5" class="ml-1 text-sm font-semibold tabular-nums text-gray-500 dark:text-gray-400">
-                +{{ card.items.length - 5 }}
-              </span>
-            </div>
-            <DeckChips v-else-if="card.chips?.length || card.items?.length" :tone="card.tone" :items="card.chips || card.items.map((item) => ({ key: item.id, label: item.name }))" :max="3" />
-          </DeckCard>
-
-          <!-- Everything the church has: its number, large, and a few of the
-               things themselves along the foot. -->
-          <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
-            <template #art>
-              <CardPanes />
-            </template>
-            <template v-if="card.ready" #title>
-              <span class="text-5xl font-bold tabular-nums tracking-tight">{{ card.total.toLocaleString() }}</span>
-              <span class="ml-2 text-lg font-semibold text-white/80">{{ card.total === 1 ? 'thing' : 'things' }}</span>
-            </template>
-            <!-- The Inventory artwork, on white because its orange and blue
-                 are Ekkly's and need a white ground on a coloured card. -->
-            <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-                <AppArt app-key="inventory" :play="1" class="size-10" />
-              </span>
-            </template>
-            <template v-if="card.ready && pictured.length" #default>
-              <div class="flex items-center gap-1.5">
-                <span
-                  v-for="item in pictured"
-                  :key="item.id"
-                  class="flex size-10 items-center justify-center overflow-hidden rounded-xl bg-white ring-2 ring-white/70"
-                >
-                  <img :src="item.thumb" alt="" loading="lazy" :class="item.photoCut ? 'size-full object-contain p-1' : 'size-full object-cover'" />
-                </span>
-                <span
-                  v-if="card.total > pictured.length"
-                  class="ml-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white"
-                >
-                  +{{ (card.total - pictured.length).toLocaleString() }}
-                </span>
-              </div>
-            </template>
-            <template v-else-if="!loading && !card.total && canEdit" #default>
-              <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-white/90">
-                <Camera class="size-4" />
-                Take the first photo
-              </span>
-            </template>
-          </DeckCard>
+      <!-- Something of yours: its picture is the headline's companion. -->
+      <DeckCard
+        v-else-if="card.kind === 'item'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        inset
+      >
+        <template #leading>
+          <ItemThumb :item="card.item" size="size-14 rounded-2xl" />
         </template>
-      </AppHeroDeck>
+      </DeckCard>
 
-      <!-- 2. The doors -->
-      <AppShortcuts :doors="doors" label="Inventory" />
-    </div>
-  </AppScreen>
+      <!-- A pile of things: their pictures, or their names when they
+           have none to show. -->
+      <DeckCard
+        v-else-if="card.kind === 'items'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        inset
+      >
+        <div v-if="card.items?.some((item) => item.thumb)" class="flex items-center gap-1.5">
+          <ItemThumb v-for="item in card.items.slice(0, 5)" :key="item.id" :item="item" size="size-10 rounded-xl" />
+          <span v-if="card.items.length > 5" class="ml-1 text-sm font-semibold tabular-nums text-gray-500 dark:text-gray-400">
+            +{{ card.items.length - 5 }}
+          </span>
+        </div>
+        <DeckChips v-else-if="card.chips?.length || card.items?.length" :tone="card.tone" :items="card.chips || card.items.map((item) => ({ key: item.id, label: item.name }))" :max="3" />
+      </DeckCard>
+
+      <!-- Everything the church has: its number, large, and a few of the
+           things themselves along the foot. -->
+      <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
+        <template #art>
+          <CardPanes />
+        </template>
+        <template v-if="card.ready" #title>
+          <span class="text-5xl font-bold tabular-nums tracking-tight">{{ card.total.toLocaleString() }}</span>
+          <span class="ml-2 text-lg font-semibold text-white/80">{{ card.total === 1 ? 'thing' : 'things' }}</span>
+        </template>
+        <!-- The Inventory artwork, on white because its orange and blue
+             are Ekkly's and need a white ground on a coloured card. -->
+        <template #trailing>
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+            <AppArt app-key="inventory" :play="1" class="size-10" />
+          </span>
+        </template>
+        <template v-if="card.ready && pictured.length" #default>
+          <div class="flex items-center gap-1.5">
+            <span
+              v-for="item in pictured"
+              :key="item.id"
+              class="flex size-10 items-center justify-center overflow-hidden rounded-xl bg-white ring-2 ring-white/70"
+            >
+              <img :src="item.thumb" alt="" loading="lazy" :class="item.photoCut ? 'size-full object-contain p-1' : 'size-full object-cover'" />
+            </span>
+            <span
+              v-if="card.total > pictured.length"
+              class="ml-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white"
+            >
+              +{{ (card.total - pictured.length).toLocaleString() }}
+            </span>
+          </div>
+        </template>
+        <template v-else-if="!loading && !card.total && canEdit" #default>
+          <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-white/90">
+            <Camera class="size-4" />
+            Take the first photo
+          </span>
+        </template>
+      </DeckCard>
+    </template>
+
+    <template #side>
+      <AppSidePanel
+        title="Out on loan"
+        :rows="outOnLoan"
+        :loading="loading"
+        :link="{ to: { name: 'InventoryBorrowed' }, label: 'See all' }"
+        doodle="tea"
+        few="Everything else is in."
+        :empty="{ title: 'Everything is in', line: 'Nothing is out on loan right now.' }"
+      >
+        <template #picture="{ row }">
+          <ItemThumb :item="row.item" />
+        </template>
+      </AppSidePanel>
+    </template>
+  </AppHome>
 </template>

@@ -44,9 +44,13 @@ const props = defineProps({
   // on the app's home wears, a screen further in borrows its section's, and
   // the app's own drawing stands in for a section that has none.
   art: { type: String, default: '' },
+  // An app's home laid out as a board on a desktop (AppHome), the way the
+  // home of all apps is: the width of the screen and its height, in panels
+  // that scroll inside themselves, so the screen itself never does.
+  board: { type: Boolean, default: false },
 })
 
-const column = computed(() => (props.wide ? 'max-w-5xl' : 'max-w-xl'))
+const column = computed(() => (props.wide ? 'max-w-5xl' : props.board ? 'max-w-xl lg:h-full lg:max-w-[112rem] lg:px-6 lg:pt-5 lg:pb-5' : 'max-w-xl'))
 
 const router = useRouter()
 const route = useRoute()
@@ -110,6 +114,7 @@ defineExpose({ scroller, hidden })
       // things are read — a roll, a month, a record — and windows and pews
       // behind its rows pulled the eye off them, so it stands on plain ground.
       hasHeader ? 'h-full bg-gray-50 dark:bg-gray-900' : 'app-interior h-full bg-gray-50 dark:bg-gray-900',
+      board ? 'app-board' : '',
       fill
         ? 'flex flex-col overflow-hidden'
         : hasHeader
@@ -200,6 +205,16 @@ defineExpose({ scroller, hidden })
 
 .dark .app-interior {
   background-image: var(--interior-windows-dark), var(--interior-pews-dark);
+}
+
+/* A desktop's board (AppHome) covers the room with its panels, and what
+   showed of it between them read as something broken, not as a room: there,
+   the ground is plain. */
+@media (min-width: 64rem) {
+  .app-interior.app-board,
+  .dark .app-interior.app-board {
+    background-image: none;
+  }
 }
 
 /* On paper a report is the page, with nothing behind it. */

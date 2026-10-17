@@ -1,12 +1,12 @@
 <script setup>
 import { computed } from 'vue'
-import { FileText, HandCoins, Scales, Tag } from '../../icons'
-import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
+import { ArrowCircleDown, ArrowCircleUp, ArrowsLeftRight, FileText, HandCoins, Scales, Tag } from '../../icons'
+import AppHome from '../../components/appframe/AppHome.vue'
+import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
+import { categoryLabel } from '../../data/financeChart'
 import CardPanes from '../../components/appframe/CardPanes.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DateTile from '../../components/appframe/DateTile.vue'
-import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
 import DeckChips from '../../components/appframe/DeckChips.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import { useFinanceOverview } from '../../composables/useFinanceOverview'
@@ -35,6 +35,7 @@ import { formatMonthLabel, monthKeyOf } from '../../utils/ledgerUtils'
 
 const {
   loading,
+  entries,
   opening,
   canManage,
   balancesToday,
@@ -175,6 +176,27 @@ const monthBars = computed(() => {
   }
 })
 
+/* -------------------------------------------------------------- the side */
+
+// Beside the cards on a desktop (AppHome's `side`): the latest entries in the
+// book, newest first, each with its amount — what came in, what went out, and
+// what moved between accounts — so the treasurer can see the last few without
+// opening the month.
+const latestEntries = computed(() =>
+  [...entries.value]
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+    .slice(0, 25)
+    .map((entry) => ({
+      key: String(entry.id),
+      to: { name: 'Finances', params: { month: monthKeyOf(entry.date) } },
+      icon: entry.direction === 'in' ? ArrowCircleDown : entry.direction === 'out' ? ArrowCircleUp : ArrowsLeftRight,
+      title: entry.description || entry.payee || categoryLabel(entry),
+      line: [shortDate(entry.date), entry.description || entry.payee ? categoryLabel(entry) : ''].filter(Boolean).join(' · '),
+      aside: `${entry.direction === 'in' ? '+' : entry.direction === 'out' ? '−' : ''}${peso(Math.abs(entry.amount))}`,
+      tone: entry.direction === 'in' ? 'accent' : '',
+    }))
+)
+
 /* -------------------------------------------------------------- the doors */
 
 // A door is its name and nothing more. The month's result, the balances and
@@ -189,106 +211,112 @@ const doors = computed(() => [
 </script>
 
 <template>
-  <AppScreen>
-    <div class="flex flex-col gap-4">
-      <!-- 1. What needs doing about the money, most important on top -->
-      <AppHeroDeck :cards="cards" scope="finances" label="Finances today" class="animate-rise">
-        <template #card="{ card }">
-          <!-- A Sunday whose offering is missing: its date. -->
-          <DeckCard
-            v-if="card.kind === 'dated'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <template #leading>
-              <DateTile :date="card.date" class="size-14! rounded-2xl!" />
-            </template>
-            <DeckChips :tone="card.tone" :items="card.chips" />
-          </DeckCard>
-
-          <!-- Last month's statement: its in and out, side by side. -->
-          <DeckCard
-            v-else-if="card.kind === 'statement'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <div class="flex flex-col gap-1.5" aria-hidden="true">
-              <span
-                class="block h-2 rounded-full bg-green-500"
-                :style="{ width: `${Math.round((card.month.income / Math.max(card.month.income, card.month.expenses, 1)) * 100)}%` }"
-              />
-              <span
-                class="block h-2 rounded-full bg-red-400"
-                :style="{ width: `${Math.round((card.month.expenses / Math.max(card.month.income, card.month.expenses, 1)) * 100)}%` }"
-              />
-            </div>
-          </DeckCard>
-
-          <!-- What the church has today, and how this month is going. -->
-          <DeckCard
-            v-else-if="card.kind === 'balance'"
-            tone="accent"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-          >
-            <template #art>
-              <CardPanes />
-            </template>
-            <!-- The Finances artwork, on white because its orange and blue
-                 are Ekkly's and need a white ground on a coloured card. -->
-            <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-                <AppArt app-key="finances" :play="1" class="size-10" />
-              </span>
-            </template>
-            <template v-if="!loading" #title>
-              <span class="text-4xl font-bold tabular-nums tracking-tight">{{ peso(balancesToday.total) }}</span>
-            </template>
-            <!-- This month so far: in and out, as two bars. -->
-            <template v-if="!loading" #default>
-              <p class="mb-1.5 text-xs font-semibold text-white/80">{{ monthName(current.key) }} so far</p>
-              <div class="flex flex-col gap-1.5">
-                <div class="flex items-center gap-2">
-                  <span class="h-2 rounded-full bg-white" :style="{ width: `${Math.max(monthBars.income, 2)}%` }" aria-hidden="true" />
-                  <span class="shrink-0 text-xs tabular-nums text-white/85">+{{ peso(current.income) }}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="h-2 rounded-full bg-white/40" :style="{ width: `${Math.max(monthBars.expenses, 2)}%` }" aria-hidden="true" />
-                  <span class="shrink-0 text-xs tabular-nums text-white/85">−{{ peso(current.expenses) }}</span>
-                </div>
-              </div>
-            </template>
-          </DeckCard>
-
-          <DeckCard
-            v-else
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <DeckChips v-if="card.chips" :tone="card.tone" :items="card.chips" :max="card.chipMax || 4" />
-          </DeckCard>
+  <AppHome :cards="cards" scope="finances" label="Finances today" :doors="doors" name="Finances">
+    <!-- 1. What needs doing about the money, most important on top -->
+    <template #card="{ card }">
+      <!-- A Sunday whose offering is missing: its date. -->
+      <DeckCard
+        v-if="card.kind === 'dated'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <template #leading>
+          <DateTile :date="card.date" class="size-14! rounded-2xl!" />
         </template>
-      </AppHeroDeck>
+        <DeckChips :tone="card.tone" :items="card.chips" />
+      </DeckCard>
 
-      <!-- 2. The doors -->
-      <AppShortcuts :doors="doors" label="Finances" />
-    </div>
-  </AppScreen>
+      <!-- Last month's statement: its in and out, side by side. -->
+      <DeckCard
+        v-else-if="card.kind === 'statement'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <div class="flex flex-col gap-1.5" aria-hidden="true">
+          <span
+            class="block h-2 rounded-full bg-green-500"
+            :style="{ width: `${Math.round((card.month.income / Math.max(card.month.income, card.month.expenses, 1)) * 100)}%` }"
+          />
+          <span
+            class="block h-2 rounded-full bg-red-400"
+            :style="{ width: `${Math.round((card.month.expenses / Math.max(card.month.income, card.month.expenses, 1)) * 100)}%` }"
+          />
+        </div>
+      </DeckCard>
+
+      <!-- What the church has today, and how this month is going. -->
+      <DeckCard
+        v-else-if="card.kind === 'balance'"
+        tone="accent"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+      >
+        <template #art>
+          <CardPanes />
+        </template>
+        <!-- The Finances artwork, on white because its orange and blue
+             are Ekkly's and need a white ground on a coloured card. -->
+        <template #trailing>
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+            <AppArt app-key="finances" :play="1" class="size-10" />
+          </span>
+        </template>
+        <template v-if="!loading" #title>
+          <span class="text-4xl font-bold tabular-nums tracking-tight">{{ peso(balancesToday.total) }}</span>
+        </template>
+        <!-- This month so far: in and out, as two bars. -->
+        <template v-if="!loading" #default>
+          <p class="mb-1.5 text-xs font-semibold text-white/80">{{ monthName(current.key) }} so far</p>
+          <div class="flex flex-col gap-1.5">
+            <div class="flex items-center gap-2">
+              <span class="h-2 rounded-full bg-white" :style="{ width: `${Math.max(monthBars.income, 2)}%` }" aria-hidden="true" />
+              <span class="shrink-0 text-xs tabular-nums text-white/85">+{{ peso(current.income) }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="h-2 rounded-full bg-white/40" :style="{ width: `${Math.max(monthBars.expenses, 2)}%` }" aria-hidden="true" />
+              <span class="shrink-0 text-xs tabular-nums text-white/85">−{{ peso(current.expenses) }}</span>
+            </div>
+          </div>
+        </template>
+      </DeckCard>
+
+      <DeckCard
+        v-else
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <DeckChips v-if="card.chips" :tone="card.tone" :items="card.chips" :max="card.chipMax || 4" />
+      </DeckCard>
+    </template>
+
+    <template #side>
+      <AppSidePanel
+        title="Latest in the book"
+        :rows="latestEntries"
+        :loading="loading"
+        :count="false"
+        :link="{ to: { name: 'Finances' }, label: 'Open the book', short: 'Book' }"
+        doodle="bench"
+        few="That’s the book so far."
+        :empty="{ title: 'Nothing entered yet', line: 'Each entry shows here as it goes in the book.' }"
+      />
+    </template>
+  </AppHome>
 </template>

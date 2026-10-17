@@ -1,12 +1,11 @@
 <script setup>
 import { computed } from 'vue'
-import { BellRinging, BookOpenText, HandWaving, MicrophoneStage, Plus } from '../../icons'
-import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
+import { BellRinging, BookOpenText, HandWaving, MicrophoneStage, Plus, UserCircleDashed } from '../../icons'
+import AppHome from '../../components/appframe/AppHome.vue'
+import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DateTile from '../../components/appframe/DateTile.vue'
-import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
 import DeckFaces from '../../components/appframe/DeckFaces.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
@@ -309,6 +308,34 @@ const cards = computed(() => {
 
 const FACES = 6
 
+/* -------------------------------------------------------------- the side */
+
+// Beside the cards on a desktop (AppHome's `side`): the next Sunday's line-up,
+// role by role, the one thing a congregation asks of Schedules ("who is
+// leading?"), which the card above it only shows as faces. A role nobody is
+// on says so, in amber, for whoever plans it.
+const lineup = computed(() => {
+  const sunday = next.value
+  if (!sunday) return []
+  const assignments = assignmentsOf(sunday)
+  return roles.value.flatMap((role) => {
+    const people = (assignments[role.id] || []).map(memberOf).filter(Boolean)
+    if (!people.length && !canPlan.value) return []
+    return [
+      {
+        key: role.id,
+        to: sundayLink(sunday.date),
+        members: people,
+        icon: people.length ? null : UserCircleDashed,
+        title: people.length ? listPhrase(people.map(getDisplayName)) : 'Nobody yet',
+        line: role.name,
+        aside: people.length ? '' : 'Open',
+        tone: 'warn',
+      },
+    ]
+  })
+})
+
 /* -------------------------------------------------------------- the doors */
 
 /** Who is on one team's roles on the coming Sunday. */
@@ -352,118 +379,123 @@ const doors = computed(() => {
 </script>
 
 <template>
-  <AppScreen>
-    <div class="flex flex-col gap-4">
-      <!-- 1. What matters about Sunday, most important on top -->
-      <AppHeroDeck :cards="cards" scope="schedules" label="Schedules today" class="animate-rise">
-        <template #card="{ card }">
-          <!-- Something on a Sunday: its date, the way a calendar shows it. -->
-          <DeckCard
-            v-if="card.kind === 'dated'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <template #leading>
-              <DateTile :date="card.date" class="size-14! rounded-2xl!" />
-            </template>
-            <DeckFaces v-if="card.faces" :tone="card.tone" v-bind="card.faces" />
-          </DeckCard>
-
-          <!-- A month in draft: its Sundays, the planned ones filled in. -->
-          <DeckCard
-            v-else-if="card.kind === 'draft'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <div class="flex gap-1.5" aria-hidden="true">
-              <span
-                v-for="sunday in card.sundays"
-                :key="sunday.date"
-                :class="[
-                  'flex h-9 flex-1 items-center justify-center rounded-xl text-sm font-bold tabular-nums',
-                  sunday.planned
-                    ? 'bg-amber-500 text-white dark:bg-amber-500/80'
-                    : 'border-2 border-dashed border-amber-300 text-amber-700 dark:border-gray-600 dark:text-gray-400',
-                ]"
-              >
-                {{ parseIso(sunday.date)?.getDate() }}
-              </span>
-            </div>
-            <p class="mt-1.5 text-xs text-amber-800 dark:text-gray-400">
-              {{ card.sundays.filter((s) => s.planned).length }} of {{ card.sundays.length }} Sundays planned
-            </p>
-          </DeckCard>
-
-          <!-- The next Sunday: always at the bottom of the deck, with
-               everyone serving on it along its foot. -->
-          <DeckCard
-            v-else-if="card.kind === 'sunday'"
-            tone="accent"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-          >
-            <template #art>
-              <CardPanes />
-            </template>
-            <!-- The Schedules artwork, on white because its orange and blue
-                 are Ekkly's and need a white ground on a coloured card. -->
-            <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-                <AppArt app-key="lineups" :play="1" class="size-10" />
-              </span>
-            </template>
-            <template v-if="serving.length" #default>
-              <div class="flex items-center">
-                <div class="flex -space-x-2.5">
-                  <MemberAvatar
-                    v-for="member in serving.slice(0, FACES)"
-                    :key="keyOf(member)"
-                    :member="member"
-                    alt=""
-                    size="h-10 w-10"
-                    plain-class="ring-2 ring-white/70"
-                  />
-                </div>
-                <span
-                  v-if="serving.length > FACES"
-                  class="ml-2 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white"
-                >
-                  +{{ serving.length - FACES }}
-                </span>
-              </div>
-              <p v-if="keyPeople" class="mt-2 truncate text-xs text-white/80">{{ keyPeople }}</p>
-            </template>
-          </DeckCard>
-
-          <DeckCard
-            v-else
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <DeckFaces v-if="card.faces" :tone="card.tone" v-bind="card.faces" />
-          </DeckCard>
+  <AppHome :cards="cards" scope="schedules" label="Schedules today" :doors="doors" name="Schedules">
+    <!-- 1. What matters about Sunday, most important on top -->
+    <template #card="{ card }">
+      <!-- Something on a Sunday: its date, the way a calendar shows it. -->
+      <DeckCard
+        v-if="card.kind === 'dated'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <template #leading>
+          <DateTile :date="card.date" class="size-14! rounded-2xl!" />
         </template>
-      </AppHeroDeck>
+        <DeckFaces v-if="card.faces" :tone="card.tone" v-bind="card.faces" />
+      </DeckCard>
 
-      <!-- 2. The doors -->
-      <AppShortcuts :doors="doors" label="Schedules" />
-    </div>
-  </AppScreen>
+      <!-- A month in draft: its Sundays, the planned ones filled in. -->
+      <DeckCard
+        v-else-if="card.kind === 'draft'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <div class="flex gap-1.5" aria-hidden="true">
+          <span
+            v-for="sunday in card.sundays"
+            :key="sunday.date"
+            :class="[
+              'flex h-9 flex-1 items-center justify-center rounded-xl text-sm font-bold tabular-nums',
+              sunday.planned
+                ? 'bg-amber-500 text-white dark:bg-amber-500/80'
+                : 'border-2 border-dashed border-amber-300 text-amber-700 dark:border-gray-600 dark:text-gray-400',
+            ]"
+          >
+            {{ parseIso(sunday.date)?.getDate() }}
+          </span>
+        </div>
+        <p class="mt-1.5 text-xs text-amber-800 dark:text-gray-400">
+          {{ card.sundays.filter((s) => s.planned).length }} of {{ card.sundays.length }} Sundays planned
+        </p>
+      </DeckCard>
+
+      <!-- The next Sunday: always at the bottom of the deck, with
+           everyone serving on it along its foot. -->
+      <DeckCard
+        v-else-if="card.kind === 'sunday'"
+        tone="accent"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+      >
+        <template #art>
+          <CardPanes />
+        </template>
+        <!-- The Schedules artwork, on white because its orange and blue
+             are Ekkly's and need a white ground on a coloured card. -->
+        <template #trailing>
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+            <AppArt app-key="lineups" :play="1" class="size-10" />
+          </span>
+        </template>
+        <template v-if="serving.length" #default>
+          <div class="flex items-center">
+            <div class="flex -space-x-2.5">
+              <MemberAvatar
+                v-for="member in serving.slice(0, FACES)"
+                :key="keyOf(member)"
+                :member="member"
+                alt=""
+                size="h-10 w-10"
+                plain-class="ring-2 ring-white/70"
+              />
+            </div>
+            <span
+              v-if="serving.length > FACES"
+              class="ml-2 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white"
+            >
+              +{{ serving.length - FACES }}
+            </span>
+          </div>
+          <p v-if="keyPeople" class="mt-2 truncate text-xs text-white/80">{{ keyPeople }}</p>
+        </template>
+      </DeckCard>
+
+      <DeckCard
+        v-else
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <DeckFaces v-if="card.faces" :tone="card.tone" v-bind="card.faces" />
+      </DeckCard>
+    </template>
+
+    <template #side>
+      <AppSidePanel
+        :title="next ? `Line-up, ${formatShortDate(next.date)}` : 'Line-up'"
+        :rows="lineup"
+        :loading="loading"
+        :count="false"
+        :link="next ? { to: sundayLink(next.date), label: 'Open Sunday', short: 'Open' } : { to: { name: 'SchedulesCalendar' }, label: 'Calendar' }"
+        few="That’s everyone on."
+        :empty="{ title: 'Nothing planned yet', line: 'The next Sunday’s line-up shows here once it is planned.' }"
+      />
+    </template>
+  </AppHome>
 </template>

@@ -1,13 +1,12 @@
 <script setup>
 import { computed } from 'vue'
 import { Camera, ClockCounterClockwise, ImagePlus, Images } from '../../icons'
-import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
+import AppHome from '../../components/appframe/AppHome.vue'
+import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
 import DateTile from '../../components/appframe/DateTile.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import DeckChips from '../../components/appframe/DeckChips.vue'
-import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
 import AppArt from '../../components/common/AppArt.vue'
 import { useGalleryOverview } from '../../composables/useGalleryOverview'
 import { useGalleryUpload } from '../../composables/useGalleryUpload'
@@ -179,6 +178,21 @@ const alwaysCard = computed(() => {
   }
 })
 
+/* -------------------------------------------------------------- the side */
+
+// Beside the cards on a desktop (AppHome's `side`): the newest albums, each by
+// its cover, so the church's latest pictures are one look away on a screen
+// with the room for them.
+const latestAlbums = computed(() =>
+  withPhotos.value.slice(0, 30).map((album) => ({
+    key: String(album.id),
+    to: albumLink(album),
+    photo: album.coverUrl,
+    title: album.title || 'Untitled',
+    line: album.date ? formatShortDate(album.date) : '',
+  }))
+)
+
 /* -------------------------------------------------------------- the doors */
 
 // A door is its name, with a count on the corner only for what is waiting on
@@ -214,134 +228,140 @@ const doors = computed(() => {
 </script>
 
 <template>
-  <AppScreen>
-    <div class="flex flex-col gap-4">
-      <!-- 1. What matters this week, most important on top -->
-      <AppHeroDeck :cards="cards" scope="gallery" label="Gallery this week" class="animate-rise">
-        <template #card="{ card }">
-          <!-- A gathering with no photos: its date, the way a calendar shows
-               it. One is a tap straight to the photo picker, so a button. -->
-          <DeckCard
-            v-if="card.kind === 'waiting'"
-            tone="plain"
-            :icon="Camera"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.album ? null : { name: 'GalleryWaiting' }"
-            :action="Boolean(card.album)"
-            inset
-            :aria-busy="(card.album && isUploadingTo(card.album)) || undefined"
-            @click="card.album && pickPhotosFor(card.album)"
-          >
-            <template #leading>
-              <DateTile :date="card.date" highlight />
-            </template>
-            <DeckChips v-if="card.chips.length" :items="card.chips" :max="3" />
-          </DeckCard>
+  <AppHome :cards="cards" scope="gallery" label="Gallery this week" :doors="doors" name="Gallery">
+    <!-- 1. What matters this week, most important on top -->
+    <template #card="{ card }">
+      <!-- A gathering with no photos: its date, the way a calendar shows
+           it. One is a tap straight to the photo picker, so a button. -->
+      <DeckCard
+        v-if="card.kind === 'waiting'"
+        tone="plain"
+        :icon="Camera"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.album ? null : { name: 'GalleryWaiting' }"
+        :action="Boolean(card.album)"
+        inset
+        :aria-busy="(card.album && isUploadingTo(card.album)) || undefined"
+        @click="card.album && pickPhotosFor(card.album)"
+      >
+        <template #leading>
+          <DateTile :date="card.date" highlight />
+        </template>
+        <DeckChips v-if="card.chips.length" :items="card.chips" :max="3" />
+      </DeckCard>
 
-          <!-- New photos: the photos themselves, along the foot. -->
-          <DeckCard
-            v-else-if="card.kind === 'new'"
-            tone="plain"
-            :icon="Images"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            inset
+      <!-- New photos: the photos themselves, along the foot. -->
+      <DeckCard
+        v-else-if="card.kind === 'new'"
+        tone="plain"
+        :icon="Images"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        inset
+      >
+        <div class="flex items-center gap-1.5">
+          <span
+            v-for="photo in card.photos.slice(0, STRIP)"
+            :key="photo.id"
+            class="size-11 shrink-0 overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-700"
           >
-            <div class="flex items-center gap-1.5">
+            <img :src="photo.url" alt="" loading="lazy" decoding="async" class="h-full w-full object-cover" />
+          </span>
+          <span
+            v-if="card.photos.length > STRIP"
+            class="ml-1 text-sm font-semibold tabular-nums text-gray-500 dark:text-gray-400"
+          >
+            +{{ (card.photos.length - STRIP).toLocaleString() }}
+          </span>
+        </div>
+      </DeckCard>
+
+      <!-- A year ago: the album's cover, where another card has a date. -->
+      <DeckCard
+        v-else-if="card.kind === 'year'"
+        tone="plain"
+        :icon="ClockCounterClockwise"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        inset
+      >
+        <template #leading>
+          <span class="size-16 shrink-0 overflow-hidden rounded-2xl bg-gray-100 ring-1 ring-gray-200 dark:bg-gray-700 dark:ring-gray-700">
+            <img :src="card.cover" alt="" decoding="async" class="h-full w-full object-cover" />
+          </span>
+        </template>
+      </DeckCard>
+
+      <!-- Albums left empty: which ones, by name. -->
+      <DeckCard
+        v-else-if="card.tone !== 'accent'"
+        :tone="card.tone"
+        :icon="card.icon"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        :inset="card.dismissible"
+      >
+        <DeckChips v-if="card.chips?.length" :items="card.chips" :max="3" />
+      </DeckCard>
+
+      <!-- The albums: how many, large, and their covers along the foot. -->
+      <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
+        <template #art>
+          <CardPanes />
+        </template>
+        <template v-if="card.ready" #title>
+          <span class="text-5xl font-bold tabular-nums tracking-tight">{{ card.total.toLocaleString() }}</span>
+          <span class="ml-2 text-lg font-semibold text-white/80">{{ card.total === 1 ? 'album' : 'albums' }}</span>
+        </template>
+        <!-- The Gallery artwork, on white because its orange and blue are
+             Ekkly's and need a white ground on a coloured card (BRAND.md). -->
+        <template #trailing>
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+            <AppArt app-key="gallery" :play="1" class="size-10" />
+          </span>
+        </template>
+        <!-- The newest covers, overlapping the way People's faces do. -->
+        <template v-if="card.ready" #default>
+          <div class="flex items-center">
+            <div class="flex -space-x-2.5">
               <span
-                v-for="photo in card.photos.slice(0, STRIP)"
-                :key="photo.id"
-                class="size-11 shrink-0 overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-700"
+                v-for="album in card.covers"
+                :key="album.id"
+                class="size-10 overflow-hidden rounded-xl bg-white/15 ring-2 ring-white/70"
               >
-                <img :src="photo.url" alt="" loading="lazy" decoding="async" class="h-full w-full object-cover" />
-              </span>
-              <span
-                v-if="card.photos.length > STRIP"
-                class="ml-1 text-sm font-semibold tabular-nums text-gray-500 dark:text-gray-400"
-              >
-                +{{ (card.photos.length - STRIP).toLocaleString() }}
+                <img :src="album.coverUrl" alt="" loading="lazy" decoding="async" class="h-full w-full object-cover" />
               </span>
             </div>
-          </DeckCard>
-
-          <!-- A year ago: the album's cover, where another card has a date. -->
-          <DeckCard
-            v-else-if="card.kind === 'year'"
-            tone="plain"
-            :icon="ClockCounterClockwise"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            inset
-          >
-            <template #leading>
-              <span class="size-16 shrink-0 overflow-hidden rounded-2xl bg-gray-100 ring-1 ring-gray-200 dark:bg-gray-700 dark:ring-gray-700">
-                <img :src="card.cover" alt="" decoding="async" class="h-full w-full object-cover" />
-              </span>
-            </template>
-          </DeckCard>
-
-          <!-- Albums left empty: which ones, by name. -->
-          <DeckCard
-            v-else-if="card.tone !== 'accent'"
-            :tone="card.tone"
-            :icon="card.icon"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            :inset="card.dismissible"
-          >
-            <DeckChips v-if="card.chips?.length" :items="card.chips" :max="3" />
-          </DeckCard>
-
-          <!-- The albums: how many, large, and their covers along the foot. -->
-          <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
-            <template #art>
-              <CardPanes />
-            </template>
-            <template v-if="card.ready" #title>
-              <span class="text-5xl font-bold tabular-nums tracking-tight">{{ card.total.toLocaleString() }}</span>
-              <span class="ml-2 text-lg font-semibold text-white/80">{{ card.total === 1 ? 'album' : 'albums' }}</span>
-            </template>
-            <!-- The Gallery artwork, on white because its orange and blue are
-                 Ekkly's and need a white ground on a coloured card (BRAND.md). -->
-            <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-                <AppArt app-key="gallery" :play="1" class="size-10" />
-              </span>
-            </template>
-            <!-- The newest covers, overlapping the way People's faces do. -->
-            <template v-if="card.ready" #default>
-              <div class="flex items-center">
-                <div class="flex -space-x-2.5">
-                  <span
-                    v-for="album in card.covers"
-                    :key="album.id"
-                    class="size-10 overflow-hidden rounded-xl bg-white/15 ring-2 ring-white/70"
-                  >
-                    <img :src="album.coverUrl" alt="" loading="lazy" decoding="async" class="h-full w-full object-cover" />
-                  </span>
-                </div>
-                <span
-                  v-if="card.total > STRIP"
-                  class="ml-2 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white"
-                >
-                  +{{ (card.total - STRIP).toLocaleString() }}
-                </span>
-              </div>
-            </template>
-          </DeckCard>
+            <span
+              v-if="card.total > STRIP"
+              class="ml-2 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white"
+            >
+              +{{ (card.total - STRIP).toLocaleString() }}
+            </span>
+          </div>
         </template>
-      </AppHeroDeck>
+      </DeckCard>
+    </template>
 
-      <!-- 2. The doors -->
-      <AppShortcuts :doors="doors" label="Gallery" />
-    </div>
-  </AppScreen>
+    <template #side>
+      <AppSidePanel
+        title="Latest albums"
+        :rows="latestAlbums"
+        :loading="loading"
+        :count="false"
+        :link="{ to: { name: 'Gallery' }, label: 'See all' }"
+        doodle="bench"
+        few="That’s every album so far."
+        :empty="{ title: 'No pictures yet', line: 'Albums show here once photos go up.' }"
+      />
+    </template>
+  </AppHome>
 </template>

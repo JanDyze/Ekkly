@@ -1,12 +1,11 @@
 <script setup>
 import { computed } from 'vue'
 import { Cake, ClipboardText, HandHeart, Hourglass, KeyRound, UserCircleCheck, UsersThree } from '../../icons'
-import AppScreen from '../../components/appframe/AppScreen.vue'
-import AppHeroDeck from '../../components/appframe/AppHeroDeck.vue'
+import AppHome from '../../components/appframe/AppHome.vue'
+import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import BirthdayCard from '../../components/members/BirthdayCard.vue'
-import AppShortcuts from '../../components/appframe/AppShortcuts.vue'
 import DeckFaces from '../../components/appframe/DeckFaces.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
 import AppArt from '../../components/common/AppArt.vue'
@@ -17,6 +16,7 @@ import { findRosterMember, todayIso } from '../../utils/lineupUtils'
 import { suggestMembers } from '../../utils/memberMatch'
 import { useClaimFlow } from '../../composables/useClaimFlow'
 import { useAuth } from '../../composables/useAuth'
+import { useMediaQuery } from '../../composables/useMediaQuery'
 
 // The People app's home. One screen, no scrolling, and two things on it:
 //
@@ -86,6 +86,8 @@ const dateParts = (days) => {
 }
 
 /* -------------------------------------------------------------- the deck */
+
+const wide = useMediaQuery('(min-width: 1024px)')
 
 const today = todayIso()
 
@@ -164,9 +166,11 @@ const cards = computed(() => {
   // The birthdays still to come this week, together — near enough to buy a
   // card or plan a greeting. Not the next one when there are none this week:
   // three weeks off is nothing to do yet, and Birthdays opens on who is
-  // next. Keyed by who, so a different set of names is news again.
+  // next. Keyed by who, so a different set of names is news again. Not on a
+  // desktop, where the coming birthdays stand beside the cards and already
+  // name them (the side, below).
   const soon = birthdays.value.filter((row) => row.days >= 1 && row.days <= 6)
-  if (soon.length) {
+  if (soon.length && !wide.value) {
     const first = soon[0]
     const on = first.days === 1 ? 'tomorrow' : `on ${whenOfBirthday(first.days)}`
     list.push({
@@ -277,6 +281,25 @@ const cards = computed(() => {
   return list
 })
 
+/* -------------------------------------------------------------- the side */
+
+// Beside the cards on a desktop (AppHome's `side`): the birthdays of the
+// coming month, from tomorrow (today's each have a card), the week's in the
+// church's colour, so a greeting can be planned before the day.
+const comingBirthdays = computed(() =>
+  birthdays.value
+    .filter((row) => row.days >= 1 && row.days <= 31)
+    .map((row) => ({
+      key: String(keyOf(row.member)),
+      to: recordOf(row.member),
+      member: row.member,
+      title: getDisplayName(row.member),
+      line: row.turning ? `Turns ${row.turning}` : getFullName(row.member),
+      aside: whenOfBirthday(row.days),
+      tone: row.days <= 6 ? 'accent' : '',
+    }))
+)
+
 /* -------------------------------------------------------------- the doors */
 
 // People with a photo first: a face reads, a generated avatar is a pattern.
@@ -321,186 +344,191 @@ const doors = computed(() => {
 </script>
 
 <template>
-  <AppScreen>
-    <div class="flex flex-col gap-4">
-      <!-- 1. What matters today, most important on top -->
-      <AppHeroDeck :cards="cards" scope="people" label="People today" class="animate-rise">
-        <template #card="{ card }">
-          <!-- Someone waiting on you: the key they are asking for, in amber. -->
-          <DeckCard
-            v-if="card.kind === 'claims'"
-            tone="warn"
-            :icon="KeyRound"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            inset
-          >
-            <template #leading>
-              <span class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">
-                <KeyRound class="size-6" />
-              </span>
-            </template>
-            <DeckFaces tone="warn" :members="card.members" :empty="card.unmatched" :caption="card.caption" />
-          </DeckCard>
-
-          <!-- Somebody's birthday: the day itself is the headline. -->
-          <BirthdayCard v-else-if="card.kind === 'birthday'" :card="card" />
-
-          <!-- A birthday coming: its date, the way a calendar shows it. -->
-          <DeckCard
-            v-else-if="card.kind === 'upcoming'"
-            tone="plain"
-            :icon="Cake"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            inset
-          >
-            <template #leading>
-              <span class="flex size-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-primary/10 leading-none text-primary dark:bg-primary-light/15 dark:text-primary-light">
-                <span class="text-[11px] font-bold uppercase">{{ card.date.month }}</span>
-                <span class="mt-0.5 text-xl font-bold tabular-nums">{{ card.date.day }}</span>
-              </span>
-            </template>
-            <!-- Three at most on the one line, each name giving up width to
-                 the others and ending in an ellipsis when squeezed. -->
-            <div v-if="card.rows.length > 1" class="flex min-w-0 gap-x-3">
-              <span v-for="row in card.rows.slice(0, 3)" :key="keyOf(row.member)" class="flex min-w-0 items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
-                <MemberAvatar :member="row.member" alt="" size="h-6 w-6" class="shrink-0" />
-                <span class="min-w-0 truncate">
-                  {{ getDisplayName(row.member) }}
-                  <span class="text-gray-400 dark:text-gray-500">{{ whenOfBirthday(row.days) }}</span>
-                </span>
-              </span>
-            </div>
-            <DeckFaces v-else :members="[card.rows[0].member]" :caption="card.countdown" />
-          </DeckCard>
-
-          <!-- Records to fill in: how much of the roll is complete. -->
-          <DeckCard
-            v-else-if="card.kind === 'missing'"
-            tone="plain"
-            :icon="ClipboardText"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            inset
-          >
-            <div class="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
-              <div class="h-full rounded-full bg-primary dark:bg-primary-light" :style="{ width: `${Math.round(card.share * 100)}%` }" />
-            </div>
-            <p class="mt-1.5 text-xs tabular-nums text-gray-500 dark:text-gray-400">
-              {{ card.complete.toLocaleString() }} of {{ counts.total.toLocaleString() }} complete
-            </p>
-          </DeckCard>
-
-          <!-- People in no ministry: their faces, a few of them. -->
-          <DeckCard
-            v-else-if="card.kind === 'unplaced'"
-            tone="plain"
-            :icon="card.icon || HandHeart"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            :to="card.to"
-            inset
-          >
-            <div class="flex items-center">
-              <div class="flex -space-x-2.5">
-                <MemberAvatar
-                  v-for="member in card.members.slice(0, 6)"
-                  :key="keyOf(member)"
-                  :member="member"
-                  alt=""
-                  size="h-9 w-9"
-                  plain-class="ring-2 ring-white dark:ring-gray-800"
-                />
-              </div>
-              <span
-                v-if="card.members.length > 6"
-                class="ml-2 text-sm font-semibold tabular-nums text-gray-500 dark:text-gray-400"
-              >
-                +{{ card.members.length - 6 }}
-              </span>
-            </div>
-          </DeckCard>
-
-          <!-- You, not yet linked: the likeliest records by your account's
-               name, and a tap that opens the sheet to choose yours. -->
-          <DeckCard
-            v-else-if="card.kind === 'self'"
-            tone="plain"
-            :icon="UserCircleCheck"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            action
-            inset
-            @click="openClaimSheet"
-          >
-            <DeckFaces v-if="card.members.length" :members="card.members" :caption="card.caption" />
-          </DeckCard>
-
-          <!-- Asked already: said once, so nobody asks twice. -->
-          <DeckCard
-            v-else-if="card.kind === 'self-asked'"
-            tone="plain"
-            :icon="Hourglass"
-            :kicker="card.kicker"
-            :title="card.title"
-            :detail="card.detail"
-            inset
-          />
-
-          <!-- The roll: its number, large, and what it is made of. -->
-          <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
-            <template #art>
-              <CardPanes />
-            </template>
-            <template v-if="card.ready" #title>
-              <span class="text-5xl font-bold tabular-nums tracking-tight">{{ card.total.toLocaleString() }}</span>
-              <span class="ml-2 text-lg font-semibold text-white/80">{{ card.total === 1 ? 'person' : 'people' }}</span>
-            </template>
-            <!-- The People app's own artwork, on a white tile because its
-                 orange and blue are Ekkly's and need a white ground on a
-                 coloured card (BRAND.md). -->
-            <template #trailing>
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
-                <AppArt app-key="members" :play="1" class="size-10" />
-              </span>
-            </template>
-            <!-- The people themselves, along the foot. -->
-            <template v-if="card.ready" #default>
-              <div class="flex items-center">
-                <div class="flex -space-x-2.5">
-                  <MemberAvatar
-                    v-for="member in heroFaces"
-                    :key="keyOf(member)"
-                    :member="member"
-                    alt=""
-                    size="h-10 w-10"
-                    plain-class="ring-2 ring-white/70"
-                  />
-                </div>
-                <span
-                  v-if="card.total > HERO_FACES"
-                  class="ml-2 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white"
-                >
-                  +{{ (card.total - HERO_FACES).toLocaleString() }}
-                </span>
-              </div>
-            </template>
-          </DeckCard>
+  <AppHome :cards="cards" scope="people" label="People today" :doors="doors" name="People">
+    <!-- 1. What matters today, most important on top -->
+    <template #card="{ card }">
+      <!-- Someone waiting on you: the key they are asking for, in amber. -->
+      <DeckCard
+        v-if="card.kind === 'claims'"
+        tone="warn"
+        :icon="KeyRound"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        inset
+      >
+        <template #leading>
+          <span class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">
+            <KeyRound class="size-6" />
+          </span>
         </template>
-      </AppHeroDeck>
+        <DeckFaces tone="warn" :members="card.members" :empty="card.unmatched" :caption="card.caption" />
+      </DeckCard>
 
-      <!-- 2. The doors -->
-      <AppShortcuts :doors="doors" label="People" />
-    </div>
-  </AppScreen>
+      <!-- Somebody's birthday: the day itself is the headline. -->
+      <BirthdayCard v-else-if="card.kind === 'birthday'" :card="card" />
+
+      <!-- A birthday coming: its date, the way a calendar shows it. -->
+      <DeckCard
+        v-else-if="card.kind === 'upcoming'"
+        tone="plain"
+        :icon="Cake"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        inset
+      >
+        <template #leading>
+          <span class="flex size-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-primary/10 leading-none text-primary dark:bg-primary-light/15 dark:text-primary-light">
+            <span class="text-[11px] font-bold uppercase">{{ card.date.month }}</span>
+            <span class="mt-0.5 text-xl font-bold tabular-nums">{{ card.date.day }}</span>
+          </span>
+        </template>
+        <!-- Three at most on the one line, each name giving up width to
+             the others and ending in an ellipsis when squeezed. -->
+        <div v-if="card.rows.length > 1" class="flex min-w-0 gap-x-3">
+          <span v-for="row in card.rows.slice(0, 3)" :key="keyOf(row.member)" class="flex min-w-0 items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
+            <MemberAvatar :member="row.member" alt="" size="h-6 w-6" class="shrink-0" />
+            <span class="min-w-0 truncate">
+              {{ getDisplayName(row.member) }}
+              <span class="text-gray-400 dark:text-gray-500">{{ whenOfBirthday(row.days) }}</span>
+            </span>
+          </span>
+        </div>
+        <DeckFaces v-else :members="[card.rows[0].member]" :caption="card.countdown" />
+      </DeckCard>
+
+      <!-- Records to fill in: how much of the roll is complete. -->
+      <DeckCard
+        v-else-if="card.kind === 'missing'"
+        tone="plain"
+        :icon="ClipboardText"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        inset
+      >
+        <div class="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+          <div class="h-full rounded-full bg-primary dark:bg-primary-light" :style="{ width: `${Math.round(card.share * 100)}%` }" />
+        </div>
+        <p class="mt-1.5 text-xs tabular-nums text-gray-500 dark:text-gray-400">
+          {{ card.complete.toLocaleString() }} of {{ counts.total.toLocaleString() }} complete
+        </p>
+      </DeckCard>
+
+      <!-- People in no ministry: their faces, a few of them. -->
+      <DeckCard
+        v-else-if="card.kind === 'unplaced'"
+        tone="plain"
+        :icon="card.icon || HandHeart"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        :to="card.to"
+        inset
+      >
+        <div class="flex items-center">
+          <div class="flex -space-x-2.5">
+            <MemberAvatar
+              v-for="member in card.members.slice(0, 6)"
+              :key="keyOf(member)"
+              :member="member"
+              alt=""
+              size="h-9 w-9"
+              plain-class="ring-2 ring-white dark:ring-gray-800"
+            />
+          </div>
+          <span
+            v-if="card.members.length > 6"
+            class="ml-2 text-sm font-semibold tabular-nums text-gray-500 dark:text-gray-400"
+          >
+            +{{ card.members.length - 6 }}
+          </span>
+        </div>
+      </DeckCard>
+
+      <!-- You, not yet linked: the likeliest records by your account's
+           name, and a tap that opens the sheet to choose yours. -->
+      <DeckCard
+        v-else-if="card.kind === 'self'"
+        tone="plain"
+        :icon="UserCircleCheck"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        action
+        inset
+        @click="openClaimSheet"
+      >
+        <DeckFaces v-if="card.members.length" :members="card.members" :caption="card.caption" />
+      </DeckCard>
+
+      <!-- Asked already: said once, so nobody asks twice. -->
+      <DeckCard
+        v-else-if="card.kind === 'self-asked'"
+        tone="plain"
+        :icon="Hourglass"
+        :kicker="card.kicker"
+        :title="card.title"
+        :detail="card.detail"
+        inset
+      />
+
+      <!-- The roll: its number, large, and what it is made of. -->
+      <DeckCard v-else tone="accent" :kicker="card.kicker" :title="card.title" :detail="card.detail" :to="card.to">
+        <template #art>
+          <CardPanes />
+        </template>
+        <template v-if="card.ready" #title>
+          <span class="text-5xl font-bold tabular-nums tracking-tight">{{ card.total.toLocaleString() }}</span>
+          <span class="ml-2 text-lg font-semibold text-white/80">{{ card.total === 1 ? 'person' : 'people' }}</span>
+        </template>
+        <!-- The People app's own artwork, on a white tile because its
+             orange and blue are Ekkly's and need a white ground on a
+             coloured card (BRAND.md). -->
+        <template #trailing>
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:ring-gray-700">
+            <AppArt app-key="members" :play="1" class="size-10" />
+          </span>
+        </template>
+        <!-- The people themselves, along the foot. -->
+        <template v-if="card.ready" #default>
+          <div class="flex items-center">
+            <div class="flex -space-x-2.5">
+              <MemberAvatar
+                v-for="member in heroFaces"
+                :key="keyOf(member)"
+                :member="member"
+                alt=""
+                size="h-10 w-10"
+                plain-class="ring-2 ring-white/70"
+              />
+            </div>
+            <span
+              v-if="card.total > HERO_FACES"
+              class="ml-2 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white"
+            >
+              +{{ (card.total - HERO_FACES).toLocaleString() }}
+            </span>
+          </div>
+        </template>
+      </DeckCard>
+    </template>
+
+    <template #side>
+      <AppSidePanel
+        title="Birthdays"
+        :rows="comingBirthdays"
+        :loading="loading"
+        :link="{ to: { name: 'PeopleBirthdays' }, label: 'See all' }"
+        doodle="bench"
+        few="No more this month."
+        :empty="{ title: 'No birthdays soon', line: 'None in the coming month.' }"
+      />
+    </template>
+  </AppHome>
 </template>
 

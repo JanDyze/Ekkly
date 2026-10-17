@@ -16,6 +16,11 @@ defineProps({
   doors: { type: Array, required: true },
   // What the doors are, for a screen reader: usually the app's name.
   label: { type: String, required: true },
+  // Down a desktop's sidebar (AppHome), as the home's apps are there
+  // (HomeAppCards' `column`): Compact's slim rows one a row, since two across
+  // cut their names short, and the rest measuring the sidebar (@container) so
+  // a narrow one sets Accent's names smaller.
+  column: { type: Boolean, default: false },
 })
 
 const { style } = useHomeCards()
@@ -60,7 +65,11 @@ const propsOf = ({ to, title, detail, art, glyph, badge, urgent }) =>
     />
   </nav>
 
-  <nav v-else class="grid grid-cols-2 gap-2.5" :aria-label="label">
+  <nav
+    v-else
+    :class="['grid gap-2.5', column && style === 'compact' ? 'grid-cols-1' : 'grid-cols-2', column ? '@container' : '']"
+    :aria-label="label"
+  >
     <AppShortcut v-for="(door, index) in doors" :key="door.key" v-bind="propsOf(door)" :variant="style" :hue="sectionHue(index)" :delay="delayOf(index)" />
   </nav>
 </template>
