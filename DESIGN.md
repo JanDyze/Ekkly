@@ -155,8 +155,8 @@ CHANGELOG.md.
   about, or, on a desktop, hide-and-seek: curling into a ball that shrinks
   away to nothing and appears beside a card chosen at random, where he
   uncurls and slides behind its edge until only the side of his head and one
-  eye show, his teal fingers round the edge holding it, whispers "psst", and
-  stays until he is clicked, when he lets go, shrinks away as a ball and
+  eye show (no hand; only his head peeks), whispers "psst", and
+  stays until he is clicked, when he shrinks away as a ball and
   appears home, popping out "Ta-da!"; he never hides behind his own bubble
   or ducks out of sight), only
   while someone is there and nothing else is going on, and dozes only after

@@ -11,6 +11,13 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.44] — 2026-10-17
+
+### Changed
+
+- **YUNIT peeks with his head alone.** The hand he held a card's edge with is
+  gone: only the side of his head and one eye show round the card.
+
 ## [0.35.43] — 2026-10-17
 
 People on a computer is laid out for a computer, not stretched from a phone.

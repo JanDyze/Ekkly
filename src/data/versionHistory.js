@@ -22,10 +22,10 @@ export const versionHistory = [
     version: '0.35.42',
     date: '2026-10-17',
     title: 'YUNIT peeks',
-    summary: 'When YUNIT plays hide-and-seek he vanishes and reappears, then peeks round a card, holding its edge.',
+    summary: 'When YUNIT plays hide-and-seek he vanishes and reappears, then peeks round a card.',
     highlights: [
       'He shrinks away as a ball and appears beside the card.',
-      'Only the side of his head shows, with his fingers round the edge.',
+      'Only the side of his head shows round the card.',
     ],
   },
   {

@@ -616,9 +616,8 @@ const free = () =>
 // Hide-and-seek behind a card (a desktop's board): he curls into a ball,
 // shrinks away to nothing where he stands, and appears beside a card chosen
 // at random, a ball again growing back, then uncurls and slides behind its
-// edge until only the side of his head and one eye show, his hand round the
-// edge holding it, and whispers "psst". There he stays until he is clicked;
-// then he lets go, curls up, shrinks away, and appears back home, popping out
+// edge until only the side of his head and one eye show, and whispers "psst". There he stays until he is clicked;
+// then he curls up, shrinks away, and appears back home, popping out
 // "Ta-da!". He is drawn over the page while away (roamEl), cut where the card
 // is (clip-path), so he looks to be behind it and only the part of him that
 // shows takes a click. On a card's right he is turned round, so it is always
@@ -658,12 +657,6 @@ const roamStyle = computed(() => {
   if (!at) return { display: 'none' }
   return { left: `${at.left}px`, top: `${at.top}px`, width: `${ROAM_SIZE}px`, height: `${ROAM_SIZE}px`, clipPath: at.clip || 'none' }
 })
-// His hand round the card's edge, in front of it, at his cheek.
-const gripStyle = computed(() => {
-  const at = roamAt.value
-  if (!at?.grip) return { display: 'none' }
-  return { left: `${at.grip.left}px`, top: `${at.grip.top}px`, width: '13px', height: '26px', transform: at.right ? 'scaleX(-1)' : 'none' }
-})
 const roam = async () => {
   if (!props.anchor || reduced || roaming.value) return
   const cards = [...document.querySelectorAll('[data-panel]')].filter((el) => el.dataset.panel !== 'yunit' && el.offsetHeight > 80)
@@ -675,9 +668,6 @@ const roam = async () => {
   const left = Math.round(right ? card.right - ROAM_SIZE * (1 - PEEKS) : card.left - ROAM_SIZE * PEEKS)
   const clip = right ? `inset(-40% -40% -40% ${Math.round(card.right - left)}px)` : `inset(-40% ${Math.round(left + ROAM_SIZE - card.left)}px -40% -40%)`
   const out = (right ? 1 : -1) * ROAM_SIZE * 0.8
-  // The fingers wrap the edge: most of them on the card's face, their tips
-  // just past it, at his cheek, under the eye that peeks.
-  const grip = { left: Math.round(right ? card.right - 10 : card.left - 3), top: Math.round(top + ROAM_SIZE * 0.5) }
 
   hideBubble()
   curled.value = true
@@ -700,13 +690,11 @@ const roam = async () => {
   await pause(320)
   await el.animate([{ translate: `${out}px 0` }, { translate: '0 0' }], { duration: 560, easing: 'cubic-bezier(0.3, 0.7, 0.2, 1)' }).finished
   el.style.translate = ''
-  // His hand comes round the edge to hold the card.
-  roamAt.value = { left, top, right, clip, grip }
   mascot.value?.play('peek')
   feel('psst')
 }
-// Clicked while away, or wanted at home (the conversation opened): he lets go
-// of the card, curls up, shrinks away, and appears home, popping out
+// Clicked while away, or wanted at home (the conversation opened): he curls
+// up, shrinks away, and appears home, popping out
 // "Ta-da!"; at once, without the trip, when the conversation is opening.
 const comeHome = async (quick = false) => {
   if (!roaming.value) return
@@ -718,7 +706,6 @@ const comeHome = async (quick = false) => {
     if (el) el.style.scale = ''
     return
   }
-  roamAt.value = { ...roamAt.value, grip: null }
   curled.value = true
   await pause(320)
   await vanish(el)
@@ -1178,11 +1165,6 @@ onBeforeUnmount(() => {
          over the page, cut where the card is. -->
     <Teleport to="body">
       <div ref="roamEl" class="pointer-events-none fixed z-[60]" :style="roamStyle" />
-      <!-- His hand, holding the card he is behind: three fingertips round
-           its edge, on its face, in his teal (the petal that is his hand). -->
-      <svg v-if="roamAt?.grip" class="yunit-grip pointer-events-none fixed z-[61]" :style="gripStyle" viewBox="0 0 13 26" aria-hidden="true">
-        <rect v-for="y in [0, 8.5, 17]" :key="y" x="0" :y="y" width="13" height="8" rx="4" fill="#20B9C2" stroke="#0E9AA6" stroke-width="1.2" />
-      </svg>
     </Teleport>
 
     <!-- At rest: what he is saying, over where he stands, its corner nearest
@@ -1389,21 +1371,6 @@ onBeforeUnmount(() => {
   .yunit-pop-in,
   .yunit-pop-out {
     animation: none;
-  }
-}
-
-/* His fingers coming round the card's edge to hold it. */
-.yunit-grip {
-  animation: yunit-grip-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-@keyframes yunit-grip-in {
-  from {
-    opacity: 0;
-    clip-path: inset(0 100% 0 0);
-  }
-  to {
-    opacity: 1;
-    clip-path: inset(0 0 0 0);
   }
 }
 </style>
