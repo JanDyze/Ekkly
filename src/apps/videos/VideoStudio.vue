@@ -195,7 +195,7 @@ const exporting = ref(false)
 </script>
 
 <template>
-  <AppScreen :title="monthLabel" :subtitle="subtitle" :art="art" :back="{ name: 'VideosHome' }" root="/videos">
+  <AppScreen :title="monthLabel" :subtitle="subtitle" :art="art" :back="{ name: 'VideosHome' }" root="/videos" desk>
     <template v-if="canEdit" #action>
       <RouterLink
         :to="{ name: 'VideosLook' }"
@@ -206,7 +206,10 @@ const exporting = ref(false)
       </RouterLink>
     </template>
 
-    <div class="flex flex-col gap-3">
+    <!-- On a desktop, the video on the left, held in view while the list of
+         what is in it scrolls beside it, rather than above it. -->
+    <div class="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(22rem,1fr)] lg:items-start lg:gap-6">
+      <div class="flex flex-col gap-3 lg:sticky lg:top-20">
       <VideoPlayer
         ref="player"
         :video="video"
@@ -261,7 +264,9 @@ const exporting = ref(false)
         </p>
       </div>
 
-      <section class="mt-2">
+      </div>
+
+      <section class="mt-2 lg:mt-0">
         <h2 class="mb-2 flex items-baseline gap-2 px-0.5 text-sm font-medium text-gray-500 dark:text-gray-400">
           In this video
           <span class="text-xs tabular-nums text-gray-400 dark:text-gray-500">{{ scenes.filter((s) => !s.hidden).length }}</span>

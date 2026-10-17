@@ -34,7 +34,7 @@ const songPage = (song) => ({ name: 'SongDetails', params: { id: song.id } })
 </script>
 
 <template>
-  <AppScreen title="Missing lyrics" :subtitle="subtitle" :back="{ name: 'SongsHome' }" root="/songs">
+  <AppScreen title="Missing lyrics" :subtitle="subtitle" :back="{ name: 'SongsHome' }" root="/songs" desk>
     <div class="flex flex-col gap-5">
       <div
         v-if="loading"

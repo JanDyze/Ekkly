@@ -142,7 +142,7 @@ const STEP_STYLE = {
 </script>
 
 <template>
-  <AppScreen title="Welcome" subtitle="Greeting newcomers, and following them up" :back="{ name: 'SchedulesHome' }" root="/schedules">
+  <AppScreen title="Welcome" subtitle="Greeting newcomers, and following them up" :back="{ name: 'SchedulesHome' }" root="/schedules" desk>
     <div class="flex flex-col gap-5">
       <div v-if="loading" class="h-48 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
       <template v-else>

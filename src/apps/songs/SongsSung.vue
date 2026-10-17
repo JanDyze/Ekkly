@@ -74,7 +74,7 @@ const nothingSung = computed(() => !mostSung.value.length && !resting.value.leng
 </script>
 
 <template>
-  <AppScreen title="Most sung" :subtitle="subtitle" :back="{ name: 'SongsHome' }" root="/songs">
+  <AppScreen title="Most sung" :subtitle="subtitle" :back="{ name: 'SongsHome' }" root="/songs" desk>
     <div class="flex flex-col gap-5">
       <div
         v-if="busy"

@@ -58,7 +58,7 @@ const showRoles = ref(false)
     title="Who serves"
     :subtitle="`${formatMonthLabel(month)} · ${sundayCount} Sundays`"
     :back="{ name: 'SchedulesHome' }"
-    root="/schedules"
+    root="/schedules" desk
   >
     <template #action>
       <button

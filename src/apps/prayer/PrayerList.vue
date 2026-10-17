@@ -281,7 +281,7 @@ const confirmDelete = async () => {
 </script>
 
 <template>
-  <AppScreen :title="title" :subtitle="subtitle" :back="{ name: 'PrayerHome' }" root="/prayer-concerns" fill wide>
+  <AppScreen :title="title" :subtitle="subtitle" :back="{ name: 'PrayerHome' }" root="/prayer-concerns" fill wide desk>
     <template #action>
       <button
         v-if="canEdit && mode !== 'answered'"
@@ -297,9 +297,11 @@ const confirmDelete = async () => {
 
     <div class="flex min-h-0 flex-1">
       <div class="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pb-6">
-        <div class="mx-auto flex max-w-2xl flex-col gap-4">
+        <!-- On a desktop the concerns are cards across the width (ListGroup on
+             a desk screen), the one opened beside them. -->
+        <div class="mx-auto flex max-w-2xl flex-col gap-4 lg:max-w-none">
           <!-- Search: above the list, never scrolled away from. -->
-          <label class="relative block">
+          <label class="relative block lg:max-w-xl">
             <MagnifyingGlass class="pointer-events-none absolute left-3.5 top-1/2 size-4.5 -translate-y-1/2 text-gray-400" />
             <input
               v-model="searchQuery"

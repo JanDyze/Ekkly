@@ -376,9 +376,12 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
     title="Look and sound"
     :subtitle="`Every month’s video · shown with ${monthName(thisMonth)}`"
     :back="{ name: 'VideosHome' }"
-    root="/videos"
+    root="/videos" desk
   >
-    <div class="flex flex-col gap-6">
+    <!-- On a desktop, the video on the left, held in view while every choice
+         about how it looks and sounds is made beside it. -->
+    <div class="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(24rem,1fr)] lg:items-start">
+      <div class="lg:sticky lg:top-20">
       <VideoPlayer
         :video="video"
         :music="music"
@@ -387,7 +390,9 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
         :aspect="style.aspect"
         max-height="46dvh"
       />
+      </div>
 
+      <div class="flex flex-col gap-6">
       <!-- Shape -->
       <section>
         <h2 :class="heading">Shape</h2>
@@ -786,6 +791,7 @@ const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
           </div>
         </div>
       </section>
+      </div>
     </div>
   </AppScreen>
 </template>

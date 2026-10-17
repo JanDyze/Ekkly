@@ -74,7 +74,7 @@ const handleSave = async (data) => {
     title="Sunday school"
     :subtitle="thisSunday ? `Lessons for ${formatShortDate(thisSunday)}` : ''"
     :back="{ name: 'TeachingHome' }"
-    root="/teaching"
+    root="/teaching" desk
   >
     <template v-if="canManageTeaching" #action>
       <button

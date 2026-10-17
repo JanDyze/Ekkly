@@ -53,7 +53,7 @@ const subtitleOf = (lesson) => [lessonWhere(lesson, classById(lesson.classId)), 
 </script>
 
 <template>
-  <AppScreen title="Lesson plans" :subtitle="loading ? '' : `${lessons.length} ${lessons.length === 1 ? 'lesson' : 'lessons'}`" :back="{ name: 'TeachingHome' }" root="/teaching">
+  <AppScreen title="Lesson plans" :subtitle="loading ? '' : `${lessons.length} ${lessons.length === 1 ? 'lesson' : 'lessons'}`" :back="{ name: 'TeachingHome' }" root="/teaching" desk>
     <template v-if="canWritePlans" #action>
       <button
         type="button"

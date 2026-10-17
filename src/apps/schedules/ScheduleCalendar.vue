@@ -224,7 +224,7 @@ const resultCount = computed(() => results.value.upcoming.length + results.value
 </script>
 
 <template>
-  <AppScreen title="Calendar" :subtitle="subtitle" :back="{ name: 'SchedulesHome' }" root="/schedules">
+  <AppScreen title="Calendar" :subtitle="subtitle" :back="{ name: 'SchedulesHome' }" root="/schedules" desk>
     <template #action>
       <button
         v-if="!searchOpen"

@@ -32,7 +32,7 @@ const recordOf = (member) => ({ name: 'MemberDetails', params: { id: member.id |
 </script>
 
 <template>
-  <AppScreen title="Not in a group" :subtitle="subtitle" :back="{ name: 'SmallGroupsHome' }" root="/small-groups">
+  <AppScreen title="Not in a group" :subtitle="subtitle" :back="{ name: 'SmallGroupsHome' }" root="/small-groups" desk>
     <div v-if="loading" class="flex flex-col gap-2">
       <div v-for="n in 5" :key="n" class="h-14 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
     </div>

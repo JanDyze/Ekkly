@@ -48,7 +48,7 @@ const noteOf = ({ sunday, leader }) =>
 </script>
 
 <template>
-  <AppScreen title="Sundays" :subtitle="subtitle" :back="{ name: 'SongsHome' }" root="/songs">
+  <AppScreen title="Sundays" :subtitle="subtitle" :back="{ name: 'SongsHome' }" root="/songs" desk>
     <div class="flex flex-col gap-5">
       <!-- Loading: shaped like a Sunday's block -->
       <div v-if="loading || sundaysLoading" class="flex flex-col gap-5">

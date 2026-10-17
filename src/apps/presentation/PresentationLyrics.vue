@@ -35,7 +35,7 @@ const songLink = (row) => (row.song ? `/songs/${row.song.id}` : null)
 </script>
 
 <template>
-  <AppScreen title="Lyrics" :subtitle="subtitle" :back="{ name: 'PresentationHome' }" root="/presentation">
+  <AppScreen title="Lyrics" :subtitle="subtitle" :back="{ name: 'PresentationHome' }" root="/presentation" desk>
     <div v-if="loading" class="flex flex-col gap-2">
       <div v-for="n in 5" :key="n" class="h-14 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
     </div>

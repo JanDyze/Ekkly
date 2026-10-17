@@ -8,14 +8,14 @@
 
 export const versionHistory = [
   {
-    version: '0.35.45',
+    version: '0.35.46',
     date: '2026-10-17',
-    title: 'More apps, made for a computer',
-    summary: 'Tasks, Attendance, Events, Finances, Gallery, Inventory and Minutes use the whole screen on a computer.',
+    title: 'Every app, made for a computer',
+    summary: 'On a computer, every app now uses the whole screen instead of a phone’s column.',
     highlights: [
-      'Tasks is a table, with who, ministry and due date in columns.',
-      'The book is a ledger: money in, money out and the balance.',
-      'Lists are cards across the screen; albums fill it with photos.',
+      'People and Tasks are tables; the book is a ledger.',
+      'Lists are cards across the screen; a record spreads its details side by side.',
+      'Videos keeps the video in view beside its list and its settings.',
     ],
   },
   {

@@ -38,7 +38,7 @@ const songsLine = (sunday) => {
 </script>
 
 <template>
-  <AppScreen title="Worship" subtitle="Who leads, and what is sung" :back="{ name: 'SchedulesHome' }" root="/schedules">
+  <AppScreen title="Worship" subtitle="Who leads, and what is sung" :back="{ name: 'SchedulesHome' }" root="/schedules" desk>
     <div class="flex flex-col gap-5">
       <div v-if="loading" class="h-48 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
 

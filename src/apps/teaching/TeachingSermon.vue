@@ -78,7 +78,7 @@ const screenFor = computed(() => {
 </script>
 
 <template>
-  <AppScreen :title="title" :subtitle="formatServiceDate(date)" :back="{ name: 'TeachingSermons' }" root="/teaching">
+  <AppScreen :title="title" :subtitle="formatServiceDate(date)" :back="{ name: 'TeachingSermons' }" root="/teaching" desk>
     <template v-if="canEdit" #action>
       <button
         type="button"
@@ -94,9 +94,12 @@ const screenFor = computed(() => {
       <div v-for="n in 3" :key="n" class="h-20 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
     </div>
 
-    <div v-else class="flex flex-col gap-5">
+    <!-- On a desktop, the message down the left and the rest of that Sunday
+         beside it, rather than under it. -->
+    <div v-else class="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] lg:items-start lg:gap-6">
+      <div class="flex min-w-0 flex-col gap-5">
       <!-- Who, and the series: the schedule's -->
-      <ListGroup>
+      <ListGroup flat>
         <ListRow
           :title="preachers.length ? preachers.map(getDisplayName).join(' and ') : 'Nobody preaching yet'"
           :subtitle="theme ? `Series · ${theme}` : 'No series set'"
@@ -131,7 +134,7 @@ const screenFor = computed(() => {
         </div>
 
         <!-- Passages, with their words -->
-        <ListGroup v-if="sermon.passages.length" title="Passages" :count="sermon.passages.length">
+        <ListGroup flat v-if="sermon.passages.length" title="Passages" :count="sermon.passages.length">
           <div v-for="(passage, index) in sermon.passages" :key="`${passage.reference}-${index}`" class="px-4 py-3">
             <p class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
               <BookOpen class="size-4 shrink-0 text-primary dark:text-primary-light" />
@@ -147,7 +150,7 @@ const screenFor = computed(() => {
         </ListGroup>
 
         <!-- Outline -->
-        <ListGroup v-if="sermon.points.length" title="Outline">
+        <ListGroup flat v-if="sermon.points.length" title="Outline">
           <ListRow v-for="(point, index) in sermon.points" :key="index" :title="point">
             <template #leading>
               <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold tabular-nums text-primary dark:bg-primary-light/15 dark:text-primary-light">
@@ -166,8 +169,11 @@ const screenFor = computed(() => {
         </section>
       </template>
 
+      </div>
+
+      <div class="flex min-w-0 flex-col gap-5">
       <!-- The rest of the Sunday: the screen, and the lessons that follow it -->
-      <ListGroup v-if="can('lineups.view') || lessonsThatDay.length" title="The same Sunday">
+      <ListGroup flat v-if="can('lineups.view') || lessonsThatDay.length" title="The same Sunday">
         <ListRow
           v-if="can('lineups.view')"
           :to="{ name: 'SchedulesSunday', params: { date } }"
@@ -196,6 +202,7 @@ const screenFor = computed(() => {
       </ListGroup>
 
       <p v-if="date < today && !written" class="px-1 text-xs text-gray-500 dark:text-gray-400">This Sunday has passed.</p>
+      </div>
     </div>
 
     <SermonNotesSheet

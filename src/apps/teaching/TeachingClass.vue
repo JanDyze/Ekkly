@@ -107,7 +107,7 @@ const archiveClass = async () => {
     :title="cls?.name || 'Class'"
     :subtitle="cls ? [classLine(cls), teachers.length ? `Taught by ${namesOf(teachers)}` : ''].filter(Boolean).join(' · ') : ''"
     :back="{ name: 'TeachingSchool' }"
-    root="/teaching"
+    root="/teaching" desk
   >
     <template v-if="canManageTeaching && cls" #action>
       <button

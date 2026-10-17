@@ -99,7 +99,7 @@ const statusOf = (service) => {
     title="Services"
     subtitle="Pick a Sunday to put on the screen"
     :back="{ name: 'PresentationHome' }"
-    root="/presentation"
+    root="/presentation" desk
   >
     <p class="mb-4 px-0.5 text-sm text-gray-500 dark:text-gray-400">
       Songs come from that Sunday's schedule; readings and notices are added in the presenter.
@@ -135,7 +135,7 @@ const statusOf = (service) => {
         <button
           v-if="next"
           @click="open(next.date)"
-          class="mb-4 block w-full rounded-2xl border border-primary/30 bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
+          class="mb-4 block w-full rounded-2xl border border-primary/30 bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10 lg:max-w-2xl"
         >
           <p class="text-[10px] font-bold uppercase tracking-widest text-primary">
             {{ next.isToday ? 'Today' : 'Next service' }}
@@ -163,7 +163,7 @@ const statusOf = (service) => {
           <p class="mb-1.5 px-1 text-[11px] font-bold uppercase tracking-wide text-gray-400">
             Coming up
           </p>
-          <div class="space-y-1.5">
+          <div class="space-y-1.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] lg:gap-2 lg:space-y-0">
             <button
               v-for="service in laterUpcoming"
               :key="service.date"
@@ -193,7 +193,7 @@ const statusOf = (service) => {
           <p class="mb-1.5 px-1 text-[11px] font-bold uppercase tracking-wide text-gray-400">
             Past services
           </p>
-          <div class="space-y-1.5">
+          <div class="space-y-1.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] lg:gap-2 lg:space-y-0">
             <button
               v-for="service in past"
               :key="service.date"

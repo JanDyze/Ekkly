@@ -59,7 +59,7 @@ const isMine = (row) => (row.lesson?.teacherIds || []).some(isMe)
 </script>
 
 <template>
-  <AppScreen title="What’s taught" subtitle="The message and every class, Sunday by Sunday" :back="{ name: 'TeachingHome' }" root="/teaching">
+  <AppScreen title="What’s taught" subtitle="The message and every class, Sunday by Sunday" :back="{ name: 'TeachingHome' }" root="/teaching" desk>
     <div v-if="loading" class="flex flex-col gap-3">
       <div v-for="n in 3" :key="n" class="h-32 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
     </div>

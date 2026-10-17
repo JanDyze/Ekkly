@@ -104,7 +104,7 @@ const applySeries = async () => {
 </script>
 
 <template>
-  <AppScreen title="Preaching" subtitle="The series, each message, its passages and slides" :back="{ name: 'SchedulesHome' }" root="/schedules">
+  <AppScreen title="Preaching" subtitle="The series, each message, its passages and slides" :back="{ name: 'SchedulesHome' }" root="/schedules" desk>
     <template v-if="canPlan" #action>
       <button
         type="button"

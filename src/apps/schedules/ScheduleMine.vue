@@ -38,7 +38,7 @@ const subtitle = computed(() => {
 </script>
 
 <template>
-  <AppScreen title="My turns" :subtitle="subtitle" :back="{ name: 'SchedulesHome' }" root="/schedules">
+  <AppScreen title="My turns" :subtitle="subtitle" :back="{ name: 'SchedulesHome' }" root="/schedules" desk>
     <div v-if="loading" class="h-48 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
 
     <!-- An account not tied to anybody on the roll has no turns to find. -->

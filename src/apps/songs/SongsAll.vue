@@ -38,6 +38,7 @@ import {
   tidyLyrics
 } from '../../utils/songUtils'
 import AppScreen from '../../components/appframe/AppScreen.vue'
+import { DESK_ROWS } from '../../components/appframe/deskGrid'
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue'
 import SongPlayer from '../../components/songs/SongPlayer.vue'
 import { usePermissions } from '../../composables/usePermissions'
@@ -419,7 +420,7 @@ const copyLyrics = async (song) => {
 </script>
 
 <template>
-  <AppScreen title="All songs" :subtitle="subtitle" :back="{ name: 'SongsHome' }" root="/songs" fill wide>
+  <AppScreen title="All songs" :subtitle="subtitle" :back="{ name: 'SongsHome' }" root="/songs" fill wide desk>
     <template #action>
       <button
         v-if="canManage('songs')"
@@ -435,11 +436,13 @@ const copyLyrics = async (song) => {
     <div class="flex min-h-0 flex-1">
       <!-- List Area -->
       <div class="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pb-6">
-        <div class="mx-auto flex max-w-2xl flex-col gap-4">
+        <!-- On a desktop the songs are cards across the width (DESK_ROWS), the
+             one opened beside them. -->
+        <div class="mx-auto flex max-w-2xl flex-col gap-4 lg:max-w-none">
           <!-- Search, and the categories to narrow it by: above the list,
                never scrolled away from. Searching is most of what this page
                is opened for, and half the time it is a line of the lyrics. -->
-          <div class="flex flex-col gap-2">
+          <div class="flex flex-col gap-2 lg:max-w-2xl">
             <label class="relative block">
               <MagnifyingGlass class="pointer-events-none absolute left-3.5 top-1/2 size-4.5 -translate-y-1/2 text-gray-400" />
               <input
@@ -552,7 +555,7 @@ const copyLyrics = async (song) => {
                 <span class="text-xs font-semibold tabular-nums text-gray-400 dark:text-gray-500">{{ group.items.length }}</span>
               </div>
 
-              <div class="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70">
+              <div :class="['divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70', DESK_ROWS]">
                 <div
                   v-for="song in group.items"
                   :key="song.id"

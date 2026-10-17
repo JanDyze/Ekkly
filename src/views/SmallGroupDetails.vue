@@ -260,6 +260,7 @@ const sessionsByMonth = computed(() => {
       :back="{ name: 'SmallGroupsAll' }"
       root="/small-groups"
       class="no-print"
+      desk
     >
       <template #action>
       <div class="relative shrink-0">
@@ -307,8 +308,9 @@ const sessionsByMonth = computed(() => {
       </div>
       </template>
 
-      <!-- Body -->
-      <div class="space-y-4">
+      <!-- Body. On a desktop, two columns: the group and its members on the
+           left, its sessions, the part that grows, on the right. -->
+      <div class="space-y-4 lg:grid lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-5 lg:space-y-0">
         <!-- Identity card. The cover is deliberately a small thumbnail rather
              than a full-bleed banner: at page width a 16:9 hero ran to roughly
              430px on desktop and pushed the roster and sessions below the fold.
@@ -452,7 +454,7 @@ const sessionsByMonth = computed(() => {
 
         <!-- Sessions -->
         <section
-          class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden"
+          class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden lg:col-start-2 lg:row-span-2 lg:row-start-1"
         >
           <div
             class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700"

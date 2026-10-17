@@ -71,7 +71,7 @@ const handleSave = async (groupData) => {
 
 <template>
   <div class="relative h-full">
-    <AppScreen title="Groups" :subtitle="subtitle" :back="{ name: 'SmallGroupsHome' }" root="/small-groups">
+    <AppScreen title="Groups" :subtitle="subtitle" :back="{ name: 'SmallGroupsHome' }" root="/small-groups" desk>
       <template #action>
         <button
           v-if="canEdit"
@@ -107,7 +107,7 @@ const handleSave = async (groupData) => {
         </button>
       </div>
 
-      <div v-if="loading" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div v-if="loading" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(19rem,1fr))]">
         <div
           v-for="i in 4"
           :key="`skeleton-${i}`"
@@ -141,7 +141,7 @@ const handleSave = async (groupData) => {
         </button>
       </div>
 
-      <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(19rem,1fr))]">
         <SmallGroupCard
           v-for="group in filteredGroups"
           :key="group.firestoreId"

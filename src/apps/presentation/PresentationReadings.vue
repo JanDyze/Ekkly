@@ -58,7 +58,7 @@ const subtitle = computed(() => {
 </script>
 
 <template>
-  <AppScreen title="Readings" :subtitle="subtitle" :back="{ name: 'PresentationHome' }" root="/presentation">
+  <AppScreen title="Readings" :subtitle="subtitle" :back="{ name: 'PresentationHome' }" root="/presentation" desk>
     <div class="relative mb-4">
       <MagnifyingGlass class="pointer-events-none absolute left-3 top-1/2 size-4.5 -translate-y-1/2 text-gray-400" />
       <input

@@ -11,6 +11,25 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.46] — 2026-10-17
+
+The last seven apps laid out for a computer, so no app in Ekkly looks like a
+phone on a big screen any more: Prayer, Presentation, Schedules, Small groups,
+Songs, Teaching and Videos.
+
+### Changed
+
+- **Lists are cards across the screen:** prayer concerns, services, every
+  Schedules team's Sundays, sessions, songs, sermons, Sunday school's classes,
+  lessons and what is taught each Sunday.
+- **Small groups' covers stand four across,** and **a group's page** has the
+  group and its members on the left and its sessions on the right.
+- **A sermon** has the message down the left and the rest of that Sunday
+  beside it.
+- **Videos** keeps the video on the left, in view, with what is in it — or
+  every choice about how it looks and sounds — beside it.
+- On a phone, nothing changes.
+
 ## [0.35.45] — 2026-10-17
 
 Seven more apps laid out for a computer: Tasks, Attendance, Events, Finances,
