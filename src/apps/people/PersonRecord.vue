@@ -1,4 +1,5 @@
 <script setup>
+import AppCrumbs from '../../components/appframe/AppCrumbs.vue'
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
@@ -461,8 +462,10 @@ const handleImageUpdate = async (base64Image) => {
         class="flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
       >
         <ArrowLeft class="h-5 w-5 shrink-0" />
-        <span class="hidden sm:inline">People</span>
+        <span class="hidden sm:inline lg:hidden">People</span>
       </button>
+      <!-- On a desktop, the way here in place of the word "People". -->
+      <AppCrumbs class="shrink-0" />
 
       <!-- The face comes up with the name: on a phone the face is how most
            people are recognised, and a name alone reads like any other row. -->

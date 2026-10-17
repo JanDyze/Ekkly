@@ -11,6 +11,14 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.50] — 2026-10-17
+
+### Fixed
+
+- **The way back now shows on a person's record, a song and a meeting's
+  minutes too** ("People › Everyone"), which have headers of their own and
+  were left without it.
+
 ## [0.35.49] — 2026-10-17
 
 ### Added

@@ -1,11 +1,11 @@
 <script setup>
 import { computed, provide, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { RouterLink } from 'vue-router'
-import { ChevronLeft, ChevronRight } from '../../icons'
+import { ChevronLeft } from '../../icons'
 import AppArt from '../common/AppArt.vue'
 import AppRail from './AppRail.vue'
-import { NAV_ITEMS } from '../../data/navigation'
+import AppCrumbs from './AppCrumbs.vue'
+import { useCrumbs } from '../../composables/useCrumbs'
 import { useMediaQuery } from '../../composables/useMediaQuery'
 import { interiorVars } from './churchInterior'
 
@@ -78,28 +78,11 @@ const hasHeader = computed(() => Boolean(props.title || props.back))
 
 /* ------------------------------------------------------------ the trail */
 
-// Two steps or more into an app on a desktop — a ministry, a Sunday, a
-// lesson, a session — the header says the way here over the title: the app,
-// then the section the screen belongs to, each a link ("People / Ministries",
-// then "Worship" large). One step in, the rail already marks the section, and
-// a phone has its back arrow and no room to spare, so neither has one. Read
-// off the routes, as the rail is (AppRail): the app's name from navigation,
-// the section the one-step screen whose drawing this screen borrows.
+// Two steps or more into an app on a desktop, the way here over the title
+// (AppCrumbs, useCrumbs). The header grows a line for it.
 const desktop = useMediaQuery('(min-width: 1024px)')
-const crumbs = computed(() => {
-  if (!hasHeader.value || Number(route.meta?.depth) < 2) return []
-  const app = route.matched.find((record) => record.meta?.frame === 'app')
-  if (!app) return []
-  const path = `/${String(app.path).replace(/^\//, '')}`
-  const home = app.children?.find((child) => child.meta?.depth === 0)
-  const first = { key: 'app', label: NAV_ITEMS.find((item) => item.path === path)?.name || '', to: home?.name ? { name: home.name } : path }
-  if (props.trail) return [first, ...props.trail.map((crumb, i) => ({ key: `trail${i}`, ...crumb }))].filter((crumb) => crumb.label)
-  const section = (app.children || []).find(
-    (child) => child.name && child.meta?.depth === 1 && child.meta?.title && child.meta?.art && child.meta.art === route.meta?.art
-  )
-  return [first, ...(section ? [{ key: section.name, label: section.meta.title, to: { name: section.name } }] : [])].filter((crumb) => crumb.label)
-})
-const withTrail = computed(() => desktop.value && crumbs.value.length > 0)
+const crumbs = useCrumbs(() => props.trail)
+const withTrail = computed(() => hasHeader.value && desktop.value && crumbs.value.length > 0)
 
 // Flat, in the church's colour, the way a section's tile draws it (BRAND.md):
 // a room of the app, never mistaken for the app's own glossy picture.
@@ -207,14 +190,7 @@ defineExpose({ scroller, hidden })
           class="size-9 shrink-0"
         />
         <div class="min-w-0 flex-1">
-          <nav v-if="withTrail" aria-label="Breadcrumb" class="mb-0.5 flex min-w-0 items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400">
-            <template v-for="(crumb, i) in crumbs" :key="crumb.key">
-              <ChevronRight v-if="i" class="size-3 shrink-0 text-gray-300 dark:text-gray-600" aria-hidden="true" />
-              <RouterLink :to="crumb.to" class="min-w-0 truncate rounded transition-colors hover:text-gray-900 hover:underline dark:hover:text-white">
-                {{ crumb.label }}
-              </RouterLink>
-            </template>
-          </nav>
+          <AppCrumbs v-if="withTrail" :trail="trail" class="mb-0.5" />
           <!-- Named by its path, so the tile that opened this section can fly
                its name up into this title (router/viewTransitions.js). -->
           <h1 :data-morph-label="route.path" class="truncate text-2xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white">

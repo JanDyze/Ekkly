@@ -1,4 +1,5 @@
 <script setup>
+import AppCrumbs from '../components/appframe/AppCrumbs.vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMinutes } from '../composables/useMinutes'
@@ -1191,6 +1192,7 @@ watch(() => minute.value, (newMinute, oldMinute) => {
           <ArrowLeft class="h-5 w-5" />
         </button>
         <div class="min-w-0 flex-1">
+          <AppCrumbs class="mb-0.5" />
           <h1 class="truncate text-sm font-bold text-gray-900 sm:text-lg dark:text-white">
             {{ minute?.title || 'Meeting Minutes' }}
           </h1>
