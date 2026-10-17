@@ -600,13 +600,7 @@ onMounted(() => {
 // being said, not carried, not asleep), and silently but for hide-and-seek's
 // "ta-da!", so it never gets noisy. One thing, then still: never a loop
 // (BRAND.md). Asking for less motion, he does none of it.
-//
-// Hide-and-seek: on a desktop he slips behind his bubble (the card beside
-// or above him), most of the way, and waits; on a phone, or standing on
-// the church's hill, he ducks down out of sight. Then out he pops, "Ta-da!",
-// with a little celebration.
-const hiding = ref(false)
-const PLAYS = ['hide', 'jump', 'wave', 'peek', 'glance', 'hide', 'jump', 'roam', 'roam']
+const PLAYS = ['jump', 'wave', 'peek', 'glance', 'jump', 'roam', 'roam']
 let playTimer = null
 let popTimer = null
 const free = () =>
@@ -620,33 +614,55 @@ const free = () =>
   Date.now() - lastActive < 120000
 
 // Hide-and-seek behind a card (a desktop's board): he curls into a ball,
-// rolls across the page to a card chosen at random, uncurls beside it and
-// slides behind its edge until only part of him peeks out, and whispers
-// "psst". There he stays until he is clicked; then he curls up again, rolls
-// home to his place, and pops out "Ta-da!". He is drawn over the page while
-// away (roamEl), cut where the card is (clip-path), so he looks to be behind
-// it and only the part of him that shows takes a click.
+// shrinks away to nothing where he stands, and appears beside a card chosen
+// at random, a ball again growing back, then uncurls and slides behind its
+// edge until only the side of his head and one eye show, his hand round the
+// edge holding it, and whispers "psst". There he stays until he is clicked;
+// then he lets go, curls up, shrinks away, and appears back home, popping out
+// "Ta-da!". He is drawn over the page while away (roamEl), cut where the card
+// is (clip-path), so he looks to be behind it and only the part of him that
+// shows takes a click. On a card's right he is turned round, so it is always
+// his face that peeks, never the back of his head.
 const roaming = ref(false)
 const curled = ref(false)
 const roamEl = ref(null)
 const roamAt = ref(null)
-const ROAM_SIZE = 84
-const PEEKS = 0.55
+const ROAM_SIZE = 64
+// How much of him shows past the card's edge: the petal round that side of
+// his head, his near eye and a little of the face beside it, the rest of him
+// behind the card.
+const PEEKS = 0.56
 const pause = (ms) => new Promise((done) => setTimeout(done, ms))
-const roll = (el, from, turns) => {
-  const to = el.getBoundingClientRect()
-  const dx = from.left + from.width / 2 - (to.left + to.width / 2)
-  const dy = from.top + from.height / 2 - (to.top + to.height / 2)
-  const scale = from.width / (to.width || 1)
+// Shrinking away where he is, spinning as a ball does, and kept gone (not
+// back at full size for a frame) while he is moved.
+const vanish = async (el) => {
+  const run = el.animate(
+    [{ transform: 'scale(1) rotate(0deg)' }, { transform: 'scale(0.82) rotate(-90deg)', offset: 0.3 }, { transform: 'scale(0) rotate(-420deg)' }],
+    { duration: 460, easing: 'cubic-bezier(0.55, 0, 0.75, 0.25)', fill: 'forwards' }
+  )
+  await run.finished
+  el.style.opacity = '0'
+  run.cancel()
+}
+// Growing back out of nothing where he has arrived, a little past his size
+// and settling, as a ball dropped in would.
+const appear = (el) => {
+  el.style.opacity = ''
   return el.animate(
-    [{ transform: `translate(${dx}px, ${dy}px) scale(${scale}) rotate(0deg)` }, { transform: `translate(0, 0) scale(1) rotate(${turns * 360}deg)` }],
-    { duration: 950, easing: 'cubic-bezier(0.45, 0, 0.25, 1)' }
+    [{ transform: 'scale(0) rotate(360deg)' }, { transform: 'scale(1.12) rotate(-12deg)', offset: 0.72 }, { transform: 'scale(1) rotate(0deg)' }],
+    { duration: 540, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' }
   ).finished
 }
 const roamStyle = computed(() => {
   const at = roamAt.value
   if (!at) return { display: 'none' }
   return { left: `${at.left}px`, top: `${at.top}px`, width: `${ROAM_SIZE}px`, height: `${ROAM_SIZE}px`, clipPath: at.clip || 'none' }
+})
+// His hand round the card's edge, in front of it, at his cheek.
+const gripStyle = computed(() => {
+  const at = roamAt.value
+  if (!at?.grip) return { display: 'none' }
+  return { left: `${at.grip.left}px`, top: `${at.grip.top}px`, width: '13px', height: '26px', transform: at.right ? 'scaleX(-1)' : 'none' }
 })
 const roam = async () => {
   if (!props.anchor || reduced || roaming.value) return
@@ -658,32 +674,40 @@ const roam = async () => {
   const top = Math.round(card.top + (card.height - ROAM_SIZE) * (0.2 + Math.random() * 0.6))
   const left = Math.round(right ? card.right - ROAM_SIZE * (1 - PEEKS) : card.left - ROAM_SIZE * PEEKS)
   const clip = right ? `inset(-40% -40% -40% ${Math.round(card.right - left)}px)` : `inset(-40% ${Math.round(left + ROAM_SIZE - card.left)}px -40% -40%)`
-  const out = (right ? 1 : -1) * ROAM_SIZE * 0.7
+  const out = (right ? 1 : -1) * ROAM_SIZE * 0.8
+  // The fingers wrap the edge: most of them on the card's face, their tips
+  // just past it, at his cheek, under the eye that peeks.
+  const grip = { left: Math.round(right ? card.right - 10 : card.left - 3), top: Math.round(top + ROAM_SIZE * 0.5) }
 
   hideBubble()
   curled.value = true
   await pause(380)
   const el = mascot.value?.$el
   if (!el) return
-  const from = el.getBoundingClientRect()
-  roamAt.value = { left, top }
+  // Away where he stands...
+  await vanish(el)
+  roamAt.value = { left, top, right }
   roaming.value = true
   await nextTick()
-  // Rolled out to just beside the card...
+  // ...and back beside the card, a ball growing out of nothing, turned round
+  // on a card's right so his face is the side that will peek.
   el.style.translate = `${out}px 0`
-  await roll(el, from, right ? 2 : -2)
-  // ...uncurled, and slid behind its edge.
+  el.style.scale = right ? '-1 1' : ''
+  await appear(el)
+  // Uncurled, and slid behind the edge until only a peek of him shows.
   curled.value = false
-  roamAt.value = { left, top, clip }
+  roamAt.value = { left, top, right, clip }
   await pause(320)
-  await el.animate([{ translate: `${out}px 0` }, { translate: '0 0' }], { duration: 520, easing: 'cubic-bezier(0.3, 0.7, 0.2, 1)' }).finished
+  await el.animate([{ translate: `${out}px 0` }, { translate: '0 0' }], { duration: 560, easing: 'cubic-bezier(0.3, 0.7, 0.2, 1)' }).finished
   el.style.translate = ''
+  // His hand comes round the edge to hold the card.
+  roamAt.value = { left, top, right, clip, grip }
   mascot.value?.play('peek')
   feel('psst')
 }
-// Clicked while away, or wanted at home (the conversation opened): curled up
-// and rolled home, popping out "Ta-da!" — at once, without the roll, when the
-// conversation is opening.
+// Clicked while away, or wanted at home (the conversation opened): he lets go
+// of the card, curls up, shrinks away, and appears home, popping out
+// "Ta-da!"; at once, without the trip, when the conversation is opening.
 const comeHome = async (quick = false) => {
   if (!roaming.value) return
   const el = mascot.value?.$el
@@ -691,49 +715,22 @@ const comeHome = async (quick = false) => {
     roaming.value = false
     roamAt.value = null
     curled.value = false
+    if (el) el.style.scale = ''
     return
   }
+  roamAt.value = { ...roamAt.value, grip: null }
   curled.value = true
   await pause(320)
-  const from = el.getBoundingClientRect()
+  await vanish(el)
   roaming.value = false
   roamAt.value = null
+  el.style.scale = ''
   await nextTick()
-  await roll(mascot.value.$el, from, -2)
+  await appear(mascot.value.$el)
   curled.value = false
   mascot.value?.play('celebrate')
   feel('peekaboo')
   say({ hello: 'Ta-da!', line: '' })
-}
-const hideAndSeek = () => {
-  const el = mascot.value?.$el
-  if (!el) return
-  const card = !onHill.value && form.value?.querySelector('.yunit-dock-bubble')
-  let away
-  if (card) {
-    // Most of the way behind the card, from wherever it is beside him.
-    const me = el.getBoundingClientRect()
-    const it = card.getBoundingClientRect()
-    const dx = (it.left + it.width / 2 - (me.left + me.width / 2)) * 0.55
-    const dy = (it.top + it.height / 2 - (me.top + me.height / 2)) * 0.75
-    away = { transform: `translate(${dx}px, ${dy}px) scale(0.9)` }
-    hiding.value = true
-  } else {
-    // Down out of sight, below where he stands, as if behind a ledge.
-    away = { transform: 'translateY(70%)', clipPath: 'inset(0 0 70% 0)' }
-  }
-  const here = { transform: 'none', clipPath: 'inset(0 0 0 0)' }
-  const run = el.animate(
-    [here, { ...here, ...away, offset: 0.18 }, { ...here, ...away, offset: 0.78 }, { ...here, offset: 0.86 }, here],
-    { duration: 3400, easing: 'cubic-bezier(0.45, 0, 0.25, 1)' }
-  )
-  popTimer = setTimeout(() => {
-    hiding.value = false
-    mascot.value?.play('celebrate')
-    feel('peekaboo')
-    say({ hello: 'Ta-da!', line: '' })
-  }, 3400 * 0.84)
-  run.finished.catch(() => {}).finally(() => (hiding.value = false))
 }
 const schedulePlay = () => {
   clearTimeout(playTimer)
@@ -743,7 +740,6 @@ const schedulePlay = () => {
       if (free() && !reduced) {
         const what = PLAYS[Math.floor(Math.random() * PLAYS.length)]
         if (what === 'roam') roam()
-        else if (what === 'hide') hideAndSeek()
         else mascot.value?.play(what)
       }
       schedulePlay()
@@ -756,9 +752,9 @@ const schedulePlay = () => {
 
 // For seeing what he does without waiting for it, as `?weather=` and
 // `?sky=` are for the sky (useLiveSky): on the address,
-//   ?yunit=wave,hide,jump   his actions, one after another, a moment apart
-//                           (any of YUNIT_ACTIONS, `hide` for hide-and-seek
-//                           behind his bubble, `roam` for behind a card),
+//   ?yunit=wave,roam,jump   his actions, one after another, a moment apart
+//                           (any of YUNIT_ACTIONS, or `roam` for peeking
+//                           from behind a card),
 //                           each with its sound
 //   ?yunit-mood=sleeping    held in a mood (any of YUNIT_MOODS)
 //   ?yunit-say=Hello there  a line said in his bubble
@@ -774,11 +770,10 @@ const playFromAddress = () => {
   const asked = String(route.query.yunit || '')
     .split(',')
     .map((name) => name.trim())
-    .filter((name) => name === 'hide' || name === 'roam' || YUNIT_ACTIONS.includes(name))
+    .filter((name) => name === 'roam' || YUNIT_ACTIONS.includes(name))
   asked.forEach((name, i) => {
     previewTimers.push(
       setTimeout(() => {
-        if (name === 'hide') return hideAndSeek()
         if (name === 'roam') return roam()
         mascot.value?.play(name)
         feel(SOUND_OF[name] || name)
@@ -1066,8 +1061,7 @@ onBeforeUnmount(() => {
             'yunit-dock-him shrink-0 transition-[width,height] duration-300 ease-out motion-reduce:transition-none',
             // Drawn over his bubble, so his umbrella, which stands above his
             // box, lies over it rather than under it.
-            // Under his bubble only while hiding behind it (hideAndSeek).
-            hiding ? 'relative z-0' : 'relative z-10',
+            'relative z-10',
             open ? 'size-14' : roaming || onHill ? 'pointer-events-auto size-full' : anchor ? 'size-24' : 'size-20',
             movable && !open ? (carried ? 'cursor-grabbing' : 'cursor-grab') : '',
           ]"
@@ -1184,6 +1178,11 @@ onBeforeUnmount(() => {
          over the page, cut where the card is. -->
     <Teleport to="body">
       <div ref="roamEl" class="pointer-events-none fixed z-[60]" :style="roamStyle" />
+      <!-- His hand, holding the card he is behind: three fingertips round
+           its edge, on its face, in his teal (the petal that is his hand). -->
+      <svg v-if="roamAt?.grip" class="yunit-grip pointer-events-none fixed z-[61]" :style="gripStyle" viewBox="0 0 13 26" aria-hidden="true">
+        <rect v-for="y in [0, 8.5, 17]" :key="y" x="0" :y="y" width="13" height="8" rx="4" fill="#20B9C2" stroke="#0E9AA6" stroke-width="1.2" />
+      </svg>
     </Teleport>
 
     <!-- At rest: what he is saying, over where he stands, its corner nearest
@@ -1390,6 +1389,21 @@ onBeforeUnmount(() => {
   .yunit-pop-in,
   .yunit-pop-out {
     animation: none;
+  }
+}
+
+/* His fingers coming round the card's edge to hold it. */
+.yunit-grip {
+  animation: yunit-grip-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes yunit-grip-in {
+  from {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
   }
 }
 </style>

@@ -152,11 +152,13 @@ CHANGELOG.md.
   so the button can focus it at once and a phone's keyboard comes up).
   Talked to, he shrinks to make room for it. Left alone, he plays: every
   twenty to forty-five seconds one thing (a jump, a wave, a peek, a look
-  about, or hide-and-seek: behind his bubble's card on a desktop, ducking
-  out of sight on a phone or on the hill, then popping out "Ta-da!"; or,
-  on a desktop, curling into a ball and rolling off to peek from behind a
-  card chosen at random, whispering "psst", and staying there until he is
-  clicked, when he rolls home and pops out "Ta-da!"), only
+  about, or, on a desktop, hide-and-seek: curling into a ball that shrinks
+  away to nothing and appears beside a card chosen at random, where he
+  uncurls and slides behind its edge until only the side of his head and one
+  eye show, his teal fingers round the edge holding it, whispers "psst", and
+  stays until he is clicked, when he lets go, shrinks away as a ball and
+  appears home, popping out "Ta-da!"; he never hides behind his own bubble
+  or ducks out of sight), only
   while someone is there and nothing else is going on, and dozes only after
   five minutes of quiet. Faces of his own for some of what he says: "whoa!"
   wide-eyed with a round "O" (`whoa`, at a rainbow, and among his tap

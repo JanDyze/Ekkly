@@ -11,6 +11,23 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.42] — 2026-10-17
+
+YUNIT's hide-and-seek is a proper peek now, and he gets there by vanishing
+rather than rolling across your home.
+
+### Changed
+
+- **He travels as a ball that vanishes.** He curls up, shrinks away to
+  nothing where he stands, and appears beside the card he hides behind,
+  growing back as a ball before he uncurls. Coming home he does the same.
+- **A real peek.** Behind a card only the side of his head and one eye show,
+  and his fingers curl round the card's edge as if he is holding it.
+
+### Removed
+
+- **He no longer hides behind his own speech bubble** or ducks out of sight.
+
 ## [0.35.41] — 2026-10-17
 
 On a computer, every part of an app keeps the rest of the app beside it.

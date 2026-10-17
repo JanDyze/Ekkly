@@ -73,8 +73,9 @@ const props = defineProps({
   // into a hem, as a raincoat does, his feet showing under it.
   raincoat: { type: Boolean, default: false },
   // Curled up into a ball for as long as it is true — feet tucked in, petals
-  // hugged round him, eyes shut — as he is for a roll, but held: for rolling
-  // across the page (HomeYunit's hide-and-seek behind a card).
+  // hugged round him, eyes shut — as he is for a roll, but held: for his trip
+  // to and from a card, shrinking away and appearing as a ball (HomeYunit's
+  // hide-and-seek).
   curled: { type: Boolean, default: false },
   // Taps are the page's, not his: he does nothing of his own when tapped
   // (while hiding behind a card, a tap is what brings him back).
