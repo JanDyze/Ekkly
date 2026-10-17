@@ -10,12 +10,18 @@ export const versionHistory = [
   {
     version: '0.35.47',
     date: '2026-10-17',
+    title: 'A Sunday at a glance',
+    summary: 'On a computer, a Sunday in Schedules shows every team side by side.',
+    highlights: ['Worship, the songs, preaching, ushers and welcome, each a column.'],
+  },
+  {
+    version: '0.35.46',
+    date: '2026-10-17',
     title: 'Every app, made for a computer',
     summary: 'On a computer, every app now uses the whole screen instead of a phone’s column.',
     highlights: [
       'People and Tasks are tables; the book is a ledger.',
       'Lists are cards across the screen; a record spreads its details side by side.',
-      'A Sunday in Schedules shows every team side by side.',
       'Videos keeps the video in view beside its list and its settings.',
     ],
   },
