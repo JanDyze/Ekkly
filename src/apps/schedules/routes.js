@@ -18,14 +18,9 @@ export const schedulesRoutes = [
         meta: { depth: 0 },
         component: () => import('./ScheduleHome.vue'),
       },
-      {
-        // Optional: the calendar opens on this month. A month is what gets
-        // shared with whoever is serving.
-        path: 'calendar/:month(\\d{4}-\\d{2})?',
-        name: 'SchedulesCalendar',
-        meta: { art: 'schedules-calendar', title: 'Calendar', depth: 1 },
-        component: () => import('./ScheduleCalendar.vue'),
-      },
+      // The sections in the order the home's tiles are in, which is the order
+      // a desktop's rail lists them in too (AppRail), so each wears the same
+      // colour in both places.
       {
         path: 'mine',
         name: 'SchedulesMine',
@@ -33,11 +28,12 @@ export const schedulesRoutes = [
         component: () => import('./ScheduleMine.vue'),
       },
       {
-        // Who serves how often is for whoever assigns people.
-        path: 'team',
-        name: 'SchedulesTeam',
-        meta: { art: 'schedules-who', title: 'Who serves', depth: 1, capability: 'lineups.manage' },
-        component: () => import('./ScheduleTeam.vue'),
+        // Optional: the calendar opens on this month. A month is what gets
+        // shared with whoever is serving.
+        path: 'calendar/:month(\\d{4}-\\d{2})?',
+        name: 'SchedulesCalendar',
+        meta: { art: 'schedules-calendar', title: 'Calendar', depth: 1 },
+        component: () => import('./ScheduleCalendar.vue'),
       },
       // Each team's own section: its Sundays as it sees them, and the work only
       // it does — the songs, the message, the door, the newcomers. Anyone who
@@ -66,6 +62,13 @@ export const schedulesRoutes = [
         name: 'SchedulesWelcome',
         meta: { art: 'schedules-welcome', title: 'Welcome', depth: 1 },
         component: () => import('./ScheduleWelcome.vue'),
+      },
+      {
+        // Who serves how often is for whoever assigns people.
+        path: 'team',
+        name: 'SchedulesTeam',
+        meta: { art: 'schedules-who', title: 'Who serves', depth: 1, capability: 'lineups.manage' },
+        component: () => import('./ScheduleTeam.vue'),
       },
       {
         // Presenting is an app of its own now (src/apps/presentation).

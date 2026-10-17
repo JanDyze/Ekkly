@@ -1,5 +1,15 @@
+<script>
+// How many rails are on the page, across every screen: the one arriving and
+// the one leaving overlap for a moment, so the width is held while any is.
+let rails = 0
+const railCount = (by) => {
+  rails = Math.max(0, rails + by)
+  document.documentElement.style.setProperty('--app-rail', rails ? '18rem' : '0px')
+}
+</script>
+
 <script setup>
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import AppArt from '../common/AppArt.vue'
 import CardPanes from './CardPanes.vue'
@@ -55,6 +65,15 @@ const current = computed(() => {
 })
 
 const shown = computed(() => Boolean(app.value && home.value && sections.value.length >= 2))
+
+// What floats over a section rather than scrolling in it (People's search
+// dock, the bar under Add people) is placed against the whole window, not the
+// screen beside the rail, and would sit off to the left of the column it
+// belongs to. So the rail's width is said on the page, as --app-rail, for
+// them to step aside by on a desktop (`lg:left-(--app-rail)`). Counted, not
+// set and cleared: the next screen's rail arrives before the last one leaves.
+watch(shown, (on, was) => railCount(Number(Boolean(on)) - Number(Boolean(was))), { immediate: true })
+onBeforeUnmount(() => shown.value && railCount(-1))
 </script>
 
 <template>

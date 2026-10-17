@@ -801,7 +801,7 @@ const onMenu = (key) => {
          the two read as one control changing what it does. -->
     <div
       v-if="picking"
-      class="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom),calc(var(--bottom-bar-space)+0.75rem))] z-50 px-4"
+      class="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom),calc(var(--bottom-bar-space)+0.75rem))] z-50 px-4 lg:left-(--app-rail)"
     >
       <div class="pointer-events-auto mx-auto flex max-w-xl items-center gap-1.5 rounded-full bg-gray-900 p-1.5 text-white dark:bg-gray-100 dark:text-gray-900">
         <button

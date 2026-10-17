@@ -85,7 +85,7 @@ onBeforeUnmount(() => follow(false))
 <template>
   <!-- Above the bottom bar when someone has it on, rather than under it. -->
   <div
-    class="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom),calc(var(--bottom-bar-space)+0.75rem))] z-40 px-4"
+    class="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom),calc(var(--bottom-bar-space)+0.75rem))] z-40 px-4 lg:left-(--app-rail)"
     :style="lift ? { transform: `translateY(-${lift}px)` } : null"
   >
     <div class="mx-auto max-w-xl">
