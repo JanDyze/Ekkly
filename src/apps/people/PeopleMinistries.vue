@@ -73,13 +73,13 @@ const TABS = [
 </script>
 
 <template>
-  <AppScreen title="Ministries" :subtitle="subtitle" :back="{ name: 'PeopleHome' }" root="/members">
+  <AppScreen title="Ministries" :subtitle="subtitle" :back="{ name: 'PeopleHome' }" root="/members" desk>
     <!-- Ministries or small groups: two tabs rather than one long scroll. -->
     <div
       v-if="seesGroups"
       role="tablist"
       aria-label="Ministries or small groups"
-      class="mb-4 grid grid-cols-2 gap-1 rounded-full bg-gray-200/70 p-1 dark:bg-gray-800"
+      class="mb-4 grid grid-cols-2 gap-1 rounded-full bg-gray-200/70 p-1 lg:max-w-sm dark:bg-gray-800"
     >
       <button
         v-for="t in TABS"
@@ -101,7 +101,7 @@ const TABS = [
 
     <div v-if="loading" class="flex flex-col gap-2.5">
       <div class="h-24 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
-      <div class="grid grid-cols-2 gap-2.5">
+      <div class="grid grid-cols-2 gap-2.5 lg:grid-cols-[repeat(auto-fill,minmax(15rem,1fr))]">
         <div v-for="n in 6" :key="n" class="h-32 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
       </div>
     </div>
@@ -128,7 +128,7 @@ const TABS = [
       </section>
 
       <!-- One card per ministry. -->
-      <div class="grid grid-cols-2 gap-2.5">
+      <div class="grid grid-cols-2 gap-2.5 lg:grid-cols-[repeat(auto-fill,minmax(15rem,1fr))]">
         <RouterLink
           v-for="(ministry, index) in sorted"
           :key="ministry.name"
@@ -220,7 +220,7 @@ const TABS = [
         </div>
       </section>
 
-      <div v-if="groups.length" class="grid grid-cols-2 gap-2.5">
+      <div v-if="groups.length" class="grid grid-cols-2 gap-2.5 lg:grid-cols-[repeat(auto-fill,minmax(15rem,1fr))]">
         <RouterLink
           v-for="(group, index) in groups"
           :key="group.id"

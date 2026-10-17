@@ -11,6 +11,24 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.43] — 2026-10-17
+
+People on a computer is laid out for a computer, not stretched from a phone.
+
+### Changed
+
+- **Everyone is a table.** A person a row, with their status, age, birthday,
+  ministries and tags in columns, grouped as the phone groups them. Search,
+  sort, select and a switch between the table and cards of faces sit along the
+  top. Columns step aside on a narrower screen.
+- **A person's record spreads across the screen:** what is missing along the
+  top, then their card, their details and their place in the church side by
+  side, with their attendance under them.
+- **The other lists are cards across the width:** birthdays, missing info, a
+  ministry's people and those in none. Overview's three breakdowns stand side
+  by side, and the ministries are four or more across.
+- On a phone, nothing changes.
+
 ## [0.35.42] — 2026-10-17
 
 YUNIT's hide-and-seek is a proper peek now, and he gets there by vanishing

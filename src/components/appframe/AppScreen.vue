@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, provide, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft } from '../../icons'
 import AppArt from '../common/AppArt.vue'
@@ -49,9 +49,21 @@ const props = defineProps({
   // home of all apps is: the width of the screen and its height, in panels
   // that scroll inside themselves, so the screen itself never does.
   board: { type: Boolean, default: false },
+  // A section laid out for a desktop's width (a table, a grid of cards,
+  // columns side by side) rather than a phone's column: there it takes the
+  // room beside the rail, as wide as reads well. A phone's screen is the same.
+  desk: { type: Boolean, default: false },
 })
 
-const column = computed(() => (props.wide ? 'max-w-5xl' : props.board ? 'max-w-xl lg:h-full lg:max-w-[112rem] lg:px-6 lg:pt-5 lg:pb-5' : 'max-w-xl'))
+// The lists on a desktop's screen (ListGroup) lay their rows out as cards
+// across its width rather than one long column down the middle of it.
+provide('appScreenDesk', computed(() => props.desk))
+
+const column = computed(() => {
+  if (props.board) return 'max-w-xl lg:h-full lg:max-w-[112rem] lg:px-6 lg:pt-5 lg:pb-5'
+  if (props.desk) return `${props.wide ? 'max-w-5xl' : 'max-w-xl'} lg:max-w-[90rem] lg:px-8`
+  return props.wide ? 'max-w-5xl' : 'max-w-xl'
+})
 
 const router = useRouter()
 const route = useRoute()
@@ -128,7 +140,7 @@ defineExpose({ scroller, hidden })
           ? 'overflow-y-auto overscroll-contain'
           : 'overflow-hidden with-bar:overflow-y-auto with-bar:overscroll-contain',
     ]"
-    :style="interiorVars"
+    :style="[interiorVars, { '--screen-head': hasHeader && !hidden ? '4rem' : '0px' }]"
     @scroll.passive="onScroll"
   >
     <!-- The way back and the screen's name are for the screen, never the

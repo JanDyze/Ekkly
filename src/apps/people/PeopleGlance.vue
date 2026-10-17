@@ -50,13 +50,15 @@ const subtitle = computed(() =>
 </script>
 
 <template>
-  <AppScreen title="Overview" :subtitle="subtitle" :back="{ name: 'PeopleHome' }" root="/members">
+  <AppScreen title="Overview" :subtitle="subtitle" :back="{ name: 'PeopleHome' }" root="/members" desk>
     <div v-if="loading" class="flex flex-col gap-2">
       <div v-for="n in 6" :key="n" class="h-14 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
     </div>
 
-    <div v-else class="flex flex-col gap-5">
-      <ListGroup title="On the roll">
+    <!-- On a desktop the three breakdowns stand side by side, as a
+         dashboard's figures do, rather than one under another. -->
+    <div v-else class="flex flex-col gap-5 lg:grid lg:grid-cols-3 lg:items-start">
+      <ListGroup title="On the roll" flat>
         <ListRow v-for="row in roll" :key="row.key" :title="row.title">
           <template #trailing>
             <span class="shrink-0 text-sm tabular-nums text-gray-500 dark:text-gray-400">
@@ -67,7 +69,7 @@ const subtitle = computed(() =>
         </ListRow>
       </ListGroup>
 
-      <ListGroup title="Ages" :note="ageNote">
+      <ListGroup title="Ages" :note="ageNote" flat>
         <!-- The bands side by side, so the shape of the church reads before
              any number does. -->
         <div v-if="agedTotal" class="flex h-2.5 gap-0.5 overflow-hidden rounded-full mx-4 mt-4 mb-2" aria-hidden="true">
@@ -91,7 +93,7 @@ const subtitle = computed(() =>
         </ListRow>
       </ListGroup>
 
-      <ListGroup title="Men and women">
+      <ListGroup title="Men and women" flat>
         <ListRow v-for="row in sexes" :key="row.key" :title="row.title" :muted="row.muted">
           <template #trailing>
             <span class="shrink-0 text-sm tabular-nums text-gray-500 dark:text-gray-400">

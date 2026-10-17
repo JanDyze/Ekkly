@@ -514,14 +514,19 @@ const handleImageUpdate = async (base64Image) => {
       @scroll.passive="onScroll"
       class="flex-1 overflow-y-auto pb-[calc(2rem+env(safe-area-inset-bottom))]"
     >
-      <div class="mx-auto w-full max-w-2xl space-y-3 pb-3 sm:px-4 sm:pt-3">
+      <!-- On a desktop the record is one wide page rather than a phone's
+           column: what is missing across the top, then who they are, about
+           them and their place in the church side by side, and their
+           attendance the full width under them, where its months have room.
+           A phone reads it top to bottom as it always has. -->
+      <div class="mx-auto flex w-full max-w-2xl flex-col gap-3 pb-3 sm:px-4 sm:pt-3 lg:grid lg:max-w-6xl lg:grid-cols-3 lg:items-start lg:gap-5 lg:px-8 lg:pt-6">
         <!-- ============ Identity ============ -->
         <!-- No cover strip. A cover is a photograph somebody chose, and nobody
              here is going to choose one — an empty gradient band was a tenth of
              a phone screen spent saying nothing. Nor tiles of figures under the
              name: each one repeated a section further down the same page. -->
         <section
-          class="border-b border-gray-200 bg-white px-4 py-4 sm:rounded-2xl sm:border dark:border-gray-700 dark:bg-gray-800"
+          class="lg:order-1 border-b border-gray-200 bg-white px-4 py-4 sm:rounded-2xl sm:border dark:border-gray-700 dark:bg-gray-800"
         >
           <div class="flex items-start gap-4">
             <div class="relative shrink-0">
@@ -588,215 +593,218 @@ const handleImageUpdate = async (base64Image) => {
           </div>
         </section>
 
-        <div class="space-y-3 px-3 sm:px-0">
-          <!-- ============ Gaps ============ -->
-          <div
-            v-if="gaps.length"
-            class="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/25 dark:bg-amber-500/10"
-          >
-            <AlertCircle class="mt-0.5 h-4 w-4 shrink-0 text-amber-500 dark:text-amber-400" />
-            <div class="min-w-0 flex-1">
-              <p class="text-xs font-bold text-amber-800 dark:text-amber-300">
-                {{ gaps.length }} {{ gaps.length === 1 ? 'detail is' : 'details are' }} still missing
-              </p>
-              <div class="mt-1.5 flex flex-wrap gap-1.5">
-                <span
-                  v-for="gap in gaps"
-                  :key="gap.key"
-                  class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold capitalize text-amber-700 dark:bg-amber-500/20 dark:text-amber-300"
-                >
-                  {{ gap.label }}
-                </span>
-              </div>
-            </div>
-            <!-- Both details it asks for live on the Personal step. -->
-            <button
-              v-if="canEdit"
-              @click="openEditor(1)"
-              class="shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-500/20"
+          <div class="mx-3 empty:hidden sm:mx-0 lg:order-0 lg:col-span-3">
+            <!-- ============ Gaps ============ -->
+            <div
+              v-if="gaps.length"
+              class="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/25 dark:bg-amber-500/10"
             >
-              Fill in
-            </button>
-          </div>
-
-          <!-- ============ Attendance ============ -->
-          <!-- Only the gatherings this person was expected at: a choir practice
-               is on a chorister's profile and nobody else's, a Sunday service
-               is on everyone's. -->
-          <section
-            v-if="history.length"
-            class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
-          >
-            <div class="mb-3 flex items-baseline justify-between gap-2">
-              <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                Attendance
-              </h2>
-              <p v-if="counted.length" class="text-xs tabular-nums text-gray-500 dark:text-gray-400">
-                <span class="font-bold text-gray-900 dark:text-white">{{ presentCount }}</span>
-                of {{ counted.length }}
-                <span class="text-gray-400 dark:text-gray-500">· {{ attendanceRate }}%</span>
-              </p>
+              <AlertCircle class="mt-0.5 h-4 w-4 shrink-0 text-amber-500 dark:text-amber-400" />
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-bold text-amber-800 dark:text-amber-300">
+                  {{ gaps.length }} {{ gaps.length === 1 ? 'detail is' : 'details are' }} still missing
+                </p>
+                <div class="mt-1.5 flex flex-wrap gap-1.5">
+                  <span
+                    v-for="gap in gaps"
+                    :key="gap.key"
+                    class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold capitalize text-amber-700 dark:bg-amber-500/20 dark:text-amber-300"
+                  >
+                    {{ gap.label }}
+                  </span>
+                </div>
+              </div>
+              <!-- Both details it asks for live on the Personal step. -->
+              <button
+                v-if="canEdit"
+                @click="openEditor(1)"
+                class="shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-500/20"
+              >
+                Fill in
+              </button>
             </div>
+          </div>
+          <div class="mx-3 empty:hidden sm:mx-0 lg:order-4 lg:col-span-3">
+            <!-- ============ Attendance ============ -->
+            <!-- Only the gatherings this person was expected at: a choir practice
+                 is on a chorister's profile and nobody else's, a Sunday service
+                 is on everyone's. -->
+            <section
+              v-if="history.length"
+              class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+            >
+              <div class="mb-3 flex items-baseline justify-between gap-2">
+                <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                  Attendance
+                </h2>
+                <p v-if="counted.length" class="text-xs tabular-nums text-gray-500 dark:text-gray-400">
+                  <span class="font-bold text-gray-900 dark:text-white">{{ presentCount }}</span>
+                  of {{ counted.length }}
+                  <span class="text-gray-400 dark:text-gray-500">· {{ attendanceRate }}%</span>
+                </p>
+              </div>
 
-            <!-- One grid for the whole table, so every row's months sit under
-                 the same heading however many squares each holds. Scrolls
-                 sideways on its own when a long history outgrows the phone. -->
-            <div class="-mx-4 overflow-x-auto px-4">
-              <div
-                class="grid w-max min-w-full items-center gap-x-4"
-                :style="{ gridTemplateColumns: `repeat(${attendanceGrid.columns.length}, max-content)` }"
+              <!-- One grid for the whole table, so every row's months sit under
+                   the same heading however many squares each holds. Scrolls
+                   sideways on its own when a long history outgrows the phone. -->
+              <div class="-mx-4 overflow-x-auto px-4">
+                <div
+                  class="grid w-max min-w-full items-center gap-x-4"
+                  :style="{ gridTemplateColumns: `repeat(${attendanceGrid.columns.length}, max-content)` }"
+                >
+                  <span
+                    v-for="month in attendanceGrid.columns"
+                    :key="month.key"
+                    class="pb-1 text-[10px] font-bold tracking-wider text-gray-400 dark:text-gray-500"
+                  >
+                    {{ month.label }}
+                  </span>
+
+                  <template v-for="row in attendanceGrid.rows" :key="row.key">
+                    <!-- Held at the left edge while the months slide under it, so
+                         a long history scrolled sideways still says which
+                         gathering its squares belong to. Only as wide as its
+                         words, or there would be no room in the row to slide;
+                         capped at the card's width so a long title still
+                         truncates rather than running off the screen. -->
+                    <p
+                      class="sticky left-4 col-span-full mt-2 flex max-w-[min(100%,calc(100vw_-_3.5rem),40rem)] min-w-0 items-center gap-1.5 justify-self-start text-xs font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      <component :is="row.icon" class="h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
+                      <span class="truncate">{{ row.title }}</span>
+                    </p>
+                    <div
+                      v-for="month in attendanceGrid.columns"
+                      :key="`${row.key}-${month.key}`"
+                      class="flex h-4 items-center"
+                    >
+                      <!-- The square is small; the button around it is not, so a
+                           thumb can still land on one. -->
+                      <button
+                        v-for="item in row.byMonth[month.key] || []"
+                        :key="item.key"
+                        type="button"
+                        @click="pickDay(item)"
+                        :aria-label="`${item.title}, ${longDay(item.date)}: ${stateWord[item.state]}`"
+                        :aria-pressed="pickedDay?.key === item.key"
+                        class="-my-1.5 p-[3px]"
+                      >
+                        <span
+                          :class="[
+                            'block h-2.5 w-2.5 rounded-[2px]',
+                            ATTENDANCE_STYLE[item.state],
+                            pickedDay?.key === item.key
+                              ? 'ring-2 ring-primary ring-offset-1 dark:ring-primary-light dark:ring-offset-gray-800'
+                              : '',
+                          ]"
+                        ></span>
+                      </button>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <p v-if="pickedDay" class="mt-3 text-xs text-gray-600 dark:text-gray-300">
+                <span class="font-medium">{{ pickedDay.title }}</span>
+                · {{ longDay(pickedDay.date) }} · {{ stateWord[pickedDay.state] }}
+              </p>
+
+              <!-- Green and red speak for themselves; the hollow one does not,
+                   and it is the one that matters. A head count says how many
+                   came, never who, so those are shown but never counted. -->
+              <p
+                v-if="unrecordedCount"
+                class="mt-3 flex items-start gap-2 text-[11px] text-gray-400 dark:text-gray-500"
               >
                 <span
-                  v-for="month in attendanceGrid.columns"
-                  :key="month.key"
-                  class="pb-1 text-[10px] font-bold tracking-wider text-gray-400 dark:text-gray-500"
-                >
-                  {{ month.label }}
+                  class="mt-0.5 h-3 w-3 shrink-0 rounded border border-dashed border-gray-300 dark:border-gray-600"
+                ></span>
+                <span>
+                  {{ unrecordedCount === 1 ? 'One was' : `${unrecordedCount} were` }} counted as a
+                  head count only, so nobody's name was written down.
                 </span>
+              </p>
+            </section>
+          </div>
+          <div class="mx-3 sm:mx-0 lg:order-2">
+            <!-- ============ About ============ -->
+            <section class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+              <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                About
+              </h2>
 
-                <template v-for="row in attendanceGrid.rows" :key="row.key">
-                  <!-- Held at the left edge while the months slide under it, so
-                       a long history scrolled sideways still says which
-                       gathering its squares belong to. Only as wide as its
-                       words, or there would be no room in the row to slide;
-                       capped at the card's width so a long title still
-                       truncates rather than running off the screen. -->
+              <div class="space-y-2.5">
+                <div v-for="fact in about" :key="fact.key" class="flex items-start gap-3">
+                  <component
+                    :is="fact.icon"
+                    :class="[
+                      'mt-0.5 h-4 w-4 shrink-0',
+                      fact.iconClass || 'text-gray-400 dark:text-gray-500',
+                    ]"
+                  />
                   <p
-                    class="sticky left-4 col-span-full mt-2 flex max-w-[min(100%,calc(100vw_-_3.5rem),40rem)] min-w-0 items-center gap-1.5 justify-self-start text-xs font-medium text-gray-700 dark:text-gray-300"
+                    :class="[
+                      'min-w-0 flex-1 whitespace-pre-line break-words text-sm',
+                      fact.text ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500',
+                    ]"
                   >
-                    <component :is="row.icon" class="h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
-                    <span class="truncate">{{ row.title }}</span>
+                    {{ fact.text || fact.missing }}
                   </p>
-                  <div
-                    v-for="month in attendanceGrid.columns"
-                    :key="`${row.key}-${month.key}`"
-                    class="flex h-4 items-center"
-                  >
-                    <!-- The square is small; the button around it is not, so a
-                         thumb can still land on one. -->
-                    <button
-                      v-for="item in row.byMonth[month.key] || []"
-                      :key="item.key"
-                      type="button"
-                      @click="pickDay(item)"
-                      :aria-label="`${item.title}, ${longDay(item.date)}: ${stateWord[item.state]}`"
-                      :aria-pressed="pickedDay?.key === item.key"
-                      class="-my-1.5 p-[3px]"
+                </div>
+              </div>
+            </section>
+          </div>
+          <div class="mx-3 sm:mx-0 lg:order-3">
+            <!-- ============ Church ============ -->
+            <section class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+              <h2 class="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                <Church class="h-3.5 w-3.5" />
+                Church
+              </h2>
+
+              <div class="space-y-4">
+                <!-- Ministries come from the controlled list in Settings because
+                     they grant access; tags are free text and grant nothing. -->
+                <div>
+                  <p class="mb-1.5 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                    <Users class="h-3.5 w-3.5" />
+                    Ministries
+                  </p>
+                  <div v-if="(localMember.ministries || []).length" class="flex flex-wrap gap-1.5">
+                    <span
+                      v-for="name in localMember.ministries"
+                      :key="name"
+                      class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary dark:bg-primary-light/20 dark:text-primary-light"
                     >
-                      <span
-                        :class="[
-                          'block h-2.5 w-2.5 rounded-[2px]',
-                          ATTENDANCE_STYLE[item.state],
-                          pickedDay?.key === item.key
-                            ? 'ring-2 ring-primary ring-offset-1 dark:ring-primary-light dark:ring-offset-gray-800'
-                            : '',
-                        ]"
-                      ></span>
-                    </button>
+                      <LabelMark :mark="ministryMark(name)" size="h-3.5 w-3.5" />
+                      {{ name }}
+                    </span>
                   </div>
-                </template>
-              </div>
-            </div>
-
-            <p v-if="pickedDay" class="mt-3 text-xs text-gray-600 dark:text-gray-300">
-              <span class="font-medium">{{ pickedDay.title }}</span>
-              · {{ longDay(pickedDay.date) }} · {{ stateWord[pickedDay.state] }}
-            </p>
-
-            <!-- Green and red speak for themselves; the hollow one does not,
-                 and it is the one that matters. A head count says how many
-                 came, never who, so those are shown but never counted. -->
-            <p
-              v-if="unrecordedCount"
-              class="mt-3 flex items-start gap-2 text-[11px] text-gray-400 dark:text-gray-500"
-            >
-              <span
-                class="mt-0.5 h-3 w-3 shrink-0 rounded border border-dashed border-gray-300 dark:border-gray-600"
-              ></span>
-              <span>
-                {{ unrecordedCount === 1 ? 'One was' : `${unrecordedCount} were` }} counted as a
-                head count only, so nobody's name was written down.
-              </span>
-            </p>
-          </section>
-
-          <!-- ============ About ============ -->
-          <section class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-            <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-              About
-            </h2>
-
-            <div class="space-y-2.5">
-              <div v-for="fact in about" :key="fact.key" class="flex items-start gap-3">
-                <component
-                  :is="fact.icon"
-                  :class="[
-                    'mt-0.5 h-4 w-4 shrink-0',
-                    fact.iconClass || 'text-gray-400 dark:text-gray-500',
-                  ]"
-                />
-                <p
-                  :class="[
-                    'min-w-0 flex-1 whitespace-pre-line break-words text-sm',
-                    fact.text ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500',
-                  ]"
-                >
-                  {{ fact.text || fact.missing }}
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <!-- ============ Church ============ -->
-          <section class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-            <h2 class="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-              <Church class="h-3.5 w-3.5" />
-              Church
-            </h2>
-
-            <div class="space-y-4">
-              <!-- Ministries come from the controlled list in Settings because
-                   they grant access; tags are free text and grant nothing. -->
-              <div>
-                <p class="mb-1.5 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
-                  <Users class="h-3.5 w-3.5" />
-                  Ministries
-                </p>
-                <div v-if="(localMember.ministries || []).length" class="flex flex-wrap gap-1.5">
-                  <span
-                    v-for="name in localMember.ministries"
-                    :key="name"
-                    class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary dark:bg-primary-light/20 dark:text-primary-light"
-                  >
-                    <LabelMark :mark="ministryMark(name)" size="h-3.5 w-3.5" />
-                    {{ name }}
-                  </span>
+                  <p v-else class="text-sm text-gray-400 dark:text-gray-500">
+                    Not serving in any ministry
+                  </p>
                 </div>
-                <p v-else class="text-sm text-gray-400 dark:text-gray-500">
-                  Not serving in any ministry
-                </p>
-              </div>
 
-              <div>
-                <p class="mb-1.5 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
-                  <Tag class="h-3.5 w-3.5" />
-                  Tags
-                </p>
-                <div v-if="(localMember.tags || []).length" class="flex flex-wrap gap-1.5">
-                  <span
-                    v-for="tag in localMember.tags"
-                    :key="tag"
-                    class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-                  >
-                    <LabelMark :mark="tagMark(tag)" size="h-3.5 w-3.5" />
-                    {{ tag }}
-                  </span>
+                <div>
+                  <p class="mb-1.5 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                    <Tag class="h-3.5 w-3.5" />
+                    Tags
+                  </p>
+                  <div v-if="(localMember.tags || []).length" class="flex flex-wrap gap-1.5">
+                    <span
+                      v-for="tag in localMember.tags"
+                      :key="tag"
+                      class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                    >
+                      <LabelMark :mark="tagMark(tag)" size="h-3.5 w-3.5" />
+                      {{ tag }}
+                    </span>
+                  </div>
+                  <p v-else class="text-sm text-gray-400 dark:text-gray-500">No tags</p>
                 </div>
-                <p v-else class="text-sm text-gray-400 dark:text-gray-500">No tags</p>
               </div>
-            </div>
-          </section>
-        </div>
+            </section>
+          </div>
       </div>
     </div>
 

@@ -8,6 +8,17 @@
 
 export const versionHistory = [
   {
+    version: '0.35.43',
+    date: '2026-10-17',
+    title: 'People, made for a computer',
+    summary: 'On a computer, People uses the whole screen instead of a phone’s column.',
+    highlights: [
+      'Everyone is a table: age, birthday, ministries and tags in columns.',
+      'A person’s record spreads its details side by side.',
+      'Birthdays, ministries and the other lists are cards across the width.',
+    ],
+  },
+  {
     version: '0.35.42',
     date: '2026-10-17',
     title: 'YUNIT peeks',

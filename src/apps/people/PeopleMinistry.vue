@@ -60,6 +60,7 @@ const recordOf = (member) => ({ name: 'MemberDetails', params: { id: member.id |
     :subtitle="subtitle"
     :back="isUngrouped ? { name: 'PeopleMinistries', query: { tab: 'groups' } } : { name: 'PeopleMinistries' }"
     root="/members"
+    desk
   >
     <div v-if="loading" class="flex flex-col gap-2">
       <div v-for="n in 5" :key="n" class="h-14 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />

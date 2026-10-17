@@ -19,12 +19,19 @@ import MemberListItem from "../../components/members/MemberListItem.vue";
 import ConfirmationModal from "../../components/common/ConfirmationModal.vue";
 import BulkAssignSheet from "../../components/members/BulkAssignSheet.vue";
 import AppScreen from "../../components/appframe/AppScreen.vue";
+import DeskTable from "../../components/appframe/DeskTable.vue";
+import MemberAvatar from "../../components/members/MemberAvatar.vue";
+import MemberAttentionBadge from "../../components/members/MemberAttentionBadge.vue";
+import YouBadge from "../../components/members/YouBadge.vue";
+import { useMediaQuery } from "../../composables/useMediaQuery";
+import { bandOf, ageOf } from "../../utils/ageBands";
+import { birthdayParts, getFullName, missingMemberDetails } from "../../utils/memberUtils";
 import { exportToExcel } from "../../utils/exportUtils";
 import { mergeTagSources } from "../../utils/memberUtils";
 import { usePermissions } from "../../composables/usePermissions";
 import { useMinistries } from "../../composables/useMinistries";
 import { areaLabel } from "../../data/capabilities";
-import { CheckCircle, Church, Download, Plus, Tag, UsersThree, X } from "../../icons";
+import { ArrowsDownUp, Check, CheckCircle, Church, Download, ListBullets, MagnifyingGlass, Plus, SquaresFour, Tag, UsersThree, X } from "../../icons";
 import {
   subscribeToCustomTags,
   addCustomTag,
@@ -111,7 +118,30 @@ const toggleMobileView = async () => {
   await nextTick();
   glideFaces(before);
 };
-const showGrid = computed(() => mobileView.value === "grid");
+// On a desktop the roll is a table by default — a person a row, with what
+// the phone keeps a tap away (age, birthday, ministries, tags) in columns —
+// or the faces as cards, many across. Chosen and remembered apart from the
+// phone's list or grid: the same person may read one way on each.
+const desk = useMediaQuery("(min-width: 1024px)");
+const DESK_VIEW_KEY = "ekkly:people-desk-view";
+const deskView = ref(
+  (() => {
+    try {
+      return localStorage.getItem(DESK_VIEW_KEY) === "cards" ? "cards" : "table";
+    } catch {
+      return "table";
+    }
+  })()
+);
+const setDeskView = (view) => {
+  deskView.value = view;
+  try {
+    localStorage.setItem(DESK_VIEW_KEY, view);
+  } catch {
+    // Not remembered this time; the switch itself still happened.
+  }
+};
+const showGrid = computed(() => (desk.value ? deskView.value === "cards" : mobileView.value === "grid"));
 
 // Shown again after a record (the page is kept alive while one is open), the
 // list slides in a short way rather than simply appearing. The way in to the
@@ -598,8 +628,48 @@ const handleMemberDelete = async (member) => {
   });
 };
 
-// Three faces across, the width of the app's column on any screen.
-const gridClass = "grid grid-cols-3 gap-2 p-2";
+// Three faces across on a phone; on a desktop as many as the width holds.
+const gridClass = "grid grid-cols-3 gap-2 p-2 lg:grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))]";
+
+/* ------------------------------------------------- the desktop's table */
+
+const MONTH_DAY = { month: "short", day: "numeric" };
+const birthdayOf = (member) => {
+  const parts = birthdayParts(member.dateOfBirth);
+  return parts ? new Date(2000, parts.month - 1, parts.day).toLocaleDateString(undefined, MONTH_DAY) : "";
+};
+// The columns, the least needed going first as the table narrows (DeskTable).
+const deskColumns = computed(() => [
+  ...(picking.value ? [{ key: "pick", label: "", width: "1.75rem" }] : []),
+  { key: "person", label: "Name", width: "minmax(13rem, 2.2fr)" },
+  { key: "status", label: "On the roll as", width: "7.5rem", min: 760 },
+  { key: "age", label: "Age", width: "6.5rem", min: 640 },
+  { key: "birthday", label: "Birthday", width: "6rem", min: 880 },
+  { key: "ministries", label: "Ministries", width: "minmax(9rem, 1.6fr)", min: 560 },
+  { key: "tags", label: "Tags", width: "minmax(8rem, 1.2fr)", min: 1040 },
+]);
+const deskGroups = computed(() =>
+  memberGroups.value.map((group) => ({
+    key: group.band?.key || "all",
+    label: group.band?.label || "",
+    count: group.band ? group.members.length : undefined,
+    dot: group.band?.dotClass,
+    rows: group.members,
+    source: group,
+  }))
+);
+const deskRowClass = (member) =>
+  picking.value && pickedIds.value.has(memberId(member))
+    ? "bg-primary/10 dark:bg-primary/20"
+    : missingMemberDetails(member).length
+      ? "bg-amber-50/70 hover:bg-amber-50 dark:bg-amber-500/10 dark:hover:bg-amber-500/15"
+      : "";
+const onDeskRow = (member) => (picking.value ? togglePicked(member) : handleMemberClick(member));
+const onDeskMenu = (member, event) => {
+  event.preventDefault();
+  if (picking.value) return;
+  handleContextMenu({ member, x: event.clientX, y: event.clientY });
+};
 
 // Search sits at the foot of the screen (PeopleDock), which also clears the
 // query when it is closed: a search you cannot see must not still be
@@ -631,7 +701,7 @@ const onMenu = (key) => {
 
 <template>
   <div :class="['relative h-full', returning ? 'page-return' : '']">
-    <AppScreen ref="screen" title="Everyone" :subtitle="subtitle" :back="{ name: 'PeopleHome' }" root="/members">
+    <AppScreen ref="screen" title="Everyone" :subtitle="subtitle" :back="{ name: 'PeopleHome' }" root="/members" :desk="desk">
       <template #action>
         <PeopleMenu :items="menuItems" @pick="onMenu" />
         <button
@@ -644,6 +714,150 @@ const onMenu = (key) => {
           Person
         </button>
       </template>
+
+      <!-- On a desktop the search, the sort and the way the roll is shown sit
+           over it, as a toolbar does, rather than at the foot of the screen
+           where a thumb would want them (PeopleDock, a phone's). -->
+      <div v-if="desk" class="mb-4 flex flex-wrap items-center gap-2">
+        <label class="relative min-w-60 flex-1">
+          <span class="sr-only">Search people</span>
+          <MagnifyingGlass class="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+          <input
+            v-model="searchQuery"
+            type="search"
+            placeholder="Search by name, tag, ministry, place…"
+            class="h-10 w-full rounded-xl border-0 bg-white pl-10 pr-3 text-sm text-gray-900 ring-1 ring-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white dark:ring-gray-700"
+          />
+        </label>
+        <span v-if="searchQuery.trim()" class="px-1 text-sm tabular-nums text-gray-500 dark:text-gray-400">
+          {{ filteredMembers.length }} of {{ members.length }}
+        </span>
+        <button
+          type="button"
+          class="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-3.5 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700 dark:hover:bg-gray-700"
+          @click="showSort = true"
+        >
+          <ArrowsDownUp class="size-4" />
+          {{ currentSort.label }}
+        </button>
+        <button
+          v-if="canTag && searchQuery.trim() && filteredMembers.length"
+          type="button"
+          class="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-3.5 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700 dark:hover:bg-gray-700"
+          @click="openTagSheetForResults"
+        >
+          <Tag class="size-4" />
+          Tag these {{ filteredMembers.length }}
+        </button>
+        <button
+          v-if="canTag && !picking"
+          type="button"
+          class="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-3.5 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700 dark:hover:bg-gray-700"
+          @click="startPicking()"
+        >
+          <CheckCircle class="size-4" />
+          Select
+        </button>
+        <div class="flex h-10 items-center rounded-xl bg-white p-1 ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700" role="group" aria-label="Show the roll as">
+          <button
+            v-for="view in [{ key: 'table', label: 'Table', icon: ListBullets }, { key: 'cards', label: 'Cards', icon: SquaresFour }]"
+            :key="view.key"
+            type="button"
+            :aria-pressed="deskView === view.key"
+            :class="[
+              'inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition-colors',
+              deskView === view.key ? 'bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
+            ]"
+            @click="setDeskView(view.key)"
+          >
+            <component :is="view.icon" class="size-4" />
+            {{ view.label }}
+          </button>
+        </div>
+      </div>
+
+      <!-- The roll as a table, on a desktop: a person a row, grouped by the
+           sort as the phone's list is, each row opening the record. -->
+      <DeskTable
+        v-if="desk && !showGrid && !loading && filteredMembers.length"
+        label="Everyone on the roll"
+        :columns="deskColumns"
+        :groups="deskGroups"
+        :row-key="(member) => member.id"
+        :row-class="deskRowClass"
+        clickable
+        @row-click="onDeskRow"
+        @row-contextmenu="onDeskMenu"
+      >
+        <template #group-action="{ group }">
+          <button
+            v-if="picking && group.label"
+            type="button"
+            class="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10 dark:text-primary-light"
+            @click="toggleBand(group.source)"
+          >
+            {{ isBandPicked(group.source) ? "Clear" : `Select all ${group.rows.length}` }}
+          </button>
+        </template>
+        <template #cell-pick="{ row }">
+          <span
+            :class="[
+              'flex size-5 items-center justify-center rounded-full border-2 transition-colors',
+              pickedIds.has(memberId(row)) ? 'border-primary bg-primary text-white' : 'border-gray-300 text-transparent dark:border-gray-600',
+            ]"
+          >
+            <Check class="size-3.5" />
+          </span>
+        </template>
+        <template #cell-person="{ row }">
+          <span class="flex min-w-0 items-center gap-3">
+            <MemberAvatar :member="row" size="h-9 w-9" :data-member-avatar="row.firestoreId || row.id" />
+            <span class="min-w-0">
+              <span class="flex min-w-0 items-center gap-1.5">
+                <span class="truncate font-semibold text-gray-900 dark:text-white">{{ getFullName(row) }}</span>
+                <MemberAttentionBadge :member="row" />
+                <YouBadge :member="row" />
+              </span>
+              <span v-if="row.nickname" class="block truncate text-xs text-gray-500 dark:text-gray-400">"{{ row.nickname }}"</span>
+            </span>
+          </span>
+        </template>
+        <template #cell-status="{ row }">
+          <span
+            :class="[
+              'inline-flex rounded-full px-2 py-0.5 text-xs font-semibold',
+              row.isMember === false ? 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300' : 'bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light',
+            ]"
+          >
+            {{ row.isMember === false ? "Attendee" : "Member" }}
+          </span>
+        </template>
+        <template #cell-age="{ row }">
+          <span v-if="ageOf(row) !== null" class="flex items-center gap-1.5 tabular-nums">
+            <span :class="['size-2 shrink-0 rounded-full', bandOf(row)?.dotClass]" aria-hidden="true" />
+            {{ ageOf(row) }}
+            <span class="truncate text-xs text-gray-400 dark:text-gray-500">{{ bandOf(row)?.label }}</span>
+          </span>
+          <span v-else class="text-gray-300 dark:text-gray-600">—</span>
+        </template>
+        <template #cell-birthday="{ row }">
+          <span class="tabular-nums">{{ birthdayOf(row) || "—" }}</span>
+        </template>
+        <template #cell-ministries="{ row }">
+          <span v-if="row.ministries.length" class="flex min-w-0 flex-wrap gap-1">
+            <span v-for="name in row.ministries.slice(0, 3)" :key="name" class="truncate rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary dark:bg-primary-light/15 dark:text-primary-light">{{ name }}</span>
+            <span v-if="row.ministries.length > 3" class="text-xs text-gray-400">+{{ row.ministries.length - 3 }}</span>
+          </span>
+          <span v-else class="text-gray-300 dark:text-gray-600">—</span>
+        </template>
+        <template #cell-tags="{ row }">
+          <span v-if="row.tags.length" class="flex min-w-0 flex-wrap gap-1">
+            <span v-for="tag in row.tags.slice(0, 3)" :key="tag" class="truncate rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-white/10 dark:text-gray-300">{{ tag }}</span>
+            <span v-if="row.tags.length > 3" class="text-xs text-gray-400">+{{ row.tags.length - 3 }}</span>
+          </span>
+          <span v-else class="text-gray-300 dark:text-gray-600">—</span>
+        </template>
+      </DeskTable>
 
       <!-- Loading: the shape of whichever view is on, so nothing jumps when
            the rows arrive. -->
@@ -679,6 +893,7 @@ const onMenu = (key) => {
            painted, so showing the roll again only draws what can be seen; the
            intrinsic size keeps the scrollbar honest meanwhile. -->
       <div v-else class="flex flex-col gap-5">
+        <template v-if="!desk || showGrid">
         <section
           v-for="group in memberGroups"
           :key="group.band?.key || 'all'"
@@ -738,6 +953,7 @@ const onMenu = (key) => {
             </template>
           </div>
         </section>
+        </template>
 
         <p v-if="filteredMembers.length === 0" class="p-8 text-center text-gray-500 dark:text-gray-400">
           {{ members.length ? 'Nobody matches your search.' : 'Nobody on the roll yet.' }}
@@ -757,8 +973,8 @@ const onMenu = (key) => {
 
       <!-- Room for the search at the foot, so the last person scrolls clear
            of it. -->
-      <div v-if="searchOpen && searchQuery" class="h-12" aria-hidden="true" />
-      <div class="h-20" aria-hidden="true" />
+      <div v-if="searchOpen && searchQuery" class="h-12 lg:hidden" aria-hidden="true" />
+      <div class="h-20 lg:h-8" aria-hidden="true" />
     </AppScreen>
 
     <!-- Adding someone: the same four steps as editing them. -->
@@ -860,7 +1076,7 @@ const onMenu = (key) => {
     />
 
     <PeopleDock
-      v-if="showDock"
+      v-if="showDock && !desk"
       v-model:query="searchQuery"
       v-model:open="searchOpen"
       :tucked="dockTucked"
