@@ -153,11 +153,12 @@ CHANGELOG.md.
   Talked to, he shrinks to make room for it. Left alone, he plays: every
   twenty to forty-five seconds one thing (a jump, a wave, a peek, a look
   about, or, on a desktop, hide-and-seek: curling into a ball that shrinks
-  away to nothing and appears beside a card chosen at random, where he
-  uncurls and slides behind its edge until only the side of his head and one
-  eye show (no hand; only his head peeks), whispers "psst", and
-  stays until he is clicked, when he shrinks away as a ball and
-  appears home, popping out "Ta-da!"; he never hides behind his own bubble
+  away to nothing, with a swirl, and appears straight behind a card chosen
+  at random, growing back as a ball with another swirl, already cut at its
+  edge; he uncurls with only the side of his head and one eye showing (no
+  hand; only his head peeks), whispers "psst", and stays until he is
+  clicked, when he swirls away as a ball and appears home, popping out
+  "Ta-da!"; he never hides behind his own bubble
   or ducks out of sight), only
   while someone is there and nothing else is going on, and dozes only after
   five minutes of quiet. Faces of his own for some of what he says: "whoa!"

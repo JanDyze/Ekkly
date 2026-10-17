@@ -615,8 +615,10 @@ const free = () =>
 
 // Hide-and-seek behind a card (a desktop's board): he curls into a ball,
 // shrinks away to nothing where he stands, and appears beside a card chosen
-// at random, a ball again growing back, then uncurls and slides behind its
-// edge until only the side of his head and one eye show, and whispers "psst". There he stays until he is clicked;
+// at random, already behind its edge, a ball again growing back, and uncurls
+// with only the side of his head and one eye showing, and whispers "psst".
+// Each way, a swirl is heard as he goes and as he comes (yunitFeedback's
+// vanish and appear). There he stays until he is clicked;
 // then he curls up, shrinks away, and appears back home, popping out
 // "Ta-da!". He is drawn over the page while away (roamEl), cut where the card
 // is (clip-path), so he looks to be behind it and only the part of him that
@@ -635,6 +637,7 @@ const pause = (ms) => new Promise((done) => setTimeout(done, ms))
 // Shrinking away where he is, spinning as a ball does, and kept gone (not
 // back at full size for a frame) while he is moved.
 const vanish = async (el) => {
+  feel('vanish')
   const run = el.animate(
     [{ transform: 'scale(1) rotate(0deg)' }, { transform: 'scale(0.82) rotate(-90deg)', offset: 0.3 }, { transform: 'scale(0) rotate(-420deg)' }],
     { duration: 460, easing: 'cubic-bezier(0.55, 0, 0.75, 0.25)', fill: 'forwards' }
@@ -646,6 +649,7 @@ const vanish = async (el) => {
 // Growing back out of nothing where he has arrived, a little past his size
 // and settling, as a ball dropped in would.
 const appear = (el) => {
+  feel('appear')
   el.style.opacity = ''
   return el.animate(
     [{ transform: 'scale(0) rotate(360deg)' }, { transform: 'scale(1.12) rotate(-12deg)', offset: 0.72 }, { transform: 'scale(1) rotate(0deg)' }],
@@ -667,7 +671,6 @@ const roam = async () => {
   const top = Math.round(card.top + (card.height - ROAM_SIZE) * (0.2 + Math.random() * 0.6))
   const left = Math.round(right ? card.right - ROAM_SIZE * (1 - PEEKS) : card.left - ROAM_SIZE * PEEKS)
   const clip = right ? `inset(-40% -40% -40% ${Math.round(card.right - left)}px)` : `inset(-40% ${Math.round(left + ROAM_SIZE - card.left)}px -40% -40%)`
-  const out = (right ? 1 : -1) * ROAM_SIZE * 0.8
 
   hideBubble()
   curled.value = true
@@ -676,20 +679,16 @@ const roam = async () => {
   if (!el) return
   // Away where he stands...
   await vanish(el)
-  roamAt.value = { left, top, right }
+  // ...and straight in behind the card, cut at its edge from the first frame,
+  // a ball growing out of nothing there, turned round on a card's right so
+  // his face is the side that peeks.
+  roamAt.value = { left, top, right, clip }
   roaming.value = true
   await nextTick()
-  // ...and back beside the card, a ball growing out of nothing, turned round
-  // on a card's right so his face is the side that will peek.
-  el.style.translate = `${out}px 0`
   el.style.scale = right ? '-1 1' : ''
   await appear(el)
-  // Uncurled, and slid behind the edge until only a peek of him shows.
+  // Uncurled where he is, the peek already showing.
   curled.value = false
-  roamAt.value = { left, top, right, clip }
-  await pause(320)
-  await el.animate([{ translate: `${out}px 0` }, { translate: '0 0' }], { duration: 560, easing: 'cubic-bezier(0.3, 0.7, 0.2, 1)' }).finished
-  el.style.translate = ''
   mascot.value?.play('peek')
   feel('psst')
 }

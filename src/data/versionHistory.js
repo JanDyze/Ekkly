@@ -8,6 +8,13 @@
 
 export const versionHistory = [
   {
+    version: '0.35.48',
+    date: '2026-10-17',
+    title: 'YUNIT swirls',
+    summary: 'YUNIT’s hide-and-seek has a swirl to it now.',
+    highlights: ['A swirl as he vanishes and as he reappears.', 'He pops up straight behind the card, already peeking.'],
+  },
+  {
     version: '0.35.47',
     date: '2026-10-17',
     title: 'A Sunday at a glance',

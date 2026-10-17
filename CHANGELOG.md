@@ -11,6 +11,15 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.35.48] — 2026-10-17
+
+### Changed
+
+- **YUNIT swirls when he vanishes and when he reappears**, a soft spinning
+  sound falling as he goes and rising as he comes back (with his sounds on).
+- **He appears straight behind the card** he hides behind, already peeking,
+  instead of appearing beside it and sliding behind.
+
 ## [0.35.47] — 2026-10-17
 
 ### Changed

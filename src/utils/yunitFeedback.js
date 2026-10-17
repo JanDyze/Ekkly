@@ -132,6 +132,10 @@ const MOMENTS = {
   arrive: { voice: 'tada', buzz: 0 },
   peekaboo: { voice: 'tada', buzz: 0 },
   psst: { voice: 'psst', buzz: 0 },
+  // His trip to a card and back (hide-and-seek): a swirl as he spins away to
+  // nothing, falling, and another as he spins back out of nothing, rising.
+  vanish: { swirl: 'down', buzz: 0 },
+  appear: { swirl: 'up', buzz: 0 },
   waken: { voice: 'yawn', buzz: 0 },
   squint: { voice: 'bright', buzz: 0 },
   lamp: { voice: 'therewego', buzz: 0 },
@@ -201,6 +205,44 @@ const play = (notes) => {
   }
 }
 
+// A swirl: two soft tones, a fifth apart, gliding the whole way down (or up)
+// while a quick warble runs through them, the way something spinning sounds
+// as it goes, and fading in and out so it never starts or stops with a click.
+// As quiet as his notes.
+const swirl = (way) => {
+  try {
+    audio ||= new (window.AudioContext || window.webkitAudioContext)()
+    if (audio.state === 'suspended') audio.resume()
+    const t = audio.currentTime + 0.01
+    const length = 0.5
+    const [from, to] = way === 'up' ? [260, 1250] : [1250, 260]
+    const warble = audio.createOscillator()
+    warble.frequency.setValueAtTime(9, t)
+    warble.frequency.linearRampToValueAtTime(18, t + length)
+    for (const [ratio, type, level] of [[1, 'sine', 0.05], [1.5, 'triangle', 0.018]]) {
+      const osc = audio.createOscillator()
+      const depth = audio.createGain()
+      const gain = audio.createGain()
+      osc.type = type
+      osc.frequency.setValueAtTime(from * ratio, t)
+      osc.frequency.exponentialRampToValueAtTime(to * ratio, t + length)
+      depth.gain.value = 45 * ratio
+      warble.connect(depth).connect(osc.frequency)
+      gain.gain.setValueAtTime(0.0001, t)
+      gain.gain.exponentialRampToValueAtTime(level, t + 0.08)
+      gain.gain.setValueAtTime(level, t + length * 0.6)
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + length)
+      osc.connect(gain).connect(audio.destination)
+      osc.start(t)
+      osc.stop(t + length + 0.05)
+    }
+    warble.start(t)
+    warble.stop(t + length + 0.05)
+  } catch {
+    // No sound on this device; the screen still shows him go.
+  }
+}
+
 /** Plays the moment's sound and buzz. Unknown moments do nothing. */
 // A browser keeps a page silent until it has been tapped or typed in, so a
 // moment that comes before then (the home opening under a rainbow, say)
@@ -210,6 +252,7 @@ const LATE = 8000
 let waiting = null
 const sound = (it) => {
   if (it.voice) speak(Array.isArray(it.voice) ? it.voice[Math.floor(Math.random() * it.voice.length)] : it.voice)
+  else if (it.swirl) swirl(it.swirl)
   else play(it.notes)
 }
 const onFirstTouch = () => {
