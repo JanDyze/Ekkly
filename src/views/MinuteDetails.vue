@@ -593,7 +593,7 @@ const handleLinkMark = async ({ surface, memberId }) => {
 
 const handleOpenMember = (memberId) => {
   activeMark.value = null
-  router.push(`/members/${memberId}`)
+  router.push(`/people/${memberId}`)
 }
 
 /**

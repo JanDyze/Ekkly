@@ -12,6 +12,9 @@ import { useTasksOverview } from '../../composables/useTasksOverview'
 import { useMediaQuery } from '../../composables/useMediaQuery'
 import { usePermissions } from '../../composables/usePermissions'
 import { getDisplayName } from '../../utils/memberUtils'
+import { useSimpleView } from '../../composables/useSimpleView'
+import TasksDesk from './TasksDesk.vue'
+import TasksSimple from './TasksSimple.vue'
 
 // The Tasks app's home, built the way People's and Finances' are. One screen,
 // and two things on it:
@@ -57,6 +60,9 @@ const greeting = computed(() => {
 /* -------------------------------------------------------------- the deck */
 
 const wide = useMediaQuery('(min-width: 1024px)')
+// On a desktop the same cards go to TasksDesk, laid out for the width; in
+// simple view (Preferences), to a plain dashboard (TasksSimple).
+const { simpleView } = useSimpleView()
 
 const cards = computed(() => {
   const list = []
@@ -189,7 +195,11 @@ const doors = computed(() => [
 </script>
 
 <template>
-  <AppHome :cards="cards" scope="tasks" label="Tasks today" :doors="doors" name="Tasks">
+  <TasksSimple v-if="simpleView" :cards="cards" />
+
+  <TasksDesk v-else-if="wide" :cards="cards" />
+
+  <AppHome v-else :cards="cards" scope="tasks" label="Tasks today" :doors="doors" name="Tasks">
     <!-- 1. What needs doing, most important on top -->
     <template #card="{ card }">
       <DeckCard

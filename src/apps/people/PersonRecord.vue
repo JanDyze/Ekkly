@@ -1,5 +1,5 @@
 <script setup>
-import AppCrumbs from '../../components/appframe/AppCrumbs.vue'
+import { nameThisScreen } from '../../composables/useTrail'
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
@@ -23,15 +23,19 @@ import { useMinistries } from '../../composables/useMinistries'
 import { usePermissions } from '../../composables/usePermissions'
 import { useMemberAttendance } from '../../composables/useMemberAttendance'
 import {
+  daysUntilBirthday,
+  formatBirthday,
   getFullName,
   getSexIcon,
   getSexIconColor,
-  calculateAgeFromDate,
-  formatBirthDate,
-  isYearless,
   mergeTagSources,
   missingMemberFields,
+  nicknameOf,
 } from '../../utils/memberUtils'
+import { ageOf } from '../../utils/ageBands'
+import { ATTENDANCE_STYLE, STATE_WORD as stateWord, buildAttendanceGrid, longDay } from '../../utils/attendanceGrid'
+import { useMediaQuery } from '../../composables/useMediaQuery'
+import PersonDesk from './PersonDesk.vue'
 import { subscribeToCustomTags } from '../../api/tagsService'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
 import YouBadge from '../../components/members/YouBadge.vue'
@@ -40,9 +44,9 @@ import ImageCropper from '../../components/members/ImageCropper.vue'
 import MemberEditSheet from '../../components/members/MemberEditSheet.vue'
 import LabelMark from '../../components/common/LabelMark.vue'
 import { useLabelMarks } from '../../composables/useLabelMarks'
-import { getIconForEvent } from '../../utils/eventIcons'
 import { uploadImage } from '../../api/blobService'
 import { useToast } from '../../composables/useToast'
+import { useAuth } from '../../composables/useAuth'
 
 const route = useRoute()
 const router = useRouter()
@@ -54,8 +58,13 @@ const { ministryMark, tagMark } = useLabelMarks()
 // A ministry grants access, so editing this record is a manage capability even
 // though reading it is not. The route only asks for members.view, which is why
 // the gate has to be here rather than in the router.
-const { canManage } = usePermissions()
+const { canManage, canView } = usePermissions()
 const canEdit = computed(() => canManage('members'))
+
+// Someone who may not see the roll can still open their own record (the
+// route's ownRecord), and the way out of it is then the home, not People.
+const peopleOpen = computed(() => canView('members'))
+const leave = () => router.replace(peopleOpen.value ? { name: 'PeopleHome' } : { path: '/home' })
 
 // The record is edited as a record, in a sheet of short steps over the
 // profile, and written once when Save is pressed. Per-field pencils asked which
@@ -85,14 +94,18 @@ const saveEdit = async (changes) => {
 }
 const showImageCropper = ref(false)
 
+// A desktop has its own layout of the record (PersonDesk): the app's rail and
+// header, and the person laid out across the width. A phone keeps this one.
+const wide = useMediaQuery('(min-width: 1024px)')
+
 // Back is to wherever in the People app the record was opened from — the roll,
 // a birthday, a ministry, the records to fill in — and from anywhere else in
 // Ekkly (the top bar's own record, Accounts, Minutes) to the People app's home.
 // Never a new history entry, the same as every screen of an app (AppScreen).
 const goBack = () => {
   const previous = window.history.state?.back
-  if (previous && String(previous).startsWith('/members')) router.back()
-  else router.replace({ name: 'PeopleHome' })
+  if (previous && String(previous).startsWith('/people') && peopleOpen.value) router.back()
+  else leave()
 }
 
 // The bar only says the name once the heading carrying it has scrolled past,
@@ -110,6 +123,10 @@ const member = computed(() => {
 })
 
 const localMember = ref({})
+
+// The person's name as this screen's step on the top bar's trail
+// (Home › People › Everyone › Ana Cruz), once the record has loaded.
+nameThisScreen(() => (member.value ? getFullName(member.value) : ''))
 
 watch(
   member,
@@ -160,72 +177,8 @@ const gaps = computed(() => (localMember.value ? missingMemberFields(localMember
 const { history, counted, presentCount, unrecordedCount } =
   useMemberAttendance(localMember, { limit: 60 })
 
-const ATTENDANCE_STYLE = {
-  present: 'bg-green-500 dark:bg-green-500',
-  absent: 'bg-red-500 dark:bg-red-500',
-  unrecorded:
-    'bg-transparent border border-dashed border-gray-300 dark:border-gray-600',
-}
-
-const stateWord = { present: 'Came', absent: 'Did not come', unrecorded: 'Not recorded' }
-
-/**
- * A gathering to a row, a month to a column: Sunday Service, then its Sundays
- * as small squares under AUG and SEP. Read across, a row is one person's habit
- * with one gathering — which is the question a profile is opened to answer —
- * and the months line up down the page, so "stopped coming to the prayer
- * meeting in August" is a gap you see rather than a date you look for.
- *
- * Oldest month on the left and oldest day first inside it, the way a week
- * reads. Dates are not printed; a tap on a square says it.
- */
-const attendanceGrid = computed(() => {
-  const thisYear = new Date().getFullYear()
-  const months = new Map()
-  const rows = new Map()
-
-  history.value.forEach((item) => {
-    const iso = String(item.date || '')
-    const key = iso.slice(0, 7)
-    if (!key) return
-    if (!months.has(key)) {
-      const [y, mo] = key.split('-').map(Number)
-      const d = new Date(y, mo - 1, 1)
-      months.set(key, {
-        key,
-        label:
-          d.toLocaleDateString(undefined, { month: 'short' }).toUpperCase() +
-          (y === thisYear ? '' : ` '${String(y).slice(2)}`),
-      })
-    }
-    // By series, not by title: the Sunday with an occasion on it is still a
-    // square on the Sunday service's row (useMemberAttendance.js).
-    if (!rows.has(item.seriesKey)) {
-      rows.set(item.seriesKey, {
-        key: item.seriesKey,
-        title: item.seriesTitle,
-        icon: getIconForEvent({ icon: item.icon, type: item.type }),
-        byMonth: {},
-        latest: iso,
-      })
-    }
-    const row = rows.get(item.seriesKey)
-    ;(row.byMonth[key] ||= []).push(item)
-    if (iso > row.latest) row.latest = iso
-  })
-
-  const columns = [...months.values()].sort((x, y) => x.key.localeCompare(y.key))
-  columns.forEach(({ key }) =>
-    rows.forEach((row) => row.byMonth[key]?.sort((x, y) => String(x.date).localeCompare(String(y.date))))
-  )
-
-  return {
-    columns,
-    // The gathering seen most recently first: the one still going on is the
-    // one the reader most likely came about.
-    rows: [...rows.values()].sort((x, y) => y.latest.localeCompare(x.latest) || x.title.localeCompare(y.title)),
-  }
-})
+// Laid out by utils/attendanceGrid.js, which a desktop's record shares.
+const attendanceGrid = computed(() => buildAttendanceGrid(history.value))
 
 // The date is one tap away rather than printed on every square. Tapping the
 // same square again puts it away.
@@ -234,25 +187,13 @@ const pickDay = (item) => {
   pickedDay.value = pickedDay.value?.key === item.key ? null : item
 }
 
-const longDay = (iso) => {
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime())
-    ? iso
-    : d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
-}
-
 /* ----------------------------------------------------------------- record */
-const fmtDate = (iso) => {
-  if (!iso) return ''
-  // A birthday with no year (memberUtils' YEARLESS) is said as the day alone.
-  if (isYearless(iso)) return formatBirthDate(iso)
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime())
-    ? ''
-    : d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
-}
+// A birthday with no year (memberUtils' YEARLESS) is said as the day alone.
+const fmtDate = (iso) => formatBirthday(iso)
 
-const age = computed(() => calculateAgeFromDate(localMember.value?.dateOfBirth))
+// The same age the lists and the age groups give (ageOf): from the birth
+// date, or the age the record carries when it has no date.
+const age = computed(() => ageOf(localMember.value))
 
 /** A number a phone can actually dial: digits and a leading +, nothing else. */
 const dialable = (value) => {
@@ -277,17 +218,8 @@ const sexMark = computed(() => {
  * beside it.
  */
 const birthdaySoon = computed(() => {
-  const iso = localMember.value?.dateOfBirth
-  if (!iso) return ''
-  const dob = new Date(iso)
-  if (Number.isNaN(dob.getTime())) return ''
-
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const next = new Date(today.getFullYear(), dob.getMonth(), dob.getDate())
-  if (next < today) next.setFullYear(next.getFullYear() + 1)
-
-  const days = Math.round((next - today) / 86400000)
+  const days = daysUntilBirthday(localMember.value)
+  if (!Number.isFinite(days)) return ''
   if (days === 0) return 'today'
   if (days === 1) return 'tomorrow'
   if (days <= 30) return `in ${days} days`
@@ -308,9 +240,9 @@ const attendanceRate = computed(() => {
 const introParts = computed(() => {
   const m = localMember.value || {}
   const parts = []
-  if (m.nickname) parts.push(`“${m.nickname}”`)
+  if (nicknameOf(m)) parts.push(`“${nicknameOf(m)}”`)
   parts.push(m.isMember ? 'Church member' : 'Attendee')
-  if (age.value !== undefined) parts.push(`${age.value} years old`)
+  if (age.value !== null) parts.push(`${age.value} years old`)
   return parts
 })
 
@@ -319,8 +251,15 @@ const introParts = computed(() => {
  * somebody; the number used to be plain text you read out to yourself and
  * retyped into the dialler.
  */
+//
+// None on your own record: nobody rings or texts themselves, and the buttons
+// there only read as a mistake. The number and email stay in About, to check.
+const { user } = useAuth()
+const isMe = computed(() => Boolean(user.value?.uid && localMember.value?.uid === user.value.uid))
+
 const contactActions = computed(() => {
   const m = localMember.value || {}
+  if (isMe.value) return []
   const tel = dialable(m.contactNumber)
   const out = []
   if (tel) {
@@ -367,28 +306,16 @@ const about = computed(() => {
   ]
 })
 
-const handleFieldSave = async (field, value) => {
-  localMember.value[field] = value
-
-  if (field === 'dateOfBirth' && value) {
-    localMember.value.age = calculateAgeFromDate(value)
-  }
-
+// The photo, and only the photo. This used to write the whole record back as
+// this page last saw it, so a change somebody else had made a moment before
+// (a ministry, a number) was quietly put back the way it was.
+const savePhoto = async (image) => {
+  localMember.value.image = image
   try {
-    const { id, firestoreId, ...dataToUpdate } = localMember.value
-
-    Object.keys(dataToUpdate).forEach((key) => {
-      if (dataToUpdate[key] === undefined || dataToUpdate[key] === '') {
-        if (!['tags', 'ministries', 'isMember', 'image'].includes(key)) {
-          delete dataToUpdate[key]
-        }
-      }
-    })
-
-    await updateMemberInFirestore(member.value, dataToUpdate)
+    await updateMemberInFirestore(member.value, { image })
   } catch (error) {
-    console.error('Error updating member:', error)
-    toast.error('Could not save that change. Please try again.')
+    console.error('Error saving the photo:', error)
+    toast.error('Could not save that photo. Please try again.')
   }
 }
 
@@ -414,15 +341,18 @@ const handleConfirmation = () => {
 
 const handleDelete = () => {
   showEditor.value = false
+  // Said as Everyone's menu says it, so it reads the same from both.
   showConfirmModal({
-    title: 'Delete Member',
-    message: `Are you sure you want to delete ${getFullName(member.value)}? This action cannot be undone.`,
+    title: 'Delete this person',
+    message: `${getFullName(member.value)} will be taken off the roll for good, with everything on their record.`,
     confirmText: 'Delete',
     cancelText: 'Cancel',
     confirmButtonClass: 'bg-red-600 text-white hover:bg-red-700',
     onConfirm: async () => {
       try {
+        const name = getFullName(member.value)
         await removeMember(member.value)
+        toast.success(`${name} is off the roll`)
         router.replace({ name: 'Members' })
       } catch (error) {
         console.error('Error deleting member:', error)
@@ -436,11 +366,11 @@ const handleDelete = () => {
 // and the record keeps only the URL — a data URL is never written to Firestore.
 const handleImageUpdate = async (base64Image) => {
   if (!base64Image) {
-    handleFieldSave('image', null)
+    savePhoto(null)
     return
   }
   try {
-    handleFieldSave('image', await uploadImage(base64Image, 'members'))
+    await savePhoto(await uploadImage(base64Image, 'members'))
   } catch (error) {
     console.error('Error storing that photo:', error)
     toast.error('Could not save that photo. Please try again.')
@@ -449,23 +379,46 @@ const handleImageUpdate = async (base64Image) => {
 </script>
 
 <template>
-  <!-- A focus route gets the raw box, so the padding and the safe areas are
-       this page's own - there is no layout chrome left to provide them. -->
-  <div class="flex h-full flex-col bg-gray-50 dark:bg-gray-900">
+  <div class="h-full">
+  <PersonDesk
+    v-if="wide"
+    :member="member ? localMember : null"
+    :loading="loading"
+    :can-edit="canEdit"
+    :is-me="isMe"
+    :people-open="peopleOpen"
+    :intro="introParts"
+    :age="age"
+    :birthday="fmtDate(localMember.dateOfBirth)"
+    :birthday-soon="birthdaySoon"
+    :gaps="gaps"
+    :history="history"
+    :grid="attendanceGrid"
+    :counted="counted.length"
+    :present="presentCount"
+    :unrecorded="unrecordedCount"
+    :rate="attendanceRate"
+    @edit="openEditor"
+    @photo="showImageCropper = true"
+    @leave="leave"
+    @delete="handleDelete"
+  />
+
+  <!-- A phone's record: its own sticky header with the way back, and the
+       person read top to bottom. -->
+  <div v-else class="flex h-full flex-col bg-gray-50 dark:bg-gray-900">
     <!-- Sticky, because a profile is longer than a phone screen and the way
          back should not be something you scroll up to find. -->
     <header
-      class="sticky top-0 z-30 flex shrink-0 items-center gap-2 border-b border-gray-200 bg-white/90 px-2 py-2 backdrop-blur pt-[calc(0.5rem+env(safe-area-inset-top))] dark:border-gray-700 dark:bg-gray-800/90"
+      class="sticky top-0 z-30 flex shrink-0 items-center gap-2 border-b border-gray-200 bg-white/90 px-2 py-2 backdrop-blur dark:border-gray-700 dark:bg-gray-800/90"
     >
       <button
         @click="goBack"
         class="flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
       >
         <ArrowLeft class="h-5 w-5 shrink-0" />
-        <span class="hidden sm:inline lg:hidden">People</span>
+        <span class="hidden sm:inline">{{ peopleOpen ? 'People' : 'Home' }}</span>
       </button>
-      <!-- On a desktop, the way here in place of the word "People". -->
-      <AppCrumbs class="shrink-0" />
 
       <!-- The face comes up with the name: on a phone the face is how most
            people are recognised, and a name alone reads like any other row. -->
@@ -503,12 +456,13 @@ const handleImageUpdate = async (base64Image) => {
       class="flex flex-1 flex-col items-center justify-center px-6 text-gray-500 dark:text-gray-400"
     >
       <Users class="mb-4 h-16 w-16 opacity-50" />
-      <p class="text-lg">Member not found</p>
+      <p class="text-lg">This person is not on the roll</p>
+      <p class="mt-1 text-sm">They may have been taken off it, or the link is old.</p>
       <button
-        @click="router.replace({ name: 'PeopleHome' })"
+        @click="leave"
         class="mt-4 rounded-lg bg-primary px-4 py-2 text-white transition-colors hover:bg-primary-hover"
       >
-        Back to People
+        {{ peopleOpen ? 'Back to People' : 'Back home' }}
       </button>
     </div>
 
@@ -533,12 +487,9 @@ const handleImageUpdate = async (base64Image) => {
         >
           <div class="flex items-start gap-4">
             <div class="relative shrink-0">
-              <!-- Named for the list-to-profile transition: the photo in the
-                   row that was tapped flies here (router/viewTransitions.js). -->
               <MemberAvatar
                 :member="localMember"
                 size="h-20 w-20"
-                style="view-transition-name: member-avatar"
                 plain-class="border-2 border-white dark:border-gray-700"
               />
               <!-- Always drawn, not revealed on hover: there is no hover on a
@@ -810,6 +761,7 @@ const handleImageUpdate = async (base64Image) => {
           </div>
       </div>
     </div>
+  </div>
 
     <MemberEditSheet
       :show="showEditor"

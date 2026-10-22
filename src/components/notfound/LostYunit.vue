@@ -12,7 +12,7 @@ import { useTheme } from '../../composables/useTheme'
 
 // The other lost page (views/NotFound.vue): YUNIT out in the dark field with
 // his lantern, looking for the page, and not finding it. Here he is dressed
-// as a lamb (YunitLamb), his colours lumps of dyed wool in his fleece: a lost lamb
+// as a lamb (YunitLamb), his colours a crown of dyed wool on his head: a lost lamb
 // himself, out looking for what is lost.
 //
 // The field follows the theme. In the light he simply searches it; in the
@@ -173,7 +173,7 @@ onBeforeUnmount(() => {
 // The pool of his light on the dark, centred on his lantern, which hangs at
 // his side away from his facing.
 const light = computed(() => ({
-  '--lx': `${x.value + width() * (facing.value > 0 ? 0.58 : 0.42)}px`,
+  '--lx': `${x.value + width() * (facing.value > 0 ? 0.61 : 0.39)}px`,
   '--walk': `${walkMs.value}ms`,
 }))
 </script>

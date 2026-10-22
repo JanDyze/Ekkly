@@ -1,6 +1,18 @@
 import { ref, reactive, watch, onMounted } from 'vue'
 
 const isDark = ref(false)
+
+// Light or dark imposed by a screen for as long as it shows, over the
+// person's own setting, or null: the home lit as its live sky is (Apps.vue).
+// Here rather than on the page directly, so a component applying the theme
+// as it mounts cannot undo it.
+export const themeOverride = ref(null)
+
+const applyTheme = () => {
+  const dark = themeOverride.value ?? isDark.value
+  document.documentElement.classList.toggle('dark', dark)
+}
+watch(themeOverride, applyTheme)
 const isTransitioning = ref(false)
 const transitionOrigin = reactive({ x: 0, y: 0 })
 
@@ -14,14 +26,6 @@ export function useTheme() {
       isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
     }
     applyTheme()
-  }
-
-  const applyTheme = () => {
-    if (isDark.value) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
   }
 
   const toggleTheme = (event) => {

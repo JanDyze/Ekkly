@@ -8,7 +8,6 @@ import {
   doc,
   onSnapshot,
   query,
-  orderBy,
   where,
   limit,
 } from './firestore';
@@ -24,10 +23,16 @@ const normalizeMember = (data, docId) => {
     firstName: data.firstName || '',
     lastName: data.lastName || '',
     nickname: data.nickname || '',
-    sex: data.sex || 'Male',
+    // Blank when nobody has said. Both used to be filled in here as "Male" and
+    // "Single", which undid the add form leaving them blank: a record whose
+    // sex was never asked could not be flagged as missing it, was counted
+    // among the men, and wore the ♂.
+    sex: data.sex || '',
     dateOfBirth: data.dateOfBirth || null,
-    age: data.age || null,
-    civilStatus: data.civilStatus || 'Single',
+    // Kept as written (a newborn's 0 included). Only for a record with no
+    // birth date: ageOf works the age out from the date wherever there is one.
+    age: typeof data.age === 'number' ? data.age : null,
+    civilStatus: data.civilStatus || '',
     address: data.address || '',
     // The province, city and barangay the address was picked from, with their
     // PSGC codes (AddressPicker), so the picker opens on them again. Null on a
@@ -68,22 +73,6 @@ export const getMemberByUid = async (uid) => {
   );
   const found = snapshot.docs[0];
   return found ? normalizeMember(found.data(), found.id) : null;
-};
-
-// Get all members
-export const getMembers = async () => {
-  try {
-    const membersRef = collection(db, MEMBERS_COLLECTION);
-    const q = query(membersRef, orderBy("id", "asc"));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return normalizeMember(data, doc.id);
-    });
-  } catch (error) {
-    console.error("Error getting members:", error);
-    throw error;
-  }
 };
 
 // Subscribe to members changes (real-time)
@@ -148,30 +137,6 @@ export const deleteMember = async (firestoreId) => {
     await deleteDoc(memberRef);
   } catch (error) {
     console.error("Error deleting member:", error);
-    throw error;
-  }
-};
-
-// Batch update members (for syncing)
-export const batchUpdateMembers = async (members) => {
-  try {
-    const batch = [];
-    members.forEach((member) => {
-      if (member.id && typeof member.id === "string" && member.id.length > 0) {
-        // Update existing member
-        const memberRef = doc(db, MEMBERS_COLLECTION, member.id);
-        const { id, ...memberData } = member;
-        batch.push(updateDoc(memberRef, memberData));
-      } else {
-        // Add new member
-        const { id, ...memberData } = member;
-        const membersRef = collection(db, MEMBERS_COLLECTION);
-        batch.push(addDoc(membersRef, memberData));
-      }
-    });
-    await Promise.all(batch);
-  } catch (error) {
-    console.error("Error batch updating members:", error);
     throw error;
   }
 };

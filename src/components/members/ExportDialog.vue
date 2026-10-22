@@ -3,6 +3,7 @@ import { ref, computed, watch } from "vue";
 import { X, Download, ArrowUp, ArrowDown, Check, ChevronDown } from '../../icons';
 import { useFocusTrap } from "../../composables/useFocusTrap";
 import { EXPORT_FIELDS } from "../../utils/exportUtils";
+import SelectMenu from "../common/SelectMenu.vue";
 
 // Two questions, asked in the order people think them: who is on the sheet,
 // and what the sheet is for. The old dialog opened on a pair of stat tiles and
@@ -105,10 +106,15 @@ const toggleField = (key) => {
 };
 
 /* ----------------------------------------------------------------- sort */
+// The roll's own orders (useMemberSorting), so the sheet can come out the way
+// the list on screen is sorted. Ministry and tag are left out: on the roll
+// they put one person under several headings, which a flat sheet cannot.
 const sortOptions = [
-  { value: "name", label: "Name" },
+  { value: "name", label: "First name" },
+  { value: "lastName", label: "Last name" },
   { value: "age", label: "Age" },
-  { value: "dateOfBirth", label: "Birth date" },
+  { value: "birthday", label: "Birthday, next first" },
+  { value: "recent", label: "Recently added" },
 ];
 const sortBy = ref(props.currentSortBy);
 const sortOrder = ref(props.currentSortOrder);
@@ -288,15 +294,13 @@ useFocusTrap(dialogRef, () => props.showExport, close);
                 Order
               </h3>
               <div class="flex gap-2">
-                <select
+                <SelectMenu
                   v-model="sortBy"
+                  :options="sortOptions"
                   aria-label="Sort by"
-                  class="h-10 min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-primary focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-900 dark:text-white"
-                >
-                  <option v-for="option in sortOptions" :key="option.value" :value="option.value">
-                    {{ option.label }}
-                  </option>
-                </select>
+                  class="min-w-0 flex-1"
+                  field-class="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                />
                 <button
                   type="button"
                   @click="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'"

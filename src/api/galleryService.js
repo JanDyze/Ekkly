@@ -17,6 +17,7 @@ import {
 import { inBatches } from './batchWrite'
 import { deleteImages, uploadImage } from './blobService'
 import { notify } from './notifyService'
+import { mockAlbums, mockGalleryOn, mockPhotos } from '../data/mockGallery' // MOCK
 
 const ALBUMS_COLLECTION = 'gallery_albums'
 const PHOTOS_COLLECTION = 'gallery_photos'
@@ -48,6 +49,11 @@ export const subscribeToAlbums = (callback) => {
   const q = query(collection(db, ALBUMS_COLLECTION), orderBy('date', 'desc'))
   return onSnapshot(q, (snapshot) => {
     const albums = snapshot.docs.map(normalizeAlbum)
+    // MOCK: the made-up albums among the real ones, newest first.
+    if (mockGalleryOn()) {
+      albums.push(...mockAlbums())
+      albums.sort((a, b) => String(b.date).localeCompare(String(a.date)))
+    }
     callback(albums)
   }, (error) => {
     console.error('Error subscribing to albums:', error)
@@ -59,6 +65,12 @@ export const subscribeToAlbums = (callback) => {
  * Subscribe to photos of a specific album (Base64 from Firestore)
  */
 export const subscribeToAlbumPhotos = (albumId, callback) => {
+  // MOCK: a made-up album's pictures are handed over at once, and there is
+  // nothing to listen to.
+  if (mockGalleryOn() && String(albumId).startsWith('mock-')) {
+    callback(mockPhotos().filter((photo) => photo.albumId === albumId).sort((a, b) => b.uploadedAt - a.uploadedAt))
+    return () => {}
+  }
   const q = query(
     collection(db, PHOTOS_COLLECTION),
     where('albumId', '==', albumId)
@@ -97,7 +109,7 @@ export const subscribeToRecentPhotos = (count, callback) => {
   const q = query(collection(db, PHOTOS_COLLECTION), orderBy('uploadedAt', 'desc'), limit(count))
 
   return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map((doc) => {
+    const photos = snapshot.docs.map((doc) => {
       const data = doc.data()
       return {
         id: doc.id,
@@ -106,10 +118,17 @@ export const subscribeToRecentPhotos = (count, callback) => {
         description: data.description || '',
         uploadedAt: data.uploadedAt?.toDate?.() || new Date()
       }
-    }))
+    })
+    // MOCK: the made-up pictures among the real ones, newest first, still capped.
+    if (mockGalleryOn()) {
+      photos.push(...mockPhotos())
+      photos.sort((a, b) => b.uploadedAt - a.uploadedAt)
+      photos.splice(count)
+    }
+    callback(photos)
   }, (err) => {
     console.error('Error fetching recent photos:', err)
-    callback([])
+    callback(mockGalleryOn() ? mockPhotos().slice(0, count) : []) // MOCK: was callback([])
   })
 }
 

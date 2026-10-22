@@ -36,8 +36,11 @@
 //
 // The sound can be turned off from YUNIT's header (yunitSound), and the phone
 // remembers; the buzz stays, because it is felt rather than heard by the room.
+// During the church's Sunday service (yunitHushed, set by useSundayService)
+// there is nothing at all, the buzz included: a phone buzzing on a pew is
+// heard too.
 
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import ooh from '../assets/sounds/yunit/ooh.mp3'
 import no from '../assets/sounds/yunit/no.mp3'
 import oops from '../assets/sounds/yunit/oops.mp3'
@@ -95,6 +98,12 @@ export const setYunitSound = (on) => {
     // Not remembered this time; the switch itself still happened.
   }
 }
+
+/** Whether the church is at its Sunday service, when he makes no sound and no buzz. */
+export const yunitHushed = ref(false)
+
+/** Whether he is heard right now: his sounds on, and no service going on. */
+export const yunitHeard = computed(() => yunitSound.value && !yunitHushed.value)
 
 // Notes as [frequency, start, length] in seconds, with an optional frequency
 // to slide to by the note's end, and a buzz pattern in ms; or `voice`, one of
@@ -258,13 +267,13 @@ const sound = (it) => {
 const onFirstTouch = () => {
   window.removeEventListener('pointerdown', onFirstTouch, true)
   window.removeEventListener('keydown', onFirstTouch, true)
-  if (waiting && Date.now() - waiting.at < LATE && yunitSound.value) sound(waiting.it)
+  if (waiting && Date.now() - waiting.at < LATE && yunitHeard.value) sound(waiting.it)
   waiting = null
 }
 
 export const feel = (moment) => {
   const it = MOMENTS[moment]
-  if (!it) return
+  if (!it || yunitHushed.value) return
   if (yunitSound.value) {
     if (typeof navigator !== 'undefined' && navigator.userActivation && !navigator.userActivation.hasBeenActive) {
       if (!waiting) {

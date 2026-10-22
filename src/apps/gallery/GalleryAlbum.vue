@@ -276,7 +276,7 @@ const confirmDeleteAlbum = () => {
         </div>
       </div>
 
-      <div v-if="busy" class="grid grid-cols-3 gap-1 overflow-hidden rounded-2xl sm:grid-cols-4 lg:grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] lg:gap-1.5">
+      <div v-if="busy" class="grid grid-cols-3 gap-1 overflow-hidden rounded-2xl sm:grid-cols-4 lg:grid-cols-5 lg:gap-1.5">
         <div v-for="i in 12" :key="i" class="aspect-square animate-pulse bg-gray-200 dark:bg-gray-700"></div>
       </div>
 
@@ -297,7 +297,7 @@ const confirmDeleteAlbum = () => {
       <!-- Edge to edge in a rounded block, the way a phone's own albums sit. -->
       <div
         v-else-if="photos.length"
-        class="grid grid-cols-3 gap-1 overflow-hidden rounded-2xl sm:grid-cols-4 lg:grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] lg:gap-1.5"
+        class="grid grid-cols-3 gap-1 overflow-hidden rounded-2xl sm:grid-cols-4 lg:grid-cols-5 lg:gap-1.5"
       >
         <button
           v-for="photo in photos"

@@ -33,6 +33,7 @@ import {
   replySupportRequest,
   sendSupportRequest,
 } from "../lib/platform/support.js";
+import { deleteTicket, listTickets, updateTicket } from "../lib/platform/tickets.js";
 import { readConfig, saveAi, saveBranding, saveCatalog, saveDefaults, saveTheme } from "../lib/platform/config.js";
 import { addDomain, domainStatus, removeDomain, setPrimaryDomain } from "../lib/platform/domains.js";
 import { frontDoorReport, recordFrontDoor, recordLead } from "../lib/platform/frontDoor.js";
@@ -69,6 +70,10 @@ const PLATFORM_ACTIONS = {
   // support requests
   supportRequests: () => listSupportRequests(),
   replySupportRequest,
+  // every church's tickets: the bugs and ideas Ekkly answers
+  tickets: () => listTickets(),
+  updateTicket,
+  deleteTicket,
   // the platform's own settings
   config: () => readConfig(),
   saveBranding,

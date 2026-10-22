@@ -1,4 +1,5 @@
 <script setup>
+import { usePageSearch } from '../../composables/usePageSearch'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppScreen from '../../components/appframe/AppScreen.vue'
@@ -85,6 +86,8 @@ const events = computed(() => {
 const searchQuery = ref('')
 const searchOpen = ref(false)
 const openSearch = () => { searchOpen.value = true }
+// Ctrl+G opens it too (usePageSearch).
+usePageSearch(openSearch)
 const closeSearch = () => {
   searchOpen.value = false
   searchQuery.value = ''

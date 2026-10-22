@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { YEARLESS, birthdayParts } from '../../utils/memberUtils'
+import SelectMenu from '../common/SelectMenu.vue'
 
 // A birthday as three plain answers — the month, the day, and the year if it
 // is known — in place of the browser's date picker.
@@ -80,6 +81,10 @@ watch(daysIn, (n) => {
 
 const pad = (n) => String(n).padStart(2, '0')
 
+// The choices (SelectMenu), each with a blank first to clear it.
+const monthChoices = computed(() => [{ value: '', label: 'Month' }, ...MONTHS])
+const dayChoices = computed(() => [{ value: '', label: 'Day' }, ...Array.from({ length: daysIn.value }, (_, i) => ({ value: i + 1, label: String(i + 1) }))])
+
 watch([month, day, validYear], () => {
   const value =
     month.value && day.value ? `${validYear.value ? validYear.value : YEARLESS}-${pad(month.value)}-${pad(day.value)}` : ''
@@ -99,14 +104,8 @@ const size = computed(() => (props.compact ? 'text-sm' : ''))
 <template>
   <div>
     <div :class="['grid gap-2', compact ? 'grid-cols-[1.2fr_1fr_1.1fr]' : 'grid-cols-[1.6fr_1fr_1.1fr]']">
-      <select :id="id" v-model="month" :class="[fieldClass, size]" aria-label="Month">
-        <option value="">Month</option>
-        <option v-for="m in MONTHS" :key="m.value" :value="m.value">{{ m.label }}</option>
-      </select>
-      <select v-model="day" :class="[fieldClass, size]" aria-label="Day">
-        <option value="">Day</option>
-        <option v-for="n in daysIn" :key="n" :value="n">{{ n }}</option>
-      </select>
+      <SelectMenu :id="id" v-model="month" :options="monthChoices" placeholder="Month" :field-class="[fieldClass, size]" aria-label="Month" />
+      <SelectMenu v-model="day" :options="dayChoices" placeholder="Day" :field-class="[fieldClass, size]" aria-label="Day" />
       <input
         :value="year"
         @input="onYear"

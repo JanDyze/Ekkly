@@ -1,7 +1,7 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, ArrowsLeftRight, DotsSixVertical, MagnifyingGlass, Star, StarFill, X } from '../icons'
+import { ArrowLeft, ArrowRight, ArrowsLeftRight, DotsSixVertical, MagnifyingGlass, Plus, StarFill, X } from '../icons'
 import AppArt from '../components/common/AppArt.vue'
 import { useToast } from '../composables/useToast'
 import { useAppOrder, HOME_SLOTS } from '../composables/useAppOrder'
@@ -12,11 +12,12 @@ import { allowedGroups } from '../data/navigation'
 import { APPS } from '../../lib/apps'
 import { APP_DETAILS } from '../components/frontdoor/appDetails'
 import { prefetchRoute } from '../router/prefetch'
-import { useSounds } from '../composables/useSounds'
 import AppPeek from '../components/appframe/AppPeek.vue'
 import { usePressAndHold } from '../composables/usePressAndHold'
 import { useMediaQuery } from '../composables/useMediaQuery'
 import { useFocusMode } from '../composables/useFocusMode'
+import { useFocusTrap } from '../composables/useFocusTrap'
+import AppDetailsPanel from '../components/apps/AppDetailsPanel.vue'
 
 // Every app, at /apps: behind More apps on the home of all apps
 // (src/views/Apps.vue) and the round mark on the bottom bar, laid out the way
@@ -30,27 +31,27 @@ import { useFocusMode } from '../composables/useFocusMode'
 // bottom bar used to open — which said "here is a list" and nothing about why
 // anyone would open one. Ekkly already says why, on its front door: every app
 // has a line about what changes for the church and three practical wins
-// (frontdoor/appDetails.js). So the page uses them:
+// (frontdoor/appDetails.js). Those used to be on every row, under a large
+// spotlight of one app, which made a page for finding an app a long read and a
+// long scroll. So the words wait until an app is picked:
 //
-//   1. A spotlight: one app this person does not keep on their home, a
-//      different one each day, shown large in the church's colour with its
-//      headline, its wins and the way in.
-//   2. Their home: the five they keep there, in one row, held and dragged to
+//   1. Their home: the five they keep there, in one row, held and dragged to
 //      reorder.
-//   3. The catalogue, in the groups a church buys apps in, each app a store
-//      row — its artwork on its plate, its name, its line — that opens it,
-//      and a star to put it on the home.
-//   4. For an administrator, the apps the church has not switched on, each
-//      with Add, which goes to Settings → Apps & plan. These are the apps
-//      being sold, and only someone who can buy them is shown them.
+//   2. The catalogue, one grid in the order the navigation keeps, every app a
+//      small tile — its artwork, its name, a star if it is on the home — so the whole
+//      of it is seen at once. A tile shows the app close up (AppDetailsPanel):
+//      what it is for, its wins, Open, and putting it on the home.
+//   3. For an administrator, the apps the church has not switched on, as
+//      tiles too, whose panel adds one (Settings → Apps & plan). These are the
+//      apps being sold, and only someone who can buy them is shown them.
 //
 // A search at the top finds an app by what it is for as well as its name.
 //
 // The order is the person's own and follows their account (useAppOrder).
 //
-// On a desktop it is laid out as an app store on a computer is: categories
-// down the left with the shelf under them, and the store beside them
-// (see the template).
+// On a desktop it is three columns: the search and the shelf down the left,
+// the store's grid in the middle, and the app picked beside it (see the
+// template).
 
 const router = useRouter()
 const wide = useMediaQuery('(min-width: 1024px)')
@@ -81,6 +82,16 @@ const close = () => {
 // The square an app's artwork sits on: flat, a white tile with a hairline
 // ring, never raised on a shadow. The artwork's own gloss is the only depth.
 const PLATED = 'grid shrink-0 place-items-center rounded-[14px] bg-white ring-1 ring-gray-200 dark:bg-gray-700 dark:ring-gray-600'
+
+// A tile in the desktop's grid: a white card, its picture over its name and
+// tagline, ringed in the church's colour while it is the one shown in the
+// panel. Large enough that the grid fills the page rather than gathering in a
+// strip across its top: small tiles left a store of a dozen and a half apps
+// two rows high over a screen of grey.
+const TILE = 'store-tile flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-2xl bg-white px-2 py-2 text-center ring-1 transition-colors dark:bg-gray-800'
+const TILE_ON = 'ring-2 ring-primary dark:ring-primary-light'
+const TILE_OFF = 'ring-gray-200/70 hover:ring-gray-300 dark:ring-gray-700/70 dark:hover:ring-gray-600'
+
 
 /** What an app is for, in the words Ekkly sells it with. */
 const detailOf = (item) => APP_DETAILS[item.art] || null
@@ -177,55 +188,94 @@ const tapShelf = (item) => {
   if (!justDragged.value) open(item)
 }
 
-/* --------------------------------------------------------- the spotlight */
+/* -------------------------------------------------- one app, close up */
 
-// One app not on the home, a different one each day, so the page shows off
-// something new whenever it is opened on a new day.
+// The grid is names and pictures; what an app is for is shown when one is
+// picked, in a panel beside the grid on a desktop and a sheet on a phone
+// (AppDetailsPanel), with the way to open it there. Opening straight from
+// the grid skipped the one moment someone browsing every app wants: what is
+// this, before I go in?
 //
-// It can be put away. It changes every day, so it is put away for the day:
-// tomorrow brings a different app, and a spotlight dismissed for good would
-// stop showing anyone anything. Remembered on this device, so opening the
-// page again the same day does not bring it back.
-const SPOTLIGHT_STORE = 'ekkly:spotlight-away'
-const todayKey = () => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-const readAway = () => {
-  try {
-    return localStorage.getItem(SPOTLIGHT_STORE) || ''
-  } catch {
-    return ''
-  }
-}
-const awayOn = ref(readAway())
-const { lift } = useSounds()
+// Until something is picked, a desktop's panel shows one app not on the home,
+// a different one each day ("Today's pick"), which took the place of the
+// spotlight that stood over the store and pushed every app down a screen.
+const selected = ref(null)
 
-const dismissSpotlight = () => {
-  awayOn.value = todayKey()
-  lift()
-  try {
-    localStorage.setItem(SPOTLIGHT_STORE, awayOn.value)
-  } catch {
-    // Not remembered past this opening; it is still gone from it.
-  }
-}
-
-const spotlight = computed(() => {
-  if (awayOn.value === todayKey()) return null
+const featured = computed(() => {
   const candidates = ordered.value.slice(HOME_SLOTS).filter((item) => detailOf(item))
-  if (!candidates.length) return null
+  if (!candidates.length) return ordered.value[0] || null
   const day = Math.floor(Date.now() / 86400000)
   return candidates[day % candidates.length]
 })
+
+/** An app, or an app not on the plan, in the shape the panel reads. */
+const detailsOf = (choice) => {
+  if (choice.kind === 'sale') {
+    const app = choice.app
+    return {
+      key: `sale:${app.key}`,
+      name: app.name,
+      art: app.key,
+      tagline: '',
+      headline: APP_DETAILS[app.key]?.headline || '',
+      wins: APP_DETAILS[app.key]?.wins || [],
+      description: app.description,
+      group: app.group || '',
+      forSale: true,
+    }
+  }
+  const item = choice.item
+  return {
+    key: item.path,
+    item,
+    path: item.path,
+    name: item.name,
+    art: item.art,
+    tagline: item.tagline || '',
+    headline: detailOf(item)?.headline || '',
+    wins: detailOf(item)?.wins || [],
+    description: item.description || '',
+    // Which group of the catalogue it is in, said once on its page now that
+    // the grid has no headings.
+    group: groups.value.find((group) => group.items.some((each) => each.path === item.path))?.label || '',
+    forSale: false,
+  }
+}
+
+const picked = computed(() => (selected.value ? detailsOf(selected.value) : null))
+// What a desktop's panel shows: the pick, or today's.
+const shownDetails = computed(() => picked.value || (featured.value ? detailsOf({ kind: 'app', item: featured.value }) : null))
+const isShown = (key) => (wide.value ? shownDetails.value?.key === key : picked.value?.key === key)
+
+const pick = (item) => {
+  selected.value = { kind: 'app', item }
+}
+const pickSale = (app) => {
+  selected.value = { kind: 'sale', app }
+}
+const closeDetails = () => {
+  selected.value = null
+}
+
+// The panel's buttons. Putting an app on the home is chosen on the shelf, so
+// on a phone the sheet steps aside for it.
+const openPicked = (details) => details.item && open(details.item)
+const pinPicked = (details) => {
+  if (!details.item) return
+  if (!wide.value) closeDetails()
+  startPin(details.item)
+}
+
+const sheetRef = ref(null)
+useFocusTrap(sheetRef, () => !wide.value && Boolean(selected.value), closeDetails)
 
 /* ------------------------------------------------------------ searching */
 
 // Search finds an app by what it is for, not only by its name: "birthday"
 // finds People, "offering" Finances, "slides" Presentation. Each app is read
 // as its name, its line, its wins and its group, and every word typed has to
-// be in there somewhere. While a search is on, the spotlight and the home row
-// step aside and the catalogue narrows to what matches.
+// be in there somewhere. While a search is on, the home row steps aside on a
+// phone and the catalogue narrows to what matches.
 const query = ref('')
 const words = computed(() => query.value.trim().toLowerCase().split(/\s+/).filter(Boolean))
 const searching = computed(() => words.value.length > 0)
@@ -288,57 +338,294 @@ const openHeld = () => {
   else open(item)
 }
 
-// Escape clears a search first, and only then leaves, the way it closed the
-// drawer. A held app's screen kept open takes Escape for itself (AppPeek).
+// Escape puts down the app picked first (a phone's sheet closes itself, by
+// its focus trap), then clears a search, and only then leaves, the way it
+// closed the drawer. A held app's screen kept open takes Escape for itself
+// (AppPeek).
 const onKey = (event) => {
   if (event.key !== 'Escape' || event.defaultPrevented || held.value) return
-  if (query.value) query.value = ''
+  if (selected.value) closeDetails()
+  else if (query.value) query.value = ''
   else if (swapping.value) cancelPin()
   else close()
 }
 onMounted(() => window.addEventListener('keydown', onKey))
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
-/* ------------------------------------------------------------ a desktop */
+/* ------------------------------------------------------------ the store */
 
-// What each group is for, said once beside its heading on a desktop, so the
-// store explains itself the way an app store's categories do.
-const GROUP_LINES = {
-  overview: 'What is on you this week',
-  people: 'Who is in the church, and who came',
-  gatherings: 'Sundays, services, meetings and prayer',
-  media: 'Photos, videos and the links you hand out',
-  extras: 'Help with the work',
-  admin: 'Money, and what the church owns',
-}
-
-// The page of the store being looked at: every app, one group, or the apps
-// not on the plan yet. A search looks across all of them.
-const category = ref('all')
-
-const categories = computed(() => [
-  { key: 'all', label: 'All apps', count: apps.value.length },
-  ...groups.value.map((group) => ({ key: group.key, label: group.label || 'Everyday', count: group.items.length })),
-  ...(forSale.value.length ? [{ key: 'sale', label: 'Not on your plan', count: forSale.value.length }] : []),
-])
-
-const browse = (key) => {
-  query.value = ''
-  category.value = key
-}
-
-const deskGroups = computed(() => {
-  if (searching.value || category.value === 'all') return shownGroups.value
-  return shownGroups.value.filter((group) => group.key === category.value)
+// The whole store as one grid, narrowed only by a search, in this person's
+// own order of their apps (useAppOrder): the five on their home first, as
+// the shelf has them, then the rest as they arranged them (Arrange, below),
+// or as the navigation keeps them until they do. It had a list of its
+// categories down the left, and then a heading over each group in the grid;
+// with only two to five apps a group, every heading left a half-empty row
+// under it, and a page meant to show every app at once was mostly gaps. What
+// the church has not switched on stays apart, after them: those are added,
+// not opened.
+const shownApps = computed(() => {
+  const found = new Set(shownGroups.value.flatMap((group) => group.items.map((item) => item.path)))
+  return ordered.value.filter((item) => found.has(item.path))
 })
 
-const deskForSale = computed(() =>
-  searching.value || category.value === 'all' || category.value === 'sale' ? shownForSale.value : []
+const foundCount = computed(() => shownApps.value.length + shownForSale.value.length)
+
+/* ------------------------------------------------- moving the apps about */
+
+// A tile is picked up and put down where it is wanted, straight from the
+// grid, the way the home's panels are (HomeBoard): pressed and moved a
+// little, a copy of it lifts off under the pointer, its place stays as an
+// outline, and the grid is laid out as it would be with it let go there, the
+// other tiles sliding out of the way; let go, the copy glides down into the
+// outline. A press that does not move is a click, and shows the app.
+//
+// It used to need an Arrange button first, and moved the tiles under the
+// pointer the moment it crossed one, so the grid jumped from one order to the
+// next rather than making way. Here the place is found from where the tiles
+// are laid out, not where they are seen mid-slide, so a tile sliding under the
+// pointer never moves the aim, and nothing flicks back and forth.
+//
+// It is the one order of this person's apps (useAppOrder), the same the shelf
+// is the first five of, so a tile put among the first five is on the home and
+// the fifth steps out of it — the stars say so as it happens — and it is
+// written once, when let go. Not while searching: the order is of every app,
+// not of a search's few. Not the apps not on the plan, which have no place in
+// it.
+const preview = ref(null)
+const carried = ref(null)
+const gridList = ref(null)
+const tileEls = new Map()
+const setTileEl = (key) => (el) => {
+  if (el) tileEls.set(key, el)
+  else tileEls.delete(key)
+}
+
+const DRAG_THRESHOLD = 6
+let press = null
+let ghost = null
+let landTimer = null
+
+/** The apps in the order the grid shows them: being arranged, or as kept. */
+const orderShown = computed(() => preview.value || shownApps.value)
+
+const lift = () => {
+  const el = tileEls.get(press.key)
+  if (!el) return
+  const box = el.getBoundingClientRect()
+  ghost = el.cloneNode(true)
+  ghost.setAttribute('aria-hidden', 'true')
+  ghost.setAttribute('inert', '')
+  Object.assign(ghost.style, {
+    position: 'fixed',
+    left: `${box.left}px`,
+    top: `${box.top}px`,
+    width: `${box.width}px`,
+    height: `${box.height}px`,
+    margin: '0',
+    zIndex: '9999',
+    pointerEvents: 'none',
+    cursor: 'grabbing',
+    transition: 'none',
+  })
+  document.body.appendChild(ghost)
+  document.body.style.cursor = 'grabbing'
+  carried.value = press.key
+  preview.value = [...shownApps.value]
+}
+
+// Where the pointer is, as a place in the order: the tile under it, from
+// where the tiles are laid out (offsets in the list, which a slide does not
+// change), or, over the gap between two, no change.
+const aimAt = (x, y) => {
+  const list = gridList.value
+  if (!list || !preview.value) return
+  const origin = list.getBoundingClientRect()
+  const px = x - origin.left
+  const py = y - origin.top
+  const under = preview.value.find((item) => {
+    const el = tileEls.get(item.path)
+    return el && px >= el.offsetLeft && px <= el.offsetLeft + el.offsetWidth && py >= el.offsetTop && py <= el.offsetTop + el.offsetHeight
+  })
+  if (!under || under.path === carried.value) return
+  const next = preview.value.filter((item) => item.path !== carried.value)
+  const at = preview.value.findIndex((item) => item.path === under.path)
+  next.splice(at, 0, preview.value.find((item) => item.path === carried.value))
+  preview.value = next
+}
+
+// Each tile slides from where it was to where it is now, as the order shown
+// changes (measured before the grid is drawn again, slid after).
+const reducedMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+watch(
+  () => orderShown.value.map((item) => item.path).join(),
+  () => {
+    if (reducedMotion) return
+    const before = new Map([...tileEls].map(([key, el]) => [key, el.getBoundingClientRect()]))
+    nextTick(() => {
+      tileEls.forEach((el, key) => {
+        const was = before.get(key)
+        if (!was) return
+        el.getAnimations().forEach((running) => running.cancel())
+        const now = el.getBoundingClientRect()
+        const dx = was.left - now.left
+        const dy = was.top - now.top
+        if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return
+        el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], {
+          duration: 220,
+          easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+        })
+      })
+    })
+  },
+  { flush: 'pre' }
 )
 
-const foundCount = computed(
-  () => shownGroups.value.reduce((sum, group) => sum + group.items.length, 0) + shownForSale.value.length
-)
+const unlisten = () => {
+  window.removeEventListener('pointermove', onTileMove)
+  window.removeEventListener('pointerup', onTileUp)
+  window.removeEventListener('pointercancel', cancelDrag)
+  window.removeEventListener('keydown', onDragKey, true)
+  window.removeEventListener('blur', cancelDrag)
+}
+const settleDrag = () => {
+  clearTimeout(landTimer)
+  landTimer = null
+  ghost?.remove()
+  ghost = null
+  document.body.style.cursor = ''
+  carried.value = null
+  press = null
+  unlisten()
+}
+const cancelDrag = () => {
+  preview.value = null
+  settleDrag()
+}
+const onDragKey = (event) => {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    cancelDrag()
+  }
+}
+
+// The click a drag ends on would show the app under the pointer.
+const swallowNextClick = () => {
+  const stop = (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+  window.addEventListener('click', stop, { capture: true, once: true })
+  setTimeout(() => window.removeEventListener('click', stop, { capture: true }), 0)
+}
+
+function onTileMove(event) {
+  if (!press) return
+  if (!carried.value) {
+    if (Math.hypot(event.clientX - press.x, event.clientY - press.y) < DRAG_THRESHOLD) return
+    lift()
+    if (!carried.value) return
+  }
+  event.preventDefault()
+  if (ghost) ghost.style.translate = `${event.clientX - press.x}px ${event.clientY - press.y}px`
+  aimAt(event.clientX, event.clientY)
+}
+
+function onTileUp() {
+  if (!carried.value) return settleDrag()
+  unlisten()
+  swallowNextClick()
+  const order = preview.value
+  // Kept until the saved order has come back, so nothing jumps between.
+  if (order) setOrder([...order])
+  // The copy glides down into the outline, and only then is the tile there.
+  const key = carried.value
+  nextTick(() => {
+    const at = tileEls.get(key)?.getBoundingClientRect()
+    if (!ghost || !at || reducedMotion) return settleDrag()
+    const left = parseFloat(ghost.style.left)
+    const top = parseFloat(ghost.style.top)
+    Object.assign(ghost.style, {
+      transition: 'translate 180ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+      translate: `${at.left - left}px ${at.top - top}px`,
+    })
+    landTimer = setTimeout(settleDrag, 190)
+  })
+}
+
+const onTileDown = (event, item) => {
+  if (searching.value || event.button !== 0 || event.pointerType === 'touch') return
+  if (event.target.closest('[data-go]')) return
+  if (ghost || landTimer) settleDrag()
+  press = { key: item.path, x: event.clientX, y: event.clientY }
+  window.addEventListener('pointermove', onTileMove, { passive: false })
+  window.addEventListener('pointerup', onTileUp)
+  window.addEventListener('pointercancel', cancelDrag)
+  window.addEventListener('keydown', onDragKey, true)
+  window.addEventListener('blur', cancelDrag)
+}
+
+// The saved order has caught up: the preview has done its work.
+watch(ordered, () => {
+  if (!carried.value) preview.value = null
+})
+onBeforeUnmount(cancelDrag)
+
+/* ------------------------------------------------- the grid, to the page */
+
+// Every tile on a desktop: the apps, in the order shown, then the ones the
+// church could add.
+const storeTiles = computed(() => [
+  ...orderShown.value.map((item) => ({ kind: 'app', key: item.path, item })),
+  ...shownForSale.value.map((app) => ({ kind: 'sale', key: `sale:${app.key}`, app })),
+])
+// Whether an app is among the home's five: in the order being arranged while a
+// tile is carried, so the stars move with it, and otherwise as kept.
+const onHomeShown = (path) =>
+  preview.value ? preview.value.findIndex((item) => item.path === path) < HOME_SLOTS : homePaths.value.has(path)
+
+// The grid fits the room it has, so the page never scrolls: measured, and
+// laid out in whichever number of columns makes the tiles largest with every
+// row still on the screen. Not wider than TILE_MAX, so a search that leaves
+// two apps does not draw two giant ones; and as a row grows short, each tile
+// draws its picture smaller and lets its tagline go (the store-tile rules).
+const gridBox = ref(null)
+const gridSize = ref({ w: 0, h: 0 })
+let gridObserver = null
+watch(gridBox, (el) => {
+  gridObserver?.disconnect()
+  if (!el || typeof ResizeObserver === 'undefined') return
+  gridObserver = new ResizeObserver(([entry]) => {
+    gridSize.value = { w: entry.contentRect.width, h: entry.contentRect.height }
+  })
+  gridObserver.observe(el)
+})
+onBeforeUnmount(() => gridObserver?.disconnect())
+
+const GRID_GAP = 10
+const TILE_MIN = 104
+const TILE_MAX = 200
+const gridFit = computed(() => {
+  const n = storeTiles.value.length
+  const { w, h } = gridSize.value
+  if (!n || !w || !h) return { cols: 5, w: 160, h: 140 }
+  let best = null
+  for (let cols = 1; cols <= n; cols += 1) {
+    const rows = Math.ceil(n / cols)
+    const tw = (w - (cols - 1) * GRID_GAP) / cols
+    const th = (h - (rows - 1) * GRID_GAP) / rows
+    if (tw < TILE_MIN) break
+    // Tiles a little wider than tall read best; a cell may be no larger
+    // than TILE_MAX either way.
+    const size = Math.min(tw, th * 1.15, TILE_MAX)
+    if (!best || size > best.size + 0.5) best = { cols, size, w: Math.min(tw, TILE_MAX), h: Math.min(th, TILE_MAX / 1.15) }
+  }
+  return best || { cols: 1, w: Math.min(w, TILE_MAX), h: 120 }
+})
+const gridStyle = computed(() => ({
+  gridTemplateColumns: `repeat(${gridFit.value.cols}, ${Math.floor(gridFit.value.w)}px)`,
+  gridAutoRows: `${Math.floor(gridFit.value.h)}px`,
+  gap: `${GRID_GAP}px`,
+}))
 </script>
 
 <template>
@@ -349,23 +636,23 @@ const foundCount = computed(
        into the search. A phone and a desktop each have a layout of their
        own, below. -->
   <div class="flex h-full w-full flex-col overflow-hidden bg-gray-50 pt-[env(safe-area-inset-top)] dark:bg-gray-900">
-    <!-- A desktop: laid out the way an app store on a computer is. The
-         categories down the left, with the five on the home under them, both
-         always in view; the store itself beside them — a featured app, then
-         each group as a heading that says what it is for and its apps as
-         rows, each saying in words what it does and whether it is on the
-         home. It is its own layout rather than the phone's stretched, since a
-         phone's single column only looked lost on a wide screen. Ekkly's top
-         bar is over it here, naming the page and leading home, so the page
-         has no header of its own; the search heads the left column, as it
-         does in an app store. -->
+    <!-- A desktop: the search with the five on the home under it, always in
+         view, down the left; the store's grid in the middle, every app a
+         tile; and the app
+         picked (or today's pick) close up on the right. It is its own layout
+         rather than the phone's stretched, since a phone's single column
+         only looked lost on a wide screen. Ekkly's top bar is over it here,
+         naming the page and leading home, so the page has no header of its
+         own. -->
     <template v-if="wide">
       <h1 class="sr-only">All apps</h1>
-      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-8 pb-12">
-        <div class="mx-auto grid w-full max-w-[88rem] grid-cols-[15rem_minmax(0,1fr)] items-start gap-10">
-          <!-- The left column: the search, where to look, and what is on the
-               home. -->
-          <aside class="sticky top-0 flex flex-col gap-6 pt-6">
+      <div class="min-h-0 flex-1 overflow-hidden px-5 pb-4">
+        <div class="grid h-full w-full grid-cols-[12rem_minmax(0,1fr)_25rem] gap-5 xl:grid-cols-[13rem_minmax(0,1fr)_29rem] 2xl:grid-cols-[13rem_minmax(0,1fr)_33rem]">
+          <!-- The left column: the search, and what is on the home. -->
+          <!-- A pixel or two of room inside its edges (and taken back outside
+               them), so the search's ring and the shelf's are not cut off by
+               the column scrolling. -->
+          <aside class="-mx-1 flex min-h-0 flex-col gap-4 overflow-y-auto px-1 pb-1 pt-4 [scrollbar-width:none]">
             <div class="relative">
               <MagnifyingGlass class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
               <input
@@ -387,31 +674,9 @@ const foundCount = computed(
               </button>
             </div>
 
-            <nav aria-label="Categories">
-              <p class="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Browse</p>
-              <ul class="flex flex-col gap-0.5">
-                <li v-for="entry in categories" :key="entry.key">
-                  <button
-                    type="button"
-                    :aria-current="category === entry.key && !searching ? 'page' : undefined"
-                    :class="[
-                      'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors',
-                      category === entry.key && !searching
-                        ? 'bg-primary/10 font-semibold text-primary dark:bg-primary-light/15 dark:text-primary-light'
-                        : 'font-medium text-gray-700 hover:bg-gray-200/60 dark:text-gray-300 dark:hover:bg-gray-800',
-                    ]"
-                    @click="browse(entry.key)"
-                  >
-                    <span class="min-w-0 flex-1 truncate">{{ entry.label }}</span>
-                    <span class="text-xs tabular-nums text-gray-400 dark:text-gray-500">{{ entry.count }}</span>
-                  </button>
-                </li>
-              </ul>
-            </nav>
-
-            <!-- The five on the home, dragged into order. Kept in view on
-                 every page of the store, so an app found anywhere can be
-                 put on the home without losing your place. -->
+            <!-- The five on the home, dragged into order, in view beside the
+                 store, so an app found anywhere can be put on the home
+                 without losing your place. -->
             <section ref="shelfRef">
               <div class="mb-1.5 px-3">
                 <template v-if="swapping">
@@ -458,7 +723,7 @@ const foundCount = computed(
                     @click="tapShelf(item)"
                   >
                     <span :class="[PLATED, 'relative size-9 rounded-[10px]']">
-                      <AppArt :app-key="item.art" :play="playOf(item.path)" :data-morph-icon="item.path" class="size-6.5" />
+                      <AppArt :app-key="item.art" :play="playOf(item.path)" class="size-6.5" />
                       <span
                         v-if="swapping"
                         class="absolute -right-1.5 -top-1.5 flex size-4.5 items-center justify-center rounded-full bg-primary text-white ring-2 ring-white dark:bg-primary-light dark:ring-gray-800"
@@ -467,7 +732,7 @@ const foundCount = computed(
                         <ArrowsLeftRight class="size-2.5" />
                       </span>
                     </span>
-                    <span :data-morph-label="item.path" class="min-w-0 flex-1 truncate text-sm font-medium text-gray-800 dark:text-gray-200">{{ item.name }}</span>
+                    <span class="min-w-0 flex-1 truncate text-sm font-medium text-gray-800 dark:text-gray-200">{{ item.name }}</span>
                   </button>
                   <!-- The grip: grabbed, the row comes with it. -->
                   <span
@@ -484,163 +749,129 @@ const foundCount = computed(
             </section>
           </aside>
 
-          <!-- The store. -->
-          <div class="min-w-0 pt-6">
-            <!-- Featured: one app not on the home, a different one each day. -->
-            <section
-              v-if="spotlight && !searching && category === 'all'"
-              class="apps-spotlight relative isolate mb-10 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-10 overflow-hidden rounded-3xl border border-b-4 border-black/15 px-9 py-8 text-white dark:border-black/40"
-              @pointerenter="replay($event, 'spotlight')"
-            >
-              <button
-                type="button"
-                aria-label="Put the spotlight away for today"
-                title="Not today"
-                class="absolute right-4 top-4 flex size-8 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
-                @click="dismissSpotlight"
-              >
-                <X class="size-4" />
-              </button>
-              <div class="min-w-0">
-                <p class="text-xs font-semibold uppercase tracking-wide text-white/75">Spotlight</p>
-                <h2 class="mt-2 text-3xl font-bold leading-tight">{{ spotlight.name }}</h2>
-                <p class="mt-1.5 text-lg leading-snug text-white/90">{{ detailOf(spotlight).headline }}</p>
-                <ul class="mt-4 flex flex-wrap gap-2">
-                  <li
-                    v-for="win in detailOf(spotlight).wins"
-                    :key="win.text"
-                    class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-sm text-white"
-                  >
-                    <component :is="win.icon" class="size-4 shrink-0 text-white/80" />
-                    {{ win.text }}
-                  </li>
-                </ul>
-                <div class="mt-6 flex items-center gap-2">
-                  <button
-                    type="button"
-                    class="inline-flex h-10 items-center rounded-full bg-white px-5 text-sm font-bold text-primary transition-colors duration-200 hover:bg-white/90"
-                    @pointerdown="prefetchRoute(router, spotlight.path)"
-                    @click="open(spotlight)"
-                  >
-                    Open {{ spotlight.name }}
-                  </button>
-                  <button
-                    type="button"
-                    :aria-label="`Put ${spotlight.name} on your home`"
-                    title="Put on your home"
-                    class="flex size-10 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
-                    @click="startPin(spotlight)"
-                  >
-                    <Star class="size-4.5" />
-                  </button>
-                </div>
-              </div>
-              <span :class="[PLATED, 'mr-6 size-40 rounded-[40px]']">
-                <AppArt :app-key="spotlight.art" :play="playOf('spotlight')" class="size-28" />
-              </span>
-            </section>
-
+          <!-- The store: every app as a tile, in one grid sized to the room
+               it has (gridFit), so the whole of it is on the screen at once,
+               never scrolled through; what one is for is in the panel beside
+               it. The apps the church could add are tiles in it too, after
+               the rest, marked so. -->
+          <div class="flex min-h-0 min-w-0 flex-col pt-4">
             <p v-if="nothingFound" class="py-16 text-center text-sm text-gray-500 dark:text-gray-400">
               No app for “{{ query.trim() }}”.
             </p>
-            <p v-else-if="searching" class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+            <p v-else-if="searching" class="mb-2 shrink-0 px-1 text-sm text-gray-500 dark:text-gray-400">
               {{ foundCount }} {{ foundCount === 1 ? 'app' : 'apps' }} for “{{ query.trim() }}”
             </p>
 
-            <!-- Each group: what it is for, then its apps. -->
-            <section v-for="group in deskGroups" :key="group.key" class="mb-10 last:mb-0">
-              <div class="mb-1 flex items-baseline gap-3">
-                <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ group.label || 'Everyday' }}</h2>
-                <p class="min-w-0 truncate text-sm text-gray-500 dark:text-gray-400">{{ GROUP_LINES[group.key] }}</p>
-              </div>
-              <!-- The whole row opens the app, so it needs no Open button;
-                   the star beside it is the one other thing it does. -->
-              <ul class="-mx-3 mt-2 grid grid-cols-[repeat(auto-fill,minmax(21rem,1fr))] gap-x-4 gap-y-1">
+            <!-- How many, the way to move them, and the way back. -->
+            <div v-if="!searching" class="mb-2 flex shrink-0 items-center justify-between gap-3 px-1">
+              <p class="min-w-0 truncate text-sm text-gray-500 dark:text-gray-400">
+                {{ apps.length }} apps <span aria-hidden="true">·</span> drag one to move it; the first {{ HOME_SLOTS }} are your home
+              </p>
+              <button
+                type="button"
+                class="h-8 shrink-0 rounded-full px-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-200/70 dark:text-gray-300 dark:hover:bg-gray-800"
+                title="Put the apps back in their usual order"
+                @click="resetOrder"
+              >
+                Reset
+              </button>
+            </div>
+
+            <!-- A tile shows the app close up in the panel, and is dragged to
+                 move it; the arrow in its corner goes straight in. -->
+            <!-- Room round the tiles inside its edge, so the ring of the one
+                 picked is not cut off there; gridFit measures inside it. -->
+            <div ref="gridBox" class="-m-1 min-h-0 flex-1 overflow-hidden p-1">
+              <ul v-if="storeTiles.length" ref="gridList" class="relative grid content-start" :style="gridStyle">
                 <li
-                  v-for="item in group.items"
-                  :key="item.path"
-                  class="flex items-center gap-1 rounded-2xl pr-2 transition-colors hover:bg-gray-200/50 dark:hover:bg-gray-800"
-                  @pointerenter="replay($event, item.path)"
+                  v-for="tile in storeTiles"
+                  :key="tile.key"
+                  :ref="(el) => tile.kind === 'app' && setTileEl(tile.key)(el)"
+                  :class="[
+                    'group/tile relative min-h-0',
+                    carried === tile.key ? 'rounded-2xl outline-2 -outline-offset-2 outline-dashed outline-gray-300 *:invisible dark:outline-gray-600' : '',
+                  ]"
+                  @pointerdown="tile.kind === 'app' && onTileDown($event, tile.item)"
                 >
                   <button
+                    v-if="tile.kind === 'app'"
                     type="button"
-                    class="flex min-w-0 flex-1 items-start gap-4 py-3 pl-3 text-left"
-                    @pointerdown="prefetchRoute(router, item.path)"
-                    @click="open(item)"
+                    :aria-pressed="isShown(tile.key)"
+                    :class="[TILE, isShown(tile.key) ? TILE_ON : TILE_OFF]"
+                    @pointerenter="replay($event, tile.key)"
+                    @pointerdown="prefetchRoute(router, tile.item.path)"
+                    @click="pick(tile.item)"
                   >
-                    <span :class="[PLATED, 'size-16 rounded-[18px]']">
-                      <AppArt :app-key="item.art" :play="playOf(item.path)" :data-morph-icon="item.path" class="size-11" />
+                    <span :class="[PLATED, 'store-plate relative']">
+                      <AppArt :app-key="tile.item.art" :play="playOf(tile.key)" class="store-art" />
+                      <span
+                        v-if="onHomeShown(tile.item.path)"
+                        class="absolute -right-1.5 -top-1.5 flex size-5.5 items-center justify-center rounded-full bg-white text-primary ring-1 ring-gray-200 dark:bg-gray-800 dark:text-primary-light dark:ring-gray-600"
+                        title="On your home"
+                      >
+                        <StarFill class="size-3" />
+                      </span>
                     </span>
-                    <span class="min-w-0 flex-1">
-                      <span :data-morph-label="item.path" class="block truncate text-[15px] font-semibold text-gray-900 dark:text-white">{{ item.name }}</span>
-                      <span class="mt-0.5 block truncate text-[13px] text-gray-500 dark:text-gray-400">{{ item.tagline }}</span>
-                      <span class="mt-1.5 line-clamp-2 text-[13px] leading-snug text-gray-600 dark:text-gray-300">{{ item.description }}</span>
-                    </span>
+                    <span class="store-name w-full truncate text-sm font-semibold text-gray-900 dark:text-white">{{ tile.item.name }}</span>
+                    <span class="store-tag -mt-1 w-full truncate text-xs text-gray-500 dark:text-gray-400">{{ tile.item.tagline }}</span>
                   </button>
-                  <!-- The star says it without words: filled, the app is on
-                       the home; outlined, a press puts it there. Filled is a
-                       marker, not a button: an app leaves the home only by
-                       choosing what replaces it. -->
-                  <span
-                    v-if="homePaths.has(item.path)"
-                    class="flex size-9 shrink-0 items-center justify-center text-primary dark:text-primary-light"
-                    title="On your home"
-                    aria-label="On your home"
-                  >
-                    <StarFill class="size-5" />
-                  </span>
                   <button
                     v-else
                     type="button"
-                    :aria-label="`Put ${item.name} on your home`"
-                    title="Put on your home"
-                    :class="[
-                      'flex size-9 shrink-0 items-center justify-center rounded-full transition-colors',
-                      swapping?.path === item.path
-                        ? 'bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light'
-                        : 'text-gray-300 hover:bg-white hover:text-primary dark:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-light',
-                    ]"
-                    @click="startPin(item)"
+                    :aria-pressed="isShown(tile.key)"
+                    :class="[TILE, isShown(tile.key) ? TILE_ON : TILE_OFF]"
+                    @pointerenter="replay($event, tile.key)"
+                    @click="pickSale(tile.app)"
                   >
-                    <Star class="size-5" />
+                    <span :class="[PLATED, 'store-plate relative opacity-80']">
+                      <AppArt :app-key="tile.app.key" :play="playOf(tile.key)" class="store-art" />
+                    </span>
+                    <span class="store-name w-full truncate text-sm font-semibold text-gray-900 dark:text-white">{{ tile.app.name }}</span>
+                    <span class="store-tag -mt-1 w-full truncate text-xs font-medium text-primary dark:text-primary-light">Add to plan</span>
                   </button>
-                </li>
-              </ul>
-            </section>
-
-            <!-- What the church could add, for whoever can add it. -->
-            <section v-if="deskForSale.length" class="mb-0 mt-10 first:mt-0">
-              <div class="mb-1 flex items-baseline gap-3">
-                <h2 class="text-xl font-bold text-gray-900 dark:text-white">Not on your plan</h2>
-                <p class="min-w-0 truncate text-sm text-gray-500 dark:text-gray-400">Apps your church can add</p>
-              </div>
-              <ul class="-mx-3 mt-2 grid grid-cols-[repeat(auto-fill,minmax(21rem,1fr))] gap-x-4 gap-y-1">
-                <li
-                  v-for="app in deskForSale"
-                  :key="app.key"
-                  class="flex items-center gap-4 rounded-2xl px-3 py-3 transition-colors hover:bg-gray-200/50 dark:hover:bg-gray-800"
-                  @pointerenter="replay($event, app.key)"
-                >
-                  <span :class="[PLATED, 'size-16 rounded-[18px]']">
-                    <AppArt :app-key="app.key" :play="playOf(app.key)" class="size-11" />
-                  </span>
-                  <div class="min-w-0 flex-1">
-                    <p class="truncate text-[15px] font-semibold text-gray-900 dark:text-white">{{ app.name }}</p>
-                    <p class="mt-0.5 truncate text-[13px] text-gray-500 dark:text-gray-400">{{ APP_DETAILS[app.key]?.headline || 'Not on your plan yet' }}</p>
-                    <p class="mt-1.5 line-clamp-2 text-[13px] leading-snug text-gray-600 dark:text-gray-300">{{ app.description }}</p>
-                  </div>
+                  <!-- Straight in, without the panel first: the tile shows the
+                       app, this opens it (or, not on the plan, adds it). Beside
+                       the tile rather than in it, as a button cannot hold one.
+                       It comes up with the pointer on the tile, so a grid at
+                       rest is pictures and names; it stays on the tile shown in
+                       the panel, and for the keyboard it is there when reached. -->
                   <button
+                    data-go
                     type="button"
-                    class="inline-flex h-8 shrink-0 items-center rounded-full bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary-hover"
-                    :aria-label="`Add ${app.name} to your plan`"
-                    @click="addApp"
+                    :aria-label="tile.kind === 'app' ? `Open ${tile.item.name}` : `Add ${tile.app.name} to your plan`"
+                    :title="tile.kind === 'app' ? 'Open' : 'Add to your plan'"
+                    :class="[
+                      'absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-[opacity,background-color,color] duration-150 hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white focus-visible:opacity-100 group-hover/tile:opacity-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-primary-light dark:hover:text-gray-900',
+                      isShown(tile.key) ? 'opacity-100' : 'opacity-0',
+                    ]"
+                    @pointerdown="tile.kind === 'app' && prefetchRoute(router, tile.item.path)"
+                    @click="tile.kind === 'app' ? open(tile.item) : addApp()"
                   >
-                    Add
+                    <ArrowRight v-if="tile.kind === 'app'" class="size-4" />
+                    <Plus v-else class="size-4" />
                   </button>
                 </li>
               </ul>
-            </section>
+            </div>
           </div>
+
+          <!-- The app picked (or today's pick), its page, the height of the
+               screen. -->
+          <aside class="flex min-h-0 flex-col pt-4">
+            <div v-if="shownDetails" class="flex min-h-0 flex-1 flex-col rounded-2xl bg-white p-4 ring-1 ring-gray-200/70 dark:bg-gray-800 dark:ring-gray-700/70">
+              <AppDetailsPanel
+                :key="shownDetails.key"
+                fill
+                :app="shownDetails"
+                :kicker="picked ? '' : 'Today’s pick'"
+                :on-home="Boolean(shownDetails.path && homePaths.has(shownDetails.path))"
+                :pinning="Boolean(shownDetails.path && swapping?.path === shownDetails.path)"
+                @open="openPicked(shownDetails)"
+                @pin="pinPicked(shownDetails)"
+                @add="addApp"
+              />
+            </div>
+          </aside>
         </div>
       </div>
     </template>
@@ -690,48 +921,8 @@ const foundCount = computed(
            otherwise be handed to the browser, and Chrome on Android turns
            that into pull-to-refresh. -->
       <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] [&>*]:mx-auto [&>*]:max-w-2xl">
-        <!-- 1. The spotlight: one app, shown off. -->
-        <section
-          v-if="spotlight && !searching"
-          class="apps-spotlight relative isolate mt-2 overflow-hidden rounded-3xl border border-b-4 border-black/15 p-5 text-white dark:border-black/40"
-        >
-          <button
-            type="button"
-            aria-label="Put the spotlight away for today"
-            title="Not today"
-            class="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
-            @click="dismissSpotlight"
-          >
-            <X class="size-4" />
-          </button>
-          <p class="text-xs font-semibold uppercase tracking-wide text-white/75">Spotlight</p>
-          <div class="mt-3 flex items-center gap-4">
-            <span :class="[PLATED, 'size-20 rounded-[22px]']">
-              <AppArt :app-key="spotlight.art" :play="playOf('spotlight')" class="size-14" />
-            </span>
-            <div class="min-w-0">
-              <p class="text-2xl font-bold leading-tight">{{ spotlight.name }}</p>
-              <p class="mt-1 text-sm leading-snug text-white/85">{{ detailOf(spotlight).headline }}</p>
-            </div>
-          </div>
-          <ul class="mt-4 flex flex-col gap-1.5">
-            <li v-for="win in detailOf(spotlight).wins" :key="win.text" class="flex items-center gap-2 text-sm text-white/90">
-              <component :is="win.icon" class="size-4 shrink-0 text-white/75" />
-              {{ win.text }}
-            </li>
-          </ul>
-          <button
-            type="button"
-            class="mt-5 inline-flex h-10 items-center rounded-full bg-white px-5 text-sm font-bold text-primary transition-colors duration-200 hover:bg-white/90"
-            @pointerdown="prefetchRoute(router, spotlight.path)"
-            @click="open(spotlight)"
-          >
-            Open {{ spotlight.name }}
-          </button>
-        </section>
-
         <!-- 2. Their home: the five, held and dragged to reorder. -->
-        <section v-show="!searching" ref="shelfRef" class="mt-5 scroll-mt-4">
+        <section v-show="!searching" ref="shelfRef" class="mt-2 scroll-mt-4">
           <div class="mb-2 flex items-end justify-between gap-2 px-1">
             <template v-if="swapping">
               <h3 class="min-w-0 text-sm font-bold text-primary dark:text-primary-light">
@@ -784,7 +975,7 @@ const foundCount = computed(
                 @click="tapShelf(item)"
               >
                 <span :class="[PLATED, 'relative size-12']">
-                  <AppArt :app-key="item.art" :play="playOf(item.path)" :data-morph-icon="item.path" class="size-9" />
+                  <AppArt :app-key="item.art" :play="playOf(item.path)" class="size-9" />
                   <span
                     v-if="swapping"
                     class="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-white ring-2 ring-white dark:bg-primary-light dark:ring-gray-800"
@@ -793,102 +984,103 @@ const foundCount = computed(
                     <ArrowsLeftRight class="size-3" />
                   </span>
                 </span>
-                <span :data-morph-label="item.path" class="line-clamp-2 w-full text-center text-[11px] font-medium leading-tight text-gray-800 dark:text-gray-200">{{ item.name }}</span>
+                <span class="line-clamp-2 w-full text-center text-[11px] font-medium leading-tight text-gray-800 dark:text-gray-200">{{ item.name }}</span>
               </button>
             </div>
           </div>
         </section>
 
-        <!-- 3. The catalogue, a store row to each app. -->
+        <!-- 3. The catalogue: every app as a tile, four across, in one grid.
+             A tap shows the app close up (the sheet, below); holding plays
+             what it does. -->
         <p v-if="nothingFound" class="px-4 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
           No app for “{{ query.trim() }}”.
         </p>
 
-        <section v-for="(group, g) in shownGroups" :key="group.key" :class="searching && g === 0 ? 'mt-2' : 'mt-6'">
-          <h3 class="mb-2 px-1 text-base font-bold text-gray-900 dark:text-white">{{ group.label || 'Everyday' }}</h3>
-          <ul class="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70">
-            <li v-for="item in group.items" :key="item.path" class="flex items-center gap-1 pr-2" @click.capture="swallowClick">
+        <section v-if="shownApps.length" :class="searching ? 'mt-2' : 'mt-3'">
+          <ul class="grid grid-cols-4 gap-0.5 rounded-2xl bg-white p-1 ring-1 ring-gray-200/70 dark:bg-gray-800 dark:ring-gray-700/70">
+            <li v-for="item in shownApps" :key="item.path" @click.capture="swallowClick">
               <button
                 type="button"
-                class="flex min-w-0 flex-1 items-center gap-3 py-3 pl-3 text-left active:bg-gray-50 dark:active:bg-gray-700/40"
+                class="flex w-full flex-col items-center gap-1 rounded-xl px-0.5 py-1.5 transition-colors active:bg-gray-100 dark:active:bg-gray-700/60"
                 @pointerdown="holdRow($event, item)"
                 @touchmove="holdStill"
                 @contextmenu.prevent
-                @click="open(item)"
+                @click="pick(item)"
               >
-                <span data-art-plate :class="[PLATED, 'size-14']">
-                  <AppArt :app-key="item.art" :play="playOf(item.path)" :data-morph-icon="item.path" class="size-10" />
+                <span data-art-plate :class="[PLATED, 'relative size-12']">
+                  <AppArt :app-key="item.art" :play="playOf(item.path)" class="size-9" />
+                  <span
+                    v-if="homePaths.has(item.path)"
+                    class="absolute -right-1.5 -top-1.5 flex size-4.5 items-center justify-center rounded-full bg-white text-primary ring-1 ring-gray-200 dark:bg-gray-800 dark:text-primary-light dark:ring-gray-600"
+                    aria-label="On your home"
+                  >
+                    <StarFill class="size-2.5" />
+                  </span>
                 </span>
-                <span class="min-w-0">
-                  <span :data-morph-label="item.path" class="block truncate text-[15px] font-semibold text-gray-900 dark:text-white">{{ item.name }}</span>
-                  <span class="mt-0.5 line-clamp-2 text-xs leading-snug text-gray-500 dark:text-gray-400">{{ lineOf(item) }}</span>
-                </span>
-              </button>
-              <!-- The row opens the app, so it needs no Open button. The
-                   star is on the home: filled, a marker, not a button — an
-                   app leaves the home only by choosing what replaces it;
-                   outlined, a press puts it there. -->
-              <span
-                v-if="homePaths.has(item.path)"
-                class="flex size-9 shrink-0 items-center justify-center text-primary dark:text-primary-light"
-                title="On your home"
-                aria-label="On your home"
-              >
-                <StarFill class="size-5" />
-              </span>
-              <button
-                v-else
-                type="button"
-                :aria-label="`Put ${item.name} on your home`"
-                title="Put on your home"
-                :class="[
-                  'flex size-9 shrink-0 items-center justify-center rounded-full transition-colors',
-                  swapping?.path === item.path
-                    ? 'bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light'
-                    : 'text-gray-300 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-600 dark:hover:bg-gray-700',
-                ]"
-                @click="startPin(item)"
-              >
-                <Star class="size-5" />
+                <span class="line-clamp-2 w-full text-center text-[11px] font-medium leading-tight text-gray-800 dark:text-gray-200">{{ item.name }}</span>
               </button>
             </li>
           </ul>
         </section>
 
         <!-- 4. What the church could add: for whoever can add it. -->
-        <section v-if="shownForSale.length" class="mt-6">
-          <div class="mb-2 px-1">
-            <h3 class="text-base font-bold text-gray-900 dark:text-white">More for your church</h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Not on your plan yet</p>
-          </div>
-          <ul class="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70">
-            <li
-              v-for="app in shownForSale"
-              :key="app.key"
-              class="flex items-center gap-3 px-3 py-3"
-              @pointerdown="holdForSale($event, app)"
-              @touchmove="holdStill"
-              @contextmenu.prevent
-              @click.capture="swallowClick"
-            >
-              <span data-art-plate :class="[PLATED, 'size-14']">
-                <AppArt :app-key="app.key" :play="playOf(app.key)" class="size-10" />
-              </span>
-              <span class="min-w-0 flex-1">
-                <span class="block truncate text-[15px] font-semibold text-gray-900 dark:text-white">{{ app.name }}</span>
-                <span class="mt-0.5 line-clamp-2 text-xs leading-snug text-gray-500 dark:text-gray-400">{{ APP_DETAILS[app.key]?.headline || app.description }}</span>
-              </span>
+        <section v-if="shownForSale.length" class="mt-3">
+          <h3 class="mb-1 px-1 text-sm font-bold text-gray-900 dark:text-white">Not on your plan</h3>
+          <ul class="grid grid-cols-4 gap-0.5 rounded-2xl bg-white p-1 ring-1 ring-gray-200/70 dark:bg-gray-800 dark:ring-gray-700/70">
+            <li v-for="app in shownForSale" :key="app.key" @click.capture="swallowClick">
               <button
                 type="button"
-                class="inline-flex h-8 shrink-0 items-center rounded-full bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary-hover"
-                @click="addApp"
+                class="flex w-full flex-col items-center gap-1 rounded-xl px-0.5 py-1.5 transition-colors active:bg-gray-100 dark:active:bg-gray-700/60"
+                @pointerdown="holdForSale($event, app)"
+                @touchmove="holdStill"
+                @contextmenu.prevent
+                @click="pickSale(app)"
               >
-                Add
+                <span data-art-plate :class="[PLATED, 'size-12 opacity-80']">
+                  <AppArt :app-key="app.key" :play="playOf(app.key)" class="size-9" />
+                </span>
+                <span class="line-clamp-2 w-full text-center text-[11px] font-medium leading-tight text-gray-800 dark:text-gray-200">{{ app.name }}</span>
               </button>
             </li>
           </ul>
         </section>
       </div>
+
+      <!-- The app tapped, close up, in a sheet from the foot. -->
+      <Teleport to="body">
+        <Transition name="apps-sheet">
+          <div v-if="picked" class="fixed inset-0 z-90 flex flex-col justify-end">
+            <div class="absolute inset-0 bg-black/50" @click="closeDetails" />
+            <div
+              ref="sheetRef"
+              role="dialog"
+              aria-modal="true"
+              :aria-label="picked.name"
+              tabindex="-1"
+              class="apps-sheet-panel relative max-h-[85dvh] overflow-y-auto rounded-t-3xl bg-white px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 dark:bg-gray-800"
+            >
+              <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-200 dark:bg-gray-600" aria-hidden="true" />
+              <button
+                type="button"
+                aria-label="Close"
+                class="absolute right-3 top-3 flex size-9 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                @click="closeDetails"
+              >
+                <X class="size-5" />
+              </button>
+              <AppDetailsPanel
+                :app="picked"
+                :on-home="Boolean(picked.path && homePaths.has(picked.path))"
+                :pinning="Boolean(picked.path && swapping?.path === picked.path)"
+                @open="openPicked(picked)"
+                @pin="pinPicked(picked)"
+                @add="addApp"
+              />
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
     </template>
 
     <AppPeek
@@ -943,14 +1135,57 @@ const foundCount = computed(
   }
 }
 
-/* The spotlight: the church's colour, flat, with the same deeper edge as the
-   cards at the top of each app's home. Deeper on a dark page, where the
-   accent token is its lighter shade. */
-.apps-spotlight {
-  background-color: var(--color-primary);
+/* A tile in the desktop's grid sizes what is in it to the cell it is given
+   (gridFit): its picture a share of the cell's height up to its full size,
+   and on a short row its tagline gone, then its name a size smaller. */
+.store-tile {
+  container-type: size;
+}
+.store-plate {
+  width: min(4rem, 46cqh);
+  height: min(4rem, 46cqh);
+  border-radius: 28%;
+}
+.store-art {
+  width: 72%;
+  height: 72%;
+}
+@container (max-height: 8rem) {
+  .store-tag {
+    display: none;
+  }
+}
+@container (max-height: 5rem) {
+  .store-name {
+    font-size: 11px;
+  }
 }
 
-.dark .apps-spotlight {
-  background-color: color-mix(in oklab, var(--color-primary) 55%, black);
+/* The sheet an app is shown close up in, on a phone: it rises from the foot
+   over the page dimming behind it. */
+.apps-sheet-enter-active,
+.apps-sheet-leave-active {
+  transition: opacity 0.2s ease;
+}
+.apps-sheet-enter-active .apps-sheet-panel,
+.apps-sheet-leave-active .apps-sheet-panel {
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.apps-sheet-enter-from,
+.apps-sheet-leave-to {
+  opacity: 0;
+}
+.apps-sheet-enter-from .apps-sheet-panel,
+.apps-sheet-leave-to .apps-sheet-panel {
+  transform: translateY(100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .apps-sheet-enter-active,
+  .apps-sheet-leave-active,
+  .apps-sheet-enter-active .apps-sheet-panel,
+  .apps-sheet-leave-active .apps-sheet-panel {
+    transition: none;
+  }
 }
 </style>

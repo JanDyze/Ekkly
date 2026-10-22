@@ -18,8 +18,17 @@ import QuickActionsMenu from '../components/home/QuickActionsMenu.vue'
 import QuickActionsBack from '../components/home/QuickActionsBack.vue'
 import HomeBoard from '../components/home/HomeBoard.vue'
 import HomeVerse from '../components/home/HomeVerse.vue'
+import HomeSunday from '../components/home/HomeSunday.vue'
+import HomePrayer from '../components/home/HomePrayer.vue'
+import HomePhotos from '../components/home/HomePhotos.vue'
+import HomeGroups from '../components/home/HomeGroups.vue'
+import HomeBirthdays from '../components/home/HomeBirthdays.vue'
+import HomeLinks from '../components/home/HomeLinks.vue'
 import HomeYunit from '../components/home/HomeYunit.vue'
-import { HOME_COLUMNS, useHomeLayout } from '../composables/useHomeLayout'
+import HomeSimple from '../components/home/HomeSimple.vue'
+import { useSimpleView } from '../composables/useSimpleView'
+import HomeModeShutter from '../components/home/HomeModeShutter.vue'
+import { HOME_COLUMNS, HOME_PANELS, OPTIONAL_PANELS, homeArranging, useHomeLayout } from '../composables/useHomeLayout'
 import { useHomeCards } from '../composables/useHomeCards'
 import { useHomeChurch } from '../composables/useHomeChurch'
 import { useLiveSky } from '../composables/useLiveSky'
@@ -76,13 +85,13 @@ import { peopleOnService } from '../data/scheduleRoles'
 // On a desktop (lg) the same page has the room to show everything at once,
 // and like a phone's it keeps to one screen and never scrolls. It is three
 // columns, a quarter, a half and a quarter, whose panels anyone can drag into
-// their own arrangement (HomeBoard, useHomeLayout); to begin with, this. The sidebar reads as a phone does,
-// top to bottom: the day's card in the church's colour (the quick actions
-// behind its "+"), the apps in the style chosen, and the church on its hill with the
-// day's verse. The middle is the work: what needs attention (HomeAttention),
-// with the community's news under it (HomeCommunity). The last is the week
-// (HomeWeek). Each list scrolls inside its own card where it holds more than
-// fits; the page never does. An issue that covers
+// their own arrangement (HomeBoard, useHomeLayout); to begin with, this. The
+// sidebar reads as a phone does, top to bottom: the day's card in the
+// church's colour (the quick actions behind its "+"), the apps in the style
+// chosen, and the church on its hill. The middle is the work: what needs
+// attention (HomeAttention). The last is the week (HomeWeek). Each list shows
+// the rows that fit its card, whole, and how many more (useRowsThatFit),
+// never a row cut off or a list scrolling inside its card. An issue that covers
 // several records is one row with its records under it, never a row each,
 // and what is on goes in the week and nowhere else, so nothing is said twice.
 
@@ -504,13 +513,43 @@ const weekEvents = computed(() =>
 // The desktop's panels where this person has put them (useHomeLayout), less
 // any whose app is not theirs to open: the week goes with Events, YUNIT with
 // his app.
-const { layout: homeLayout, move: movePanel, place: placeFoot } = useHomeLayout()
+// Less any this person has off ("Show on my home", in the account menu;
+// useHomeLayout's hiddenPanels — the panels from the apps are off until
+// turned on), and any whose app they may not open (OPTIONAL_PANELS'
+// capability), as the menu itself offers only those.
+const { layout: homeLayout, moveBefore: movePanelBefore, swap: swapPanels, place: placeFoot, hiddenPanels, setShown, reset: resetLayout, isDefault: layoutIsDefault, showOnBoard } = useHomeLayout()
+// The board holds still until someone asks to rearrange it from the account
+// menu (homeArranging, HomeBoard's locked); leaving the home puts it back.
+const stopArranging = () => (homeArranging.value = false)
+
+// A move from the board (HomeBoard: a panel dropped, YUNIT set down, a full
+// column tidied), whose place is counted among the panels the board shows,
+// and counted before the panel is taken out of its own column. Saved by the
+// shown panel it lands before, not by that count: the arrangement keeps the
+// hidden panels too, and a count put a panel among them (useHomeLayout's
+// moveBefore).
+const movePanel = (key, column, index) => {
+  const shown = boardColumns.value.find((each) => each.id === column)?.panels || []
+  const at = shown.indexOf(key)
+  const others = shown.filter((each) => each !== key)
+  const place = at >= 0 && index > at ? index - 1 : index
+  return movePanelBefore(key, column, others[place] || null)
+}
+onBeforeUnmount(stopArranging)
+const mayOpen = (key) => {
+  const capability = OPTIONAL_PANELS.find((panel) => panel.key === key)?.capability
+  return !capability || can(capability)
+}
+const onBoard = (key) =>
+  !hiddenPanels.value.includes(key) &&
+  mayOpen(key) &&
+  (key !== 'week' || showWeek.value) &&
+  (key !== 'verse' || verse.value) &&
+  (key !== 'yunit' || hasYunit.value)
 const boardColumns = computed(() =>
   HOME_COLUMNS.map((column) => ({
     ...column,
-    panels: homeLayout.value[column.id].filter(
-      (key) => (key !== 'week' || showWeek.value) && (key !== 'verse' || verse.value) && (key !== 'yunit' || hasYunit.value)
-    ),
+    panels: homeLayout.value[column.id].filter(onBoard),
   }))
 )
 // The church on its hill stands at the foot of whichever column this person
@@ -521,7 +560,7 @@ const footColumn = computed(() => homeLayout.value.church)
 // The church can be turned off in Preferences (useHomeChurch): it is a picture
 // and nothing more. Off, a desktop has no church at any column's foot, and a
 // phone keeps the room under its apps, for the verse and YUNIT, on plain sky.
-const { homeChurch } = useHomeChurch()
+const { homeChurch, setHomeChurch } = useHomeChurch()
 const standingColumns = computed(() => boardColumns.value.filter((column) => column.panels.length || (homeChurch.value && column.id === footColumn.value)))
 
 // The church in front of the apps. Where the apps stand right above it and
@@ -548,26 +587,33 @@ const onAppsScroll = (event) => {
   appsLift.value = Math.min(event.target.scrollTop / 160, 1)
 }
 // How each panel shares its column: the day keeps its height; the apps and
-// the lists give way and scroll inside, the work least of all, and none of
-// them below a few rows, so a crowded column never folds a panel to its title.
+// the lists share out the rest of the screen, as tall as what they hold where
+// there is room, giving way where there is not, what needs attention least
+// of all (it gives way half as fast), and none below a header and a couple of
+// rows (9rem). However little room a list is left, it shows only the rows
+// that fit, whole, and how many more (useRowsThatFit): squeezed lists used to
+// cut a row off part way, or scroll inside their card, which nobody found.
 const PANEL_FIT = computed(() => ({
   // Over the church, the apps panel reaches down behind it to the column's foot.
   apps: churchOverApps.value ? 'flex-1 min-h-[9rem]' : 'flex-[0_1_auto] min-h-[9rem]',
-  // These three share out the column's height between them: as tall as what
-  // they hold, a busy week taller, and the room left over given to them too,
-  // so an empty one is never a sliver (its room saying so, PanelRest); and
-  // giving way, to 9rem, only where the column is short.
   attention: 'flex-[1_0.5_auto] min-h-[9rem]',
   community: 'flex-[1_1_auto] min-h-[9rem]',
   verse: 'flex-[0_0.6_auto] min-h-[8.5rem]',
   week: 'flex-[1_1_auto] min-h-[9rem]',
+  sunday: 'flex-[1_1_auto] min-h-[9rem]',
+  prayer: 'flex-[1_1_auto] min-h-[9rem]',
+  // The photos size themselves to the panel (HomePhotos), so it takes its
+  // share of the column like the lists rather than asking for a height.
+  photos: 'flex-[1_1_auto] min-h-[9rem]',
+  groups: 'flex-[1_1_auto] min-h-[9rem]',
+  birthdays: 'flex-[1_1_auto] min-h-[9rem]',
+  links: 'flex-[1_1_auto] min-h-[9rem]',
   // YUNIT's place keeps his height, and last in a column it is pushed down
   // to the column's foot, so he stands on the bottom of the screen however
   // short the panels above him are, rather than under them part way up.
   // His height is his and his bubble's (HomeYunit), never less than his own.
   yunit: yunitLast.value ? 'mt-auto shrink-0' : 'shrink-0',
 }))
-
 const showWeek = computed(() => wide.value && allApps.value.some((item) => item.path === '/events'))
 
 /* ------------------------------------------------------------------ YUNIT */
@@ -707,15 +753,41 @@ const yunitAnchor = computed(() => (wide.value ? yunitSpot.value : null))
 
 // YUNIT in hand: the board leaves his place as an outline, offers every
 // column, and shows the line he would land on; let go, he moves there.
+//
+// Only while the home is being rearranged (homeArranging), as for every
+// panel: the rest of the time he cannot be picked up at all (HomeYunit's
+// movable). And never off the home by being put down: the remove place shows at the
+// foot of the screen, where he stands, so setting him down near his own spot
+// took him off. The × in his corner while rearranging is the way off.
 const onYunitDrag = ({ x, y }) => {
+  if (!homeArranging.value) return
   board.value?.hold('yunit')
   board.value?.aimAt(x, y)
 }
 const onYunitPlace = ({ x, y }) => {
+  if (!homeArranging.value) return
   // Put down where he will not fit, he goes back, and says so.
   if (board.value?.aimAt(x, y)?.full) feel('refuse')
   const at = board.value?.drop()
-  if (at) movePanel('yunit', at.id, at.index)
+  // Over a full column he trades places with the panel he is put on, as a
+  // panel does.
+  if (at?.swap) swapPanels('yunit', at.swap)
+  else if (at && !at.remove) movePanel('yunit', at.id, at.index)
+}
+
+// What may be dropped on the board's remove place while carried (HomeBoard's
+// `removable`): the panels someone may have or not, and the church, while it
+// stands there. The day, the apps and what needs attention are not among
+// them, so the place never shows for those.
+const removable = computed(() => [...OPTIONAL_PANELS.map((panel) => panel.key), ...(homeChurch.value ? ['church'] : [])])
+const removeLabel = (key) => (key === 'church' ? 'The church picture' : OPTIONAL_PANELS.find((panel) => panel.key === key)?.label || 'That panel')
+
+// Dropped there: off the home, as its switch under "Show on my home" turns it
+// off, and said where to find it again.
+const removePanel = (key) => {
+  if (key === 'church') setHomeChurch(false)
+  else setShown(key, false)
+  toast.success(`${removeLabel(key)} is off your home. Bring it back from Show on my home.`)
 }
 
 /* ------------------------------------------------------------- the verse */
@@ -737,6 +809,11 @@ const verseTo = computed(() => {
 // Every app this person may open, in the navigation's order; the five on
 // the home are whichever they keep first (useAppOrder).
 const allApps = computed(() => allowedGroups(can, isAdmin.value).flatMap((group) => group.items))
+// The board's usual arrangement is made from exactly what it shows
+// (useHomeLayout's arrangeHome), so a panel this person may not open never
+// takes a place another would have had. Here, once everything the board's
+// panels depend on is defined.
+watch(() => HOME_PANELS.filter(onBoard), showOnBoard, { immediate: true })
 const { ordered, primary } = useAppOrder(allApps)
 const others = computed(() => ordered.value.slice(primary.value.length))
 // Or every app, for whoever asked for them all (useHomeCards' `showAll`).
@@ -756,6 +833,39 @@ const openHeld = () => {
 }
 
 const { style: cardStyle, showAll: showAllApps } = useHomeCards()
+
+// Simple view (Preferences): the quiet home instead of this one, handed the
+// same Today cards and apps so the two never disagree (HomeSimple).
+const { simpleView, shutter, homeShowing } = useSimpleView()
+// The window plays only while the home is on screen to be closed.
+onMounted(() => (homeShowing.value = true))
+onBeforeUnmount(() => (homeShowing.value = false))
+const simpleCards = computed(() => cards.value.filter((card) => card.kind !== 'day'))
+// Simple view's figures, one for each of these apps this person may open,
+// each opening its app.
+const opens = (path) => allApps.value.some((item) => item.path === path)
+const simpleStats = computed(() => {
+  const overdue = today.myOverdue.value.length
+  return [
+    opens('/people') && {
+      key: 'people',
+      label: 'People',
+      value: today.people.counts.value.total,
+      to: '/people',
+      note: plural(today.people.counts.value.members, 'member', 'members'),
+    },
+    opens('/events') && { key: 'events', label: 'Events this week', value: today.eventsThisWeek.value.length, to: '/events' },
+    opens('/tasks') && {
+      key: 'tasks',
+      label: 'Your open tasks',
+      value: today.myTasks.value.length,
+      to: '/tasks',
+      warn: overdue > 0,
+      note: overdue ? `${overdue} overdue` : '',
+    },
+    opens('/prayer-concerns') && { key: 'prayer', label: 'Open prayer requests', value: today.openPrayers.value, to: '/prayer-concerns' },
+  ].filter(Boolean)
+})
 
 // The desktop's apps panel, and whether its list has more below than shows:
 // measured as it scrolls, as it or its tiles change size, and as the apps on
@@ -796,6 +906,8 @@ const openVerse = computed(() => cardStyle.value === "compact")
 // The time and weather over the church, for the picture (live sky).
 const { sky, weather } = useLiveSky()
 
+// With the sky live, every page is lit as the sky is (AdminLayout).
+
 // Day or night, the weather over the church as one small picture.
 const weatherIcon = computed(() => {
   const w = weather.value
@@ -813,7 +925,7 @@ const APP_LINES = Object.fromEntries(APPS.map((app) => [app.key, app.description
 // otherwise what the app is for, in the words the church bought it under.
 const lineOf = (item) => {
   switch (item.path) {
-    case '/members':
+    case '/people':
       return today.people.loading.value ? '' : plural(today.people.counts.value.total, 'person', 'people')
     case '/tasks': {
       const n = today.myTasks.value.length
@@ -842,7 +954,7 @@ const lineOf = (item) => {
 <template>
   <!-- The home is laid out to fit one screen, so it does not scroll: its
        bottom padding alone used to tip it over and let the page slide. On a
-       desktop a list with more than fits scrolls inside its own card. -->
+       desktop each list shows the rows that fit, whole, and how many more. -->
   <!-- The page stands in a picture (HomeScene): its sky behind everything,
        and its church on the hill in the room the apps leave at the foot. -->
   <!-- With the bottom bar on, the bar takes the foot of the screen, so the
@@ -851,7 +963,15 @@ const lineOf = (item) => {
        not. -->
   <!-- YUNIT at the foot of a phone's home takes room there as the bar does,
        so the home grows a scroll the same way where it has to. -->
+  <!-- Simple view (useSimpleView) instead of all of what follows, the
+       switch between them closing and opening like a church window
+       (HomeModeShutter) with the home changed while it is shut. -->
+  <div class="relative h-full">
+  <HomeModeShutter :phase="shutter" />
+  <HomeSimple v-if="simpleView" key="simple" :greeting="greeting" :stats="simpleStats" :cards="simpleCards" />
   <div
+    v-else
+    key="full"
     :class="[
       'home-scene relative h-full bg-(--scene-sky-3) with-bar:overflow-y-auto with-bar:overscroll-contain',
       hasYunit ? 'with-yunit' : '',
@@ -884,26 +1004,30 @@ const lineOf = (item) => {
       :class="[yunitDocked ? 'h-auto min-h-full' : 'h-full', footerOn ? 'lg:pb-(--hill-band)' : 'lg:pb-5']"
       class="relative mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:grid lg:h-full lg:max-w-[112rem] lg:grid-cols-1 lg:grid-rows-[minmax(0,1fr)] lg:gap-5 lg:px-6 lg:pt-5">
       <!-- 1. Today, most important on top: on a phone, the deck. On a desktop,
-           under the greeting and beside the apps: what needs attention, with
-           the community under it, beside the week. All of it in the one
-           screen: the page never scrolls, and a list with more than its card
-           holds scrolls inside the card. -->
+           under the greeting and beside the apps: what needs attention
+           beside the week. All of it in the one screen: the page never
+           scrolls, and each list shows the rows that fit, whole, and how
+           many more. -->
       <div class="lg:col-start-1 lg:row-start-1 lg:min-h-0">
       <AppHeroDeck :cards="cards" scope="home" label="Today" :spread="wide">
         <template #spread="{ urgent, rest, dismiss, leaving }">
           <!-- The panels, in the arrangement this person chose (HomeBoard,
                useHomeLayout): three columns, a quarter, a half and a quarter,
                and any panel dragged to another place. To begin with: the day
-               and the apps down the left, the work with the community under
-               it in the middle, and the week on the right. A list with more
-               than its panel holds scrolls inside the panel, never the page;
-               the work gives way least when a column is full. -->
+               and the apps down the left, the work in the middle, and the
+               week on the right. The panels share out their column's
+               height; each list shows the rows that fit, whole, never one cut
+               off or scrolling inside, and says how many more. -->
           <HomeBoard
             ref="board"
+            :locked="!homeArranging"
             :columns="boardColumns"
             :foot="homeChurch ? footColumn : null"
             :fit="PANEL_FIT"
+            :removable="removable"
+            @remove="({ key }) => removePanel(key)"
             @move="({ key, column, index }) => movePanel(key, column, index)"
+            @swap="({ key, with: other }) => swapPanels(key, other)"
             @place="({ key, column }) => placeFoot(key, column)"
           >
             <template #panel="{ panel }">
@@ -986,9 +1110,9 @@ const lineOf = (item) => {
                   <!-- "See all" opens the All apps page, every app in a grid
                        with room to find one, as "Open calendar" opens the
                        month from the week. -->
-                  <header class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 pt-4 pb-3 dark:border-white/10">
-                    <h2 id="home-apps" class="text-base font-semibold text-gray-900 dark:text-white">Apps</h2>
-                    <RouterLink :to="{ name: 'AllApps' }" class="text-sm font-semibold whitespace-nowrap text-primary hover:underline dark:text-primary-light">
+                  <header class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 pt-2.5 pb-2 dark:border-white/10">
+                    <h2 id="home-apps" class="text-sm font-semibold text-gray-900 dark:text-white">Apps</h2>
+                    <RouterLink :to="{ name: 'AllApps' }" class="text-xs font-semibold whitespace-nowrap text-primary hover:underline dark:text-primary-light">
                       See all
                     </RouterLink>
                   </header>
@@ -1027,6 +1151,14 @@ const lineOf = (item) => {
               <!-- The day's verse, a panel of its own on a desktop (on a phone
                    it is on the church's picture). -->
               <HomeVerse v-else-if="panel === 'verse'" :verse="verse" :to="verseTo" />
+              <!-- The panels from the apps, each reading its own app only
+                   while it is on the home. -->
+              <HomeSunday v-else-if="panel === 'sunday'" />
+              <HomePrayer v-else-if="panel === 'prayer'" />
+              <HomePhotos v-else-if="panel === 'photos'" />
+              <HomeGroups v-else-if="panel === 'groups'" />
+              <HomeBirthdays v-else-if="panel === 'birthdays'" />
+              <HomeLinks v-else-if="panel === 'links'" />
               <!-- YUNIT's place: at rest he stands in it (HomeYunit), and it
                    is as tall as he and his bubble are; lifted out, it keeps
                    that height until he is back. Not hidden from screen
@@ -1155,6 +1287,34 @@ const lineOf = (item) => {
           </DeckCard>
         </template>
       </AppHeroDeck>
+      </div>
+
+      <!-- Rearranging the board, on a desktop, once asked for from the account
+           menu ("Rearrange home"): a bar over the hills at the foot of the
+           screen, where it covers no panel, saying how, with the way back to
+           the usual arrangement and Done. Nothing shows the rest of the time. -->
+      <div v-if="wide && homeArranging" class="fixed bottom-4 left-1/2 z-[80] -translate-x-1/2">
+        <div
+          role="status"
+          class="flex items-center gap-3 rounded-full bg-gray-900 py-1.5 pl-5 pr-1.5 text-sm text-white dark:bg-white dark:text-gray-900"
+        >
+          Drag the panels where you want them
+          <button
+            v-if="!layoutIsDefault"
+            type="button"
+            class="rounded-full px-3 py-1.5 font-semibold text-white/80 hover:bg-white/10 hover:text-white dark:text-gray-700 dark:hover:bg-gray-900/10"
+            @click="resetLayout"
+          >
+            Put back the usual
+          </button>
+          <button
+            type="button"
+            class="rounded-full bg-primary px-4 py-1.5 font-semibold text-white hover:bg-primary-hover"
+            @click="stopArranging"
+          >
+            Done
+          </button>
+        </div>
       </div>
 
       <!-- 2. The apps kept on the home, and the way to all of them, over the
@@ -1325,14 +1485,14 @@ const lineOf = (item) => {
          right-hand end of his own, or left of the church in the church's
          column. -->
     <HomeYunit
-      v-if="hasYunit"
+      v-if="hasYunit && !(wide && hiddenPanels.includes('yunit'))"
       :name="name"
       :anchor="yunitAnchor"
       :perch="yunitOnHill ? yunitPerch : null"
       :side="wide ? 'right' : 'left'"
       :beside-rail="wide && yunitBesideRail"
       :sky="sky['data-sky'] ? { phase: sky['data-sky'], weather: sky['data-weather'], rainbow: sky['data-rainbow'] !== undefined } : null"
-      :movable="wide"
+      :movable="wide && homeArranging"
       @drag="onYunitDrag"
       @place="onYunitPlace"
     />
@@ -1346,6 +1506,7 @@ const lineOf = (item) => {
       @close="release"
       @open="openHeld"
     />
+  </div>
   </div>
 </template>
 

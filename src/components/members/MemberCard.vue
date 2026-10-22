@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from "vue";
-import { getFullName, missingMemberDetails } from "../../utils/memberUtils";
+import { getFullName, missingMemberDetails, nicknameOf } from "../../utils/memberUtils";
 import { Check } from "../../icons";
 import MemberAvatar from "./MemberAvatar.vue";
 import YouBadge from "./YouBadge.vue";
@@ -127,10 +127,10 @@ const handleClick = () => {
           {{ getFullName(member) }}
         </p>
         <p
-          v-if="member.nickname"
+          v-if="nicknameOf(member)"
           class="mt-0.5 truncate text-[11px] text-gray-500 dark:text-gray-400"
         >
-          "{{ member.nickname }}"
+          "{{ nicknameOf(member) }}"
         </p>
         <!-- The badges, which sit beside the name in a row, go under it
              here; beside a two-line name they would push it off centre. -->
@@ -165,10 +165,10 @@ const handleClick = () => {
           <YouBadge :member="member" />
         </div>
         <p
-          v-if="member.nickname"
+          v-if="nicknameOf(member)"
           class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate"
         >
-          "{{ member.nickname }}"
+          "{{ nicknameOf(member) }}"
         </p>
       </div>
     </div>

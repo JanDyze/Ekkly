@@ -1,4 +1,3 @@
-import { ref, computed } from "vue";
 import { calculateAgeFromDate } from "../utils/memberUtils";
 import { useToast } from "./useToast";
 
@@ -14,7 +13,6 @@ const blankMember = () => ({
   nickname: '',
   sex: '',
   dateOfBirth: '',
-  age: null,
   civilStatus: '',
   address: '',
   addressParts: null,
@@ -22,99 +20,72 @@ const blankMember = () => ({
   email: '',
   occupation: '',
   ministries: [],
+  instruments: [],
   tags: [FIRST_TIMER_TAG],
   isMember: false,
   image: null,
 });
 
-export function useMemberForm(members, addMemberToFirestore, allTags) {
+/**
+ * Saving one new person: the record the add sheet (MemberEditSheet) hands
+ * over, numbered next on the roll and written once.
+ *
+ * Whether the sheet is open lives in the address (?add=true, Everyone), not
+ * here. This used to keep a second copy of that, and of the form itself,
+ * field by field, from when adding was a drawer of inputs; nothing read them.
+ */
+export function useMemberForm(members, addMemberToFirestore) {
   const toast = useToast();
-  const showAddMember = ref(false);
 
-  const newMember = ref(blankMember());
+  /** Returns true when the person was saved, so the caller can close its sheet. */
+  const addMemberFrom = async (record) => {
+    const draft = { ...blankMember(), ...record };
+    const firstName = String(draft.firstName || '').trim();
+    const lastName = String(draft.lastName || '').trim();
+    // A first and last name is all a new record needs. Sex used to be required
+    // too, but the form answered it for you ("Male") so the rule only ever
+    // guarded a guess; the record now says it is missing until someone knows.
+    if (!firstName || !lastName) return false;
 
-  // A first and last name is all a new record needs. Sex used to be required
-  // too, but the form answered it for you ("Male") so the rule only ever
-  // guarded a guess; the record now says it is missing until someone knows.
-  const canAddMember = computed(() => {
-    return String(newMember.value.firstName || '').trim() !== '' &&
-           String(newMember.value.lastName || '').trim() !== '';
-  });
-
-  const addMemberTooltip = computed(() => {
-    const missing = [];
-    if (newMember.value.firstName.trim() === '') missing.push('First Name');
-    if (newMember.value.lastName.trim() === '') missing.push('Last Name');
-    
-    if (missing.length === 0) return '';
-    return `Please fill in: ${missing.join(', ')}`;
-  });
-
-  // Calculate age from date of birth
-  const calculateAge = () => {
-    if (newMember.value.dateOfBirth) {
-      newMember.value.age = calculateAgeFromDate(newMember.value.dateOfBirth);
-    }
-  };
-
-  // Add new member. Returns true when the member was saved so the caller
-  // can close its drawer (visibility lives in the URL, not in this ref).
-  const addMember = async () => {
-    if (!canAddMember.value) {
-      return false;
-    }
-    
-    const age = calculateAgeFromDate(newMember.value.dateOfBirth);
-    
-    // Calculate next ID based on existing members
-    const nextId = members.value.length > 0 
-      ? Math.max(...members.value.map(m => typeof m.id === 'number' ? m.id : parseInt(m.id) || 0), 0) + 1 
+    // The next number on the roll: other records point at it, not at the
+    // document, so a new one is numbered the way the rest were.
+    const nextId = members.value.length > 0
+      ? Math.max(...members.value.map((m) => (typeof m.id === 'number' ? m.id : parseInt(m.id) || 0)), 0) + 1
       : 1;
-    
+
+    const text = (value) => String(value || '').trim() || undefined;
     const member = {
       id: nextId,
-      firstName: newMember.value.firstName.trim(),
-      lastName: newMember.value.lastName.trim(),
-      nickname: (newMember.value.nickname.trim() || newMember.value.firstName.trim()),
-      sex: newMember.value.sex || undefined,
-      dateOfBirth: newMember.value.dateOfBirth || undefined,
-      age: age,
-      civilStatus: newMember.value.civilStatus || undefined,
-      address: newMember.value.address.trim() || undefined,
-      addressParts: newMember.value.addressParts || undefined,
-      contactNumber: newMember.value.contactNumber.trim() || undefined,
-      email: (newMember.value.email || '').trim() || undefined,
-      occupation: newMember.value.occupation.trim() || undefined,
-      relatives: {},
-      ministries: Array.isArray(newMember.value.ministries) ? newMember.value.ministries : [],
-      instruments: Array.isArray(newMember.value.instruments) ? newMember.value.instruments : [],
-      tags: Array.isArray(newMember.value.tags) ? newMember.value.tags : [],
-      isMember: newMember.value.isMember !== undefined ? newMember.value.isMember : true,
-      image: newMember.value.image || undefined, // Include image field
+      firstName,
+      lastName,
+      // Only a nickname somebody gave: the first name is what a roster falls
+      // back to anyway (getDisplayName), and copying it in only printed it twice.
+      nickname: String(draft.nickname || '').trim(),
+      sex: draft.sex || undefined,
+      dateOfBirth: draft.dateOfBirth || undefined,
+      age: calculateAgeFromDate(draft.dateOfBirth),
+      civilStatus: draft.civilStatus || undefined,
+      address: text(draft.address),
+      addressParts: draft.addressParts || undefined,
+      contactNumber: text(draft.contactNumber),
+      email: text(draft.email),
+      occupation: text(draft.occupation),
+      ministries: Array.isArray(draft.ministries) ? draft.ministries : [],
+      instruments: Array.isArray(draft.instruments) ? draft.instruments : [],
+      tags: Array.isArray(draft.tags) ? draft.tags : [],
+      isMember: draft.isMember !== undefined ? draft.isMember : true,
+      image: draft.image || null,
     };
-    
-    // Remove undefined fields (but preserve image even if null)
-    Object.keys(member).forEach(key => {
-      if (member[key] === undefined && key !== 'image') {
-        delete member[key];
-      }
+
+    // Firestore takes no undefined, so a detail nobody gave is left off.
+    Object.keys(member).forEach((key) => {
+      if (member[key] === undefined) delete member[key];
     });
-    
-    // Preserve image field even if null
-    if (newMember.value.image === null || newMember.value.image === '') {
-      member.image = null;
-    }
-    
+
     try {
-      // Add to Firestore (real-time listener will update members automatically)
+      // Added to Firestore; the live listener brings it onto the roll.
       await addMemberToFirestore(member);
-      
-      toast.success(`${member.firstName} ${member.lastName} added`);
-      
-      // Reset form
-      newMember.value = blankMember();
-      
-      showAddMember.value = false;
+      toast.success(`${firstName} ${lastName} added`);
       return true;
     } catch (error) {
       console.error('Error adding member:', error);
@@ -123,21 +94,5 @@ export function useMemberForm(members, addMemberToFirestore, allTags) {
     }
   };
 
-  // The add sheet hands over a finished record rather than filling this
-  // form field by field, so it is laid over a blank one and saved as usual.
-  const addMemberFrom = async (record) => {
-    newMember.value = { ...blankMember(), ...record };
-    return addMember();
-  };
-
-  return {
-    showAddMember,
-    addMemberFrom,
-    newMember,
-    canAddMember,
-    addMemberTooltip,
-    calculateAge,
-    addMember,
-  };
+  return { addMemberFrom };
 }
-

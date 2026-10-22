@@ -98,6 +98,18 @@ const refFor = (task) => doc(db, TASKS_COLLECTION, task.firestoreId || task.id)
 export const updateTask = async (task, updates) => {
   try {
     await updateDoc(refFor(task), { ...updates, updatedAt: Timestamp.now() })
+
+    // Given to someone who was not on it: news to them, and to them alone.
+    // Everything else an edit changes is the list doing its job, and silent.
+    const before = new Set((task.assigneeIds || []).map(String))
+    const added = (updates.assigneeIds || []).map(String).filter((id) => !before.has(id))
+    if (added.length) {
+      notify('task.assigned', {
+        title: `For you: ${updates.title || task.title || 'a task'}`,
+        body: describe({ ...task, ...updates }),
+        to: added,
+      })
+    }
   } catch (error) {
     console.error('Error updating task:', error)
     throw error

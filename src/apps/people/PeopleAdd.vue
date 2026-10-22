@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { DownloadSimple, FileArrowUp, Plus, X } from '../../icons'
 import AppScreen from '../../components/appframe/AppScreen.vue'
 import BirthdayInput from '../../components/members/BirthdayInput.vue'
+import SelectMenu from '../../components/common/SelectMenu.vue'
 import { useMembers } from '../../composables/useMembers'
 import { useToast } from '../../composables/useToast'
 import { addMembers } from '../../api/membersService'
@@ -50,6 +51,18 @@ const blank = () => ({
 
 const rows = ref(Array.from({ length: 5 }, blank))
 
+// The sheet's choices (SelectMenu), a blank first where a blank is allowed.
+const SEX_CHOICES = [
+  { value: '', label: '—' },
+  { value: 'Male', label: 'Male' },
+  { value: 'Female', label: 'Female' },
+]
+const CIVIL_CHOICES = [{ value: '', label: '—' }, ...CIVIL_STATUS_OPTIONS]
+const STANDING_CHOICES = [
+  { value: true, label: 'Member' },
+  { value: false, label: 'Attendee' },
+]
+
 const filled = (row) =>
   ['firstName', 'lastName', 'nickname', 'sex', 'dateOfBirth', 'civilStatus', 'occupation', 'contactNumber', 'address'].some(
     (field) => String(row[field] || '').trim()
@@ -69,23 +82,43 @@ watch(
 const nameKey = (first, last) => `${String(first).trim()} ${String(last).trim()}`.toLowerCase().replace(/\s+/g, ' ')
 const onRoll = computed(() => new Set(members.value.map((m) => nameKey(m.firstName, m.lastName))))
 
-/** What is wrong with a row, if anything: 'name' (missing one), 'roll' (already there), or ''. */
+// The first row each name is on. The same name further down is the same
+// person twice — a file with a repeated line, a paste made twice — and only
+// the first of them is added.
+const firstRowOf = computed(() => {
+  const first = new Map()
+  rows.value.forEach((row) => {
+    if (!String(row.firstName).trim() || !String(row.lastName).trim()) return
+    const key = nameKey(row.firstName, row.lastName)
+    if (!first.has(key)) first.set(key, row.key)
+  })
+  return first
+})
+
+/**
+ * What is wrong with a row, if anything: 'name' (missing one), 'roll'
+ * (already there), 'twice' (on an earlier row of this sheet), or ''.
+ */
 const problemOf = (row) => {
   if (!filled(row)) return ''
   if (!String(row.firstName).trim() || !String(row.lastName).trim()) return 'name'
-  if (onRoll.value.has(nameKey(row.firstName, row.lastName))) return 'roll'
+  const key = nameKey(row.firstName, row.lastName)
+  if (onRoll.value.has(key)) return 'roll'
+  if (firstRowOf.value.get(key) !== row.key) return 'twice'
   return ''
 }
 
 const ready = computed(() => rows.value.filter((row) => filled(row) && !problemOf(row)))
 const needName = computed(() => rows.value.filter((row) => problemOf(row) === 'name').length)
 const already = computed(() => rows.value.filter((row) => problemOf(row) === 'roll').length)
+const twice = computed(() => rows.value.filter((row) => problemOf(row) === 'twice').length)
 
 const summary = computed(() =>
   [
     `${ready.value.length} ready`,
     needName.value && `${needName.value} need a first and last name`,
     already.value && `${already.value} already on the roll`,
+    twice.value && `${twice.value} listed twice`,
   ]
     .filter(Boolean)
     .join(' · ')
@@ -164,7 +197,7 @@ const recordOf = (row) => {
   const record = {
     firstName: t(row.firstName),
     lastName: t(row.lastName),
-    nickname: t(row.nickname) || t(row.firstName),
+    nickname: t(row.nickname),
     sex: row.sex,
     dateOfBirth: row.dateOfBirth,
     age: row.dateOfBirth ? calculateAgeFromDate(row.dateOfBirth) ?? null : null,
@@ -226,7 +259,7 @@ const COLUMNS = [
 </script>
 
 <template>
-  <AppScreen title="Add people" :subtitle="summary" :back="{ name: 'PeopleHome' }" root="/members" wide>
+  <AppScreen title="Add people" :subtitle="summary" :back="{ name: 'PeopleHome' }" root="/people" wide>
     <div class="flex flex-col gap-4 pb-24">
       <!-- Three ways in: type, paste, or bring a file. -->
       <section class="rounded-2xl bg-white p-4 ring-1 ring-gray-200/80 dark:bg-gray-800 dark:ring-gray-700/80">
@@ -282,7 +315,7 @@ const COLUMNS = [
               v-for="(row, r) in rows"
               :key="row.key"
               :class="[
-                problemOf(row) === 'name' ? 'bg-red-50/60 dark:bg-red-500/5' : problemOf(row) === 'roll' ? 'bg-amber-50/70 dark:bg-amber-500/5' : '',
+                problemOf(row) === 'name' ? 'bg-red-50/60 dark:bg-red-500/5' : problemOf(row) === 'roll' || problemOf(row) === 'twice' ? 'bg-amber-50/70 dark:bg-amber-500/5' : '',
               ]"
             >
               <!-- First name, with the row's number and anything wrong with it. -->
@@ -300,6 +333,7 @@ const COLUMNS = [
                       :class="[cell, problemOf(row) === 'name' && !row.firstName.trim() ? 'ring-1 ring-red-400' : '']"
                     />
                     <p v-if="problemOf(row) === 'roll'" class="truncate px-2 text-[11px] text-amber-700 dark:text-amber-400">Already on the roll</p>
+                    <p v-else-if="problemOf(row) === 'twice'" class="truncate px-2 text-[11px] text-amber-700 dark:text-amber-400">Listed twice</p>
                   </div>
                 </div>
               </td>
@@ -318,20 +352,29 @@ const COLUMNS = [
                 <input v-model="row.nickname" data-cell="nickname" :data-row="r" autocomplete="off" :placeholder="samplePerson(row.sex, r).nickname" :aria-label="`Row ${r + 1}, nickname`" :class="cell" />
               </td>
               <td class="border-b border-gray-100 px-1 py-1 dark:border-gray-700/60">
-                <select v-model="row.sex" data-cell="sex" :data-row="r" :aria-label="`Row ${r + 1}, sex`" :class="cell">
-                  <option value="">—</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
+                <SelectMenu
+                  v-model="row.sex"
+                  data-cell="sex"
+                  :data-row="r"
+                  :aria-label="`Row ${r + 1}, sex`"
+                  :field-class="cell"
+                  placeholder="—"
+                  :options="SEX_CHOICES"
+                />
               </td>
               <td class="border-b border-gray-100 px-1 py-1 dark:border-gray-700/60" data-cell="dateOfBirth" :data-row="r">
                 <BirthdayInput v-model="row.dateOfBirth" compact :field-class="cell" />
               </td>
               <td class="border-b border-gray-100 px-1 py-1 dark:border-gray-700/60">
-                <select v-model="row.civilStatus" data-cell="civilStatus" :data-row="r" :aria-label="`Row ${r + 1}, civil status`" :class="cell">
-                  <option value="">—</option>
-                  <option v-for="opt in CIVIL_STATUS_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                </select>
+                <SelectMenu
+                  v-model="row.civilStatus"
+                  data-cell="civilStatus"
+                  :data-row="r"
+                  :aria-label="`Row ${r + 1}, civil status`"
+                  :field-class="cell"
+                  placeholder="—"
+                  :options="CIVIL_CHOICES"
+                />
               </td>
               <td class="border-b border-gray-100 px-1 py-1 dark:border-gray-700/60">
                 <input
@@ -362,10 +405,14 @@ const COLUMNS = [
                 <input v-model="row.address" data-cell="address" :data-row="r" autocomplete="off" placeholder="Antipolo, Rizal" :aria-label="`Row ${r + 1}, address`" :class="cell" />
               </td>
               <td class="border-b border-gray-100 px-1 py-1 dark:border-gray-700/60">
-                <select v-model="row.isMember" data-cell="isMember" :data-row="r" :aria-label="`Row ${r + 1}, standing`" :class="cell">
-                  <option :value="true">Member</option>
-                  <option :value="false">Attendee</option>
-                </select>
+                <SelectMenu
+                  v-model="row.isMember"
+                  data-cell="isMember"
+                  :data-row="r"
+                  :aria-label="`Row ${r + 1}, standing`"
+                  :field-class="cell"
+                  :options="STANDING_CHOICES"
+                />
               </td>
               <td class="border-b border-gray-100 px-1 py-1 dark:border-gray-700/60">
                 <button

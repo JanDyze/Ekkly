@@ -48,8 +48,10 @@ const REACTIONS = {
 
 let settleTimer = null
 let sleepTimer = null
-// Five minutes of quiet before he dozes: until then he plays (HomeYunit).
-const SLEEP_AFTER = 300000
+// Ten minutes of quiet before he dozes: until then he plays (HomeYunit). It
+// was five, and with his play every half a minute or so he seemed never to
+// settle: a quiet home should be quiet for a while before he nods off.
+const SLEEP_AFTER = 600000
 
 const busy = () => phase.value === 'thinking' || phase.value === 'talking'
 const settleIn = (ms) => {

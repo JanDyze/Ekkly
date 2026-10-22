@@ -8,11 +8,16 @@
 
 export const versionHistory = [
   {
-    version: '0.35.49',
-    date: '2026-10-17',
-    title: 'Where you are',
-    summary: 'On a computer, pages deep inside an app show the way you came, over their title.',
-    highlights: ['“People › Ministries” over a ministry, each part a link back.'],
+    version: '0.36.0',
+    date: '2026-10-22',
+    title: 'Tell us what you think',
+    summary: 'The new Tickets app: report a bug, suggest an idea, ask a question or say thanks, and read the answer.',
+    highlights: [
+      'Alt+T on any page sends a ticket without leaving it.',
+      'Simple view in Preferences: a sidebar, dashboards and plain tables.',
+      'The top bar shows where you are, “People › Ministries”, each step a link back.',
+      'More panels for your home, and Rearrange home in the account menu.',
+    ],
   },
   {
     version: '0.35.48',

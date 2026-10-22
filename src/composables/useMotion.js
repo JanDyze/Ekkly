@@ -5,10 +5,13 @@ import { useAuth } from './useAuth'
 /**
  * How much moves between pages, for this person (router/viewTransitions.js):
  *
- *   full   — the card turning over into the page it opens, the picture and
- *            the name flying into its header, its contents rising in;
- *   simple — pages slide in and settle, and nothing flies;
- *   off    — pages simply change.
+ *   full — the card turning over into the page it opens, and the page
+ *          turning back into its card on the way out;
+ *   off  — pages simply change.
+ *
+ * That card is the only thing that moves between pages: the slides, the
+ * settling and the rising in were taken out, so there is no `simple` any
+ * more. Whoever chose it asked for less motion, and now has none (readLevel).
  *
  * Full unless they choose otherwise in Preferences, because it is what makes
  * going between apps easy to follow; but some people find motion tiring, and
@@ -20,14 +23,16 @@ import { useAuth } from './useAuth'
  * outside any component.
  */
 export const MOTION_LEVELS = [
-  { key: 'full', label: 'Full' },
-  { key: 'simple', label: 'Simple' },
+  { key: 'full', label: 'On' },
   { key: 'off', label: 'Off' },
 ]
 
 const PREF_KEY = 'motion'
 const cacheKey = (uid) => `ekkly:motion:${uid}`
 const known = (value) => MOTION_LEVELS.some((level) => level.key === value)
+// A stored level as it stands now: the old `simple` is `off`, and anything
+// unknown is the default.
+const readLevel = (value) => (value === 'simple' ? 'off' : known(value) ? value : 'full')
 
 const level = ref('full')
 const uid = ref(null)
@@ -54,13 +59,13 @@ export const initMotion = () => {
       }
       try {
         const kept = localStorage.getItem(cacheKey(now))
-        level.value = known(kept) ? kept : 'full'
+        level.value = readLevel(kept)
       } catch {
         level.value = 'full'
       }
       unsubscribe = subscribeToUserPrefs(now, (prefs) => {
         if (!prefs) return
-        level.value = known(prefs[PREF_KEY]) ? prefs[PREF_KEY] : 'full'
+        level.value = readLevel(prefs[PREF_KEY])
         try {
           localStorage.setItem(cacheKey(now), level.value)
         } catch {
@@ -73,7 +78,7 @@ export const initMotion = () => {
 }
 
 export function useMotion() {
-  const label = computed(() => MOTION_LEVELS.find((l) => l.key === level.value)?.label || 'Full')
+  const label = computed(() => MOTION_LEVELS.find((l) => l.key === level.value)?.label || 'On')
 
   /** Sets it for this person, everywhere they sign in. Full is the default, so it is stored only when it is not. */
   const setMotion = async (value) => {

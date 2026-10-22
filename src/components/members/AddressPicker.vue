@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { listBarangays, listCities, listProvinces } from '../../api/psgcService'
+import SelectMenu from '../common/SelectMenu.vue'
 
 // An address picked rather than typed: province, then city or municipality,
 // then barangay, each a list of the real places (psgcService), and a line for
@@ -114,6 +115,9 @@ watch(
   }
 )
 
+// A list of places as the dropdown's choices (SelectMenu).
+const choices = (list) => list.map((row) => ({ value: row.code, label: row.name }))
+
 const placeholder = (what, list) => (loading.value === what ? 'Loading…' : list.length ? 'Choose' : '—')
 const picked = computed(() => Boolean(province.value))
 </script>
@@ -123,25 +127,39 @@ const picked = computed(() => Boolean(province.value))
     <template v-if="!failed">
       <div>
         <label for="ap-province" :class="labelClass">Province</label>
-        <select id="ap-province" v-model="province" :class="fieldClass" @change="pickProvince">
-          <option value="">{{ placeholder('provinces', provinces) }}</option>
-          <option v-for="row in provinces" :key="row.code" :value="row.code">{{ row.name }}</option>
-        </select>
+        <SelectMenu
+          id="ap-province"
+          v-model="province"
+          :options="choices(provinces)"
+          :placeholder="placeholder('provinces', provinces)"
+          :field-class="fieldClass"
+          @change="pickProvince"
+        />
       </div>
       <div class="grid grid-cols-2 gap-2">
         <div class="min-w-0">
           <label for="ap-city" :class="labelClass">City or town</label>
-          <select id="ap-city" v-model="city" :disabled="!province" :class="[fieldClass, 'disabled:opacity-50']" @change="pickCity">
-            <option value="">{{ placeholder('cities', cities) }}</option>
-            <option v-for="row in cities" :key="row.code" :value="row.code">{{ row.name }}</option>
-          </select>
+          <SelectMenu
+            id="ap-city"
+            v-model="city"
+            :disabled="!province"
+            :options="choices(cities)"
+            :placeholder="placeholder('cities', cities)"
+            :field-class="fieldClass"
+            @change="pickCity"
+          />
         </div>
         <div class="min-w-0">
           <label for="ap-brgy" :class="labelClass">Barangay</label>
-          <select id="ap-brgy" v-model="barangay" :disabled="!city" :class="[fieldClass, 'disabled:opacity-50']" @change="send">
-            <option value="">{{ placeholder('barangays', barangays) }}</option>
-            <option v-for="row in barangays" :key="row.code" :value="row.code">{{ row.name }}</option>
-          </select>
+          <SelectMenu
+            id="ap-brgy"
+            v-model="barangay"
+            :disabled="!city"
+            :options="choices(barangays)"
+            :placeholder="placeholder('barangays', barangays)"
+            :field-class="fieldClass"
+            @change="send"
+          />
         </div>
       </div>
     </template>

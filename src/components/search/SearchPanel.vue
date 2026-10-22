@@ -1,17 +1,8 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-  CalendarBlank,
-  CheckSquare,
-  MagnifyingGlass,
-  MusicNotes,
-  Notebook,
-  UsersThree,
-  X,
-} from '../../icons'
-import AppArt from '../common/AppArt.vue'
-import MemberAvatar from '../members/MemberAvatar.vue'
+import { ClockCounterClockwise, MagnifyingGlass, X } from '../../icons'
+import SearchResult from './SearchResult.vue'
 import { useFocusTrap } from '../../composables/useFocusTrap'
 import { useGlobalSearch } from '../../composables/useGlobalSearch'
 
@@ -27,7 +18,21 @@ import { useGlobalSearch } from '../../composables/useGlobalSearch'
 const emit = defineEmits(['close'])
 
 const router = useRouter()
-const { query, results, status, progress, consented, allowModel, indexed, total } = useGlobalSearch()
+const {
+  query,
+  results,
+  recentQueries,
+  recentOpened,
+  remember,
+  forgetQuery,
+  clearHistory,
+  status,
+  progress,
+  consented,
+  allowModel,
+  indexed,
+  total,
+} = useGlobalSearch()
 
 const panel = ref(null)
 const input = ref(null)
@@ -35,14 +40,13 @@ const input = ref(null)
 useFocusTrap(panel, ref(true), () => emit('close'))
 onMounted(() => input.value?.focus())
 
-const KINDS = {
-  app: { label: 'App' },
-  person: { label: 'Person' },
-  event: { label: 'Event', icon: CalendarBlank },
-  song: { label: 'Song', icon: MusicNotes },
-  task: { label: 'Task', icon: CheckSquare },
-  minute: { label: 'Minutes', icon: Notebook },
-  group: { label: 'Small group', icon: UsersThree },
+const hasHistory = computed(() => recentQueries.value.length > 0 || recentOpened.value.length > 0)
+
+// A search from before goes back in the box, and the focus with it, so it
+// can be run again as it was or changed a word.
+const searchAgain = (q) => {
+  query.value = q
+  input.value?.focus()
 }
 
 // Whether to offer the model: not yet agreed to, and not already on its way.
@@ -56,11 +60,27 @@ const percent = computed(() => Math.round(progress.value * 100))
 const stillIndexing = computed(() => status.value === 'ready' && indexed.value > 0 && indexed.value < total.value)
 
 const open = (result) => {
+  remember(result)
   emit('close')
   router.push(result.to)
 }
-const openFirst = () => {
-  if (results.value[0]) open(results.value[0])
+// The result Enter opens: the best one to begin with, shown as already chosen
+// so the commonest search is type, Enter. The arrows move it, and it goes back
+// to the top whenever the results change under it.
+const active = ref(0)
+watch(results, () => {
+  active.value = 0
+})
+const list = ref(null)
+const move = (step) => {
+  const count = results.value.length
+  if (!count) return
+  active.value = (active.value + step + count) % count
+  nextTick(() => list.value?.children[active.value]?.scrollIntoView({ block: 'nearest' }))
+}
+const openActive = () => {
+  const result = results.value[active.value]
+  if (result) open(result)
 }
 </script>
 
@@ -81,12 +101,20 @@ const openFirst = () => {
         ref="input"
         v-model="query"
         type="search"
+        data-global-search
         enterkeyhint="go"
         autocomplete="off"
         placeholder="Search people, songs, events…"
         aria-label="Search"
-        class="min-w-0 flex-1 bg-transparent py-2 text-base text-gray-900 outline-none placeholder:text-gray-400 dark:text-white"
-        @keydown.enter.prevent="openFirst"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-controls="global-search-results"
+        :aria-expanded="results.length > 0"
+        :aria-activedescendant="results.length ? `global-search-result-${active}` : undefined"
+        class="search-input min-w-0 flex-1 bg-transparent py-2 text-base text-gray-900 outline-none placeholder:text-gray-400 dark:text-white"
+        @keydown.enter.prevent="openActive"
+        @keydown.down.prevent="move(1)"
+        @keydown.up.prevent="move(-1)"
       />
       <button
         type="button"
@@ -124,39 +152,73 @@ const openFirst = () => {
 
     <!-- The results. -->
     <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-      <p v-if="!query.trim()" class="px-3 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
-        Try a name, a song, or what you are looking for — “youth outreach”, “songs about grace”.
-      </p>
+      <!-- Nothing typed yet: what was searched and opened before, if anything. -->
+      <template v-if="!query.trim()">
+        <template v-if="hasHistory">
+          <div class="flex items-center justify-between px-3 pb-1 pt-1">
+            <h2 class="text-xs font-semibold text-gray-500 dark:text-gray-400">Recent</h2>
+            <button
+              type="button"
+              class="rounded-lg px-2 py-1 text-xs font-semibold text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+              @click="clearHistory"
+            >
+              Clear
+            </button>
+          </div>
+          <ul v-if="recentQueries.length" class="flex flex-col">
+            <li v-for="q in recentQueries" :key="q" class="flex items-center">
+              <button
+                type="button"
+                class="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors hover:bg-gray-100 focus-visible:bg-gray-100 dark:hover:bg-white/5 dark:focus-visible:bg-white/5"
+                @click="searchAgain(q)"
+              >
+                <ClockCounterClockwise class="size-5 shrink-0 text-gray-400" aria-hidden="true" />
+                <span class="truncate text-[15px] text-gray-700 dark:text-gray-200">{{ q }}</span>
+              </button>
+              <button
+                type="button"
+                class="flex size-9 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
+                :aria-label="`Remove “${q}” from recent searches`"
+                @click="forgetQuery(q)"
+              >
+                <X class="size-4" />
+              </button>
+            </li>
+          </ul>
+          <ul v-if="recentOpened.length" class="flex flex-col" :class="{ 'mt-1 border-t border-gray-100 pt-1 dark:border-gray-800': recentQueries.length }">
+            <li v-for="result in recentOpened" :key="result.id">
+              <SearchResult :result="result" @open="open" />
+            </li>
+          </ul>
+        </template>
+        <p v-else class="px-3 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
+          Try a name, a song, or what you are looking for — “youth outreach”, “songs about grace”.
+        </p>
+      </template>
       <p v-else-if="!results.length" class="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
         Nothing matches “{{ query.trim() }}”.
       </p>
-      <ul v-else class="flex flex-col">
-        <li v-for="result in results" :key="result.id">
-          <button
-            type="button"
-            class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-gray-100 focus-visible:bg-gray-100 dark:hover:bg-white/5 dark:focus-visible:bg-white/5"
-            @click="open(result)"
-          >
-            <MemberAvatar v-if="result.kind === 'person'" :member="result.member" alt="" size="h-10 w-10" class="shrink-0" />
-            <span v-else class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-300">
-              <AppArt v-if="result.kind === 'app'" :app-key="result.art" class="size-7" />
-              <component :is="KINDS[result.kind].icon" v-else class="size-5" />
-            </span>
-            <span class="min-w-0 flex-1">
-              <span class="block truncate text-[15px] font-semibold text-gray-900 dark:text-white">{{ result.title }}</span>
-              <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
-                {{ KINDS[result.kind].label }}<template v-if="result.subtitle"> · {{ result.subtitle }}</template>
-              </span>
-            </span>
-            <span
-              v-if="result.byMeaning"
-              class="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary dark:bg-primary-light/15 dark:text-primary-light"
-            >
-              By meaning
-            </span>
-          </button>
+      <ul v-else id="global-search-results" ref="list" role="listbox" aria-label="Results" class="flex flex-col">
+        <li
+          v-for="(result, i) in results"
+          :id="`global-search-result-${i}`"
+          :key="result.id"
+          role="option"
+          :aria-selected="i === active"
+          @mousemove="active = i"
+        >
+          <SearchResult :result="result" :active="i === active" @open="open" />
         </li>
       </ul>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* The box is the whole panel's reason for being and always has the focus, so
+   the app's keyboard-focus outline (style.css, which a text field always meets
+   when focused) only drew a hard rectangle inside it. The caret says enough. */
+.search-input:focus-visible {
+  outline: none;
+}
+</style>

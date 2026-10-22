@@ -83,6 +83,10 @@ const props = defineProps({
   // Walking, for as long as it is true: the page moves him across itself at
   // WALK_SPEED of his width a second, and his feet step to match it.
   walking: { type: Boolean, default: false },
+  // A tie, red, knotted under his face over a white collar: his Sunday best,
+  // for while the church is at its service. It comes on from the knot down
+  // and goes the same way.
+  tie: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['wake'])
@@ -210,7 +214,7 @@ const REST = {
   tX: 0, tY: 0, tR: 0, tA: 1,
   bX: 0, bY: 0, bR: 0, bA: 1,
   bang: 1, dots: 0, question: 0, zzz: 0,
-  lamp: 0, brolly: 0, coat: 0, flush: 0,
+  lamp: 0, brolly: 0, coat: 0, flush: 0, tie: 0,
 }
 
 // How each kind of part moves. Stiff and well damped for eyelids, so a blink
@@ -234,7 +238,7 @@ const springOf = (key) => {
   if (key === 'lookX' || key === 'lookY') return SPRINGS.look
   if (key === 'head' || key === 'headY') return SPRINGS.head
   if (/^[yotb][XYR]$/.test(key)) return SPRINGS.petal
-  if (/A$|^(bang|dots|question|zzz|mouth|flush)$/.test(key)) return SPRINGS.fade
+  if (/A$|^(bang|dots|question|zzz|mouth|flush|tie)$/.test(key)) return SPRINGS.fade
   if (key === 'smile' || key === 'talk' || key === 'gape' || key === 'eyes' || key === 'happy') return SPRINGS.face
   return SPRINGS.body
 }
@@ -647,6 +651,7 @@ const targetsAt = (t) => {
   target.lamp = props.lantern ? 1 : 0
   target.brolly = props.umbrella ? 1 : 0
   target.coat = props.raincoat ? 1 : 0
+  target.tie = props.tie ? 1 : 0
   target.step = props.walking ? 1 : 0
   if (props.follow && !OWN_GAZE.has(props.mood)) {
     target.lookX += pointerLook.x
@@ -776,6 +781,13 @@ const draw = (t) => {
     el.brolly.setAttribute('transform', `translate(${UMBRELLA.hand[0]} ${UMBRELLA.hand[1]}) rotate(${UMBRELLA.lean}) scale(${f(brolly)}) translate(0 -${UMBRELLA.shaft})`)
   }
 
+  // His tie: faded in and drawn down from the knot.
+  if (el.tie) {
+    const tie = Math.min(1, Math.max(0, x('tie')))
+    el.tie.style.opacity = f(Math.min(1, tie * 2))
+    el.tie.setAttribute('transform', `translate(126 152) scale(1 ${f(tie)}) translate(-126 -152)`)
+  }
+
   if (el.flush) el.flush.style.opacity = f(Math.min(1, Math.max(0, x('flush'))) * 0.5)
 
   if (el.lamp) {
@@ -898,7 +910,7 @@ watch(
     wake()
   }
 )
-watch(() => [props.sparks, props.follow, props.lantern, props.umbrella, props.raincoat, props.walking, props.curled], wake)
+watch(() => [props.sparks, props.follow, props.lantern, props.umbrella, props.raincoat, props.walking, props.curled, props.tie], wake)
 
 onMounted(() => {
   if (reduced) {
@@ -1019,6 +1031,19 @@ defineExpose({ play, cross })
                 <path :ref="bind('flame')" :fill="`url(#${id}flame)`" d="M203 164C208.5 171 208.5 177 203 180.5C197.5 177 197.5 171 203 164Z" />
                 <rect class="y-lamp-frame" x="191" y="183" width="24" height="6" rx="2" />
               </g>
+            </g>
+          </g>
+
+          <!-- His tie, for the service: a white collar either side of the knot
+               and a red tie hanging between his petals, leaning a little the
+               way his face turns. Set each frame (draw). -->
+          <g :ref="bind('tie')" style="opacity: 0">
+            <g transform="rotate(-8 126 156)">
+              <path class="y-collar" d="M110 148L126 155L116 166Z" />
+              <path class="y-collar" d="M142 148L126 155L136 166Z" />
+              <path class="y-tie" d="M121 165L113 196L126 210L139 196L131 165Z" />
+              <path class="y-tie-stripe" d="M118 178L133 171M116 189L135 180M118 199L136 191" />
+              <path class="y-tie-knot" d="M118 152H134L131 166H121Z" />
             </g>
           </g>
 
@@ -1164,6 +1189,27 @@ svg {
   fill: none;
   stroke: #e3a90b;
   stroke-width: 5;
+  stroke-linecap: round;
+}
+
+/* His tie: Sunday red, a deeper red for the knot and its stripes, on a white
+   collar edged as his face is. */
+.y-collar {
+  fill: #fff;
+  stroke: #d5dce8;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+.y-tie {
+  fill: #c92f3a;
+}
+.y-tie-knot {
+  fill: #a51f2b;
+}
+.y-tie-stripe {
+  fill: none;
+  stroke: #a51f2b;
+  stroke-width: 3;
   stroke-linecap: round;
 }
 

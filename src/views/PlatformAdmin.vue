@@ -18,6 +18,7 @@ import {
   Storefront,
   Tray,
   UsersThree,
+  Kanban,
 } from '../icons'
 import { initAuth, useAuth } from '../composables/useAuth'
 import { useMediaQuery } from '../composables/useMediaQuery'
@@ -30,6 +31,7 @@ import ChurchesAdmin from '../components/platform/ChurchesAdmin.vue'
 import AppCatalogAdmin from '../components/platform/AppCatalogAdmin.vue'
 import FrontDoorAdmin from '../components/platform/FrontDoorAdmin.vue'
 import SupportRequestsAdmin from '../components/platform/SupportRequestsAdmin.vue'
+import TicketsAdmin from '../components/platform/TicketsAdmin.vue'
 import ChatAdmin from '../components/platform/ChatAdmin.vue'
 import NewChurchDefaultsAdmin from '../components/platform/NewChurchDefaultsAdmin.vue'
 import BrandingAdmin from '../components/platform/BrandingAdmin.vue'
@@ -146,6 +148,15 @@ const GROUPS = computed(() => [
         icon: ChartLine,
         status: 'Who is looking, and which churches typed their name',
         component: FrontDoorAdmin,
+      },
+      {
+        // Every church's tickets, as a board: the bugs and ideas Ekkly
+        // answers, worked from new to done.
+        key: 'tickets',
+        label: 'Tickets',
+        icon: Kanban,
+        status: 'Bugs and ideas from every church',
+        component: TicketsAdmin,
       },
       {
         key: 'support',

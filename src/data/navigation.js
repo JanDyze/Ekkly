@@ -11,7 +11,7 @@ import {
   ListChecks,
   ListMusic,
   Mic2,
-  NotebookPen,
+  ChatCircleText,
   ProjectorScreen,
   Robot,
   Settings,
@@ -56,7 +56,7 @@ import smallGroupsArt from '../assets/app-icons/smallgroups.svg'
 import songsArt from '../assets/app-icons/songs.svg'
 import tasksArt from '../assets/app-icons/tasks.svg'
 import teachingArt from '../assets/app-icons/teaching.svg'
-import todosArt from '../assets/app-icons/todos.svg'
+import ticketsArt from '../assets/app-icons/tickets.svg'
 import videosArt from '../assets/app-icons/videos.svg'
 
 /**
@@ -110,7 +110,7 @@ export const NAV_GROUPS = [
       {
         name: 'People',
         tagline: 'Our church family',
-        path: '/members',
+        path: '/people',
         image: peopleArt,
         art: 'members',
         icon: Users,
@@ -292,6 +292,19 @@ export const NAV_GROUPS = [
         icon: Robot,
         description: 'The church’s assistant: he writes up minutes, finds songs and lays out lyrics.',
       },
+      // Tickets: a bug, an idea, a word of thanks or a complaint, sent to the
+      // administrators. No capability and no app: everyone may send one, in
+      // every church, so it is never something a church switches off. What
+      // only administrators see inside it is guarded by its own routes.
+      {
+        name: 'Tickets',
+        tagline: 'Tell us what you think',
+        path: '/tickets',
+        image: ticketsArt,
+        art: 'tickets',
+        icon: ChatCircleText,
+        description: 'Report a bug, suggest an idea, or say what you love — and see the answer.',
+      },
     ],
   },
   {
@@ -317,16 +330,6 @@ export const NAV_GROUPS = [
         icon: Tray,
         capability: 'inventory.view',
         description: 'Everything the church owns — where it is kept, who has borrowed it, and what needs fixing.',
-      },
-      {
-        name: 'To-do',
-        tagline: 'Building this app',
-        path: '/todo',
-        image: todosArt,
-        art: 'todos',
-        icon: NotebookPen,
-        adminOnly: true,
-        description: 'The backlog for building this app — bugs, features and chores.',
       },
       {
         name: 'Accounts',

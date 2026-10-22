@@ -87,13 +87,12 @@ const altText = computed(() => {
 })
 
 /**
- * Blue for men, red for women — the same split getSexIcon makes, so the frame
- * and the ♂/♀ beside it can never disagree. membersService fills a blank sex
- * in as "Male", so an unrecorded sex shows blue for the same reason it already
- * shows ♂; MemberAttentionBadge is what flags that gap, not the frame.
+ * Red for women, blue for everyone else. A sex nobody has recorded stays
+ * blue, as it always looked (membersService used to fill it in as "Male"):
+ * the frame is not where that gap is told, MemberAttentionBadge is.
  */
 const frameSrc = computed(
-  () => FRAMES[props.tone] || (props.member?.sex === 'Male' ? FRAMES.blue : FRAMES.red)
+  () => FRAMES[props.tone] || (props.member?.sex === 'Female' ? FRAMES.red : FRAMES.blue)
 )
 </script>
 

@@ -29,6 +29,7 @@ import { galleryRoutes } from '../apps/gallery/routes'
 import { songsRoutes } from '../apps/songs/routes'
 import { teachingRoutes } from '../apps/teaching/routes'
 import { inventoryRoutes } from '../apps/inventory/routes'
+import { ticketsRoutes } from '../apps/tickets/routes'
 
 const HOME = '/home'
 
@@ -231,11 +232,13 @@ const churchRoutes = [
       // Inventory is an app of its own (src/apps/inventory): what the church
       // owns, photographed with the background taken out on the phone.
       ...inventoryRoutes,
+      // Tickets is an app of its own (src/apps/tickets): anyone sends a bug,
+      // an idea or a word of feedback, and the administrators answer it. It
+      // was the administrators' To-do page, whose address still leads here.
+      ...ticketsRoutes,
       {
         path: 'todo',
-        name: 'Todo',
-        meta: { adminOnly: true },
-        component: () => import('../views/Todo.vue')
+        redirect: '/tickets'
       },
       {
         path: 'accounts',
@@ -456,7 +459,14 @@ const createChurchRouter = () => {
       if (adminOnly && !isAdmin.value && !hasNoAdmins.value) {
         return { path: HOME, query: { denied: to.path } }
       }
-      if (capability && !can(capability)) return { path: HOME, query: { denied: to.path } }
+      // Someone's own member record is theirs to read whatever else they may
+      // see (meta.ownRecord): "My profile" is not a look at the roll.
+      const { myMember } = usePermissions()
+      const own =
+        to.meta.ownRecord &&
+        myMember.value &&
+        [myMember.value.id, myMember.value.firestoreId].map(String).includes(String(to.params.id))
+      if (capability && !can(capability) && !own) return { path: HOME, query: { denied: to.path } }
     }
 
     return true

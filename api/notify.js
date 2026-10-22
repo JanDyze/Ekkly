@@ -41,12 +41,34 @@ function trayIcon(def, event) {
   return "/icons/pwa-192x192.png";
 }
 
-/** Every device registered in the church, paired with the account that registered it. */
-async function loadTargets(church, kind, audience) {
+/**
+ * Every device registered in the church, paired with the account that
+ * registered it; only those of `recipients` (a Set of uids) when the
+ * notification is for particular people.
+ */
+async function loadTargets(church, kind, audience, recipients = null) {
   const snap = await church.collection("fcmTokens").select("uid").get();
   return snap.docs
+    .filter((d) => !recipients || recipients.has(d.data().uid))
     .filter((d) => canReceive(kind, audience.contextFor(d.data().uid)))
     .map((d) => d.id);
+}
+
+/**
+ * The accounts linked to these member records (by their key on the roll:
+ * the record's `id`, or its document id where it has none), as a Set of uids.
+ * A record nobody has claimed has no account, and so no one to tell.
+ */
+async function uidsOfMembers(church, keys) {
+  const wanted = new Set(keys.map(String));
+  const snap = await church.collection("members").select("id", "uid").get();
+  const uids = new Set();
+  snap.docs.forEach((d) => {
+    const data = d.data();
+    const key = String(data.id ?? d.id);
+    if (wanted.has(key) && data.uid) uids.add(data.uid);
+  });
+  return uids;
 }
 
 /** Drops tokens FCM reported as dead, so the list does not rot. */
@@ -91,7 +113,7 @@ export default async function handler(req, res) {
   const church = caller.church.ref;
 
   try {
-    const { kind, title, body, url, event } = req.body || {};
+    const { kind, title, body, url, event, to } = req.body || {};
     if (!title || !title.trim()) {
       return res.status(400).json({ error: "title is required" });
     }
@@ -109,7 +131,12 @@ export default async function handler(req, res) {
     const messaging = getMessaging();
 
     const audience = await loadAudience(church);
-    const tokens = await loadTargets(church, kind, audience);
+    // For particular people (`to`, their member records): their accounts
+    // only. None of them signed in to Ekkly yet means nobody to tell, and
+    // nothing for anyone else's history either.
+    const recipients = Array.isArray(to) && to.length ? await uidsOfMembers(church, to) : null;
+    if (recipients && !recipients.size) return res.status(200).json({ kind: kind || null, devices: 0, sent: 0, failed: 0, removed: 0 });
+    const tokens = await loadTargets(church, kind, audience, recipients);
 
     // FCM requires an absolute HTTPS link for the click-through URL
     const origin = `https://${req.headers.host}`;
@@ -166,6 +193,8 @@ export default async function handler(req, res) {
       devices: tokens.length,
       sent,
       failed,
+      // Whose it is, when it is someone's: the panel shows it to them alone.
+      ...(recipients ? { to: [...recipients] } : {}),
     });
     await pruneHistory(church);
 

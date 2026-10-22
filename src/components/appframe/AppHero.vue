@@ -47,7 +47,7 @@ defineProps({
     :is="to ? RouterLink : 'section'"
     :to="to || undefined"
     :class="[
-      'app-hero animate-rise group relative isolate block overflow-hidden rounded-2xl bg-primary p-5 text-white',
+      'app-hero group relative isolate block overflow-hidden rounded-2xl bg-primary p-5 text-white',
       to ? 'transition-[filter] duration-200 ease-out hover:brightness-95' : '',
     ]"
   >

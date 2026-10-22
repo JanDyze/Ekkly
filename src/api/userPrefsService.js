@@ -31,10 +31,15 @@ export const subscribeToUserPrefs = (uid, callback) => {
   )
 }
 
-/** Merges a partial update, so saving one preference cannot drop another. */
+/** Saves some preferences without touching the others. */
+// Each preference given replaces what was stored for it, whole; the rest
+// stay as they are. A plain merge went into a preference that is a set of
+// choices and could never take one out: turning a panel back on left its
+// old "off" stored under the new choices, and the next save of anything read
+// it back and took the panel off the home again (useHomeLayout).
 export const saveUserPrefs = (uid, partial) => {
   if (!uid) return Promise.resolve()
-  return setDoc(prefsDoc(uid), partial, { merge: true })
+  return setDoc(prefsDoc(uid), partial, { mergeFields: Object.keys(partial) })
 }
 
 /**

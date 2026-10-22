@@ -178,7 +178,7 @@ export const setDoc = async (ref, data, options) => {
   const batch = fsWriteBatch(ref.firestore)
   if (options) batch.set(ref, data, options)
   else batch.set(ref, data)
-  batch.set(auditRef(ref), entryFor(options?.merge ? 'update' : 'set', ref, data))
+  batch.set(auditRef(ref), entryFor(options?.merge || options?.mergeFields ? 'update' : 'set', ref, data))
   await batch.commit()
 }
 

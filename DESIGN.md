@@ -38,7 +38,14 @@ CHANGELOG.md.
 - **Every screen:** the top bar, and on a desktop the people rail on the
   right. There is no sidebar: the home of all apps (`/home`,
   `src/views/Apps.vue`, `meta.root`) is the way between apps, and the top
-  bar's mark is a back arrow to it from every other screen. On a phone, the
+  bar's mark is a back arrow to it from every other screen. Beside the mark,
+  the bar draws how deep you are (`src/composables/useTrail.js`): People ›
+  Ministries › Worship, read off the routes (no "Home" step: the mark is
+  that, and on an app's home the bar is just its name), each step above this
+  screen a link up to it, the highest folded into "…" when there is no room
+  (a phone shows one). A record names its own step once it has loaded
+  (`nameThisScreen`; `AppScreen` does it from its title, and from `trail`
+  where a screen's place is not its section's). On a phone, the
   bottom bar is there for whoever turns it on in Preferences: a floating
   island with the first four apps on their home, two either side of Ekkly's
   round mark, which opens every app. It floats a clear gap above the foot of
@@ -51,6 +58,10 @@ CHANGELOG.md.
   is on. The top bar's magnifying glass (and Ctrl+K, Ctrl+F, or "/")
   opens one search over everything (`SearchSheet`, `useGlobalSearch`): words
   first, meaning too once the person lets the small model onto their device.
+  Ctrl+G (⌘G) is the screen's own search instead (`usePageSearch`): any
+  showing `input[type="search"]` or `[data-page-search]` field, else the
+  opener a screen whose search folds behind a button hands to
+  `usePageSearch(open)`. A new screen with a search does one of the two.
 - **The home of all apps** leads with a Today deck (`AppHeroDeck`, fed by
   `useToday`) drawn from every app, then the five apps the person keeps there
   drawn by `HomeAppCards` (`src/components/home/`) in one of six styles —
@@ -126,9 +137,26 @@ CHANGELOG.md.
   `useHomeChurch`, per person): on a desktop it is then gone from the board,
   and on a phone the room under the apps stays, on plain sky, for the verse
   and YUNIT.
-  The home's apps are simply there when it opens: they do not rise into
-  place one after another as an app's sections do (`HomeCard`'s `rise`,
-  off in `HomeAppCards`), since it is the screen opened most.
+  The home's apps are simply there when it opens. Nothing anywhere rises
+  into place on arriving (see Moving between screens).
+  **Simple view** (Preferences, `useSimpleView`, per person) is Ekkly laid
+  out the way most systems people already know are: a sidebar of every app
+  down the left (`SimpleSidebar`, read from navigation.js, the open app's
+  sections under it; on a phone a drawer the top bar's menu button opens),
+  dashboards for homes, and plain tables with View, Edit and Delete for
+  records. Nothing decorative: no YUNIT, church, sky, verse or panels. The
+  home is a dashboard (`HomeSimple`: a welcome, a figure for each app the
+  person may open, and Needs your attention, a line each); People's home is
+  one too (`PeopleSimple`: its figures, what needs you, the birthdays
+  coming), and its Everyone is a records table (`PeopleEveryoneSimple`:
+  search, a filter, sortable headings, View/Edit/Delete, pages of 25; on a
+  phone the rows stack). Each is handed the full screen's own `cards` and
+  figures, so the two views never disagree. A section's other screens are as
+  they are on a desktop (their tables and the record's layout are already
+  standard); only the rail steps aside for the sidebar (`AppScreen`), in
+  every app. An app opts its own simple screens in with `meta.simple` on its
+  parent route (`useSimpleHere()`); lists of a line each are `SimpleRows`
+  (`components/simple/`).
   **YUNIT is on the home** wherever the church has him (`HomeYunit`), as a
   character standing on it, never a card or a panel. He stands large, so he
   is what is seen there. On a phone a frosted "Talk to YUNIT" button stands
@@ -182,8 +210,8 @@ CHANGELOG.md.
   right-hand end (`side`), the button to talk to him to his left. Last in a
   column, his place is pinned to its foot however short the panels above
   are, so he stands on the bottom of the screen; last in the church's
-  column, just above the church. He starts under the week, beside the people
-  rail. He is moved by picking him up: pressed and moved, he is startled and
+  column, just above the church. He starts at the foot of the right-hand
+  column, beside the people rail. He is moved by picking him up: pressed and moved, he is startled and
   carried with his button under the pointer while the board shows the line
   he would land on, as for a panel (`HomeBoard`'s `hold`, `aimAt` and
   `drop`), and he lands with a jump; a press that does not move is still a
@@ -212,7 +240,12 @@ CHANGELOG.md.
   "Oh! Rain. Good thing I brought an umbrella." when it starts while he is
   there. When a rainbow comes out after it (`data-rainbow`) he celebrates
   and says "Look, a rainbow! After the rain, God's promise." With Live sky
-  off he goes by the theme as before. His bubble's
+  off he goes by the theme as before. During the Sunday service (a Sunday
+  worship service in Settings' weekly services, from half an hour before it
+  starts to two and a half hours after; `useSundayService`) he wears a red
+  tie over a white collar (`tie`) and makes no sound at all — no voice, no
+  notes, no buzz — and his sounds button is gone; `?service=on` shows it on
+  any day. His bubble's
   corner and his conversation keep to his end. The first time the home opens in a visit he
   arrives, waves and says hello in a speech bubble with one thing he can be
   asked (`data/yunitTips.js`, only what this person can see); tapping him
@@ -241,27 +274,64 @@ CHANGELOG.md.
   draws, and the same conversation (`useYunitChat`), carried on at
   `/yunit`.
   On a desktop (`lg`) the same home shows everything at once rather than
-  swiped, and like a phone's it fits one screen: the page never scrolls; a
-  list with more than its card holds scrolls inside the card. Three columns,
+  swiped, and like a phone's it **fits one screen: the page never
+  scrolls.** It was tried scrolling (every panel as tall as its rows, the
+  page growing past the screen for panels someone added) and put back: a
+  home that is all there at a glance, nothing below the fold, is what a
+  church's people open it for. What made one screen hard to read was never
+  the one screen but the squeezing: three panels in a column on a laptop
+  left each a header and a row, cut off part way through the next, or a
+  list scrolling inside its card that nobody thought to try. So **each list
+  shows only the rows that fit, whole, and says how many more**
+  (`useRowsThatFit`): a row that would be cut off is hidden, and every row
+  after it, and the panel's foot says "6 more", leading into its app
+  (`HomePanel`'s `total`; This week's to the calendar). Needs attention and
+  Community have no app to lead to, so theirs opens every row **over the
+  whole column** (`useOverColumn`), the panels under it covered rather than
+  moved, closed by its ×, Escape or a press anywhere else. Opened inside the
+  card itself, the rows had only the card's height, a header and a row on a
+  crowded column, and nowhere to go. Each app panel also keeps to a handful at most
+  (Praying for and Small groups six, Birthdays and Quick links eight), so a
+  tall screen shows a tidy list, not a long one. Needs attention gives way
+  half as fast as the panels round it, its first claim on the column's
+  height. Three columns,
   a quarter, a half and a quarter, and six panels in them — the day, the
   apps, Needs attention, Community, the day's verse (`HomeVerse`, under
-  Community to begin with; on a phone it stays on the church's picture) and
-  This week — that anyone can drag to
-  another place in their column or into another (`HomeBoard`, saved to their
-  account by `useHomeLayout`; Home layout in the account menu puts them
-  back). The
+  This week to begin with; on a phone it stays on the church's picture) and
+  This week. The first home shows only what someone acts on: the day and
+  the apps on the left (and only those, over the church), Needs attention
+  the whole middle, This week and YUNIT on the right. Community, the verse
+  and the panels from the apps are off until turned on under "Show on my
+  home" (`OPTIONAL_PANELS`' `on`). That usual arrangement is not written
+  out but made from the panels this person's board shows (`useHomeLayout`'s
+  `arrangeHome`): the left keeps to the day and the apps, and every other
+  panel goes in the column it would rather while that holds no more than
+  the other, else in the one with fewer, so turning a panel on or off
+  re-deals the board evenly rather than piling it on the right, and it is
+  never saved until they move something themselves. Eight places in all, so
+  the switches stop at eight: how many stay tidy, not how many fit a
+  screen. Anyone can drag them to
+  another place in their column or into another, once they choose
+  **Rearrange home** in the account menu (until then the board holds still
+  and nothing about arranging shows: `homeArranging`, `HomeBoard`'s
+  `locked`). Rearranging, a bar over the hills at the foot of the screen
+  says how, with "Put back the usual" and Done, and every panel that can
+  come off the home has an × in its corner to take it off with a press
+  (`HomeBoard`, saved to their account by `useHomeLayout`). The
   panel in hand is a solid copy lifted on a shadow (the board's own drag;
   the browser's draws it see-through). While it is in hand the board is
   laid out as it would be let go there: its place an empty dashed outline
   its own size that moves to where it would land, the other panels sliding
   aside to make room, and let go, the copy glides down into the outline.
   Every change to the arrangement slides (FLIP), never jumps. A column
-  holds **three cards at most**; YUNIT and the church are not cards. A card
+  holds **three at most, YUNIT counted** (he takes a column's room as a
+  panel does); the church is not one. Over a full column YUNIT, like a
+  card, trades places with the panel he is put on. A card
   carried to a column with its three already is refused: the column dims
   behind a dashed outline, "This column is full" large in its middle over
   everything in it, the card in hand gone see-through over it, and let go
-  there it goes back where it was. A column holding more (from before the
-  limit) is tidied as the home opens: its last card goes to the column with
+  there it goes back where it was. The usual arrangement never holds more;
+  a saved one holding more (from before the limit) is tidied as the home opens: its last card goes to the column with
   the fewest (`HomeBoard`'s `tidy`). The church's room gives way when its
   column's panels need it, the church then the background behind them,
   except under YUNIT standing on its hill; a column left empty
@@ -282,17 +352,16 @@ CHANGELOG.md.
   panel; where the apps reach down behind the church, the same land is drawn
   again in front of them, cut to the church's column only, so the church
   stands before them there. The church's room lets touches through but for
-  the church itself, which is what is taken hold of to move it. Needs
-  attention, Community and This week share out their column's height (as
-  tall as what they hold, the room left over theirs too, giving way to 9rem
-  only in a short column), so none is a sliver however little it holds,
-  and a busy week grows: empty, a small
+  the church itself, which is what is taken hold of to move it. The lists
+  share out their column's height (as tall as what they hold where there is
+  room, the room left over theirs too, giving way where there is not, never
+  under 9rem), so none is a sliver however little it holds: empty, a small
   doodle of a quiet moment in soft grey with one touch of the church's
   colour (a cup of tea with a heart of steam, a bench with a bird on it, a
   hammock and a "z"; never an app's icon) over a light line ("All clear!",
   "A quiet day", "A quiet week"); with three or fewer rows, the room under
-  them holds the doodle small and faint with a short line (`PanelRest`); no panel but the day goes below a few
-  rows, the apps included, each scrolling inside itself instead; and nothing on the board is selectable, so a press
+  them holds the doodle small and faint with a short line (`PanelRest`);
+  and nothing on the board is selectable, so a press
   that wanders moves the panel rather than highlighting words. To begin with:
   1. **The sidebar**, read top to bottom as a phone is:
      - the day's card in the church's colour, over Ekkly's panes of light:
@@ -349,7 +418,7 @@ Route `meta` options that change the shell:
 |---|---|---|
 | `focus: true` | No top bar or people rail. The page handles its own padding and safe areas, and **must have its own back button.** | Something you finish: one person's record, taking attendance, a minute |
 | `hideTopbar: true` | Top bar hidden, people rail kept | A page with its own header that you still browse from (Bible) |
-| `frame: 'app'` | Top bar kept on the app's home (named for the app, its mark a back arrow to all apps); no people rail. The app's home is a launcher (`AppHome`: its deck, then its `AppShortcut`s) and every screen sits in `AppScreen`, from `src/components/appframe/` | An app of its own inside Ekkly (Schedules, People). One centred column on every section; sections are a step off the home, with a back arrow, not tabs. On a desktop the home is a board like the home of all apps': the always-true card over the sections down the left, Needs attention and Good to know as the phone's cards, and the app's side list (`AppSidePanel`) on the right, on plain ground, never scrolling. A section on a desktop has the app's rail down its left (`AppRail`): the way home in the church's colour, then every section as its card, the open one ringed. Two steps or more in, the header shows the way there over the title on a desktop ("People › Ministries", read off the routes; `AppScreen`'s `trail` where a screen's place is not its section's). A section is laid out for the desktop's width with `AppScreen`'s `desk`: its `ListGroup`s lay their rows out as cards across it (`deskGrid.js`'s `DESK_ROWS`, which a screen's own list can use too; `flat` keeps a group one block), a list of records with several facts each is a `DeskTable` (columns under names that stay in view, dropping the least needed as the screen narrows: Everyone, Tasks, the book), and a record or a workspace is two or three columns (a person, an item, a group, a sermon, a month's video). A phone's screen is unchanged |
+| `frame: 'app'` | Top bar kept on every screen (its mark a back arrow to all apps, then the trail of how deep you are); no people rail. The app's home is a launcher (`AppHome`: its deck, then its `AppShortcut`s) and every screen sits in `AppScreen`, from `src/components/appframe/` | An app of its own inside Ekkly (Schedules, People). One centred column on every section; sections are a step off the home, not tabs, and the way back up is the top bar's mark (a section has no back arrow of its own). A screen never scrolls as a page: its header (name, buttons) stands still and only the content under it scrolls (`AppScreen`). On a desktop the home is a board like the home of all apps': the always-true card over the sections down the left, Needs attention and Good to know as the phone's cards, and the app's side list (`AppSidePanel`) on the right, on plain ground, never scrolling. A section on a desktop has the app's rail down its left (`AppRail`): the way home in the church's colour, then every section as its card, the open one ringed. A section is laid out for the desktop's width with `AppScreen`'s `desk`: its `ListGroup`s lay their rows out as cards across it (`deskGrid.js`'s `DESK_ROWS`, which a screen's own list can use too; `flat` keeps a group one block), a list of records with several facts each is a `DeskTable` (columns under names that stay in view, dropping the least needed as the screen narrows: Everyone, Tasks, the book); where a screen is mostly its table, the page holds still and the table scrolls its own rows under its headings (`AppScreen`'s `fill` with `DeskTable`'s `fill`, People's tables), and a short table never scrolls sideways, and a record or a workspace is two or three columns (a person, an item, a group, a sermon, a month's video). A phone's screen is unchanged |
 | `root: true` | Unpadded, people rail kept | The home of all apps only |
 | `ownLayout: true` | Top bar kept; unpadded; no people rail | A page with a column of its own down the side that needs the width (All apps on a desktop; on a phone it asks for focus with `useFocusMode`) |
 
@@ -753,14 +822,29 @@ secondary: text-sm text-gray-500 dark:text-gray-400 mt-0.5 truncate
 
 ### Moving between screens
 
-The router animates each change of page (`src/router/viewTransitions.js`).
-What you tapped travels with you: an app tile's picture and name fly into the
-top bar, a section tile's name flies up into its screen's header, and both go
-back down when you return. An element takes part by naming the path it opens
-or heads, as `data-morph-icon="/path"` or `data-morph-label="/path"`. The
-tile and the header carry the same path, and that is the whole pairing. A
-new kind of tile or header gets the attribute; don't add a `<Transition>`
-around the router view.
+One animation moves between pages, and only one: a tapped card turns over
+as it grows into the page it opens, and the page turns back into it on the
+way out (`src/router/viewTransitions.js`; `data-morph-card="/path"` on the
+card, `data-morph-page` on the page area). Every other change of page is
+instant. The slides between an app's screens, the settling of other pages,
+a record pushing in over its list, the list sliding back, and blocks rising
+into place one after another (`animate-rise`) were all taken out: each moved
+differently, so going between screens felt different depending on where you
+were. Don't add an entrance animation to a page or its blocks, and don't add
+a `<Transition>` around the router view. Preferences > Transitions is On (the
+card) or Off. The one other screen-wide motion is not a change of page:
+turning Simple view on or off on the home closes it like a church window
+and opens it onto the other (`HomeModeShutter`, timed by `useSimpleView`):
+Ekkly's window's own four panes, large enough to fill the screen, close in
+from the corners in the church's colour until they meet at its curved
+cross (white light between them, at the screen's middle), the home is
+changed while they are shut, and they open.
+Under the same switch, and instant anywhere but the home.
+With live sky on, every page is lit as the sky over the church is (dark at
+night, light from dawn to dusk) whatever the light or dark setting, through
+useTheme's `themeOverride`, set by AdminLayout. While it is, the top bar's
+light/dark button is hidden and Preferences' Appearance says it follows the
+live sky; turning live sky off gives the person's setting back.
 
 ### Drawer: adding or editing
 
@@ -820,6 +904,21 @@ required: <span class="text-red-500">*</span>
 - Placeholders show a real example: "Print the bulletins".
 - Put two short fields side by side with `grid grid-cols-1 gap-4
   sm:grid-cols-2`.
+- **Never the browser's own dropdown.** A choice from a list is `SelectMenu`
+  (`components/common/`): v-model, `options` ([{ value, label }]), a
+  `placeholder`, and `field-class` for the box, styled like the input above.
+  Its list is Ekkly's own, opens above the box when there is no room below,
+  and takes the keys a select does. A native `<select>` shows the system's
+  grey list, different on every device; don't write one, and swap any you
+  touch.
+- **Nor the browser's own date picker.** A date is `DateField`
+  (`components/common/`): v-model as `YYYY-MM-DD` (or `''`), `placeholder`,
+  `field-class`, and `clearable`. Its calendar is Ekkly's, with Today,
+  Tomorrow, Next week and No date above the month, and works by keyboard.
+- A box that adds something in one line (Tasks' `TaskQuickAdd`) may read
+  more than the title from it — a date, `@someone`, `#ministry`
+  (`utils/quickTask.js`) — but always shows what it understood under the box
+  before it is added, and leaves anything it is unsure of in the title.
 
 ### Buttons
 
@@ -857,11 +956,11 @@ rolling hills (`components/notfound/LostField.vue`) with a signpost
 pointing both ways. The field follows the theme; in the dark his lantern is
 lit and the field lies dark but for the pool of its light, which goes with
 him. He is dressed as a lamb (`components/yunit/YunitLamb.vue`: one round
-of cream fleece, as YUNIT is one round, his face on it, floppy ears, navy
-blob feet as YUNIT's, his fleece white lumps lying over one another, his
-colours four irregular patches of dyed wool in it — one of each, of
-different sizes, woven in with cream over them, never on his face, never
-under his topknot, somewhere new each time he is drawn — and again as the
+of cream fleece, as YUNIT is one round, his face on it, drawn flat: a
+scalloped cloud with a pale edge and a few curls in the wool, ears out at
+his sides pink inside, navy eyes with his head tipped so one sits higher,
+navy blob feet as YUNIT's, and his colours a crown of four curly clumps of
+dyed wool on his head — yellow, orange, blue, teal — and again as the
 panes of his lantern). "YUNIT the Sheep looked everywhere.", "Take me home"
 (the home of all apps when signed in to a church, the front page
 otherwise) and "Go back". He walks from spot to spot searching

@@ -53,8 +53,8 @@ const openPhoto = (album, photo) => {
     <div v-if="photosLoading || loading" class="flex flex-col gap-5">
       <section v-for="i in 2" :key="i">
         <div class="mb-2 h-3 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
-        <div class="grid grid-cols-3 gap-1 overflow-hidden rounded-2xl">
-          <div v-for="j in 6" :key="j" class="aspect-square animate-pulse bg-gray-200 dark:bg-gray-700"></div>
+        <div class="grid grid-cols-3 gap-1 overflow-hidden rounded-2xl sm:grid-cols-4 lg:grid-cols-5">
+          <div v-for="j in 5" :key="j" class="aspect-square animate-pulse bg-gray-200 dark:bg-gray-700"></div>
         </div>
       </section>
     </div>
@@ -92,7 +92,7 @@ const openPhoto = (album, photo) => {
           <ChevronRight class="size-4 shrink-0 text-gray-300 transition-transform group-hover:translate-x-0.5 dark:text-gray-600" />
         </RouterLink>
 
-        <div class="grid grid-cols-3 gap-1 overflow-hidden rounded-2xl sm:grid-cols-4">
+        <div class="grid grid-cols-3 gap-1 overflow-hidden rounded-2xl sm:grid-cols-4 lg:grid-cols-5">
           <button
             v-for="photo in group.photos"
             :key="photo.id"

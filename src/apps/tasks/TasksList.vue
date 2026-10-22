@@ -132,6 +132,18 @@ const doneTasks = computed(() => matching.value.filter((t) => t.done).sort(compa
 const openCount = computed(() => openGroups.value.reduce((n, g) => n + g.tasks.length, 0))
 const showDone = ref(false)
 
+// What was finished in the last 30 days is what anyone looks back for; a
+// year of ticked boxes under it only buries that. The rest is one tap away,
+// and a search looks through all of it.
+const RECENT_DAYS = 30
+const showOlder = ref(false)
+const recentSince = Date.now() - RECENT_DAYS * 86_400_000
+const isRecent = (task) => (task.doneAt?.getTime?.() || 0) >= recentSince
+const doneShown = computed(() =>
+  showOlder.value || searchQuery.value.trim() ? doneTasks.value : doneTasks.value.filter(isRecent)
+)
+const olderCount = computed(() => doneTasks.value.length - doneShown.value.length)
+
 const subtitle = computed(() => {
   if (loading.value) return ''
   if (mode.value === 'done') return `${doneTasks.value.length} done`
@@ -208,9 +220,21 @@ const openTask = (task) => {
   showEditTask.value = true
 }
 
-const quickAdd = async (taskTitle, done) => {
+// What the box read from the line (TaskQuickAdd): the title, and a date,
+// people and a ministry when the line named them. Named people replace "given
+// to me" on your own list; a ministry named replaces this list's own.
+const quickAdd = async ({ title: taskTitle, dueDate, ministry, assigneeIds, assigneeNames }, done) => {
+  const base = withMe(emptyTask())
   try {
-    await addTask({ ...withMe(emptyTask()), title: taskTitle, createdBy: meAs.value.uid, createdByName: meAs.value.name })
+    await addTask({
+      ...base,
+      title: taskTitle,
+      dueDate: dueDate || base.dueDate,
+      ministry: ministry || base.ministry,
+      ...(assigneeIds.length ? { assigneeIds, assigneeNames } : {}),
+      createdBy: meAs.value.uid,
+      createdByName: meAs.value.name,
+    })
     done(true)
   } catch (error) {
     console.error('Error adding task:', error)
@@ -301,13 +325,11 @@ const emptyLine = computed(() => {
     </template>
 
     <div class="flex min-h-0 flex-1">
-      <!-- The table's column names stay at the top of this list, which scrolls
-           on its own under the screen's header (--screen-head: none over it). -->
-      <div class="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pb-6 [--screen-head:0px]">
-        <div class="mx-auto flex max-w-2xl flex-col gap-4 lg:max-w-none">
-          <!-- Search, and the box to add one: above the list, never scrolled
-               away from. -->
-          <div class="flex flex-col gap-2 lg:flex-row lg:items-start">
+      <div class="flex min-h-0 min-w-0 flex-1 flex-col">
+          <!-- Search, and the box to add one: above the list and outside what
+               scrolls, so they are never scrolled away from; only the list
+               under them moves. -->
+          <div class="mx-auto flex w-full max-w-2xl shrink-0 flex-col gap-2 pb-4 lg:max-w-none lg:flex-row lg:items-start">
             <label class="relative block lg:flex-1">
               <MagnifyingGlass class="pointer-events-none absolute left-3.5 top-1/2 size-4.5 -translate-y-1/2 text-gray-400" />
               <input
@@ -323,6 +345,12 @@ const emptyLine = computed(() => {
             </label>
             <TaskQuickAdd v-if="canEdit && mode !== 'done'" class="mb-0! lg:flex-1" @add="quickAdd" />
           </div>
+
+      <!-- The list, scrolling on its own; the table's column names stay at
+           its top (--screen-head: nothing over them in here). Room round it
+           for a row's focus ring. -->
+      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-0.5 pb-6 [--screen-head:0px]">
+        <div class="mx-auto flex max-w-2xl flex-col gap-4 lg:max-w-none">
 
           <div v-if="loading" class="flex flex-col gap-2">
             <div v-for="n in 5" :key="n" class="h-14 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
@@ -348,7 +376,7 @@ const emptyLine = computed(() => {
               <TaskTable
                 v-if="openCount || mode === 'done' || showDone"
                 :groups="openGroups"
-                :done="doneTasks"
+                :done="doneShown"
                 :show-done="mode === 'done' || showDone"
                 :today="today"
                 :selected-id="selectedTaskId"
@@ -356,6 +384,7 @@ const emptyLine = computed(() => {
                 :can-complete="canComplete"
                 @open="openTask"
                 @toggle="toggleDone"
+                @delete="askToDelete"
               />
               <button
                 v-if="mode !== 'done' && doneTasks.length"
@@ -423,7 +452,7 @@ const emptyLine = computed(() => {
                 class="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70"
               >
                 <TaskListItem
-                  v-for="task in doneTasks"
+                  v-for="task in doneShown"
                   :key="task.id"
                   :task="task"
                   :today="today"
@@ -437,8 +466,18 @@ const emptyLine = computed(() => {
               </div>
             </section>
             </template>
+
+            <button
+              v-if="(mode === 'done' || showDone) && olderCount"
+              type="button"
+              class="self-center rounded-lg px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-primary-light dark:hover:bg-primary/15"
+              @click="showOlder = true"
+            >
+              Show {{ olderCount }} done before the last {{ RECENT_DAYS }} days
+            </button>
           </template>
         </div>
+      </div>
       </div>
 
       <!-- Beside the list on a computer, a sheet on a phone (TaskDrawer). -->

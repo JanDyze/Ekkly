@@ -8,8 +8,15 @@ import { useFocusTrap } from '../../composables/useFocusTrap'
 import { TASK_PRIORITIES } from '../../utils/taskUtils'
 import { getFullName } from '../../utils/memberUtils'
 import { memberKey } from '../../utils/sgUtils'
+import SelectMenu from '../common/SelectMenu.vue'
+import DateField from '../common/DateField.vue'
 
 const isMobile = useMediaQuery('(max-width: 1023px)')
+
+// The choices, as Ekkly's own dropdown takes them (SelectMenu), never the
+// browser's.
+const priorityChoices = TASK_PRIORITIES.map((option) => ({ value: option.key, label: option.label }))
+const FIELD = 'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white'
 
 const props = defineProps({
   show: {
@@ -119,7 +126,7 @@ useFocusTrap(dialogRef, () => props.show, handleCancel)
         :class="[
           isMobile
             ? 'fixed inset-0 z-80 flex flex-col justify-end'
-            : 'task-drawer m-3 flex h-[calc(100%-1.5rem)] w-[calc(50%-1.5rem)] shrink-0 flex-col overflow-hidden rounded-2xl border-2 border-primary/30 bg-white dark:border-primary-light/30 dark:bg-gray-800'
+            : 'task-drawer flex h-full w-[29rem] shrink-0 justify-end overflow-hidden pl-4 xl:w-[33rem]'
         ]"
       >
         <div v-if="isMobile" class="absolute inset-0 bg-black/50" @click="handleCancel" />
@@ -133,7 +140,7 @@ useFocusTrap(dialogRef, () => props.show, handleCancel)
             'flex min-h-0 flex-col',
             isMobile
               ? 'relative z-10 max-h-[92dvh] w-full rounded-t-2xl border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
-              : 'h-full w-full'
+              : 'h-full w-[28rem] shrink-0 overflow-hidden rounded-2xl border-2 border-primary/30 bg-white xl:w-[32rem] dark:border-primary-light/30 dark:bg-gray-800'
           ]"
         >
           <div class="flex shrink-0 items-center justify-between rounded-t-2xl border-b border-gray-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-gray-800 sm:px-6">
@@ -234,28 +241,25 @@ useFocusTrap(dialogRef, () => props.show, handleCancel)
                   <label for="task-due" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Due
                   </label>
-                  <input
+                  <DateField
                     id="task-due"
-                    :value="taskData.dueDate"
-                    @input="patch({ dueDate: $event.target.value })"
-                    type="date"
-                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    :model-value="taskData.dueDate"
+                    placeholder="No due date"
+                    :field-class="FIELD"
+                    @update:model-value="patch({ dueDate: $event })"
                   />
                 </div>
                 <div>
                   <label for="task-priority" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Priority
                   </label>
-                  <select
+                  <SelectMenu
                     id="task-priority"
-                    :value="taskData.priority"
-                    @change="patch({ priority: $event.target.value })"
-                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  >
-                    <option v-for="option in TASK_PRIORITIES" :key="option.key" :value="option.key">
-                      {{ option.label }}
-                    </option>
-                  </select>
+                    :model-value="taskData.priority"
+                    :options="priorityChoices"
+                    :field-class="FIELD"
+                    @update:model-value="patch({ priority: $event })"
+                  />
                 </div>
               </div>
 
@@ -263,15 +267,13 @@ useFocusTrap(dialogRef, () => props.show, handleCancel)
                 <label for="task-ministry" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Ministry
                 </label>
-                <select
+                <SelectMenu
                   id="task-ministry"
-                  :value="taskData.ministry"
-                  @change="patch({ ministry: $event.target.value })"
-                  class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="">No particular ministry</option>
-                  <option v-for="name in ministryNames" :key="name" :value="name">{{ name }}</option>
-                </select>
+                  :model-value="taskData.ministry"
+                  :options="[{ value: '', label: 'No particular ministry' }, ...ministryNames.map((name) => ({ value: name, label: name }))]"
+                  :field-class="FIELD"
+                  @update:model-value="patch({ ministry: $event })"
+                />
               </div>
 
               <div>
@@ -330,14 +332,29 @@ useFocusTrap(dialogRef, () => props.show, handleCancel)
 </template>
 
 <style scoped>
+/* On a desktop the panel opens beside the list by growing from nothing, its
+   card pinned to the right edge and a fixed width, so the list gives up its
+   room in the same movement as the card comes in, and nothing inside the
+   card reflows while it does. It used to take half the screen at once and
+   then slide in over it, so the list jumped before the panel arrived. */
 .drawer-enter-active,
 .drawer-leave-active {
-  transition: transform 0.3s ease-out;
+  transition:
+    width 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+    padding-left 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .drawer-enter-from,
 .drawer-leave-to {
-  transform: translateX(100%);
+  width: 0;
+  padding-left: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer-enter-active,
+  .drawer-leave-active {
+    transition: none;
+  }
 }
 
 .dropdown-enter-active,

@@ -1,5 +1,8 @@
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onUnmounted, onActivated } from "vue";
+import { usePageSearch } from "../../composables/usePageSearch";
+import { useSimpleHere } from "../../composables/useSimpleView";
+import PeopleEveryoneSimple from "./PeopleEveryoneSimple.vue";
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from "vue";
 import { motionLevel } from "../../composables/useMotion";
 import { useRouter, useRoute } from "vue-router";
 import { useMembers } from "../../composables/useMembers";
@@ -25,7 +28,7 @@ import MemberAttentionBadge from "../../components/members/MemberAttentionBadge.
 import YouBadge from "../../components/members/YouBadge.vue";
 import { useMediaQuery } from "../../composables/useMediaQuery";
 import { bandOf, ageOf } from "../../utils/ageBands";
-import { birthdayParts, getFullName, missingMemberDetails } from "../../utils/memberUtils";
+import { birthdayParts, getFullName, missingMemberDetails, nicknameOf } from "../../utils/memberUtils";
 import { exportToExcel } from "../../utils/exportUtils";
 import { mergeTagSources } from "../../utils/memberUtils";
 import { usePermissions } from "../../composables/usePermissions";
@@ -142,26 +145,6 @@ const setDeskView = (view) => {
   }
 };
 const showGrid = computed(() => (desk.value ? deskView.value === "cards" : mobileView.value === "grid"));
-
-// Shown again after a record (the page is kept alive while one is open), the
-// list slides in a short way rather than simply appearing. The way in to the
-// record is a full view transition; the way back is not, because snapshotting
-// a long roll froze the screen for as long as it took to paint every row
-// (router/viewTransitions.js). This animates the live page instead.
-const returning = ref(false);
-let shownBefore = false;
-let returnTimer = null;
-onActivated(() => {
-  if (!shownBefore) {
-    shownBefore = true;
-    return;
-  }
-  clearTimeout(returnTimer);
-  returning.value = true;
-  returnTimer = setTimeout(() => {
-    returning.value = false;
-  }, 300);
-});
 
 const searchQuery = ref("");
 
@@ -466,12 +449,8 @@ const applyBulk = async ({ value, mode, register }) => {
 
 const showExport = ref(false);
 
-// Member form
-const { showAddMember, addMemberFrom } = useMemberForm(
-  members,
-  addMemberToFirestore,
-  allTags
-);
+// Adding one person (MemberEditSheet hands over the record).
+const { addMemberFrom } = useMemberForm(members, addMemberToFirestore);
 
 // URL query parameter helpers
 const updateQueryParams = (params) => {
@@ -495,21 +474,8 @@ const updateQueryParams = (params) => {
 // the body, so another page's ?add=true must not open it over that page.
 const showAddMemberComputed = computed({
   get: () => route.name === 'Members' && route.query.add === 'true',
-  set: (value) => {
-    if (value) {
-      showAddMember.value = true;
-      updateQueryParams({ add: 'true' });
-    } else {
-      showAddMember.value = false;
-      updateQueryParams({ add: null });
-    }
-  }
+  set: (value) => updateQueryParams({ add: value ? 'true' : null }),
 });
-
-// Watch URL params to sync state on navigation
-watch(() => route.query, (query) => {
-  showAddMember.value = query.add === 'true';
-}, { immediate: true });
 
 // Adding is the same stepper as editing (MemberEditSheet.vue), opened from the
 // plus button. It is driven by the `add` query param, so a successful save has
@@ -551,7 +517,7 @@ useListScrollMemory(listScroller);
 const openMember = (member, { edit = false } = {}) => {
   const memberId = member?.firestoreId || member?.id;
   if (!memberId) return;
-  router.push({ path: `/members/${memberId}`, query: edit ? { edit: '1' } : {} });
+  router.push({ path: `/people/${memberId}`, query: edit ? { edit: '1' } : {} });
 };
 
 const handleMemberClick = (member) => openMember(member);
@@ -606,20 +572,17 @@ const handleConfirmation = () => {
 };
 
 const handleMemberDelete = async (member) => {
-  const getFullName = (m) => {
-    return `${m.firstName || ''} ${m.lastName || ''}`.trim() || 'This person';
-  };
-
+  const name = getFullName(member).trim() || 'This person';
   showConfirmModal({
     title: 'Delete this person',
-    message: `${getFullName(member)} will be taken off the roll for good, with everything on their record.`,
+    message: `${name} will be taken off the roll for good, with everything on their record.`,
     confirmText: 'Delete',
     cancelText: 'Cancel',
     confirmButtonClass: 'bg-red-600 text-white hover:bg-red-700',
     onConfirm: async () => {
       try {
         await removeMember(member);
-        toast.success(`${getFullName(member)} is off the roll`);
+        toast.success(`${name} is off the roll`);
       } catch (error) {
         console.error('Error deleting member:', error);
         toast.error('Could not delete them. Please try again.');
@@ -675,11 +638,33 @@ const onDeskMenu = (member, event) => {
 // query when it is closed: a search you cannot see must not still be
 // filtering the list.
 const searchOpen = ref(false);
+// Ctrl+G opens it too (usePageSearch): on a phone the dock unfolds; on a
+// desktop the toolbar's field is already showing and is found as it is.
+usePageSearch(() => {
+  searchOpen.value = true;
+});
+
+// Arrived with ?q= (the People home's search on a desktop, "See all in
+// Everyone"): the roll opens already searched. Taken off the address once
+// read, so clearing the search is not undone by going back or a refresh.
+watch(
+  () => route.query.q,
+  (q) => {
+    if (route.name !== "Members" || typeof q !== "string" || !q.trim()) return;
+    searchQuery.value = q;
+    searchOpen.value = true;
+    updateQueryParams({ q: null });
+  },
+  { immediate: true }
+);
 
 // The dock steps aside while picking, when the selection bar owns the foot of
 // the screen, and while the add sheet is over it. While the list scrolls
 // down it is tucked to a round button, on the same flick as the header.
-const showDock = computed(() => !showAddMemberComputed.value && !picking.value);
+// Simple view has its own screen (PeopleEveryoneSimple): the roll as a
+// standard records table, and none of the dock, the grid or picking.
+const simple = useSimpleHere();
+const showDock = computed(() => !showAddMemberComputed.value && !picking.value && !simple.value);
 const dockTucked = computed(() => Boolean(screen.value?.hidden));
 
 // Adding one person is the header's plus. Everything else that changes or
@@ -687,7 +672,8 @@ const dockTucked = computed(() => Boolean(screen.value?.hidden));
 // for: picking people to tag or place, then adding a list, then exporting.
 const canAdd = computed(() => canManage("members"));
 const menuItems = computed(() => [
-  ...(canTag.value ? [{ key: "select", label: "Select people", icon: CheckCircle }] : []),
+  // On a desktop, selecting is a button on the toolbar beside the search.
+  ...(canTag.value && !desk.value ? [{ key: "select", label: "Select people", icon: CheckCircle }] : []),
   ...(canAdd.value ? [{ key: "add-many", label: "Add several people", icon: UsersThree }] : []),
   { key: "export", label: "Export", icon: Download },
 ]);
@@ -700,8 +686,22 @@ const onMenu = (key) => {
 </script>
 
 <template>
-  <div :class="['relative h-full', returning ? 'page-return' : '']">
-    <AppScreen ref="screen" title="Everyone" :subtitle="subtitle" :back="{ name: 'PeopleHome' }" root="/members" :desk="desk">
+  <div class="relative h-full">
+    <PeopleEveryoneSimple
+      v-if="simple"
+      v-model:query="searchQuery"
+      :members="filteredMembers"
+      :total="members.length"
+      :loading="loading"
+      :can-edit="canAdd"
+      @add="showAddMemberComputed = true"
+      @edit="handleContextEdit"
+      @delete="handleMemberDelete"
+      @export="showExport = true"
+    />
+    <!-- As a table on a desktop the page holds still and the table scrolls
+         its own rows; as cards, or on a phone, the page scrolls. -->
+    <AppScreen v-else ref="screen" title="Everyone" :subtitle="subtitle" :back="{ name: 'PeopleHome' }" root="/people" :desk="desk" :fill="desk && !showGrid">
       <template #action>
         <PeopleMenu :items="menuItems" @pick="onMenu" />
         <button
@@ -786,6 +786,7 @@ const onMenu = (key) => {
         :row-key="(member) => member.id"
         :row-class="deskRowClass"
         clickable
+        fill
         @row-click="onDeskRow"
         @row-contextmenu="onDeskMenu"
       >
@@ -818,7 +819,7 @@ const onMenu = (key) => {
                 <MemberAttentionBadge :member="row" />
                 <YouBadge :member="row" />
               </span>
-              <span v-if="row.nickname" class="block truncate text-xs text-gray-500 dark:text-gray-400">"{{ row.nickname }}"</span>
+              <span v-if="nicknameOf(row)" class="block truncate text-xs text-gray-500 dark:text-gray-400">"{{ nicknameOf(row) }}"</span>
             </span>
           </span>
         </template>
@@ -955,9 +956,27 @@ const onMenu = (key) => {
         </section>
         </template>
 
-        <p v-if="filteredMembers.length === 0" class="p-8 text-center text-gray-500 dark:text-gray-400">
-          {{ members.length ? 'Nobody matches your search.' : 'Nobody on the roll yet.' }}
-        </p>
+        <div v-if="filteredMembers.length === 0" class="flex flex-col items-center gap-3 p-8 text-center text-gray-500 dark:text-gray-400">
+          <p>{{ members.length ? 'Nobody matches your search.' : 'Nobody on the roll yet.' }}</p>
+          <!-- An empty roll is a church just starting: the way to fill it,
+               for whoever may. -->
+          <div v-if="!members.length && canAdd" class="flex flex-wrap justify-center gap-2">
+            <button
+              type="button"
+              class="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+              @click="showAddMemberComputed = true"
+            >
+              <Plus class="size-4" />
+              Add a person
+            </button>
+            <RouterLink
+              :to="{ name: 'PeopleAdd' }"
+              class="inline-flex h-10 items-center rounded-xl px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 dark:text-primary-light"
+            >
+              Add several at once
+            </RouterLink>
+          </div>
+        </div>
 
         <!-- Where the roll ends, what it adds up to. Only for the whole roll:
              under a search it would describe people who are not on screen. -->
@@ -1016,7 +1035,7 @@ const onMenu = (key) => {
          shape at the foot of the screen, so the thumb does not travel and
          the two read as one control changing what it does. -->
     <div
-      v-if="picking"
+      v-if="picking && !simple"
       class="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom),calc(var(--bottom-bar-space)+0.75rem))] z-50 px-4 lg:left-(--app-rail)"
     >
       <div class="pointer-events-auto mx-auto flex max-w-xl items-center gap-1.5 rounded-full bg-gray-900 p-1.5 text-white dark:bg-gray-100 dark:text-gray-900">

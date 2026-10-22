@@ -10,7 +10,8 @@
 export const tasksRoutes = [
   {
     path: 'tasks',
-    meta: { capability: 'tasks.view', app: 'tasks', frame: 'app', art: 'tasks' },
+    // simple: every screen here has a simple-view layout (useSimpleHere).
+    meta: { capability: 'tasks.view', app: 'tasks', frame: 'app', art: 'tasks', simple: true },
     children: [
       {
         path: '',

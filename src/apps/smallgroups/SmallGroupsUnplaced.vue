@@ -5,7 +5,7 @@ import ListGroup from '../../components/appframe/ListGroup.vue'
 import ListRow from '../../components/appframe/ListRow.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
 import { usePeopleGroups } from '../../composables/usePeopleGroups'
-import { getFullName } from '../../utils/memberUtils'
+import { getFullName, nicknameOf } from '../../utils/memberUtils'
 import { groupByBand } from '../../utils/ageBands'
 
 // The members in no small group, under their age bands, so whoever is
@@ -48,7 +48,7 @@ const recordOf = (member) => ({ name: 'MemberDetails', params: { id: member.id |
           :key="member.firestoreId || member.id"
           :to="recordOf(member)"
           :title="getFullName(member)"
-          :subtitle="member.nickname ? `“${member.nickname}”` : ''"
+          :subtitle="nicknameOf(member) ? `“${nicknameOf(member)}”` : ''"
         >
           <template #leading>
             <MemberAvatar :member="member" alt="" size="h-10 w-10" class="shrink-0" />

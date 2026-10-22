@@ -29,3 +29,21 @@ export const parseQuery = (query) =>
  */
 export const matchesQuery = (haystack, groups) =>
   groups.some((terms) => terms.every((term) => haystack.includes(term)))
+
+/**
+ * The words around a match, so a result found by something its row does not
+ * show can say why it is there: `at` and `length` are where the match sits in
+ * `text`. A few words before, more after, cut at spaces.
+ */
+export const snippetAt = (text, at, length) => {
+  let start = Math.max(0, at - 28)
+  let end = Math.min(text.length, at + length + 60)
+  if (start > 0) start = text.indexOf(' ', start) + 1 || start
+  if (start > at) start = at
+  if (end < text.length) end = Math.max(text.lastIndexOf(' ', end), at + length)
+  return {
+    before: `${start > 0 ? '…' : ''}${text.slice(start, at)}`,
+    hit: text.slice(at, at + length),
+    after: `${text.slice(at + length, end)}${end < text.length ? '…' : ''}`,
+  }
+}

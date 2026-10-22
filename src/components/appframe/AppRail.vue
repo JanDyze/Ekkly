@@ -100,7 +100,7 @@ onBeforeUnmount(() => shown.value && railCount(-1))
       class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-800/70 dark:ring-white/10"
       aria-label="Sections"
     >
-      <h2 class="shrink-0 border-b border-gray-100 px-5 pt-4 pb-3 text-base font-semibold text-gray-900 dark:border-white/10 dark:text-white">Sections</h2>
+      <h2 class="shrink-0 border-b border-gray-100 px-5 pt-2.5 pb-2 text-sm font-semibold text-gray-900 dark:border-white/10 dark:text-white">Sections</h2>
       <div class="flex min-h-0 flex-col gap-2 overflow-y-auto overscroll-contain p-3 [scrollbar-width:thin]">
         <HomeCard
           v-for="section in sections"
@@ -109,7 +109,6 @@ onBeforeUnmount(() => shown.value && railCount(-1))
           :to="section.to"
           variant="compact"
           section
-          :rise="false"
           :card="section.card"
           :aria-current="section.key === current ? 'page' : undefined"
           :class="section.key === current ? 'rail-current' : ''"

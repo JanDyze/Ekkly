@@ -26,8 +26,9 @@ const props = defineProps({
   variant: { type: String, default: 'accent' },
   // What the card opens: a RouterLink, or a button.
   as: { type: [String, Object], default: 'button' },
-  // { name, tagline, art, glyph, more, peek, path } — `path` is the key the
-  // name and the drawing morph on (router/viewTransitions.js).
+  // { name, tagline, art, glyph, more, peek, path } — `path` is where it
+  // opens, which the card growing into its page is keyed by
+  // (router/viewTransitions.js).
   card: { type: Object, required: true },
   // A section inside an app rather than an app on the home.
   section: { type: Boolean, default: false },
@@ -39,17 +40,13 @@ const props = defineProps({
   urgent: { type: Boolean, default: false },
   // Change it to play the drawing again.
   play: { type: Number, default: 1 },
-  // Rises into place as the screen opens. Off on the home of all apps, whose
-  // apps are simply there: it is the screen opened most, and tiles arriving
-  // one after another every time only held up the one being reached for.
-  rise: { type: Boolean, default: true },
 })
 
 const BADGE = 'flex h-5.5 min-w-5.5 shrink-0 items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums'
 const badgeTone = (urgent) => (urgent ? 'bg-amber-500 text-white' : 'bg-primary text-white dark:bg-primary-light dark:text-gray-900')
 const badgeText = (count) => (count > 99 ? '99+' : count)
 
-const press = computed(() => `${props.rise ? 'animate-rise ' : ''}transition-[background-color,box-shadow] duration-200 ease-out`)
+const press = computed(() => `transition-[background-color,box-shadow] duration-200 ease-out`)
 </script>
 
 <template>
@@ -63,7 +60,7 @@ const press = computed(() => `${props.rise ? 'animate-rise ' : ''}transition-[ba
     <span class="home-stripe absolute inset-y-0 left-0 w-1" />
     <HomeCardIcon :card="card" :play="play" />
     <span class="block w-full min-w-0">
-      <span :data-morph-label="card.path" class="block w-full truncate text-base font-bold tracking-tight text-gray-900 @max-[17rem]:line-clamp-2 @max-[17rem]:text-sm @max-[17rem]:leading-tight @max-[17rem]:whitespace-normal dark:text-white">{{ card.name }}</span>
+      <span class="block w-full truncate text-base font-bold tracking-tight text-gray-900 @max-[17rem]:line-clamp-2 @max-[17rem]:text-sm @max-[17rem]:leading-tight @max-[17rem]:whitespace-normal dark:text-white">{{ card.name }}</span>
       <span v-if="detail" class="mt-0.5 block truncate text-xs text-gray-500 dark:text-gray-400">{{ detail }}</span>
     </span>
     <ChevronRight v-if="!section" class="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-gray-300 lg:hidden dark:text-gray-500" />
@@ -81,7 +78,7 @@ const press = computed(() => `${props.rise ? 'animate-rise ' : ''}transition-[ba
     <span v-else class="home-hue pointer-events-none absolute -bottom-10 -right-8 -z-10 size-28 rounded-full bg-current opacity-15" />
     <HomeCardIcon :card="card" :play="play" size="size-11" art="size-7" ground="home-chip" />
     <span class="block w-full min-w-0">
-      <span :data-morph-label="card.path" class="block truncate text-[15px] font-bold tracking-tight text-gray-900 dark:text-white">{{ card.name }}</span>
+      <span class="block truncate text-[15px] font-bold tracking-tight text-gray-900 dark:text-white">{{ card.name }}</span>
       <span v-if="card.tagline" class="mt-0.5 block truncate text-xs text-gray-600 dark:text-gray-300">{{ card.tagline }}</span>
     </span>
     <span v-if="badge > 0" :class="[BADGE, badgeTone(urgent), 'absolute right-2.5 top-2.5 z-10']">{{ badgeText(badge) }}</span>
@@ -96,7 +93,7 @@ const press = computed(() => `${props.rise ? 'animate-rise ' : ''}transition-[ba
   >
     <HomeCardIcon :card="card" :play="play" size="size-10" art="size-6.5" />
     <span class="min-w-0 flex-1">
-      <span :data-morph-label="card.path" class="block truncate text-sm font-semibold text-gray-900 dark:text-white">{{ card.name }}</span>
+      <span class="block truncate text-sm font-semibold text-gray-900 dark:text-white">{{ card.name }}</span>
       <span v-if="detail" class="block truncate text-xs text-gray-500 dark:text-gray-400">{{ detail }}</span>
     </span>
     <span v-if="badge > 0" :class="[BADGE, badgeTone(urgent)]">{{ badgeText(badge) }}</span>
@@ -111,7 +108,7 @@ const press = computed(() => `${props.rise ? 'animate-rise ' : ''}transition-[ba
     :class="['home-node group absolute flex aspect-square flex-col items-center justify-center gap-1 rounded-full text-center', press]"
   >
     <HomeCardIcon :card="card" :play="play" size="size-10" art="size-7" ground="" />
-    <span :data-morph-label="card.more ? undefined : card.path" class="block max-w-full truncate px-1.5 text-[11px] font-semibold text-gray-900 dark:text-white">{{ card.name }}</span>
+    <span class="block max-w-full truncate px-1.5 text-[11px] font-semibold text-gray-900 dark:text-white">{{ card.name }}</span>
     <span v-if="badge > 0" :class="[BADGE, badgeTone(urgent), 'absolute -right-0.5 -top-0.5 z-10']">{{ badgeText(badge) }}</span>
   </component>
 
@@ -127,7 +124,7 @@ const press = computed(() => `${props.rise ? 'animate-rise ' : ''}transition-[ba
     </svg>
     <HomeCardIcon :card="card" :play="play" size="size-10" art="size-6.5" />
     <span class="min-w-0 flex-1">
-      <span :data-morph-label="card.path" class="block truncate text-[15px] font-semibold text-gray-900 dark:text-white">{{ card.name }}</span>
+      <span class="block truncate text-[15px] font-semibold text-gray-900 dark:text-white">{{ card.name }}</span>
       <span v-if="card.tagline" class="block truncate text-xs text-gray-500 dark:text-gray-400">{{ card.tagline }}</span>
     </span>
     <span v-if="badge > 0" :class="[BADGE, badgeTone(urgent)]">{{ badgeText(badge) }}</span>
@@ -146,7 +143,7 @@ const press = computed(() => `${props.rise ? 'animate-rise ' : ''}transition-[ba
     </svg>
     <HomeCardIcon :card="card" :play="play" size="size-11" art="size-7" ground="home-chip" />
     <span class="block w-full min-w-0">
-      <span :data-morph-label="card.path" class="block truncate text-[15px] font-bold tracking-tight text-gray-900 dark:text-white">{{ card.name }}</span>
+      <span class="block truncate text-[15px] font-bold tracking-tight text-gray-900 dark:text-white">{{ card.name }}</span>
       <span v-if="card.tagline" class="mt-0.5 block truncate text-xs text-gray-600 dark:text-gray-300">{{ card.tagline }}</span>
     </span>
     <span v-if="badge > 0" :class="[BADGE, badgeTone(urgent), 'absolute right-2.5 top-2.5 z-10']">{{ badgeText(badge) }}</span>

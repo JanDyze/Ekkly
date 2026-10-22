@@ -25,8 +25,6 @@ defineProps({
 
 const { style } = useHomeCards()
 
-const delayOf = (index) => 120 + index * 30
-
 // Only what a door means, so nothing else a home keeps on it lands on the
 // link as an attribute. Missing ones keep their defaults.
 const propsOf = ({ to, title, detail, art, glyph, badge, urgent }) =>
@@ -43,14 +41,13 @@ const propsOf = ({ to, title, detail, art, glyph, badge, urgent }) =>
       v-bind="propsOf(door)"
       variant="orbit"
       :hue="sectionHue(index)"
-      :delay="delayOf(index)"
       :style="orbitPlace(index, doors.length)"
       class="w-[26%]"
     />
   </nav>
 
   <nav v-else-if="style === 'list'" class="flex flex-col gap-2" :aria-label="label">
-    <AppShortcut v-for="(door, index) in doors" :key="door.key" v-bind="propsOf(door)" variant="list" :hue="sectionHue(index)" :delay="delayOf(index)" />
+    <AppShortcut v-for="(door, index) in doors" :key="door.key" v-bind="propsOf(door)" variant="list" :hue="sectionHue(index)" />
   </nav>
 
   <nav v-else-if="style === 'masonry'" class="grid grid-cols-5 gap-2.5" :aria-label="label">
@@ -60,7 +57,6 @@ const propsOf = ({ to, title, detail, art, glyph, badge, urgent }) =>
       v-bind="propsOf(door)"
       variant="masonry"
       :hue="sectionHue(index)"
-      :delay="delayOf(index)"
       :class="MASONRY_SPANS[index % MASONRY_SPANS.length]"
     />
   </nav>
@@ -70,6 +66,6 @@ const propsOf = ({ to, title, detail, art, glyph, badge, urgent }) =>
     :class="['grid gap-2.5', column && style === 'compact' ? 'grid-cols-1' : 'grid-cols-2', column ? '@container' : '']"
     :aria-label="label"
   >
-    <AppShortcut v-for="(door, index) in doors" :key="door.key" v-bind="propsOf(door)" :variant="style" :hue="sectionHue(index)" :delay="delayOf(index)" />
+    <AppShortcut v-for="(door, index) in doors" :key="door.key" v-bind="propsOf(door)" :variant="style" :hue="sectionHue(index)" />
   </nav>
 </template>

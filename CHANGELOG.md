@@ -11,6 +11,64 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.36.0] — 2026-10-22
+
+Tickets: anyone in the church can now report a bug, suggest an idea, ask a
+question or say thank you, and read the answer. Alongside it, a Simple view
+for people who would rather Ekkly looked like the systems they already know,
+and a calmer home and app frame.
+
+### Added
+
+- **Tickets**, an app every church has: send a bug, an idea, praise, a
+  complaint or a question, and read the answer as a conversation. Questions,
+  complaints and praise go to the church's administrators (who are notified);
+  bugs and ideas come to the Ekkly team. **Alt+T** on any page sends one
+  without leaving it, already knowing which page it was.
+- **Simple view** (Preferences): a sidebar of every app, a dashboard for the
+  home and for People, and plain tables with View, Edit and Delete. Nothing
+  decorative. Turning it on or off on the home closes and opens like a
+  church window.
+- **More for the home**, each off until turned on under "Show on my home":
+  Next Sunday, Praying for, Latest photos, Small groups, Birthdays and Quick
+  links.
+- **Where you are, in the top bar**: People › Ministries › Worship, on every
+  screen of an app, each step a link back up.
+- **Ctrl+G** searches the screen you are on; Ctrl+F still searches everything.
+- **People on a computer** has a home of its own: the roll and what needs you
+  along the top, the sections as columns. A person's record lays its sections
+  out as tables. Overview's figures open the people behind them.
+- **Tasks**: one line can say more than the title ("Print bulletins Friday
+  @Ana #Worship"), and Ekkly shows what it understood before adding it.
+  Someone given a task after it was made is notified; nobody else is.
+- **"My profile"** opens your own record even if you cannot see the roll.
+- **During the Sunday service** YUNIT wears a tie and makes no sound at all.
+
+### Changed
+
+- **People is at /people** now. Old /members links still work.
+- **The To-do page became Tickets**; /todo leads there.
+- **One animation between pages**: a card turning over as it opens. The
+  other slides and the blocks rising into place are gone, so every screen
+  arrives the same way. Preferences > Transitions turns it off.
+- **An app's header stays put** and only what is under it scrolls; the way
+  back up is the top bar's mark.
+- **The home fits one screen without squeezing.** Each list shows the rows
+  that fit whole and says how many more. A new home shows only what you act
+  on, and panels move only after choosing **Rearrange home** in the account
+  menu, where each one can be taken off with its ×.
+- **Dropdowns and dates are Ekkly's own** everywhere, the same on every
+  phone, with Today, Tomorrow and Next week above the calendar.
+- **With live sky on**, every page is lit as the sky over the church is.
+- **YUNIT's lamb** on the lost page has a crown of coloured wool.
+
+### Fixed
+
+- A person added without their sex or civil status is no longer shown as
+  male and single; they are flagged as missing it instead. The same goes for
+  people added through Claude.
+- A newborn's age of 0 is kept rather than dropped.
+
 ## [0.35.50] — 2026-10-17
 
 ### Fixed

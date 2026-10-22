@@ -375,15 +375,14 @@ const open = (event) => {
           <ol v-if="gatherings.length" class="relative" aria-label="Gatherings">
             <template v-for="(g, index) in gatherings" :key="`${g.event.id}-${g.event.date}`">
               <!-- Now, on today: a line across at the point the day has reached. -->
-              <li v-if="index === nowIndex" class="day-rise relative flex items-center gap-2 py-1.5 pl-[4.25rem]" :style="{ animationDelay: `${index * 50}ms` }">
+              <li v-if="index === nowIndex" class="relative flex items-center gap-2 py-1.5 pl-[4.25rem]">
                 <span class="absolute left-[3.75rem] size-2.5 -translate-x-1/2 rounded-full bg-primary ring-4 ring-primary/15" aria-hidden="true" />
                 <span class="h-px flex-1 bg-primary/40" aria-hidden="true" />
                 <span class="shrink-0 text-[11px] font-bold uppercase tracking-wide text-primary dark:text-primary-light">Now · {{ nowLabel }}</span>
               </li>
 
               <li
-                :class="['day-rise relative grid grid-cols-[3.25rem_1fr] gap-x-4 pb-3', isOver(g) ? 'opacity-55' : '']"
-                :style="{ animationDelay: `${(index + 1) * 50}ms` }"
+                :class="['relative grid grid-cols-[3.25rem_1fr] gap-x-4 pb-3', isOver(g) ? 'opacity-55' : '']"
               >
                 <!-- The rail, between the time and the card. -->
                 <span
@@ -477,7 +476,7 @@ const open = (event) => {
             </template>
 
             <!-- Now, after everything on today has started. -->
-            <li v-if="nowIndex === gatherings.length" class="day-rise relative flex items-center gap-2 py-1.5 pl-[4.25rem]" :style="{ animationDelay: `${(gatherings.length + 1) * 50}ms` }">
+            <li v-if="nowIndex === gatherings.length" class="relative flex items-center gap-2 py-1.5 pl-[4.25rem]">
               <span class="absolute left-[3.75rem] size-2.5 -translate-x-1/2 rounded-full bg-primary ring-4 ring-primary/15" aria-hidden="true" />
               <span class="h-px flex-1 bg-primary/40" aria-hidden="true" />
               <span class="shrink-0 text-[11px] font-bold uppercase tracking-wide text-primary dark:text-primary-light">Now · {{ nowLabel }}</span>
@@ -485,7 +484,7 @@ const open = (event) => {
           </ol>
 
           <!-- Nothing on: say so, and what is on next, a tap away. -->
-          <div v-else-if="!birthdays.length || nextAfter" class="day-rise flex flex-col items-center px-4 py-8 text-center">
+          <div v-else-if="!birthdays.length || nextAfter" class="flex flex-col items-center px-4 py-8 text-center">
             <span class="flex size-12 items-center justify-center rounded-2xl bg-gray-100 text-gray-400 dark:bg-gray-700/60 dark:text-gray-500">
               <CalendarBlank class="h-6 w-6" />
             </span>
@@ -557,17 +556,6 @@ const open = (event) => {
   --day-from: -28px;
 }
 
-/* Each gathering a beat after the one above it. */
-@keyframes day-rise {
-  from {
-    opacity: 0;
-    translate: 0 8px;
-  }
-}
-.day-rise {
-  animation: day-rise 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
 /* The pill follows the day on the same deceleration as the app's other
    movement (the page slides, the deck), so it glides and settles without a
    bounce. */
@@ -587,8 +575,7 @@ const open = (event) => {
     transition: none;
   }
   .day-in-next,
-  .day-in-prev,
-  .day-rise {
+  .day-in-prev {
     animation: none;
   }
 }

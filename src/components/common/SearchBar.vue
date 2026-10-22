@@ -1,4 +1,5 @@
 <script setup>
+import { usePageSearch } from '../../composables/usePageSearch'
 import { ref, nextTick } from 'vue'
 import { Search, X } from '../../icons'
 
@@ -27,6 +28,8 @@ const openSearch = async () => {
   await nextTick()
   inputRef.value?.focus()
 }
+// Ctrl+G opens it too, where it is folded away on a phone (usePageSearch).
+usePageSearch(openSearch)
 
 const closeSearch = () => {
   emit('update:open', false)
@@ -63,7 +66,7 @@ const clearOrClose = () => {
   <div class="relative hidden lg:block lg:flex-1">
     <Search class="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
     <input
-      ref="desktopInputRef"
+      ref="desktopInputRef" data-page-search
       :value="modelValue"
       @input="emit('update:modelValue', $event.target.value)"
       @keyup.escape="clearDesktop"
@@ -96,7 +99,7 @@ const clearOrClose = () => {
   <div v-else class="relative flex-1 lg:hidden">
     <Search class="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
     <input
-      ref="inputRef"
+      ref="inputRef" data-page-search
       :value="modelValue"
       @input="emit('update:modelValue', $event.target.value)"
       @keyup.escape="clearOrClose"

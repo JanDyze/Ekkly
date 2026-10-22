@@ -11,7 +11,7 @@
 // the steps can be tapped or swiped in any order, and Save is in the header
 // as soon as there is something to save: fixing a phone number should not
 // mean walking through three other screens to reach the button.
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { Camera, Check, ChevronLeft, ChevronRight, FlowerTulip, GenderFemale, GenderMale, Heart, HeartBreak, Trash2, User, X } from '../../icons'
 import { useFocusTrap } from '../../composables/useFocusTrap'
 import { useSwipePage } from '../../composables/useSwipePage'
@@ -36,6 +36,7 @@ import {
   isYearless,
 } from '../../utils/memberUtils'
 import { samplePerson } from '../../data/samplePeople'
+import { useSimpleView } from '../../composables/useSimpleView'
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -63,6 +64,13 @@ const STEPS = [
 ]
 
 const FIELDS = STEPS.flatMap((s) => s.fields)
+
+// In simple view (useSimpleView) the editor is the form most systems have:
+// every part at once under its heading, one scroll, Cancel and Save at the
+// foot. Steps are for a phone's small screen and a thumb; someone who asked
+// for the plain way gets the plain way.
+const { simpleView: simple } = useSimpleView()
+const shownSteps = computed(() => (simple.value ? STEPS : [STEPS[step.value]]))
 const LIST_FIELDS = ['ministries', 'instruments', 'tags']
 
 // Somebody being added is nearly always somebody who has just walked in, so a
@@ -104,6 +112,13 @@ watch(
     step.value = Math.min(Math.max(props.startStep, 0), STEPS.length - 1)
     direction.value = 'forward'
     nameError.value = false
+    // In simple view every part is on the one form, so asked for a part (a
+    // missing birthday's "Add"), it opens scrolled to that part's heading.
+    if (simple.value && step.value > 0) {
+      nextTick(() =>
+        dialogRef.value?.querySelector(`[data-step="${STEPS[step.value].key}"]`)?.scrollIntoView({ block: 'start' })
+      )
+    }
   },
   { immediate: true }
 )
@@ -317,7 +332,10 @@ const chip = (on) => [
           aria-modal="true"
           aria-labelledby="member-edit-title"
           tabindex="-1"
-          class="sheet-panel flex h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white sm:h-[min(640px,85dvh)] sm:max-w-lg sm:rounded-2xl dark:border-gray-700 dark:bg-gray-800"
+          :class="[
+            'sheet-panel flex h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white sm:rounded-2xl dark:border-gray-700 dark:bg-gray-800',
+            simple ? 'sm:h-[min(860px,90dvh)] sm:max-w-2xl' : 'sm:h-[min(640px,85dvh)] sm:max-w-lg',
+          ]"
         >
           <!-- Header: close, whose record this is, and Save the moment there
                is something to save. -->
@@ -356,7 +374,7 @@ const chip = (on) => [
           <!-- The stepper. Every step can be tapped: it shows where you are,
                not a gate you have to pass. A dot marks a step you have
                changed something on. -->
-          <nav aria-label="Profile sections" class="shrink-0 px-4 pb-3 pt-3">
+          <nav v-if="!simple" aria-label="Profile sections" class="shrink-0 px-4 pb-3 pt-3">
             <ol class="grid grid-cols-4 gap-2">
               <li v-for="(s, i) in STEPS" :key="s.key">
                 <button
@@ -396,11 +414,21 @@ const chip = (on) => [
           <!-- One step at a time. -->
           <div :ref="swipeRef" class="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
             <Transition :name="`step-${direction}`" mode="out-in">
-              <form :key="step" class="space-y-5 px-4 pb-6 pt-2 sm:px-6" @submit.prevent="next">
-                <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ STEPS[step].title }}</h3>
+              <form :key="simple ? 'all' : step" :class="['px-4 pb-6 pt-2 sm:px-6', simple ? 'space-y-8 pt-4' : 'space-y-5']" @submit.prevent="simple ? save() : next()">
+                <!-- One part at a time; in simple view, every part, each under
+                     its heading. -->
+                <section
+                  v-for="s in shownSteps"
+                  :key="s.key"
+                  :data-step="s.key"
+                  :class="['space-y-5', simple ? 'border-b border-gray-100 pb-8 last:border-0 last:pb-0 dark:border-gray-700' : '']"
+                >
+                <h3 :class="simple ? 'text-base font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400' : 'text-xl font-bold text-gray-900 dark:text-white'">
+                  {{ simple ? s.label : s.title }}
+                </h3>
 
                 <!-- Name -->
-                <template v-if="STEPS[step].key === 'name'">
+                <template v-if="s.key === 'name'">
                   <!-- The face first: it is how most people here are known. -->
                   <div class="flex items-center gap-4">
                     <div class="relative">
@@ -485,7 +513,7 @@ const chip = (on) => [
                 </template>
 
                 <!-- Personal -->
-                <template v-else-if="STEPS[step].key === 'personal'">
+                <template v-else-if="s.key === 'personal'">
                   <div>
                     <label for="me-dob" :class="label">
                       Birthday
@@ -562,7 +590,7 @@ const chip = (on) => [
                 </template>
 
                 <!-- Contact -->
-                <template v-else-if="STEPS[step].key === 'contact'">
+                <template v-else-if="s.key === 'contact'">
                   <div>
                     <label for="me-tel" :class="label">Phone number</label>
                     <input
@@ -713,12 +741,36 @@ const chip = (on) => [
                     </button>
                   </div>
                 </template>
+                </section>
               </form>
             </Transition>
           </div>
 
+          <!-- Simple view: Cancel and Save, as a form has them. -->
+          <div
+            v-if="simple"
+            class="flex shrink-0 items-center justify-end gap-3 border-t border-gray-200 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 dark:border-gray-700"
+          >
+            <button
+              type="button"
+              class="inline-flex h-11 items-center rounded-lg px-4 text-sm font-semibold text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 dark:text-gray-200 dark:ring-gray-600 dark:hover:bg-gray-700"
+              @click="requestClose"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              @click="save"
+              :disabled="busy || uploadingPhoto || !canSave"
+              class="inline-flex h-11 items-center gap-1 rounded-lg bg-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
+            >
+              {{ busy ? 'Saving…' : isAdd ? 'Add person' : 'Save changes' }}
+            </button>
+          </div>
+
           <!-- Back and Next, where the thumb already is. -->
           <div
+            v-else
             class="flex shrink-0 items-center gap-3 border-t border-gray-200 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-gray-700"
           >
             <button

@@ -1,13 +1,11 @@
 <script setup>
 import { computed, provide, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft } from '../../icons'
+import { useRoute } from 'vue-router'
 import AppArt from '../common/AppArt.vue'
 import AppRail from './AppRail.vue'
-import AppCrumbs from './AppCrumbs.vue'
-import { useCrumbs } from '../../composables/useCrumbs'
-import { useMediaQuery } from '../../composables/useMediaQuery'
+import { nameThisScreen } from '../../composables/useTrail'
 import { interiorVars } from './churchInterior'
+import { useSimpleView } from '../../composables/useSimpleView'
 
 // One screen of an app inside Ekkly: its home, or a section one step off it.
 //
@@ -20,8 +18,10 @@ import { interiorVars } from './churchInterior'
 // what is true today, and the way back out to Ekkly — so the screen opens on
 // what you came for rather than on a bar.
 //
-// A section's header is the top of the screen: Ekkly's own bar steps aside one
-// step into an app (AdminLayout), so this clears the phone's notch itself.
+// A section's header sits under Ekkly's own bar, which stays on every screen
+// of an app with the trail of how deep you are (Topbar, useTrail). The
+// header still names the section in full and goes up one level; the bar's
+// trail goes up to any level at once.
 //
 // The header hides as the page scrolls down and comes back the moment it
 // scrolls up, so reading a long list costs nothing at the top, and the way
@@ -52,6 +52,10 @@ const props = defineProps({
   // home of all apps is: the width of the screen and its height, in panels
   // that scroll inside themselves, so the screen itself never does.
   board: { type: Boolean, default: false },
+  // An app's home on plain ground, without the church's room behind it: for
+  // a home that is a working list rather than a launcher (Tickets), where the
+  // windows and pews behind its rows pulled the eye off them as on a section.
+  plain: { type: Boolean, default: false },
   // A section laid out for a desktop's width (a table, a grid of cards,
   // columns side by side) rather than a phone's column: there it takes the
   // room beside the rail, as wide as reads well. A phone's screen is the same.
@@ -60,43 +64,45 @@ const props = defineProps({
   // to }] after the app's name, in place of the section (a session is in its
   // group, not in Sessions). Left out, the trail is read off the routes.
   trail: { type: Array, default: null },
+  // The app's rail beside a section on a desktop. Off for a screen opened by
+  // someone who may not go into the app's sections (their own record, when
+  // they may not see the roll), where every door on it would be refused.
+  rail: { type: Boolean, default: true },
 })
 
 // The lists on a desktop's screen (ListGroup) lay their rows out as cards
 // across its width rather than one long column down the middle of it.
-provide('appScreenDesk', computed(() => props.desk))
+// In simple view the sidebar (SimpleSidebar) lists every app and the open
+// one's sections, so the rail beside a section steps aside, in every app.
+const { simpleView: simple } = useSimpleView()
+const desk = computed(() => props.desk)
+provide('appScreenDesk', desk)
 
 const column = computed(() => {
   if (props.board) return 'max-w-xl lg:h-full lg:max-w-[112rem] lg:px-6 lg:pt-5 lg:pb-5'
-  if (props.desk) return `${props.wide ? 'max-w-5xl' : 'max-w-xl'} lg:max-w-[90rem] lg:px-8`
+  if (desk.value) return `${props.wide ? 'max-w-5xl' : 'max-w-xl'} lg:max-w-[90rem] lg:px-8`
   return props.wide ? 'max-w-5xl' : 'max-w-xl'
 })
 
-const router = useRouter()
 const route = useRoute()
 const hasHeader = computed(() => Boolean(props.title || props.back))
 
 /* ------------------------------------------------------------ the trail */
 
-// Two steps or more into an app on a desktop, the way here over the title
-// (AppCrumbs, useCrumbs). The header grows a line for it.
-const desktop = useMediaQuery('(min-width: 1024px)')
-const crumbs = useCrumbs(() => props.trail)
-const withTrail = computed(() => hasHeader.value && desktop.value && crumbs.value.length > 0)
+// The way here is the top bar's (useTrail): Home › People › Ministries ›
+// Worship, at every size. It used to be a line over this header's title on a
+// desktop, two steps in; with the bar on every screen of an app that said it
+// twice. This screen gives the bar its name — a section's title, or a
+// record's (a ministry, an album, a Sunday) once it has loaded — and, where
+// its place is not its section's, the way to it.
+nameThisScreen(
+  () => (hasHeader.value ? props.title : ''),
+  () => props.trail
+)
 
 // Flat, in the church's colour, the way a section's tile draws it (BRAND.md):
 // a room of the app, never mistaken for the app's own glossy picture.
 const headerArt = computed(() => props.art || route.meta?.art || '')
-
-// Back returns to the screen you came from when it was one of this app's — a
-// Sunday opened from My turns goes back to My turns — and otherwise to the
-// screen above this one. Never as a new entry in the history: a back button
-// that pushed would make the phone's own back step forward again.
-const goBack = () => {
-  const previous = window.history.state?.back
-  if (previous && props.root && String(previous).startsWith(props.root)) router.back()
-  else if (props.back) router.replace(props.back)
-}
 
 /* -------------------------------------------------------- hiding on scroll */
 
@@ -139,61 +145,45 @@ defineExpose({ scroller, hidden })
        home to the app and every other section, down the left. The screen
        itself scrolls beside it, so the rail holds still. -->
   <div :class="hasHeader ? 'flex h-full bg-gray-50 dark:bg-gray-900' : 'contents'">
-  <AppRail v-if="hasHeader" />
+  <AppRail v-if="hasHeader && rail && !simple" />
+  <!-- The page never scrolls; what is in it does. The header (the way back,
+       the name, the screen's buttons) stands outside what scrolls, so it is
+       always where it was left, and only the content under it moves. It used
+       to scroll with the page and tuck itself away going down, which made
+       the whole screen move to read a list. -->
   <div
-    ref="scroller"
     :class="[
+      'flex h-full flex-col overflow-hidden',
       hasHeader ? 'min-w-0 flex-1' : '',
       // The room is drawn on an app's home only. A section is somewhere
       // things are read — a roll, a month, a record — and windows and pews
       // behind its rows pulled the eye off them, so it stands on plain ground.
-      hasHeader ? 'h-full bg-gray-50 dark:bg-gray-900' : 'app-interior h-full bg-gray-50 dark:bg-gray-900',
+      hasHeader || plain ? 'bg-gray-50 dark:bg-gray-900' : 'app-interior bg-gray-50 dark:bg-gray-900',
       board ? 'app-board' : '',
-      fill
-        ? 'flex flex-col overflow-hidden'
-        : hasHeader
-          ? 'overflow-y-auto overscroll-contain'
-          : 'overflow-hidden with-bar:overflow-y-auto with-bar:overscroll-contain',
     ]"
-    :style="[interiorVars, { '--screen-head': hasHeader && !hidden ? (withTrail ? '5rem' : '4rem') : '0px' }]"
-    @scroll.passive="onScroll"
+    :style="[interiorVars, { '--screen-head': '0px' }]"
   >
     <!-- The way back and the screen's name are for the screen, never the
          paper: a printed session report starts with the report. -->
     <header
       v-if="hasHeader"
-      :class="[
-        'no-print sticky top-0 z-30 border-b border-gray-200/70 bg-gray-50/85 pt-[env(safe-area-inset-top)] backdrop-blur-md transition-transform duration-300 ease-out dark:border-gray-800/70 dark:bg-gray-900/85',
-        hidden ? '-translate-y-full' : '',
-      ]"
-      @focusin="hidden = false"
+      class="no-print z-30 shrink-0 border-b border-gray-200/70 bg-gray-50 dark:border-gray-800/70 dark:bg-gray-900"
     >
-      <div :class="['mx-auto flex w-full items-center gap-3 px-4', withTrail ? 'h-20' : 'h-16', column]">
-        <button
-          v-if="back"
-          type="button"
-          class="-ml-2 flex size-10 shrink-0 items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-200/70 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-          aria-label="Back"
-          @click="goBack"
-        >
-          <ChevronLeft class="size-5" />
-        </button>
-        <!-- The tile that opened this section flies its drawing here too
-             (router/viewTransitions.js), and it lands as the tile wore it: in
-             full colour. It used to be flattened into the accent here, so the
-             drawing changed colour on the way from the tile to the header. -->
+      <div :class="['mx-auto flex h-16 w-full items-center gap-3 px-4', column]">
+        <!-- No back arrow of its own: the top bar's mark, over every screen of
+             an app, is the way up a level, and a second arrow under it did
+             the same thing. -->
+        <!-- The section's drawing, in full colour as its tile wears it. -->
+        <!-- Simple view keeps it, flat in the church's colour, as its sidebar
+             draws every app. -->
         <AppArt
           v-if="headerArt"
           :app-key="headerArt"
-          :play="1"
-          :data-morph-icon="route.path"
-          class="size-9 shrink-0"
+          :flat="simple"
+          :class="simple ? 'size-7 shrink-0 text-primary dark:text-primary-light' : 'size-9 shrink-0'"
         />
         <div class="min-w-0 flex-1">
-          <AppCrumbs v-if="withTrail" :trail="trail" class="mb-0.5" />
-          <!-- Named by its path, so the tile that opened this section can fly
-               its name up into this title (router/viewTransitions.js). -->
-          <h1 :data-morph-label="route.path" class="truncate text-2xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white">
+          <h1 class="truncate text-2xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white">
             {{ title }}
           </h1>
           <p v-if="subtitle" class="truncate text-xs text-gray-500 dark:text-gray-400">{{ subtitle }}</p>
@@ -202,6 +192,18 @@ defineExpose({ scroller, hidden })
       </div>
     </header>
 
+    <div
+      ref="scroller"
+      :class="[
+        'min-h-0 flex-1',
+        fill
+          ? 'flex flex-col overflow-hidden'
+          : hasHeader
+            ? 'overflow-y-auto overscroll-contain'
+            : 'overflow-hidden with-bar:overflow-y-auto with-bar:overscroll-contain',
+      ]"
+      @scroll.passive="onScroll"
+    >
     <!-- The screen runs to the foot of the phone, behind the bottom bar when
          someone has it on, so the foot of the column clears the bar
          (--bottom-bar-space, 0 without one): the last row of a list scrolls
@@ -218,6 +220,7 @@ defineExpose({ scroller, hidden })
     >
       <slot />
     </main>
+    </div>
   </div>
   </div>
 </template>

@@ -1,4 +1,5 @@
 import XLSX from 'xlsx-js-style'
+import { fitColumns } from './sheetColumns'
 import { sgLabel } from '../data/sgFormLabels'
 import { getChurchIdentity } from '../composables/useAppSettings'
 import { accentCell } from '../composables/useBrandTheme'
@@ -47,8 +48,11 @@ const styles = {
   },
 }
 
-/** Builds a sheet from [cells] rows plus a per-row {colIndex: style} map. */
-const toSheet = (rows, meta, cols) => {
+/**
+ * Builds a sheet from [cells] rows plus a per-row {colIndex: style} map, its
+ * columns sized to what is in them (sheetColumns.js; `fit` is its options).
+ */
+const toSheet = (rows, meta, fit) => {
   const ws = XLSX.utils.aoa_to_sheet(rows)
   rows.forEach((row, r) => {
     row.forEach((_, c) => {
@@ -58,8 +62,7 @@ const toSheet = (rows, meta, cols) => {
       if (style) ws[ref].s = style
     })
   })
-  ws['!cols'] = cols
-  return ws
+  return fitColumns(ws, fit)
 }
 
 const buildSessionSheet = (session, group, members, lang) => {
@@ -125,7 +128,8 @@ const buildSessionSheet = (session, group, members, lang) => {
   section('notes')
   push(['', session.notes || ''], { 1: styles.fieldValue })
 
-  return toSheet(rows, meta, [{ wch: 26 }, { wch: 62 }])
+  // The answers wrap, so they are given room before they do.
+  return toSheet(rows, meta, { from: 4, min: 12, max: 30, maxFor: { 1: 70 } })
 }
 
 const buildAttendanceSheet = (session, group, members, lang) => {
@@ -174,7 +178,7 @@ const buildAttendanceSheet = (session, group, members, lang) => {
   push([])
   push(['', t('totalAttendance'), totals.total], { 1: styles.totalLabel, 2: styles.totalValue })
 
-  return toSheet(rows, meta, [{ wch: 6 }, { wch: 32 }, { wch: 22 }])
+  return toSheet(rows, meta, { from: 3, min: 5, max: 40 })
 }
 
 const safeName = (value) => (value || 'Session').replace(/[^\w-]+/g, '_').slice(0, 40)
@@ -248,16 +252,7 @@ export const exportSgGroupSessions = (sessions, group, members, lang = 'en') => 
     )
   })
 
-  const ws = toSheet(rows, meta, [
-    { wch: 14 },
-    { wch: 20 },
-    { wch: 22 },
-    { wch: 30 },
-    { wch: 22 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 14 },
-  ])
+  const ws = toSheet(rows, meta, { from: 3, min: 8, max: 40 })
 
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, sgLabel(lang, 'sessions').slice(0, 31))

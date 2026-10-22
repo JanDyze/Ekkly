@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Check, X, RotateCcw, Users, ArrowLeft, ArrowRight, ClipboardCheck } from '../../icons'
-import { getFullName } from '../../utils/memberUtils'
+import { getFullName, nicknameOf } from '../../utils/memberUtils'
 import { memberKey } from '../../utils/sgUtils'
 import MemberAvatar from '../members/MemberAvatar.vue'
 
@@ -446,8 +446,8 @@ const displayName = (member) => getFullName(member) || member.firstName || 'Memb
               <p class="text-xl font-bold text-gray-900 dark:text-white leading-tight break-words">
                 {{ displayName(current) }}
               </p>
-              <p v-if="current.nickname" class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                "{{ current.nickname }}"
+              <p v-if="nicknameOf(current)" class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                "{{ nicknameOf(current) }}"
               </p>
             </div>
           </div>

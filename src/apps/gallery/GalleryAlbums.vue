@@ -1,4 +1,5 @@
 <script setup>
+import { usePageSearch } from '../../composables/usePageSearch'
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppScreen from '../../components/appframe/AppScreen.vue'
@@ -36,6 +37,8 @@ const searchQuery = ref('')
 // query: a bar you cannot see must not still be filtering the list.
 const searchOpen = ref(false)
 const openSearch = () => { searchOpen.value = true }
+// Ctrl+G opens it too (usePageSearch).
+usePageSearch(openSearch)
 const closeSearch = () => {
   searchOpen.value = false
   searchQuery.value = ''

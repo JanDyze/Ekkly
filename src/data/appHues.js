@@ -32,7 +32,7 @@ export const APP_HUES = {
   finances: AMBER,
   inventory: ORANGE,
   ai: BLUE,
-  todos: TEAL,
+  tickets: TEAL,
   accounts: NAVY,
   audit: NAVY,
   settings: NAVY,

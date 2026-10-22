@@ -16,8 +16,7 @@
 // Given `glyph`, it wears a section's small flat picture in the church's own
 // colours (SectionGlyph): for the rooms inside an app, a step below the app.
 
-import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref } from 'vue'
 import AppArt from '../common/AppArt.vue'
 import SectionGlyph from './SectionGlyph.vue'
 
@@ -35,14 +34,7 @@ const props = defineProps({
   urgent: { type: Boolean, default: false },
   // Across both columns, icon beside the words: for the odd tile out.
   wide: { type: Boolean, default: false },
-  // Its beat in the home's entrance, in milliseconds.
-  delay: { type: Number, default: 0 },
 })
-
-// The path this tile opens, which the section's header carries too, so its
-// name can fly up into the header and back (router/viewTransitions.js).
-const router = useRouter()
-const morphKey = computed(() => router.resolve(props.to).path)
 
 // Bumped to play the drawing's animation again.
 const play = ref(0)
@@ -53,9 +45,8 @@ const play = ref(0)
     :to="to"
     @pointerenter="play++"
     @focus="play++"
-    :style="{ animationDelay: `${delay}ms` }"
     :class="[
-      'animate-rise group flex rounded-2xl border border-gray-200 bg-white p-4 transition-[background-color,border-color] duration-200 ease-out hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700/80 dark:bg-gray-800 dark:hover:border-gray-600 dark:hover:bg-gray-700/60',
+      'group flex rounded-2xl border border-gray-200 bg-white p-4 transition-[background-color,border-color] duration-200 ease-out hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700/80 dark:bg-gray-800 dark:hover:border-gray-600 dark:hover:bg-gray-700/60',
       wide ? 'col-span-2 items-center gap-4' : 'flex-col gap-3.5',
     ]"
   >
@@ -80,7 +71,7 @@ const play = ref(0)
       </span>
     </span>
     <span class="min-w-0">
-      <span :data-morph-label="morphKey" class="block text-lg font-semibold leading-tight tracking-tight text-gray-900 dark:text-white">
+      <span class="block text-lg font-semibold leading-tight tracking-tight text-gray-900 dark:text-white">
         {{ title }}
       </span>
       <span

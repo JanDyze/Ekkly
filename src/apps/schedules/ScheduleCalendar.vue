@@ -22,6 +22,7 @@
  * The month can also be read as a table — the rota as it is pinned up, the
  * Sundays across and the jobs down the side — for checking it whole.
  */
+import { usePageSearch } from '../../composables/usePageSearch'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Eye, EyeOff, Search, SearchX, SquaresFour, Table } from '../../icons'
@@ -181,6 +182,8 @@ const searchQuery = ref('')
 const openSearch = () => {
   searchOpen.value = true
 }
+// Ctrl+G opens it too (usePageSearch).
+usePageSearch(openSearch)
 
 const closeSearch = () => {
   searchOpen.value = false
@@ -392,7 +395,6 @@ const resultCount = computed(() => results.value.upcoming.length + results.value
 
         <ScheduleMonthTable
           v-else-if="view === 'table'"
-          class="animate-rise"
           :sundays="sundays"
           :roles="roles"
           :members="members"

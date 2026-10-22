@@ -50,8 +50,6 @@ const props = defineProps({
   badge: { type: Number, default: 0 },
   // The badge in the warning colour, for things that are overdue rather than new.
   urgent: { type: Boolean, default: false },
-  // Its beat in the home's entrance, in milliseconds.
-  delay: { type: Number, default: 0 },
 })
 
 // The page's code is fetched as the finger comes down, so it is usually there
@@ -90,7 +88,7 @@ const replay = (event) => {
     :badge="badge"
     :urgent="urgent"
     :play="play"
-    :style="{ animationDelay: `${delay}ms`, '--hue': hue || 'var(--color-primary)' }"
+    :style="{ '--hue': hue || 'var(--color-primary)' }"
     @pointerdown="warm"
     @pointerenter="replay"
     @focus="warm"

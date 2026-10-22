@@ -4,7 +4,7 @@ import { X, Search, Check, UserCheck, Loader2 } from '../../icons'
 import { useMediaQuery } from '../../composables/useMediaQuery'
 import { useFocusTrap } from '../../composables/useFocusTrap'
 import { useAuth } from '../../composables/useAuth'
-import { getFullName } from '../../utils/memberUtils'
+import { getFullName, nicknameOf } from '../../utils/memberUtils'
 import MemberAvatar from '../members/MemberAvatar.vue'
 import { suggestMembers } from '../../utils/memberMatch'
 import { memberKey } from '../../utils/sgUtils'
@@ -137,10 +137,10 @@ useFocusTrap(dialogRef, computed(() => props.show), close)
                       {{ getFullName(member) }}
                     </span>
                     <span
-                      v-if="member.nickname"
+                      v-if="nicknameOf(member)"
                       class="block text-xs text-gray-500 dark:text-gray-400 truncate"
                     >
-                      {{ member.nickname }}
+                      {{ nicknameOf(member) }}
                     </span>
                   </span>
                   <Check

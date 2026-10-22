@@ -4,14 +4,36 @@ import { useRoute } from 'vue-router'
 import Topbar from '../components/Topbar.vue'
 import RightSidebar from '../components/RightSidebar.vue'
 import BottomBar from '../components/BottomBar.vue'
+import QuickTicket from '../components/tickets/QuickTicket.vue'
 import { useBottomBar } from '../composables/useBottomBar'
 import { initPresence, stopPresence } from '../composables/usePresence'
 import { useFocusModeValue } from '../composables/useFocusMode'
+import { useLiveSky } from '../composables/useLiveSky'
+import { themeOverride } from '../composables/useTheme'
+import { useSimpleView } from '../composables/useSimpleView'
+import SimpleSidebar from '../components/simple/SimpleSidebar.vue'
 
 // The heartbeat belongs to the signed-in shell rather than to any one panel:
 // this layout only exists while someone is authenticated, and unmounting it
 // (signing out) is exactly when the presence record should disappear.
 onMounted(initPresence)
+
+// With live sky on, every page is lit as the sky over the church is,
+// whatever the light or dark setting: dark at night, light from dawn to
+// dusk. It began on the home, where dark cards on a bright midday sky looked
+// wrong, but a page turning light the moment you left the home was the same
+// mismatch one step later. Off, the person's own setting stands
+// (useTheme's themeOverride).
+const { sky } = useLiveSky()
+watch(
+  () => sky.value['data-sky'] || null,
+  (phase) => (themeOverride.value = phase ? phase === 'night' : null),
+  { immediate: true }
+)
+onUnmounted(() => (themeOverride.value = null))
+
+// Simple view has a sidebar of every app, as most systems do (SimpleSidebar).
+const { simpleView } = useSimpleView()
 onUnmounted(stopPresence)
 
 // Focus routes drop the chrome. Between the top bar, the bottom bar and this
@@ -66,16 +88,10 @@ const bare = computed(() => isFocus.value || isApp.value || isOwnLayout.value)
 // The home of all apps lays itself out, edge to edge, like an app's home.
 const isRoot = computed(() => Boolean(route.meta?.root))
 
-// Only on an app's home, though. One step into it — a section, a Sunday — the
-// screen has its own header with its own back arrow, and a second bar above it
-// leading out of the whole app is one way back too many: the section's arrow
-// goes up a level, and the app's home is where you leave from.
-const inAppSection = computed(() => isApp.value && Number(route.meta?.depth) >= 1)
-
 // Pages kept in memory after you leave them, by component name (the file's
 // name). Only lists that open a record as its own page belong here - it costs
 // memory to keep one, and a page kept alive must cope with being shown again
-// rather than mounted afresh (see useTitleCount and useListScrollMemory).
+// rather than mounted afresh (see useListScrollMemory).
 const KEPT_ALIVE = ['PeopleEveryone', 'SongsAll']
 </script>
 
@@ -90,6 +106,10 @@ const KEPT_ALIVE = ['PeopleEveryone', 'SongsAll']
          apps (/home, Apps.vue) is the way between them. The top bar's mark
          leads back to it from everywhere else. A bottom bar is there only for
          whoever turned it on in Preferences (useBottomBar). -->
+    <!-- Except in simple view, which has the sidebar most systems have: every
+         app down the left, and the open one's sections under it. Not on a
+         focus route, which is a task with its own way out. -->
+    <SimpleSidebar v-if="simpleView && !isFocus && !hidesTopbar" />
     <!-- Main content area -->
     <div class="flex-1 min-w-0 flex flex-col overflow-hidden lg:ml-0 print-main">
       <!-- Topbar. Hidden, not removed, on a focus route (and the rail below
@@ -99,7 +119,11 @@ const KEPT_ALIVE = ['PeopleEveryone', 'SongsAll']
            pressing back and the list sliding in. A wrapper does the hiding,
            because v-show needs one root element and these have several;
            display: contents leaves the layout as if it were not there. -->
-      <div v-show="!isFocus && !hidesTopbar && !inAppSection" class="contents">
+      <!-- Inside an app's sections too: it used to step aside one step in,
+           leaving the section's own back arrow, but it carries the trail of
+           how deep you are now (useTrail), which goes up to any level at
+           once where a section's arrow goes up one. -->
+      <div v-show="!isFocus && !hidesTopbar" class="contents">
         <Topbar />
       </div>
 
@@ -142,6 +166,9 @@ const KEPT_ALIVE = ['PeopleEveryone', 'SongsAll']
     <div v-show="!bare" class="contents">
       <RightSidebar />
     </div>
+
+    <!-- Alt+T on any page: a ticket about it, sent with its address. -->
+    <QuickTicket />
   </div>
 </template>
 

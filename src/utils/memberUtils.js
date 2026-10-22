@@ -15,6 +15,18 @@ export const getFullName = (member) => {
 export const getDisplayName = (member) =>
   member?.nickname?.trim() || member?.firstName || "";
 
+/**
+ * The nickname worth printing under somebody's full name: "" when there is
+ * none, or when it is only the first name again. The add forms used to write
+ * the first name in as the nickname whenever none was given, so most of a
+ * roll read 'Ana Cruz / "Ana"', a second line that told nobody anything.
+ */
+export const nicknameOf = (member) => {
+  const nickname = String(member?.nickname || "").trim();
+  const first = String(member?.firstName || "").trim();
+  return nickname && nickname.toLowerCase() !== first.toLowerCase() ? nickname : "";
+};
+
 export const getAvatarUrl = (member) => {
   // If member has a custom image (base64), use it
   if (member.image) {
@@ -158,34 +170,66 @@ export const YEARLESS = "0000";
 
 export const isYearless = (dateOfBirth) => String(dateOfBirth || "").startsWith(`${YEARLESS}-`);
 
-/** `{ year, month, day }` as numbers, year null when it is not known; null when there is no date. */
+/**
+ * `{ year, month, day }` as numbers, year null when it is not known; null when
+ * there is no date.
+ *
+ * Every reading of a birthday goes through here rather than `new Date(iso)`.
+ * A bare "1990-05-01" handed to Date is midnight in London, which is still the
+ * thirtieth of April anywhere west of it, so birthdays, ages and month
+ * headings came out a day early for a church in the Americas. A birthday is a
+ * day on the calendar, not a moment, so it is read as one. Anything not in
+ * that shape (an old import) is read the slow way, on the device's calendar.
+ */
 export const birthdayParts = (dateOfBirth) => {
-  const match = String(dateOfBirth || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!match) return null;
-  const [, y, m, d] = match.map(Number);
-  return { year: y || null, month: m, day: d };
+  const value = String(dateOfBirth || "").trim();
+  if (!value) return null;
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const [, y, m, d] = match.map(Number);
+    if (!m || !d) return null;
+    return { year: y || null, month: m, day: d };
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
+};
+
+/** How many days until someone's next birthday, today being 0; Infinity without one. */
+export const daysUntilBirthday = (member) => {
+  const parts = birthdayParts(member?.dateOfBirth);
+  if (!parts) return Infinity;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const next = new Date(today.getFullYear(), parts.month - 1, parts.day);
+  if (next < today) next.setFullYear(today.getFullYear() + 1);
+  return Math.round((next - today) / 86400000);
+};
+
+/** "12 March 1990", or "12 March" when the year is not known; "" without a date. */
+export const formatBirthday = (dateOfBirth, { withYear = true } = {}) => {
+  const parts = birthdayParts(dateOfBirth);
+  if (!parts) return "";
+  const year = withYear && parts.year ? parts.year : 2000;
+  const options = withYear && parts.year ? { day: "numeric", month: "long", year: "numeric" } : { day: "numeric", month: "long" };
+  return new Date(year, parts.month - 1, parts.day).toLocaleDateString(undefined, options);
 };
 
 // Returns "" rather than "Invalid Date" for missing/unparseable dates
 export const formatBirthDate = (dateOfBirth) => {
-  if (!dateOfBirth) return "";
-  if (isYearless(dateOfBirth)) {
-    const parts = birthdayParts(dateOfBirth);
-    return parts ? new Date(2000, parts.month - 1, parts.day).toLocaleDateString(undefined, { month: "long", day: "numeric" }) : "";
-  }
-  const date = new Date(dateOfBirth);
-  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString();
+  const parts = birthdayParts(dateOfBirth);
+  if (!parts) return "";
+  if (!parts.year) return formatBirthday(dateOfBirth, { withYear: false });
+  return new Date(parts.year, parts.month - 1, parts.day).toLocaleDateString();
 };
 
 export const calculateAgeFromDate = (dateOfBirth) => {
-  if (!dateOfBirth || isYearless(dateOfBirth)) return undefined;
+  const parts = birthdayParts(dateOfBirth);
+  if (!parts?.year) return undefined;
   const today = new Date();
-  const birthDate = new Date(dateOfBirth);
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
+  let age = today.getFullYear() - parts.year;
+  const month = today.getMonth() + 1;
+  if (month < parts.month || (month === parts.month && today.getDate() < parts.day)) age--;
   return age;
 };
 

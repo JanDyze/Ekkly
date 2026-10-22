@@ -52,12 +52,12 @@ const ASIDE = {
 
 <template>
   <section class="@container flex min-h-[9rem] flex-1 flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-800/70 dark:ring-white/10">
-    <header class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 pt-4 pb-3 dark:border-white/10">
-      <h2 class="flex min-w-0 items-center gap-2.5 text-base font-semibold text-gray-900 dark:text-white">
+    <header class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 pt-2.5 pb-2 dark:border-white/10">
+      <h2 class="flex min-w-0 items-center gap-2.5 text-sm font-semibold text-gray-900 dark:text-white">
         <span class="truncate">{{ title }}</span>
         <span
           v-if="count && items.length"
-          class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold tabular-nums text-gray-600 dark:bg-white/10 dark:text-gray-300"
+          class="rounded-full bg-gray-100 px-1.5 py-px text-[11px] font-bold tabular-nums text-gray-600 dark:bg-white/10 dark:text-gray-300"
         >
           {{ items.length }}
         </span>
@@ -65,7 +65,7 @@ const ASIDE = {
       <RouterLink
         v-if="link"
         :to="link.to"
-        class="shrink-0 text-sm font-semibold whitespace-nowrap text-primary hover:underline dark:text-primary-light"
+        class="shrink-0 text-xs font-semibold whitespace-nowrap text-primary hover:underline dark:text-primary-light"
       >
         <template v-if="link.short">
           <span class="hidden @[18rem]:inline">{{ link.label }}</span><span class="@[18rem]:hidden">{{ link.short }}</span>

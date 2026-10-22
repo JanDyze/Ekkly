@@ -2,6 +2,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { subscribeToNotifications } from '../api/notifyService'
 import { usePermissions } from './usePermissions'
 import { canReceive } from '../../lib/notifications'
+import { useAuth } from './useAuth'
 
 // One feed, shared. It used to live inside Topbar.vue, which was fine while the
 // bell was the only thing reading it; the people drawer now shows the same
@@ -22,6 +23,7 @@ try {
 
 export function useNotificationFeed() {
   const { isAdmin, capabilities } = usePermissions()
+  const { user } = useAuth()
 
   onMounted(() => {
     subscribers += 1
@@ -45,9 +47,14 @@ export function useNotificationFeed() {
    * open the page it links to. Entries from before kinds existed carry none
    * and stay visible.
    */
+  //
+  // One sent to particular people (`to`, their accounts: a task given to them)
+  // shows to them alone, administrators included.
   const visibleNotifications = computed(() =>
-    notifications.value.filter((n) =>
-      canReceive(n.kind, { isAdmin: isAdmin.value, capabilities: capabilities.value })
+    notifications.value.filter(
+      (n) =>
+        (!Array.isArray(n.to) || n.to.includes(user.value?.uid)) &&
+        canReceive(n.kind, { isAdmin: isAdmin.value, capabilities: capabilities.value })
     )
   )
 

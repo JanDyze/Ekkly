@@ -8,6 +8,7 @@ import { useFollowReplies, useYunitChat } from '../composables/useYunitChat'
 import { usePermissions } from '../composables/usePermissions'
 import { tipsFor } from '../data/yunitTips'
 import { setYunitSound, yunitSound } from '../utils/yunitFeedback'
+import { useSundayService } from '../composables/useSundayService'
 
 // YUNIT's page: a conversation with him, and him reacting to it.
 //
@@ -24,6 +25,8 @@ import { setYunitSound, yunitSound } from '../utils/yunitFeedback'
 
 const { messages, draft, sending, focused, mood, doing, cue, send, ask, clear, stir } = useYunitChat()
 const { canView } = usePermissions()
+// During the Sunday service he wears a tie and makes no sound at all.
+const { inService } = useSundayService()
 
 const mascot = ref(null)
 const scroller = ref(null)
@@ -74,13 +77,15 @@ onMounted(() => {
   <div class="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col">
     <!-- In conversation: him small, his name, and what he is doing. -->
     <header v-if="chatting" class="flex shrink-0 items-center gap-3 border-b border-gray-100 px-4 py-2.5 sm:px-6 dark:border-gray-800">
-      <YunitMascot ref="mascot" :mood="mood" :sparks="mood !== 'idle'" class="size-14 shrink-0" @wake="stir" />
+      <YunitMascot ref="mascot" :mood="mood" :sparks="mood !== 'idle'" :tie="inService" class="size-14 shrink-0" @wake="stir" />
       <div class="min-w-0 flex-1">
         <h1 class="text-lg font-black tracking-tight text-gray-900 dark:text-white"><YunitWordmark /></h1>
         <p class="truncate text-sm text-gray-500 dark:text-gray-400" aria-live="polite">{{ status }}</p>
       </div>
-      <!-- His sounds, off for whoever is asking him things in a quiet room. -->
+      <!-- His sounds, off for whoever is asking him things in a quiet room.
+           Gone during the service, when there are none to turn on. -->
       <button
+        v-if="!inService"
         type="button"
         class="flex size-10 shrink-0 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
         :aria-label="yunitSound ? 'Turn YUNIT’s sounds off' : 'Turn YUNIT’s sounds on'"
@@ -104,7 +109,7 @@ onMounted(() => {
     <div ref="scroller" class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
       <!-- Before anything is said: him, large, and ways to start. -->
       <section v-if="!chatting" class="flex min-h-full flex-col items-center justify-center px-4 py-4 text-center sm:px-6 sm:py-8">
-        <YunitMascot ref="mascot" :mood="mood" class="size-[min(17dvh,12rem)]" @wake="stir" />
+        <YunitMascot ref="mascot" :mood="mood" :tie="inService" class="size-[min(17dvh,12rem)]" @wake="stir" />
         <h1 class="mt-2 text-3xl font-black tracking-tight text-gray-900 sm:mt-4 sm:text-5xl dark:text-white">
           <YunitWordmark />
         </h1>

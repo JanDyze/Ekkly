@@ -2,13 +2,15 @@
 import { computed } from 'vue'
 import { Cake, ClipboardText, HandHeart, Hourglass, KeyRound, UserCircleCheck, UsersThree } from '../../icons'
 import AppHome from '../../components/appframe/AppHome.vue'
-import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
 import DeckCard from '../../components/appframe/DeckCard.vue'
 import BirthdayCard from '../../components/members/BirthdayCard.vue'
 import DeckFaces from '../../components/appframe/DeckFaces.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
 import AppArt from '../../components/common/AppArt.vue'
+import PeopleDesk from './PeopleDesk.vue'
+import PeopleSimple from './PeopleSimple.vue'
+import { useSimpleView } from '../../composables/useSimpleView'
 import { usePeopleOverview, whenOfBirthday } from '../../composables/usePeopleOverview'
 import { usePeopleGroups } from '../../composables/usePeopleGroups'
 import { getDisplayName, getFullName, listPhrase } from '../../utils/memberUtils'
@@ -35,6 +37,11 @@ import { useMediaQuery } from '../../composables/useMediaQuery'
 //      records to fill in are a bar filling up, the roll is its number.
 //   2. The doors: the whole roll, birthdays, ministries, the roll at a glance,
 //      the records still to fill in, and your own.
+//
+// That is a phone's. A desktop has the room to show what is behind the doors,
+// so there the same cards go to PeopleDesk, which lays the roll across the
+// top and the sections out as panels of their own content, rather than
+// repeating the home of all apps' board one room further in.
 
 const {
   members,
@@ -88,6 +95,8 @@ const dateParts = (days) => {
 /* -------------------------------------------------------------- the deck */
 
 const wide = useMediaQuery('(min-width: 1024px)')
+// Simple view (Preferences): a plain dashboard in place of either (PeopleSimple).
+const { simpleView } = useSimpleView()
 
 const today = todayIso()
 
@@ -167,8 +176,7 @@ const cards = computed(() => {
   // card or plan a greeting. Not the next one when there are none this week:
   // three weeks off is nothing to do yet, and Birthdays opens on who is
   // next. Keyed by who, so a different set of names is news again. Not on a
-  // desktop, where the coming birthdays stand beside the cards and already
-  // name them (the side, below).
+  // desktop, where the Birthdays panel already names them (PeopleDesk).
   const soon = birthdays.value.filter((row) => row.days >= 1 && row.days <= 6)
   if (soon.length && !wide.value) {
     const first = soon[0]
@@ -281,25 +289,6 @@ const cards = computed(() => {
   return list
 })
 
-/* -------------------------------------------------------------- the side */
-
-// Beside the cards on a desktop (AppHome's `side`): the birthdays of the
-// coming month, from tomorrow (today's each have a card), the week's in the
-// church's colour, so a greeting can be planned before the day.
-const comingBirthdays = computed(() =>
-  birthdays.value
-    .filter((row) => row.days >= 1 && row.days <= 31)
-    .map((row) => ({
-      key: String(keyOf(row.member)),
-      to: recordOf(row.member),
-      member: row.member,
-      title: getDisplayName(row.member),
-      line: row.turning ? `Turns ${row.turning}` : getFullName(row.member),
-      aside: whenOfBirthday(row.days),
-      tone: row.days <= 6 ? 'accent' : '',
-    }))
-)
-
 /* -------------------------------------------------------------- the doors */
 
 // People with a photo first: a face reads, a generated avatar is a pattern.
@@ -310,6 +299,8 @@ const withPhotosFirst = computed(() =>
 /** Faces for the main card: the roll is its people. */
 const HERO_FACES = 6
 const heroFaces = computed(() => withPhotosFirst.value.slice(0, HERO_FACES))
+// The desktop's roll card is a column wide, with room for one more.
+const deskFaces = computed(() => withPhotosFirst.value.slice(0, HERO_FACES + 1))
 
 // A door is its name and nothing more, unless something behind it is waiting
 // on you: then a badge says how many. Totals, faces and charts are what the
@@ -344,7 +335,17 @@ const doors = computed(() => {
 </script>
 
 <template>
-  <AppHome :cards="cards" scope="people" label="People today" :doors="doors" name="People">
+  <PeopleSimple v-if="simpleView" :cards="cards" :can-add="canEdit" @claim="openClaimSheet" />
+
+  <PeopleDesk
+    v-else-if="wide"
+    :cards="cards"
+    :faces="deskFaces"
+    :my-record="myMember ? recordOf(myMember) : null"
+    @claim="openClaimSheet"
+  />
+
+  <AppHome v-else :cards="cards" scope="people" label="People today" :doors="doors" name="People">
     <!-- 1. What matters today, most important on top -->
     <template #card="{ card }">
       <!-- Someone waiting on you: the key they are asking for, in amber. -->
@@ -496,38 +497,25 @@ const doors = computed(() => {
         </template>
         <!-- The people themselves, along the foot. -->
         <template v-if="card.ready" #default>
-          <div class="flex items-center">
-            <div class="flex -space-x-2.5">
-              <MemberAvatar
-                v-for="member in heroFaces"
-                :key="keyOf(member)"
-                :member="member"
-                alt=""
-                size="h-10 w-10"
-                plain-class="ring-2 ring-white/70"
-              />
-            </div>
+          <!-- The faces, and how many more in a face's own shape and size. -->
+          <div class="flex -space-x-2.5">
+            <MemberAvatar
+              v-for="member in heroFaces"
+              :key="keyOf(member)"
+              :member="member"
+              alt=""
+              size="h-10 w-10"
+              plain-class="ring-2 ring-white/70"
+            />
             <span
               v-if="card.total > HERO_FACES"
-              class="ml-2 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold tabular-nums text-white"
+              class="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-xs font-bold tabular-nums text-white ring-2 ring-white/70"
             >
-              +{{ (card.total - HERO_FACES).toLocaleString() }}
+              +{{ card.total - HERO_FACES }}
             </span>
           </div>
         </template>
       </DeckCard>
-    </template>
-
-    <template #side>
-      <AppSidePanel
-        title="Birthdays"
-        :rows="comingBirthdays"
-        :loading="loading"
-        :link="{ to: { name: 'PeopleBirthdays' }, label: 'See all' }"
-        doodle="bench"
-        few="No more this month."
-        :empty="{ title: 'No birthdays soon', line: 'None in the coming month.' }"
-      />
     </template>
   </AppHome>
 </template>

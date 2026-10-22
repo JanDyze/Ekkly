@@ -20,12 +20,21 @@ installable PWA.
 
 ## Commands
 
-- `npm run dev` runs the app. On localhost, add `?church=<id>` to pick a church.
-- `npm run dev:all` runs the app plus `server.js`, for the `api/` routes.
+- `npm run dev` runs the app, and serves most `api/` routes itself
+  (`DEV_API_ROUTES` in `vite.config.js`, `/api/platform` included; never
+  `/api/notify` or `/api/email`). On localhost, add `?church=<id>` to pick a
+  church.
+- `npm run dev:all` does not work and is not needed: `server.js` is a
+  leftover from the church app, saved as UTF-16 so Node cannot read it, and
+  nothing calls it.
 - `npm run build` regenerates icons, then builds. There are no tests and no
   linter, so a clean build is the check. Run it before saying a change works.
 - `/commit` and `/deploy` are project skills. Use them instead of committing,
   versioning or deploying by hand.
+- `node scripts/tickets.mjs` lists every church's open bugs and ideas, each
+  with the page it was sent from (Alt+T on any page sends one, as
+  `useQuickTicket`). `show <id>`, `set <id> kind=… where=… status=…` and
+  `answer <id> "…"` read, re-file and answer one; the header says more.
 - `/ad`, `/ad-plan` and `/ad-results` make, plan and learn from the Facebook
   and Instagram ads in `marketing/`. Ads never bump the app version.
 
@@ -59,8 +68,10 @@ installable PWA.
   every page.) A bottom bar (`src/components/BottomBar.vue`)
   shows on phones only for whoever turns it on in Preferences (`useBottomBar`):
   the first four apps on their home either side of Ekkly's round mark, which
-  opens the All apps page. Don't add links
-  anywhere else. The one
+  opens the All apps page. Simple view (Preferences, `useSimpleView`) is the
+  one place with a sidebar, as most systems have: `SimpleSidebar` lists every
+  app from this same list, and the open app's sections under it. Don't add
+  links anywhere else. The one
   exception is a page marked `account: true` (Settings): it is not an app, so
   the app lists leave it out and it opens from the avatar's drawer instead.
 - **Access is by capability.** Capabilities are `<area>.view` and
@@ -131,7 +142,7 @@ not yet made into one still opens under the top bar, whose mark leads home. Sche
 first one and the pattern to copy; Presentation (`src/apps/presentation/`) is
 the second, Videos (`src/apps/videos/`, announcement videos drawn on a
 canvas from the calendar, engine in `src/utils/video/`) the third, People
-(`src/apps/people/`, the roll at `/members`, a record at `/members/:id`) the
+(`src/apps/people/`, at `/people`, a record at `/people/:id`; the old `/members` addresses redirect there) the
 fourth, Attendance (`src/apps/attendance/`, the recorder still at
 `/attendance/record`) the fifth, Finances (`src/apps/finances/`, the book
 at `/finances/book/:month`) the sixth, Events (`src/apps/events/`, the
@@ -152,7 +163,17 @@ and lessons, a lesson with no date being a plan to reuse) the fourteenth, and
 Inventory (`src/apps/inventory/`, a thing at `/inventory/:id`; its photo's
 background is taken out on the phone by a self-hosted Apache-2.0 model,
 `public/models/u2netp/`, in a worker, `src/utils/removeBackground.js`) the
-fifteenth.
+fifteenth, and Tickets (`src/apps/tickets/`: anyone sends a bug, a
+suggestion, praise, a complaint or a question and reads the answer; no
+capability and no app, so it is never switched off; `/todo` still leads
+here) the sixteenth. Tickets is the one app whose home is not a launcher:
+the deck and section tiles read as clutter in front of a feedback inbox, so
+it is one screen (`TicketsBoard`), the kinds as buttons to start from, then
+the tickets, a ticket reading beside the list on a desktop as a
+conversation. Who answers depends on the kind (`lib/tickets.js`,
+`handledBy`): a church's administrators answer questions, complaints and
+praise there; bugs and ideas are Ekkly's, worked on a board in the platform
+console (`TicketsAdmin`, through `/api/platform`).
 People is the standard the rest are measured against. A
 screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
 `wide` for two panes side by side).
@@ -190,8 +211,14 @@ screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
    out as the home of all apps is laid out: the always-true card and the
    sections down the left, the other cards as the phone's own in Needs
    attention and Good to know, and in a third column the app's `#side`, one
-   live list from inside it in an `AppSidePanel` (People's coming birthdays,
-   Schedules' next line-up, Tasks' open tasks). One screen, the page never
+   live list from inside it in an `AppSidePanel` (Schedules' next line-up,
+   Tasks' open tasks). People is trying the next step on its own first
+   (`src/apps/people/PeopleDesk.vue`): on a desktop its home stops copying
+   the home of all apps, with the roll card and what needs you as tiles to act
+   on along the top, and the sections as columns of their own content between
+   rules, not cards. A person's record has a desktop layout of its own too
+   (`PersonDesk`), and its sections are tables (`DeskTable`) where a phone
+   has lists. Copy those to the other apps once they are settled. One screen, the page never
    scrolling; a list holding more scrolls inside its panel. A card the side
    list already says is left off the desktop's deck (`wide`). A section on a
    desktop stands beside the app's rail (`AppRail`, drawn by `AppScreen`):
@@ -201,11 +228,12 @@ screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
    `desk`, so its lists are cards across the width, and lay out what is
    more than a list for the width (a `DeskTable`, or two columns), as
    DESIGN.md describes under `frame: 'app'`. Every screen sits in `AppScreen`, which gives a section its
-   back arrow and hide-on-scroll header, shows the section's artwork in full
+   header that stays put while only the content under it scrolls (the way back up is the top bar's mark), shows the section's artwork in full
    colour beside its title, and stands the app's home inside a church
    (`churchInterior.js`: windows, light, pews, all barely there; a section
-   stands on plain ground, so its rows are all there is to read); Ekkly's top
-   bar shows only on the app's home. They live in `src/components/appframe/`.
+   stands on plain ground, so its rows are all there is to read). Ekkly's top
+   bar stays over every screen of an app, with the trail of how deep you
+   are (`useTrail`). They live in `src/components/appframe/`.
    - Last, its commercial: holding the app's tile anywhere (the home, the All
      apps page, the bottom bar) plays a story of what it does (`AppPeek`). It
      is a folder in `src/components/appframe/stories/<app>/` with an

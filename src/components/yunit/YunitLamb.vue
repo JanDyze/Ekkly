@@ -13,10 +13,11 @@ export const LAMB_WALK_SPEED = ((4 * WALK.reach) / WALK.period) * 1000 / 240
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 // YUNIT as a lamb, for the lost page (LostYunit): one round of cream fleece,
-// as YUNIT is one round, his face on it, floppy ears at his sides and navy
-// feet like YUNIT's own. His four colours — yellow, orange, teal, blue — are
-// a few patches of dyed wool woven into his fleece, somewhere new each time
-// (FLEECE, below), and the four panes of the lantern he holds in one hoof.
+// as YUNIT is one round, his face on it, ears out at his sides and navy feet
+// like YUNIT's own. His four colours — yellow, orange, teal, blue — are a
+// crown of curly dyed wool on his head, and the four panes of the lantern he
+// holds in one hoof. He is drawn flat, as the brand's artwork is: no shading,
+// only a pale edge round him and a few curls in the wool.
 //
 // He walks (`walking`): his legs step, each planted while the other swings,
 // his body bobbing over them and his ears flopping, the lantern swinging. He
@@ -48,7 +49,8 @@ const earL = ref(null)
 const earR = ref(null)
 const lamp = ref(null)
 const look = ref(null)
-const lids = ref(null)
+const lidL = ref(null)
+const lidR = ref(null)
 const shadow = ref(null)
 
 // Where a leg is in its step, `p` from 0 to 1. For the first half it is
@@ -81,9 +83,9 @@ const tick = (now) => {
   // the other; his ears lag behind the bob, and the lantern swings.
   const bob = -Math.abs(Math.sin(turn)) * 3.5 * step
   upper.value?.setAttribute('transform', `translate(0 ${f(bob)}) rotate(${f(Math.sin(turn) * 2.5 * step)} 120 226)`)
-  earL.value?.setAttribute('transform', `rotate(${f(-bob * 3)} 60 128)`)
-  earR.value?.setAttribute('transform', `rotate(${f(bob * 3)} 180 128)`)
-  lamp.value?.setAttribute('transform', `rotate(${f(Math.sin(turn + 1) * 9 * step)} 139 190)`)
+  earL.value?.setAttribute('transform', `rotate(${f(-bob * 3)} 76 142)`)
+  earR.value?.setAttribute('transform', `rotate(${f(bob * 3)} 166 130)`)
+  lamp.value?.setAttribute('transform', `rotate(${f(Math.sin(turn + 1) * 9 * step)} 146 190)`)
   if (props.walking || step > 0.005) frame = requestAnimationFrame(tick)
   else {
     frame = 0
@@ -129,11 +131,12 @@ const play = (name) => {
   }
 }
 
-// Now and then a blink, both eyes alike, at uneven gaps.
+// Now and then a blink, both eyes alike, at uneven gaps. Each eye closes on
+// its own middle, as his head is tilted and one sits higher than the other.
 let blinkTimer = null
 const blink = () => {
   blinkTimer = setTimeout(() => {
-    lids.value?.animate([{ transform: 'scaleY(1)' }, { transform: 'scaleY(0.08)', offset: 0.5 }, { transform: 'scaleY(1)' }], { duration: 150 })
+    ;[lidL, lidR].forEach((lid) => lid.value?.animate([{ transform: 'scaleY(1)' }, { transform: 'scaleY(0.08)', offset: 0.5 }, { transform: 'scaleY(1)' }], { duration: 150 }))
     blink()
   }, 2400 + Math.random() * 4000)
 }
@@ -151,177 +154,131 @@ onBeforeUnmount(() => {
 defineExpose({ play })
 
 // He is one round, as YUNIT always is: no head on a body, his face on the
-// fleece itself. The fleece is lumps of wool lying over one another: a ring
-// of them round his edge, and a ring further in lying over that, each lump
-// drawn in its shade and then a little smaller and higher in its light, so
-// each is lit from above and the next one's edge shows where it overlaps.
-//
-// His colours are a few patches of dyed wool woven into his fleece: four
-// irregular patches, one of each colour, one large, one middling and two
-// small, set somewhere new round him each time he is drawn (never at his
-// foot, among his legs and his lantern) and never close together. Each is a
-// clump of coloured lumps, most lying under the white ones round his edge
-// and one or two on top of them, in the wool, with a small cream lump over
-// it, so the colour shows plainly and is in the wool rather than on it
-// and never makes a ring round him. His face stays cream: the ring further
-// in and his face are drawn over every colour, so nothing dyed reaches it.
-// Soft dyed-wool tints.
-const WHITE = { shade: '#eadfcd', light: '#fbf6ec' }
-const COLOURS = [
-  { shade: '#f5b83d', light: '#ffd36b' },
-  { shade: '#f2804f', light: '#ffa577' },
-  { shade: '#2fb3bb', light: '#62cfd4' },
-  { shade: '#3d8ff0', light: '#70b3ff' },
+// fleece itself. The fleece is a cloud of lumps round one oval, all one
+// cream, every lump drawn first a little larger in white, so a pale edge
+// runs round the outside of him and nowhere inside.
+const WOOL = { edge: '#ffffff', fill: '#fbf7ef', curl: '#e6dfd2' }
+const LUMPS = Array.from({ length: 16 }, (_, i) => {
+  const angle = (i / 16) * Math.PI * 2
+  return [120 + Math.cos(angle) * 50, 145 + Math.sin(angle) * 58, i % 2 ? 13.5 : 15]
+})
+
+// The curls in his wool: short strokes, a few on his cheeks and more lower
+// down, none across his eyes.
+const CURLS = [
+  'M71 120q-5 10 6 13',
+  'M116 120q6 6 13-3',
+  'M84 144q8 4 13-8',
+  'M82 162q3 13 16 12',
+  'M164 160q2 16-14 18',
+  'M146 177q-2 12-14 13',
+  'M83 188q1 10 10 10',
+  'M116 201q7 8 15 2',
+  'M158 192q9 0 11-9',
 ]
-const SLOTS = 14
-const between = (low, high) => low + Math.random() * (high - low)
-const shuffle = (list) => list.map((item) => [Math.random(), item]).sort((a, b) => a[0] - b[0]).map(([, item]) => item)
-const toRadians = (degrees) => (degrees * Math.PI) / 180
-const at = (degrees, rx, ry = rx) => [120 + Math.cos(toRadians(degrees)) * rx, 140 + Math.sin(toRadians(degrees)) * ry]
-const slotDegrees = (i) => (i / SLOTS) * 360
-// How far apart two places round him are, in degrees.
-const apart = (a, b) => Math.abs((((a - b) % 360) + 540) % 360 - 180)
-// The patches, largest first: how many lumps, and how big each may be.
-const PATCHES = [
-  { lumps: 5, small: 13, large: 19 },
-  { lumps: 4, small: 12, large: 16 },
-  { lumps: 3, small: 10, large: 14 },
-  { lumps: 2, small: 10, large: 13 },
-]
-// Round him in degrees, clockwise from his right: from low on his left up
-// to his topknot, and from his topknot down to low on his right. Not at his
-// foot, among his legs and his lantern, and not under his topknot, which
-// would hide a patch whole.
-const ROOM = [
-  [140, 248],
-  [292, 400],
-]
-const somewhere = () => {
-  const span = ROOM.reduce((sum, [low, high]) => sum + high - low, 0)
-  let at = Math.random() * span
-  for (const [low, high] of ROOM) {
-    if (at < high - low) return low + at
-    at -= high - low
-  }
-  return ROOM[0][0]
-}
-const placeFleece = () => {
-  const centres = []
-  for (let tries = 0; centres.length < PATCHES.length && tries < 400; tries++) {
-    const centre = somewhere()
-    if (centres.every((other) => apart(centre, other) >= 62)) centres.push(centre)
-  }
-  const colours = shuffle(COLOURS)
-  const under = []
-  const over = []
-  const woven = []
-  centres.forEach((centre, n) => {
-    const patch = PATCHES[n]
-    const spread = 8 + patch.lumps * 4
-    // Most of a patch lies under the white round his edge, bulging past it;
-    // one or two of its lumps lie on top, in the wool itself, so every patch
-    // shows plainly however the white falls over the rest.
-    for (let i = 0; i < patch.lumps; i++) {
-      under.push({ ...colours[n], puff: [...at(centre + between(-spread, spread), between(68, 76), between(66, 74)), between(patch.small, patch.large)] })
-    }
-    for (let i = 0; i < (patch.lumps > 3 ? 2 : 1); i++) {
-      over.push({ ...colours[n], puff: [...at(centre + between(-spread * 0.6, spread * 0.6), between(61, 66), between(59, 64)), between(patch.small * 0.8, patch.large * 0.8)] })
-    }
-    // A small cream lump over the patch, so it is woven in.
-    woven.push({ ...WHITE, puff: [...at(centre + between(-spread * 0.7, spread * 0.7), between(58, 64)), between(6, 8)] })
-  })
-  // The white lumps round his edge lie over the patches; where one is right
-  // over a patch's middle it is smaller, so the colour shows round it.
-  const outer = Array.from({ length: SLOTS }, (_, i) => {
-    const near = Math.min(...centres.map((centre) => apart(slotDegrees(i), centre)))
-    return { ...WHITE, puff: [...at(slotDegrees(i), 64, 62), near < 12 ? 10 : near < 22 ? 14 : 18] }
-  })
-  const inner = Array.from({ length: SLOTS }, (_, i) => ({ ...WHITE, puff: [...at(slotDegrees(i + 0.5), 50, 48), 15] }))
-  return [{ ...WHITE, puff: [120, 140, 62] }, ...under, ...outer, ...over, ...woven, ...inner]
-}
-const FLEECE = placeFleece()
-const TUFT = [
-  [104, 76, 15],
-  [122, 70, 17],
-  [140, 77, 14],
-]
+
+// His crown: a clump of curly dyed wool in each of his colours, each a few
+// round lobes with a curl of its deeper shade on it. Blue lies over yellow
+// and teal over orange, as the wool would fall.
+const CROWN = [
+  { x: 91, y: 98, r: 19, fill: '#ffd35c', curl: '#f0b23a' },
+  { x: 133, y: 86, r: 21, fill: '#ff8350', curl: '#ec6634' },
+  { x: 101, y: 114, r: 17, fill: '#4499f5', curl: '#2b7ee0' },
+  { x: 157, y: 110, r: 17, fill: '#3ab5b4', curl: '#24999a' },
+].map(({ x, y, r, fill, curl }) => ({
+  fill,
+  curl,
+  lobes: [
+    [x, y, r * 0.7],
+    [x - r * 0.42, y - r * 0.24, r * 0.58],
+    [x + r * 0.38, y - r * 0.36, r * 0.6],
+    [x + r * 0.5, y + r * 0.26, r * 0.52],
+    [x + r * 0.02, y + r * 0.48, r * 0.5],
+    [x - r * 0.46, y + r * 0.3, r * 0.5],
+  ],
+  path: `M${f(x - r * 0.3)} ${f(y + r * 0.18)}q${f(r * 0.04)} ${f(-r * 0.46)} ${f(r * 0.46)} ${f(-r * 0.4)}`,
+}))
 </script>
 
 <template>
   <svg class="yunit-lamb" viewBox="0 0 240 240" role="img" aria-label="YUNIT the Sheep" @click="play('hop')">
-    <ellipse ref="shadow" class="lamb-shadow" cx="120" cy="230" rx="58" ry="6" />
+    <ellipse ref="shadow" class="lamb-shadow" cx="122" cy="229" rx="56" ry="5" />
 
     <g ref="whole">
-      <!-- His legs, navy like YUNIT's feet, under the fleece, each stepping
-           on its own. -->
+      <!-- His legs, navy like YUNIT's feet, peeking from under the fleece,
+           each stepping on its own. -->
       <g ref="legL">
-        <ellipse cx="96" cy="221" rx="16" ry="10" fill="#1d3a66" />
+        <ellipse cx="103" cy="221" rx="12" ry="7.5" fill="#233a64" />
       </g>
       <g ref="legR">
-        <ellipse cx="144" cy="221" rx="16" ry="10" fill="#1d3a66" />
+        <ellipse cx="144" cy="221" rx="12" ry="7.5" fill="#233a64" />
       </g>
 
       <g ref="upper">
-        <!-- Floppy ears, pink inside, hanging from his sides and flopping as
-             he walks: behind the fleece, so he stays one round. -->
+        <!-- His ears, out at his sides, pink inside, flopping as he walks:
+             behind the fleece, so he stays one round. -->
         <g ref="earL">
-          <ellipse cx="44" cy="138" rx="30" ry="14" transform="rotate(-34 44 138)" fill="#f2e8d8" />
-          <ellipse cx="40" cy="141" rx="18" ry="7.5" transform="rotate(-34 40 141)" fill="#f49a87" />
+          <ellipse cx="54" cy="154" rx="31" ry="17" transform="rotate(-40 54 154)" :fill="WOOL.edge" />
+          <ellipse cx="54" cy="154" rx="28.5" ry="14.5" transform="rotate(-40 54 154)" :fill="WOOL.fill" />
+          <ellipse cx="50" cy="158" rx="19" ry="7.5" transform="rotate(-40 50 158)" fill="#fcc8c8" />
         </g>
         <g ref="earR">
-          <ellipse cx="196" cy="138" rx="30" ry="14" transform="rotate(34 196 138)" fill="#f2e8d8" />
-          <ellipse cx="200" cy="141" rx="18" ry="7.5" transform="rotate(34 200 141)" fill="#f49a87" />
+          <ellipse cx="188" cy="134" rx="29" ry="16" transform="rotate(26 188 134)" :fill="WOOL.edge" />
+          <ellipse cx="188" cy="134" rx="26.5" ry="13.5" transform="rotate(26 188 134)" :fill="WOOL.fill" />
+          <ellipse cx="192" cy="136" rx="17" ry="7" transform="rotate(26 192 136)" fill="#fcc8c8" />
         </g>
 
-        <!-- Him: one round of fleece, lumps over lumps, his colours among
-             them, and his face on it. -->
-        <g v-for="(lump, n) in FLEECE" :key="n">
-          <circle :cx="lump.puff[0]" :cy="lump.puff[1]" :r="lump.puff[2]" :fill="lump.shade" />
-          <circle :cx="lump.puff[0] - 1" :cy="lump.puff[1] - 3" :r="lump.puff[2] - 3" :fill="lump.light" />
+        <!-- Him: one cloud of fleece, its pale edge, then the wool. -->
+        <ellipse cx="120" cy="145" rx="54.5" ry="62.5" :fill="WOOL.edge" />
+        <circle v-for="([x, y, r], i) in LUMPS" :key="'le' + i" :cx="x" :cy="y" :r="r + 2.5" :fill="WOOL.edge" />
+        <ellipse cx="120" cy="145" rx="52" ry="60" :fill="WOOL.fill" />
+        <circle v-for="([x, y, r], i) in LUMPS" :key="'lf' + i" :cx="x" :cy="y" :r="r" :fill="WOOL.fill" />
+        <path v-for="(d, i) in CURLS" :key="'c' + i" :d="d" fill="none" :stroke="WOOL.curl" stroke-width="2.6" stroke-linecap="round" />
+
+        <!-- His crown of dyed wool. -->
+        <g v-for="(clump, i) in CROWN" :key="'k' + i">
+          <circle v-for="([x, y, r], j) in clump.lobes" :key="j" :cx="x" :cy="y" :r="r" :fill="clump.fill" />
+          <path :d="clump.path" fill="none" :stroke="clump.curl" stroke-width="2.6" stroke-linecap="round" />
         </g>
-        <ellipse cx="120" cy="134" rx="50" ry="42" fill="#fffdf7" />
 
-        <!-- A woolly topknot. -->
-        <circle v-for="([x, y, r], i) in TUFT" :key="'ts' + i" :cx="x" :cy="y" :r="r" fill="#eadfcd" />
-        <circle v-for="([x, y, r], i) in TUFT" :key="'tl' + i" :cx="x - 1" :cy="y - 2" :r="r - 3" fill="#fbf6ec" />
-
-        <!-- His eyes: where he looks, and his lids, for a blink. -->
+        <!-- His eyes, his head tipped so one sits higher: where he looks,
+             and each eye's lid, for a blink. -->
         <g ref="look">
-          <g ref="lids" class="lamb-lids">
-            <ellipse cx="103" cy="132" rx="8" ry="11" fill="#2b2838" />
-            <ellipse cx="139" cy="129" rx="8" ry="11" fill="#2b2838" />
-            <circle cx="105.8" cy="127" r="2.9" fill="#fff" />
-            <circle cx="141.8" cy="124" r="2.9" fill="#fff" />
+          <g ref="lidL" class="lamb-lids">
+            <ellipse cx="109" cy="154" rx="8" ry="10" fill="#233a64" />
+            <circle cx="110.6" cy="149.6" r="2.3" fill="#fff" />
+          </g>
+          <g ref="lidR" class="lamb-lids">
+            <ellipse cx="145" cy="144" rx="8" ry="10" fill="#233a64" />
+            <circle cx="146.6" cy="139.6" r="2.3" fill="#fff" />
           </g>
         </g>
 
         <!-- His mouth, open round for a "Baa!". -->
         <g v-if="bleating">
-          <ellipse cx="121" cy="152" rx="7" ry="8.5" fill="#5b2135" />
-          <ellipse cx="121" cy="156" rx="4.5" ry="3" fill="#e8798b" />
+          <ellipse cx="129" cy="171" rx="6" ry="7.5" fill="#5b2135" />
+          <ellipse cx="129" cy="174.5" rx="4" ry="2.6" fill="#e8798b" />
         </g>
 
-        <!-- His forelegs, held up in front of him, navy hooves in. -->
-        <circle cx="106" cy="190" r="8" fill="#1d3a66" />
-        <ellipse cx="100" cy="176" rx="10" ry="13" transform="rotate(-22 100 176)" fill="#fbf6ec" stroke="#e3d6c1" stroke-width="2" />
-        <circle cx="138" cy="190" r="8" fill="#1d3a66" />
-        <ellipse cx="144" cy="176" rx="10" ry="13" transform="rotate(22 144 176)" fill="#fbf6ec" stroke="#e3d6c1" stroke-width="2" />
-
-        <!-- His lantern, hanging from his hoof, lit through four panes of
-             glass in his four colours, like a church window. -->
-        <g v-if="lantern" ref="lamp">
-          <g transform="translate(139 190) scale(1.15)">
-            <path d="M-6 5Q0 -7 6 5" fill="none" stroke="#1d3a66" stroke-width="2.4" stroke-linecap="round" />
-            <rect x="-9" y="4" width="18" height="5" rx="2" fill="#1d3a66" />
-            <rect x="-7.5" y="8.5" width="15" height="19" rx="4" fill="#fff3c4" />
-            <rect x="-6.5" y="9.5" width="6" height="8" fill="#ffcb4a" opacity="0.9" />
-            <rect x="0.5" y="9.5" width="6" height="8" fill="#ff8d4a" opacity="0.9" />
-            <rect x="-6.5" y="18.5" width="6" height="8" fill="#2290ff" opacity="0.9" />
-            <rect x="0.5" y="18.5" width="6" height="8" fill="#20b9c2" opacity="0.9" />
-            <circle cx="0" cy="18" r="3.4" fill="#fff8d6" />
-            <rect x="-7.5" y="8.5" width="15" height="19" rx="4" fill="none" stroke="#1d3a66" stroke-width="1.6" />
-            <path d="M0 9V27M-7 18H7" stroke="#1d3a66" stroke-width="1.2" />
-            <rect x="-10" y="27" width="20" height="5" rx="2" fill="#1d3a66" />
+        <!-- His lantern, hanging from a hoof held out of the fleece, lit
+             through four panes of glass in his four colours, like a church
+             window. -->
+        <g v-if="lantern">
+          <circle cx="146" cy="188" r="7.5" fill="#233a64" />
+          <g ref="lamp">
+            <g transform="translate(146 190) scale(1.15)">
+              <path d="M-6 5Q0 -7 6 5" fill="none" stroke="#233a64" stroke-width="2.4" stroke-linecap="round" />
+              <rect x="-9" y="4" width="18" height="5" rx="2" fill="#233a64" />
+              <rect x="-7.5" y="8.5" width="15" height="19" rx="4" fill="#fff3c4" />
+              <rect x="-6.5" y="9.5" width="6" height="8" fill="#ffd35c" opacity="0.9" />
+              <rect x="0.5" y="9.5" width="6" height="8" fill="#ff8350" opacity="0.9" />
+              <rect x="-6.5" y="18.5" width="6" height="8" fill="#4499f5" opacity="0.9" />
+              <rect x="0.5" y="18.5" width="6" height="8" fill="#3ab5b4" opacity="0.9" />
+              <circle cx="0" cy="18" r="3.4" fill="#fff8d6" />
+              <rect x="-7.5" y="8.5" width="15" height="19" rx="4" fill="none" stroke="#233a64" stroke-width="1.6" />
+              <path d="M0 9V27M-7 18H7" stroke="#233a64" stroke-width="1.2" />
+              <rect x="-10" y="27" width="20" height="5" rx="2" fill="#233a64" />
+            </g>
           </g>
         </g>
       </g>
@@ -336,7 +293,7 @@ const TUFT = [
   cursor: pointer;
 }
 .lamb-shadow {
-  fill: rgb(2 6 23 / 0.35);
+  fill: rgb(2 6 23 / 0.3);
   transform-box: fill-box;
   transform-origin: center;
 }

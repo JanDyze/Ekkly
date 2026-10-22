@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from "vue";
-import { getFullName, missingMemberDetails } from "../../utils/memberUtils";
+import { getFullName, missingMemberDetails, nicknameOf } from "../../utils/memberUtils";
 import { Check } from "../../icons";
 import MemberAvatar from "./MemberAvatar.vue";
 import YouBadge from "./YouBadge.vue";
@@ -129,10 +129,10 @@ const handleClick = () => {
           <YouBadge :member="member" />
         </div>
         <p
-          v-if="member.nickname"
+          v-if="nicknameOf(member)"
           class="text-xs text-gray-500 dark:text-gray-400 truncate"
         >
-          "{{ member.nickname }}"
+          "{{ nicknameOf(member) }}"
         </p>
       </div>
     </div>

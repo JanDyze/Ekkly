@@ -107,7 +107,7 @@ orange `#FFB21E → #FF7417 → #EC4319`, blue `#3D9DFF → #1467E8 → #0A4FC4`
 shapes split on a diagonal, white cards inside, 64×64, transparent.
 
 Fourteen are the apps a church can buy, and the front door shows those. The
-other six — dashboard, presentation, todos, accounts, audit, settings — are
+other six — dashboard, presentation, tickets, accounts, audit, settings — are
 pages rather than apps, drawn so the church's sidebar can wear artwork the
 whole way down ([src/data/navigation.js](src/data/navigation.js)).
 

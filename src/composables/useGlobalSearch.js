@@ -5,9 +5,11 @@ import { useTasks } from './useTasks'
 import { useMinutes } from './useMinutes'
 import { useSmallGroups } from './useSmallGroups'
 import { usePermissions } from './usePermissions'
+import { useAuth } from './useAuth'
 import { subscribeToSongs } from '../api/songsService'
 import { NAV_ITEMS, navItemAllowed } from '../data/navigation'
 import { getFullName } from '../utils/memberUtils'
+import { snippetAt } from '../utils/search'
 
 /**
  * One search for everything in the church's app, by what is meant rather than
@@ -148,19 +150,41 @@ const fold = (s) =>
 
 const stripHtml = (s) => String(s || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 
-/** How well the words of a query match a record, 0 to 1. */
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+// Where a word of the query begins a word of the text (both folded), or -1.
+// Only at the start of a word: "art" finding "start" is noise, not an answer.
+const findWord = (folded, word) => {
+  const match = new RegExp(`(^|[^\\p{L}\\p{N}])${escapeRegExp(word)}`, 'u').exec(folded)
+  return match ? match.index + match[1].length : -1
+}
+
+/**
+ * How well the words of a query match a record, 0 to 1, and — when they were
+ * found in its text rather than its title — where, to show.
+ */
 const wordScore = (query, doc) => {
   const q = fold(query).trim()
-  if (!q) return 0
+  if (!q) return { score: 0 }
   const title = fold(doc.title)
-  if (title.startsWith(q)) return 1
-  if (title.split(/\s+/).some((w) => w.startsWith(q))) return 0.92
-  if (title.includes(q)) return 0.85
+  if (title.startsWith(q)) return { score: 1 }
+  if (title.split(/\s+/).some((w) => w.startsWith(q))) return { score: 0.92 }
+  if (title.includes(q)) return { score: 0.85 }
   const words = q.split(/\s+/).filter(Boolean)
-  const text = fold(`${doc.title} ${doc.text}`)
-  const found = words.filter((w) => text.includes(w)).length
-  if (!found) return 0
-  return found === words.length ? 0.6 : 0.3 * (found / words.length)
+  const body = fold(doc.text)
+  const found = words.filter((w) => findWord(title, w) >= 0 || findWord(body, w) >= 0)
+  if (!found.length) return { score: 0 }
+  let score = found.length === words.length ? 0.6 : 0.3 * (found.length / words.length)
+  // An app found only by its description comes after the records that hold
+  // the word: someone searching "love" wants the songs, then the app whose
+  // blurb happens to say it.
+  if (doc.kind === 'app') score *= 0.9
+  // The first place in the text a found word starts, if it is in the text.
+  const hits = found.map((w) => [findWord(body, w), w.length]).filter(([at]) => at >= 0)
+  if (!hits.length) return { score }
+  const [at, length] = hits.reduce((a, b) => (b[0] < a[0] ? b : a))
+  // The row says where, since its title and subtitle do not.
+  return { score, match: snippetAt(String(doc.text), at, length) }
 }
 
 const dot = (a, b) => {
@@ -168,6 +192,43 @@ const dot = (a, b) => {
   for (let i = 0; i < a.length; i++) sum += a[i] * b[i]
   return sum
 }
+
+/* ---------------------------------------------------- what was searched */
+
+// The last few searches, and the last few things opened from one, so whoever
+// looks up the same song every Sunday does not type it every Sunday.
+//
+// Kept on this device and against the account: a shared office tablet should
+// not hand one person's searches to the next. What was opened is kept as ids,
+// not copies, and shown from the live records — so a renamed song shows its
+// new name, and one deleted, or one this person may no longer open, drops out.
+const HISTORY_SIZE = 6
+const historyKey = (uid) => `ekkly:search-history.${uid}`
+
+const readHistory = (uid) => {
+  if (!uid) return { queries: [], opened: [] }
+  try {
+    const raw = JSON.parse(localStorage.getItem(historyKey(uid)) || '{}')
+    const strings = (list) => (Array.isArray(list) ? list.filter((s) => typeof s === 'string') : [])
+    return { queries: strings(raw.queries), opened: strings(raw.opened) }
+  } catch {
+    return { queries: [], opened: [] }
+  }
+}
+
+const writeHistory = (uid, value) => {
+  if (!uid) return
+  try {
+    if (value.queries.length || value.opened.length) localStorage.setItem(historyKey(uid), JSON.stringify(value))
+    else localStorage.removeItem(historyKey(uid))
+  } catch {
+    // Remembered for this visit only.
+  }
+}
+
+// Newest first, without the same thing twice.
+const pushRecent = (list, item, same = (a, b) => a === b) =>
+  [item, ...list.filter((x) => !same(x, item))].slice(0, HISTORY_SIZE)
 
 /* ------------------------------------------------------- the composable */
 
@@ -210,7 +271,7 @@ export function useGlobalSearch() {
       })
     )
 
-    if (allowed('/members')) {
+    if (allowed('/people')) {
       members.value.forEach((m) => {
         const ministries = Array.isArray(m.ministries) ? m.ministries.join(', ') : ''
         list.push({
@@ -352,22 +413,64 @@ export function useGlobalSearch() {
     const qv = queryVector.value
     return docs.value
       .map((doc) => {
-        const words = wordScore(q, doc)
+        const { score: words, match } = wordScore(q, doc)
         const v = qv && vectors.get(meaningOf(doc))
         const meaning = v ? dot(qv, v) : 0
         // Words lead where they match; meaning carries what words miss.
         const score = Math.max(words, meaning * 0.95) + (words > 0 && meaning > 0.3 ? 0.08 : 0)
-        return { doc, score, words, meaning }
+        return { doc, score, words, meaning, match }
       })
       .filter((r) => r.words > 0 || r.meaning > 0.32)
       .sort((a, b) => b.score - a.score)
       .slice(0, 30)
-      .map((r) => ({ ...r.doc, byMeaning: r.words === 0 }))
+      .map((r) => ({ ...r.doc, match: r.match, byMeaning: r.words === 0 }))
   })
+
+  /* --- what was searched before --- */
+  const { user } = useAuth()
+  const uid = computed(() => user.value?.uid || null)
+  const history = ref(readHistory(uid.value))
+  watch(uid, (now) => {
+    history.value = readHistory(now)
+  })
+
+  const recentQueries = computed(() => history.value.queries)
+  const recentOpened = computed(() => {
+    const byId = new Map(docs.value.map((doc) => [doc.id, doc]))
+    return history.value.opened.map((id) => byId.get(id)).filter(Boolean)
+  })
+
+  // Called when a result is opened: that is when a search found something,
+  // rather than every half-typed word along the way.
+  const remember = (result) => {
+    const q = query.value.trim()
+    const next = {
+      queries: q ? pushRecent(history.value.queries, q, (a, b) => fold(a) === fold(b)) : history.value.queries,
+      opened: pushRecent(history.value.opened, result.id),
+    }
+    history.value = next
+    writeHistory(uid.value, next)
+  }
+
+  const forgetQuery = (q) => {
+    const next = { ...history.value, queries: history.value.queries.filter((x) => x !== q) }
+    history.value = next
+    writeHistory(uid.value, next)
+  }
+
+  const clearHistory = () => {
+    history.value = { queries: [], opened: [] }
+    writeHistory(uid.value, history.value)
+  }
 
   return {
     query,
     results,
+    recentQueries,
+    recentOpened,
+    remember,
+    forgetQuery,
+    clearHistory,
     status,
     progress,
     consented,

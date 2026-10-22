@@ -49,20 +49,18 @@ export const initPermissions = () => {
 }
 
 /*
- * TEMPORARY: every signed-in account gets everything.
+ * Off: the capability checks are on, and only a church's administrators
+ * (appAdmins) get everything. It was on while the first churches were set up,
+ * when roles came from member records most accounts were not yet linked to,
+ * and it made every signed-in account an administrator in the app — which a
+ * member who had only just joined could see and use. Every church has an
+ * administrator of its own now, and one with none still keeps its admin
+ * screens open (hasNoAdmins, below) so it can appoint its first.
  *
- * Roles are derived from a member record's ministry tags, and most accounts
- * are not linked to a member yet — so the real rules lock out the very people
- * setting the church up, including whoever is meant to do the linking. This
- * opens the app to anyone who can sign in until that groundwork is done.
- *
- * It does NOT open anything to the public: the router still requires a signed
- * in account, and Firestore's own rules are untouched. It only stops this app
- * from filtering what a signed-in person may reach.
- *
- * Set to false to put the capability checks back. Nothing else has to change.
+ * Turned on, every signed-in account gets everything again. It never opened
+ * anything to the public, and never changed Firestore's own rules.
  */
-const OPEN_ACCESS = true
+const OPEN_ACCESS = false
 
 export function usePermissions() {
   const { user } = useAuth()

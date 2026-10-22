@@ -116,6 +116,7 @@ onBeforeUnmount(() => follow(false))
           <MagnifyingGlass class="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-white dark:text-gray-900" />
           <input
             ref="input"
+            data-page-search
             :value="query"
             type="text"
             inputmode="search"

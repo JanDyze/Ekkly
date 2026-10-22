@@ -50,7 +50,7 @@ const DISMISS_LIGHT = ['accent', 'celebrate']
 <template>
   <AppScreen :board="wide">
     <div v-if="!wide" class="flex flex-col gap-4">
-      <AppHeroDeck :cards="cards" :scope="scope" :label="label" class="animate-rise">
+      <AppHeroDeck :cards="cards" :scope="scope" :label="label" >
         <template #card="slot">
           <slot name="card" v-bind="slot" />
         </template>
@@ -70,15 +70,15 @@ const DISMISS_LIGHT = ['accent', 'celebrate']
         >
           <!-- 1. The sidebar: the card that is always true, then the doors. -->
           <aside class="flex min-h-0 flex-col gap-5" :aria-label="name">
-            <div v-if="hero" class="animate-rise shrink-0">
+            <div v-if="hero" class="shrink-0">
               <slot name="card" :card="hero" :top="true" />
             </div>
             <section
               :aria-labelledby="`${scope}-sections`"
               class="flex min-h-[9rem] flex-1 flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-800/70 dark:ring-white/10"
             >
-              <header class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 pt-4 pb-3 dark:border-white/10">
-                <h2 :id="`${scope}-sections`" class="text-base font-semibold text-gray-900 dark:text-white">Sections</h2>
+              <header class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 pt-2.5 pb-2 dark:border-white/10">
+                <h2 :id="`${scope}-sections`" class="text-sm font-semibold text-gray-900 dark:text-white">Sections</h2>
               </header>
               <div class="min-h-0 overflow-y-auto overscroll-contain p-3 [scrollbar-width:thin]">
                 <AppShortcuts :doors="doors" :label="name" column />
@@ -101,12 +101,12 @@ const DISMISS_LIGHT = ['accent', 'celebrate']
                 panel.fit,
               ]"
             >
-              <header class="flex shrink-0 items-center gap-2.5 border-b border-gray-100 px-5 pt-4 pb-3 dark:border-white/10">
-                <h2 :id="`${scope}-${panel.id}`" class="text-base font-semibold text-gray-900 dark:text-white">{{ panel.title }}</h2>
+              <header class="flex shrink-0 items-center gap-2.5 border-b border-gray-100 px-5 pt-2.5 pb-2 dark:border-white/10">
+                <h2 :id="`${scope}-${panel.id}`" class="text-sm font-semibold text-gray-900 dark:text-white">{{ panel.title }}</h2>
                 <span
                   v-if="panel.cards.length"
                   :class="[
-                    'rounded-full px-2 py-0.5 text-xs font-bold tabular-nums',
+                    'rounded-full px-1.5 py-px text-[11px] font-bold tabular-nums',
                     panel.id === 'attention'
                       ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300'
                       : 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300',

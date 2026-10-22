@@ -3,9 +3,8 @@ import { useMembers } from './useMembers'
 import { useMinistries } from './useMinistries'
 import { useMemberClaims } from './useMemberClaims'
 import { usePermissions } from './usePermissions'
-import { daysUntilBirthday } from './useMemberSorting'
-import { ageOf, bandOf } from '../utils/ageBands'
-import { getFullName, missingMemberDetails } from '../utils/memberUtils'
+import { AGE_BANDS, ageOf, bandOf } from '../utils/ageBands'
+import { daysUntilBirthday, getFullName, missingMemberDetails } from '../utils/memberUtils'
 
 // What is true across the whole roll, for the People app's home and the
 // sections that summarise it — how many there are, whose birthday is coming,
@@ -50,6 +49,34 @@ export function usePeopleOverview() {
     const memberCount = members.value.filter((m) => m.isMember !== false).length
     return { total, members: memberCount, attendees: total - memberCount }
   })
+
+  /* --------------------------------------------------------- the shape */
+
+  // The ages the ministries plan around, and men and women: the figures a
+  // church is asked for (Overview). Counted here with everything else, so the
+  // roll's total and the bands under it are always the same reading.
+  const stats = computed(() => {
+    const result = {
+      ...counts.value,
+      male: 0,
+      female: 0,
+      unknownAge: 0,
+      bands: AGE_BANDS.map((band) => ({ ...band, count: 0 })),
+    }
+    members.value.forEach((member) => {
+      const sex = String(member.sex || '').toLowerCase()
+      if (sex === 'male') result.male += 1
+      else if (sex === 'female') result.female += 1
+      const band = bandOf(member)
+      if (band) result.bands.find((b) => b.key === band.key).count += 1
+      else result.unknownAge += 1
+    })
+    return result
+  })
+
+  // Only people with a known age can be placed on the bar, so its segments
+  // are shares of that group rather than of everyone.
+  const agedTotal = computed(() => stats.value.total - stats.value.unknownAge)
 
   /* ----------------------------------------------------------- birthdays */
 
@@ -122,6 +149,8 @@ export function usePeopleOverview() {
     isAdmin,
     myMember,
     counts,
+    stats,
+    agedTotal,
     birthdays,
     birthdaysToday,
     birthdaysThisWeek,

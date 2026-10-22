@@ -1,6 +1,10 @@
 import XLSX from 'xlsx-js-style';
 import { getChurchIdentity } from '../composables/useAppSettings';
 import { accentCell } from '../composables/useBrandTheme';
+import { fitColumns } from './sheetColumns';
+import { compareMembers } from '../composables/useMemberSorting';
+import { ageOf } from './ageBands';
+import { formatBirthday, isYearless } from './memberUtils';
 
 // Every column a sheet can carry, in the order they are laid out. Exported so
 // the dialog offers exactly these and the two cannot drift apart.
@@ -132,37 +136,13 @@ const styles = {
   },
 };
 
-// Sort members
+// In one of the roll's own orders (useMemberSorting), so the sheet comes
+// out the way the list on screen was sorted. It used to sort only by name,
+// age and birth date, and by anything else (last name, birthday, recently
+// added) left the rows in whatever order they were stored in.
 const sortMembers = (members, sortBy, sortOrder) => {
-  const sorted = [...members];
-
-  sorted.sort((a, b) => {
-    let aVal, bVal;
-
-    switch (sortBy) {
-      case "name":
-        aVal = `${a.firstName || ''} ${a.lastName || ''}`.toLowerCase();
-        bVal = `${b.firstName || ''} ${b.lastName || ''}`.toLowerCase();
-        break;
-      case "age":
-        aVal = a.age || 0;
-        bVal = b.age || 0;
-        break;
-      case "dateOfBirth":
-        aVal = a.dateOfBirth || "";
-        bVal = b.dateOfBirth || "";
-        break;
-      default:
-        aVal = a[sortBy] || "";
-        bVal = b[sortBy] || "";
-    }
-
-    if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
-    if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
-    return 0;
-  });
-
-  return sorted;
+  const sorted = [...members].sort(compareMembers(sortBy));
+  return sortOrder === "desc" ? sorted.reverse() : sorted;
 };
 
 // Get cell style based on value and field
@@ -226,6 +206,12 @@ export const exportToExcel = (members, config) => {
   dataToExport.forEach((member) => {
     const row = headerKeys.map((key) => {
       let value = member[key];
+
+      // The age as it is today, worked out from the birth date: the one
+      // stored on the record is from the day it was last saved.
+      if (key === "age") value = ageOf(member) ?? "";
+      // A birthday with no year is the day alone, not "0000-10-09".
+      if (key === "dateOfBirth" && isYearless(value)) value = formatBirthday(value, { withYear: false });
       
       if ((key === "tags" || key === "ministries") && Array.isArray(value)) {
         value = value.join(", ");
@@ -289,24 +275,18 @@ export const exportToExcel = (members, config) => {
     }
   }
 
-  // Set column widths
-  const colWidths = headers.map((header, idx) => {
-    const key = headerKeys[idx];
-    // Different widths based on field type
-    if (key === 'address') return { wch: 35 };
-    if (key === 'tags' || key === 'ministries') return { wch: 25 };
-    if (key === 'email') return { wch: 24 };
-    if (key === 'firstName' || key === 'lastName') return { wch: 15 };
-    if (key === 'nickname') return { wch: 12 };
-    if (key === 'dateOfBirth') return { wch: 14 };
-    if (key === 'contactNumber') return { wch: 15 };
-    if (key === 'occupation') return { wch: 18 };
-    if (key === 'age' || key === 'id') return { wch: 8 };
-    if (key === 'sex' || key === 'isMember') return { wch: 10 };
-    if (key === 'civilStatus') return { wch: 12 };
-    return { wch: Math.max(header.length + 4, 12) };
+  // Each column as wide as what is in it (sheetColumns.js), from the header
+  // row down. The fields that run long get more room before they wrap: an
+  // address, an email, a list of ministries or tags.
+  const ROOMY = { address: 50, email: 36, ministries: 44, tags: 44 };
+  fitColumns(ws, {
+    from: 3,
+    min: 8,
+    max: 30,
+    maxFor: Object.fromEntries(
+      headerKeys.map((key, idx) => [idx, ROOMY[key]]).filter(([, max]) => max)
+    ),
   });
-  ws['!cols'] = colWidths;
 
   // Set row heights
   ws['!rows'] = [

@@ -400,20 +400,31 @@ const ICONS = {
   <rect x="29.5" y="45" width="5" height="11" rx="2.5" fill="url(#b)"/>
   <rect x="19" y="55" width="26" height="5.5" rx="2.75" fill="${B3}"/>`),
 
-  // The backlog: notes landing on the pile, one job done and one still open.
-  todos: svg(`
-  <g class="a-drop" style="--i:0">
-    <rect x="7" y="16" width="38" height="38" rx="6" fill="url(#t)" transform="rotate(-11 26 35)"/>
+  // Tickets: two speech bubbles, one said and one answered — somebody telling
+  // the people who run Ekkly something, and hearing back. The answer is still
+  // being typed when it arrives.
+  //
+  // It was the To-do backlog's pile of notes, from when only administrators
+  // filed anything; anyone can send one now, so it is a conversation.
+  tickets: svg(`
+  ${gapMask('said', `<path d="M15 20h20a10 10 0 0 1 10 10v10a10 10 0 0 1-10 10H22l-9 7.5v-8.2A10 10 0 0 1 5 40V30a10 10 0 0 1 10-10z" fill="#000"/>`)}
+  <g mask="url(#said)">
+    <g class="a-drop" style="--i:0">
+      <path d="M29 4h20a9 9 0 0 1 9 9v8a9 9 0 0 1-7 8.8v6.7l-8-6.5H29a9 9 0 0 1-9-9v-8a9 9 0 0 1 9-9z" fill="url(#t)"/>
+      <circle class="a-pop" style="--i:3" cx="36" cy="16" r="2.4" fill="#fff"/>
+      <circle class="a-pop" style="--i:4" cx="43" cy="16" r="2.4" fill="#fff"/>
+      <circle class="a-pop" style="--i:5" cx="50" cy="16" r="2.4" fill="#fff"/>
+    </g>
   </g>
-  <g class="a-drop" style="--i:1">
-    <rect x="21" y="11" width="38" height="38" rx="6" fill="url(#b)" transform="rotate(9 40 30)"/>
-  </g>
-  <g class="a-pop" style="--i:2">
-    <rect x="13" y="13" width="38" height="38" rx="6" fill="#fff" stroke="#C9D8EE" stroke-width="1.8"/>
-    ${check(17.5, 18, 8, O2, 3, 2)}
-    <rect class="a-line" style="--i:3" x="29" y="21.5" width="16" height="3.8" rx="1.9" fill="${LINE}"/>
-    <rect x="18" y="31" width="8.5" height="8.5" rx="2.5" fill="none" stroke="${LINE}" stroke-width="2.4"/>
-    <rect class="a-line" style="--i:4" x="31" y="33.5" width="13" height="3.8" rx="1.9" fill="${LINE}"/>
+  <g class="a-pop" style="--i:1">
+    <clipPath id="c"><path d="M15 20h20a10 10 0 0 1 10 10v10a10 10 0 0 1-10 10H22l-9 7.5v-8.2A10 10 0 0 1 5 40V30a10 10 0 0 1 10-10z"/></clipPath>
+    <g clip-path="url(#c)">
+      <rect x="5" y="20" width="40" height="38" fill="url(#b)"/>
+      <path d="M12.2 20H45V47.4Z" fill="url(#o)"/>
+      <rect x="5" y="20" width="40" height="38" fill="url(#shine)"/>
+    </g>
+    <rect class="a-line" style="--i:2" x="12" y="29" width="24" height="4" rx="2" fill="#fff"/>
+    <rect class="a-line" style="--i:3" x="12" y="37" width="15" height="4" rx="2" fill="#fff"/>
   </g>`),
 
   // A card with someone on it and the key that lets them in.

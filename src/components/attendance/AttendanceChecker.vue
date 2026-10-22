@@ -1,11 +1,12 @@
 <script setup>
+import { usePageSearch } from '../../composables/usePageSearch'
 import { computed, nextTick, ref } from 'vue'
 import { X, ArrowLeft, Search, Check, Trash2, List, Cards, ArrowUpDown, SquaresFour, HandTap, Baby, TextAa, CircleDashed } from '../../icons'
 import AttendanceSwipe from './AttendanceSwipe.vue'
 import AttendanceTally from './AttendanceTally.vue'
 import { useMembers } from '../../composables/useMembers'
 import { useMediaQuery } from '../../composables/useMediaQuery'
-import { getFullName } from '../../utils/memberUtils'
+import { getFullName, nicknameOf } from '../../utils/memberUtils'
 import { memberKey } from '../../utils/sgUtils'
 import {
   readExpectedAttendance,
@@ -90,6 +91,8 @@ const openSearch = async () => {
   await nextTick()
   searchInput.value?.focus()
 }
+// Ctrl+G opens it too (usePageSearch).
+usePageSearch(openSearch)
 const closeSearch = () => {
   searchOpen.value = false
   searchQuery.value = ''
@@ -642,6 +645,7 @@ const panelClass = computed(() => {
             <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               ref="searchInput"
+              data-page-search
               v-model="searchQuery"
               type="text"
               placeholder="Search members"
@@ -729,10 +733,10 @@ const panelClass = computed(() => {
                     <!-- What they are actually called at church, which is how
                          half the room is recognised. -->
                     <span
-                      v-if="member.nickname"
+                      v-if="nicknameOf(member)"
                       class="block truncate text-[11px] text-gray-500 dark:text-gray-400"
                     >
-                      "{{ member.nickname }}"
+                      "{{ nicknameOf(member) }}"
                     </span>
                     <!-- Only reachable by searching, and worth saying why
                          before the tap rather than after it. -->

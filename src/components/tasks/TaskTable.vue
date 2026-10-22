@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { ArrowUpCircle, Check } from '../../icons'
+import { ArrowUpCircle, Check, Trash2 } from '../../icons'
 import DeskTable from '../appframe/DeskTable.vue'
 import { assigneeLabel, dueLabel, isDueToday, isFlagged, isOverdue } from '../../utils/taskUtils'
 
@@ -22,16 +22,18 @@ const props = defineProps({
   canComplete: { type: Function, required: true },
 })
 
-const emit = defineEmits(['open', 'toggle'])
+const emit = defineEmits(['open', 'toggle', 'delete'])
 
-const columns = [
+const columns = computed(() => [
   { key: 'tick', label: '', width: '2rem' },
   { key: 'task', label: 'Task', width: 'minmax(14rem, 2.4fr)' },
   { key: 'who', label: 'Who', width: 'minmax(9rem, 1.2fr)', min: 620 },
   { key: 'ministry', label: 'Ministry', width: 'minmax(7rem, 0.9fr)', min: 820 },
   { key: 'due', label: 'Due', width: '8rem' },
   { key: 'priority', label: 'Priority', width: '6.5rem', min: 980 },
-]
+  // Deleting a row from the table, as a phone's row can, for whoever may.
+  ...(props.canEdit ? [{ key: 'actions', label: '', width: '2.25rem', align: 'right' }] : []),
+])
 
 const sections = computed(() => [
   ...props.groups.map((group) => ({
@@ -98,6 +100,17 @@ const rowClass = (task) => (String(task.id) === String(props.selectedId) ? 'bg-p
     </template>
     <template #cell-due="{ row }">
       <span :class="['block truncate tabular-nums', dueClass(row)]">{{ dueLabel(row.dueDate, today || undefined) || '—' }}</span>
+    </template>
+    <template #cell-actions="{ row }">
+      <button
+        type="button"
+        class="flex size-8 items-center justify-center rounded-lg text-gray-400 opacity-0 transition hover:bg-red-50 hover:text-red-600 focus-visible:opacity-100 group-hover/row:opacity-100 dark:hover:bg-red-500/10 dark:hover:text-red-400 [@media(hover:none)]:opacity-100"
+        :aria-label="`Delete ${row.title || 'this task'}`"
+        title="Delete"
+        @click.stop="emit('delete', row)"
+      >
+        <Trash2 class="size-4" />
+      </button>
     </template>
     <template #cell-priority="{ row }">
       <span

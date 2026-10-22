@@ -73,6 +73,7 @@ admin and writes a `platformLog` entry with the change.
 | Churches | Every church with its plan and usage. Opening one (`/platform/churches/:id`) lets you rename it, change its timezone, switch its apps on and off (and lock them off), set its billing and record payments, connect domains, and close or reopen it. |
 | Apps & prices | The monthly price of each app, whether it is on offer, and how it is described to churches. |
 | Live chat | Conversations from the front door's chat bubble, and your replies. The bubble says you are online while the account named in **Name & front door → Chat bubble** has any Ekkly tab open; a message left while you are away is emailed to that address. |
+| Tickets | Every church's tickets as a board: New, In progress, On hold, Done. Bugs and ideas are Ekkly's to answer (`lib/tickets.js`, `handledBy`); questions, complaints and praise are each church's, shown under **Everything**. Drag a card to move it on or reorder it; open one to answer, which the person who sent it reads in their church's Tickets app. Read and written from the server (`lib/platform/tickets.js`), since the rules keep a church's records to its own people. |
 | Support requests | What churches asked for, with a status and a reply they see in their Settings. |
 | New church defaults | Timezone, starting apps, trial length, starter ministries and tags. |
 | Name & front door | The platform's name, tagline, contact email and front-door wording, and the chat bubble: on or off, the name visitors see, who answers, a phone for "Call" and a Messenger link. |

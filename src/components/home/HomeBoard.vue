@@ -1,5 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { Trash2, X } from '../../icons'
 
 // The desktop home's panels in their columns, any of them dragged by itself
 // to another place: up or down its column, or across into another. While it
@@ -31,7 +32,7 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 // `drop` let the board show where it would land as it does for its own. A
 // column with nothing in it gives its width to the others, and comes back,
 // as a place to drop, while anything is in hand. No column takes more than
-// three cards (fits, below).
+// three, YUNIT counted (fits, below).
 
 const props = defineProps({
   // [{ id, weight, panels: [key] }], in order across.
@@ -40,8 +41,31 @@ const props = defineProps({
   foot: { type: String, default: null },
   // How a panel shares its column: { [key]: classes }.
   fit: { type: Object, default: () => ({}) },
+  // What may be taken off the home by dropping it on the board's "remove"
+  // place (the church, YUNIT, the panels someone may have or not): while one
+  // of these is in hand, that place shows at the foot of the screen, and let
+  // go over it, `remove` says which. The caller does the taking off.
+  removable: { type: Array, default: () => [] },
+  // Held still: nothing is picked up until the home is being arranged
+  // (useHomeLayout's homeArranging).
+  locked: { type: Boolean, default: false },
 })
-const emit = defineEmits(['move', 'place'])
+const emit = defineEmits(['move', 'place', 'swap', 'remove'])
+
+/* ------------------------------------------------------ taking it off */
+
+const trashEl = ref(null)
+// Only the church is taken off by dropping it there. A panel has its own ×
+// while the home is being rearranged, and a remove place at the foot of the
+// screen caught panels set down near it by accident: YUNIT, who stands at
+// the foot of his column, went off the home every time he was moved home.
+const canRemove = computed(() => held.value === 'church' && props.removable.includes('church'))
+// Over the remove place: a little room round it, so it is easy to hit.
+const overTrash = (x, y) => {
+  if (!canRemove.value || !trashEl.value) return false
+  const box = trashEl.value.getBoundingClientRect()
+  return x >= box.left - 12 && x <= box.right + 12 && y >= box.top - 12 && y <= box.bottom + 12
+}
 
 const held = ref(null)
 const target = ref(null)
@@ -138,14 +162,17 @@ const columnAt = (x) => {
 
 /* ------------------------------------------------------- room for it */
 
-// A column holds three cards at most (CARDS). YUNIT is not a card, and the
-// church is not one either (the land under the board, it goes to any column).
-// Something carried to a column that has its three already is refused there
-// ("This column is full") rather than piled in, where the panels ran over
-// one another and over the church. Up and down its own column it always
-// fits.
+// A column holds three at most (CARDS), YUNIT among them: he stands in a
+// column as a panel does and takes its room, so a column of three cards and
+// him was four things deep. The church is not one (the land under the
+// board, it goes to any column). Something carried to a column that has its
+// three already is never piled in, where the panels ran over one another and
+// over the church: it trades places with the one it is let go on (`swap`,
+// aim), so a board whose every column is full can still be rearranged; with
+// nothing there to trade with, it is refused ("This column is full"). Up and
+// down its own column it always fits.
 const CARDS = 3
-const NOT_CARDS = ['yunit', 'church']
+const NOT_CARDS = ['church']
 let origin = null
 const cardsIn = (id, without) => (props.columns.find((column) => column.id === id)?.panels || []).filter((key) => key !== without && !NOT_CARDS.includes(key)).length
 const takeUp = (key) => {
@@ -174,15 +201,31 @@ const aim = (x, y, foot = false) => {
   const others = panels.filter((el) => el !== outline)
   let index = others.findIndex((el) => at < el.offsetTop + el.offsetHeight / 2)
   if (index < 0) index = others.length
-  return fits(id, held.value) ? { id, index } : { id, index, full: true }
+  if (fits(id, held.value)) return { id, index }
+  // A full column: the panel under the pointer (or the nearest), YUNIT
+  // included, trades places with the one in hand, so a board whose every
+  // column is full can still be rearranged.
+  const cards = others.filter((el) => !NOT_CARDS.includes(el.dataset.panel))
+  const under =
+    cards.find((el) => at >= el.offsetTop && at <= el.offsetTop + el.offsetHeight) ||
+    cards.reduce((best, el) => {
+      const gap = Math.abs(at - (el.offsetTop + el.offsetHeight / 2))
+      return !best || gap < best.gap ? { el, gap } : best
+    }, null)?.el
+  return under ? { id, index, swap: under.dataset.panel } : { id, index, full: true }
 }
+// The board with the panel in hand and `other` changed places.
+const arrangeSwap = (key, other) =>
+  props.columns.map((column) => ({ ...column, panels: column.panels.map((each) => (each === key ? other : each === other ? key : each)) }))
 // Shows the board as it would be with the panel in hand let go at `to`; over
 // a column it does not fit in, the board as it was.
 const aimTo = (to) => {
   target.value = to
-  // See-through over a column it would not fit in, so what it says shows.
-  if (ghost) ghost.style.opacity = to?.full ? '0.45' : '1'
-  if (to?.full) preview.value = null
+  // See-through over a column it would not fit in, so what it says shows,
+  // and over the remove place, where it is about to go.
+  if (ghost) ghost.style.opacity = to?.full || to?.remove ? '0.45' : '1'
+  if (to?.full || to?.remove) preview.value = null
+  else if (to?.swap && held.value) preview.value = arrangeSwap(held.value, to.swap)
   else if (to && !to.foot && held.value) preview.value = arrange(held.value, to.id, to.index)
 }
 // The aimed place as the caller's `move` counts it: before the panel is
@@ -237,9 +280,14 @@ const unlisten = () => {
   window.removeEventListener('pointerup', onUp)
   window.removeEventListener('pointercancel', cancel)
   window.removeEventListener('keydown', onKey)
+  window.removeEventListener('blur', cancel)
 }
 const settle = () => {
   clearTimeout(landTimer)
+  landTimer = null
+  clearTimeout(steadyTimer)
+  pending = null
+  lastPoint = null
   ghost?.remove()
   ghost = null
   document.body.style.cursor = ''
@@ -280,6 +328,40 @@ const swallowClick = () => {
   setTimeout(() => window.removeEventListener('click', stop, { capture: true }), 0)
 }
 
+// Over a full column, the card the one in hand would trade places with
+// changes only once the pointer has rested on another for a moment. Without
+// that, the preview of one swap moved the cards under the pointer, which
+// aimed it at another, whose preview moved them back: the column flickered
+// between the two. `pending` is the swap waiting to be taken up, and a timer
+// takes it up for a pointer that has stopped moving over it.
+const STEADY_MS = 140
+let pending = null
+let steadyTimer = null
+let lastPoint = null
+const steady = (next) => {
+  const now = target.value
+  if (!next?.swap || !now?.swap || next.id !== now.id || next.swap === now.swap) {
+    pending = null
+    clearTimeout(steadyTimer)
+    return next
+  }
+  if (pending?.swap === next.swap && performance.now() - pending.at >= STEADY_MS) {
+    pending = null
+    return next
+  }
+  if (pending?.swap !== next.swap) {
+    pending = { swap: next.swap, at: performance.now() }
+    clearTimeout(steadyTimer)
+    steadyTimer = setTimeout(() => {
+      if (held.value && lastPoint) aimTo(aimFrom(lastPoint.x, lastPoint.y))
+    }, STEADY_MS + 10)
+  }
+  return now
+}
+// Where letting go at (x, y) would put what is in hand: the remove place, or
+// a place on the board, steadied over a full column.
+const aimFrom = (x, y) => (overTrash(x, y) ? { remove: true } : steady(aim(x, y, press?.foot)))
+
 const onMove = (event) => {
   if (!press) return
   if (!held.value) {
@@ -287,18 +369,27 @@ const onMove = (event) => {
     lift(press.el, press.key)
   }
   event.preventDefault()
+  lastPoint = { x: event.clientX, y: event.clientY }
   follow(event.clientX, event.clientY)
-  aimTo(aim(event.clientX, event.clientY, press.foot))
+  aimTo(aimFrom(event.clientX, event.clientY))
 }
 
 const onUp = (event) => {
   if (!held.value) return settle()
-  const at = aim(event.clientX, event.clientY, press.foot) || target.value
+  // Lands where the board showed it would: the place last aimed at, which
+  // is what the preview was drawn from. Aiming afresh at the last moment
+  // could pick a different place (a swap still waiting, the edge between two
+  // cards) from the one on the screen.
+  const at = overTrash(event.clientX, event.clientY) ? { remove: true } : target.value || aim(event.clientX, event.clientY, press.foot)
   aimTo(at)
-  // Let go over a column it does not fit in, it goes back where it was.
+  // Let go over a column it does not fit in, it goes back where it was; over
+  // a card in a full column, the two trade places; over the remove place, it
+  // is taken off the home.
   if (at?.full) {
     // Nothing moves.
-  } else if (at && press.foot) emit('place', { key: held.value, column: at.id })
+  } else if (at?.remove) emit('remove', { key: held.value })
+  else if (at?.swap) emit('swap', { key: held.value, with: at.swap })
+  else if (at && press.foot) emit('place', { key: held.value, column: at.id })
   else if (at) {
     const to = forMove(held.value, at)
     emit('move', { key: held.value, column: to.id, index: to.index })
@@ -320,17 +411,29 @@ const onScrollbar = (event) => {
   return el instanceof Element && (event.offsetX > el.clientWidth || event.offsetY > el.clientHeight)
 }
 
+// Let go outside the window, the browser never says so; the window losing
+// the focus (`blur`) is when the drag is given up instead, so a panel is
+// never left in hand with nothing holding it.
 const listen = () => {
   window.addEventListener('pointermove', onMove)
   window.addEventListener('pointerup', onUp)
   window.addEventListener('pointercancel', cancel)
   window.addEventListener('keydown', onKey)
+  window.addEventListener('blur', cancel)
+}
+
+// A press while the last panel is still gliding into place finishes that
+// first, so the new drag is not ended by the old one landing under it.
+const finishLanding = () => {
+  if (ghost || landTimer) settle()
 }
 
 const onDown = (event, key) => {
+  if (props.locked) return
   if (event.button !== 0 || event.pointerType === 'touch') return
   if (event.target.closest('button, input, textarea, select, [role="menu"], [role="dialog"]')) return
   if (onScrollbar(event)) return
+  finishLanding()
   press = { key, el: event.currentTarget, x: event.clientX, y: event.clientY }
   listen()
 }
@@ -340,10 +443,12 @@ const onDown = (event, key) => {
 // through to the apps behind; what is lifted is the whole of what stands
 // there (`data-foot-body`).
 const onFootDown = (event) => {
+  if (props.locked) return
   if (event.button !== 0 || event.pointerType === 'touch') return
   if (!event.target.closest('[data-foot-grab]')) return
   const el = event.currentTarget.querySelector('[data-foot-body]')
   if (!el) return
+  finishLanding()
   press = { key: 'church', el, x: event.clientX, y: event.clientY, foot: true }
   listen()
 }
@@ -352,40 +457,51 @@ const onFootDown = (event) => {
 // HomeYunit): while it is in hand the board is laid out as it would be, as
 // it is for its own, its place an outline that moves to where it would land
 // and every column offered; let go, `drop` says where — { id, index }, the
-// index counted before it is taken out, as `move` wants it — or null.
+// index counted before it is taken out, as `move` wants it; { swap } over a
+// full column, the panel it trades places with; or null.
 const hold = (key) => {
   takeUp(key)
   held.value = key
 }
 const aimAt = (x, y) => {
-  aimTo(aim(x, y))
+  aimTo(overTrash(x, y) ? { remove: true } : aim(x, y))
   return target.value
 }
+// Let go over the remove place, `drop` says so ({ remove: true }) for the
+// caller to take it off, rather than a place to move it to.
 const drop = () => {
-  const at = target.value && !target.value.full && held.value ? forMove(held.value, target.value) : null
+  const at = target.value?.remove
+    ? { remove: true }
+    : target.value?.swap && held.value
+      ? { swap: target.value.swap }
+      : target.value && !target.value.full && held.value
+        ? forMove(held.value, target.value)
+        : null
   if (target.value?.full) preview.value = null
   held.value = null
   target.value = null
   letPreviewGo()
   return at
 }
-// A column already holding more than three cards (put there before columns
-// had a limit): the board says which panel to move,
-// and where, for the caller to move it — the last panel in it that fits in
-// another column, YUNIT never (he is not a card); into the column with the
-// fewest, at its end (above YUNIT, if he is last there). Null when every column fits, or nothing
-// would fit anywhere else.
+// A column already holding more than three (put there before columns had a
+// limit, or before YUNIT counted among them): the board says which panel to
+// move, and where, for the caller to move it — the last panel in it that
+// fits in another column, YUNIT never (he keeps his place, and a card goes
+// instead); into the column with the fewest, at its end (above YUNIT, if he
+// is last there). Null when every column fits, or nothing would fit anywhere
+// else.
 const overfull = (id) => cardsIn(id) > CARDS
 const tidy = () => {
   if (held.value) return null
   for (const column of props.columns) {
     if (!overfull(column.id)) continue
-    const order = [...column.panels].reverse().filter((key) => !NOT_CARDS.includes(key))
+    const order = [...column.panels].reverse().filter((key) => key !== 'yunit' && !NOT_CARDS.includes(key))
     for (const key of order) {
       takeUp(key)
       const into = props.columns
         .filter((each) => each.id !== column.id && fits(each.id, key))
-        .sort((a, b) => cardsIn(a.id) - cardsIn(b.id))[0]
+        // On a tie, the church's column last: it is the home's sidebar.
+        .sort((a, b) => cardsIn(a.id) - cardsIn(b.id) || (a.id === props.foot) - (b.id === props.foot))[0]
       if (into) {
         const index = into.panels.at(-1) === 'yunit' ? into.panels.length - 1 : into.panels.length
         origin = null
@@ -420,13 +536,27 @@ onBeforeUnmount(() => {
         :key="key"
         :data-panel="key"
         :class="[
-          'flex min-h-0 cursor-grab flex-col',
+          'relative flex min-h-0 flex-col',
+          locked ? '' : 'cursor-grab rounded-[24px] outline-2 outline-dashed outline-white/50 outline-offset-2 dark:outline-white/25',
           fit[key] || 'shrink-0',
           held === key ? 'rounded-[24px] outline-2 -outline-offset-2 outline-dashed outline-white/60 *:invisible dark:outline-white/30' : '',
         ]"
         @pointerdown="onDown($event, key)"
       >
         <slot name="panel" :panel="key" />
+        <!-- While rearranging, a panel that can come off the home has its own
+             way off, a press rather than a drag to the remove place. Inside
+             its corner, so nothing round the panel clips it. -->
+        <button
+          v-if="!locked && removable.includes(key) && held !== key"
+          type="button"
+          class="absolute right-2.5 top-2.5 z-10 flex size-7 items-center justify-center rounded-full bg-gray-900/80 text-white ring-2 ring-white transition-colors hover:bg-red-600 focus-visible:outline-none focus-visible:ring-primary dark:bg-white/85 dark:text-gray-900 dark:ring-gray-900 dark:hover:bg-red-500 dark:hover:text-white"
+          :aria-label="`Take this panel off the home`"
+          title="Take off the home"
+          @click="emit('remove', { key })"
+        >
+          <X class="size-4" />
+        </button>
       </div>
 
       <!-- An empty column, while a panel is in hand: somewhere to put it. -->
@@ -462,5 +592,30 @@ onBeforeUnmount(() => {
         <slot name="foot" />
       </div>
     </div>
+
+    <!-- The remove place, at the foot of the screen while something that
+         may be taken off is in hand: let go over it and it is gone from the
+         home (the caller's `remove`), back again from "Show on my home". On
+         the page itself rather than in the board, so nothing the board sits
+         in can clip it or lay it out. -->
+    <Teleport to="body">
+      <Transition enter-from-class="opacity-0" leave-to-class="opacity-0" enter-active-class="transition-opacity duration-150" leave-active-class="transition-opacity duration-150">
+        <div v-if="canRemove" class="pointer-events-none fixed inset-x-0 bottom-6 z-10001 flex justify-center" aria-hidden="true">
+          <div
+            ref="trashEl"
+            :class="[
+              'flex items-center gap-2 rounded-full border-2 border-dashed px-6 py-3.5 text-sm font-semibold backdrop-blur-md transition-colors',
+              target?.remove
+                ? 'border-red-500 bg-red-600 text-white'
+                : 'border-gray-300 bg-white/90 text-gray-600 dark:border-gray-600 dark:bg-gray-900/90 dark:text-gray-300',
+            ]"
+          >
+            <Trash2 class="size-5" />
+            {{ target?.remove ? 'Let go to remove' : 'Drop here to remove' }}
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
+

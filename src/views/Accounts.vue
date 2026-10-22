@@ -129,7 +129,7 @@ const openMemberProfile = (account) => {
   const member = account.member
   if (!member) return
   selected.value = null
-  router.push(`/members/${member.id || member.firestoreId}`)
+  router.push(`/people/${member.id || member.firestoreId}`)
 }
 
 /* ---------------------------------------------------------- join requests */

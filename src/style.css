@@ -218,106 +218,6 @@ body {
   }
 }
 
-/* List to record (router/viewTransitions.js). The attribute on <html> is set
-   only for that navigation; without it these rules are inert, so any other
-   view transition keeps the browser's plain crossfade. */
-@keyframes vt-push-in {
-  from {
-    translate: 100% 0;
-  }
-}
-
-@keyframes vt-push-under {
-  to {
-    translate: -25% 0;
-    opacity: 0.6;
-  }
-}
-
-@keyframes vt-lift-in {
-  from {
-    translate: 0 0.75rem;
-    opacity: 0;
-  }
-}
-
-:root[data-nav]::view-transition-old(root),
-:root[data-nav]::view-transition-new(root),
-:root[data-nav]::view-transition-group(member-avatar),
-:root[data-nav]::view-transition-group(public-page) {
-  animation-duration: 0.34s;
-  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
-}
-
-/* A tile's picture and name flying into the header of what it opens, and back
-   (the morphs in router/viewTransitions.js). A touch longer than the slide
-   under them, so they are still arriving as the screen settles and read as
-   the thing that moved. */
-:root[data-nav]::view-transition-group(morph-icon),
-:root[data-nav]::view-transition-group(morph-label) {
-  animation-duration: 0.42s;
-  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
-}
-
-/* A name changes size on the way (a tile's 15px to a header's 24px) and its
-   box changes width too, which the browser would answer by stretching the
-   words. Sized by height alone, they grow evenly from where they start on the
-   left. The old words go first, so the two are seen together only briefly. */
-:root[data-nav]::view-transition-old(morph-label),
-:root[data-nav]::view-transition-new(morph-label) {
-  width: auto;
-  height: 100%;
-}
-
-:root[data-nav]::view-transition-old(morph-label) {
-  animation-duration: 0.2s;
-}
-
-/* A phone pushes: the record slides in over the list, opaque, while the list
-   eases a little way left and dims beneath it. */
-@media (width < 64rem) {
-  :root[data-nav='forward']::view-transition-new(root) {
-    animation-name: vt-push-in;
-  }
-  :root[data-nav='forward']::view-transition-old(root) {
-    animation-name: vt-push-under;
-  }
-}
-
-/* A desktop keeps its sidebar where it is, so sliding the whole window would
-   be too much: the new screen rises a touch over the old one, which holds
-   still beneath it. Fading the old one out as well left a moment where both
-   were half there and the background showed through them. */
-@media (width >= 64rem) {
-  :root[data-nav]::view-transition-old(root) {
-    animation: none;
-  }
-  :root[data-nav]::view-transition-new(root) {
-    animation-name: vt-lift-in;
-  }
-}
-
-/* The way back from a record: the list, already live, slides in a short way
-   from the left, where the push had left it. Transform and opacity only, so it
-   runs on the compositor however long the list is. Members.vue adds the class
-   when the page is shown again after a record. */
-@keyframes page-return {
-  from {
-    translate: -12% 0;
-    opacity: 0.4;
-  }
-}
-
-.page-return {
-  animation: page-return 0.26s cubic-bezier(0.2, 0, 0, 1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .page-return {
-    animation: none;
-  }
-}
-
 /* A settings section's own header — its icon and name — where the screen is
    too narrow for the list to sit beside it. There the section is a page of its
    own with a bar at the top carrying exactly that icon and name (Settings.vue),
@@ -371,11 +271,29 @@ body {
 }
 
 /* Consistent keyboard-focus indicator across every interactive element.
-   Only shows for keyboard/programmatic focus, not mouse clicks. */
+   Only shows for keyboard/programmatic focus, not mouse clicks.
+
+   Drawn just inside the edge, not outside it. Almost everything that takes
+   the focus sits in something that clips at its own edge — a list's rounded
+   block (ListGroup), a panel that scrolls, a grid with no padding — and an
+   outline outside the element was cut off there, so the one thing saying
+   where the keyboard was could not be seen. Inside, nothing clips it.
+
+   It follows the element's own corners. It used to set border-radius: 4px on
+   whatever had the focus, which squared off a round button or a rounded card
+   the moment it was reached with the keyboard. */
 :focus-visible {
   outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline-offset: -2px;
+}
+
+/* A field's focus ring (focus:ring-2, on nearly every input) drawn inside it,
+   for the same reason: a field the full width of a scrolling column had its
+   ring cut off down both sides. The fields hide their border while focused,
+   so the ring sits where the border was. Not for checkboxes, radios and the
+   like, which are too small to draw inside. */
+:where(input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']), textarea, select):focus {
+  --tw-ring-inset: inset;
 }
 
 .card {
@@ -663,94 +581,32 @@ body {
   }
 }
 
-/* Each block of an app's home rises into place, a beat after the one above
-   it (animation-delay is set where it is used), so the screen arrives as a
-   sequence rather than all at once. */
-@keyframes app-rise {
-  from {
-    opacity: 0;
-    translate: 0 12px;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
-}
+/* Nothing enters on its own any more: no page slides, settles or rises in,
+   and no block of a screen rises into place after it. The card below is the
+   one motion between pages (router/viewTransitions.js).
 
-.animate-rise {
-  animation: app-rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-/* Changing page (router/viewTransitions.js). The screen being left holds
-   still and fully opaque underneath, and the one arriving comes in over it,
-   so there is never a frame where the screen is blank or dimmed between the
-   two — the old way faded one out before the other had come in, and the gap
-   between them read as an overlay. The browser blends the pair with
+   The screen being left holds still and fully opaque underneath, and the one
+   arriving fades in over it, so there is never a frame where the screen is
+   blank or dimmed between the two. The browser blends the pair with
    plus-lighter by default, which lightens wherever the two differ; normal
-   blending keeps the colours true. No blur either: blurring a whole-screen
-   snapshot is expensive enough to drop frames on a phone. */
+   blending keeps the colours true. */
 :root[data-nav]::view-transition-old(root),
 :root[data-nav]::view-transition-new(root) {
   mix-blend-mode: normal;
 }
 
-:root[data-nav='app-forward']::view-transition-old(root),
-:root[data-nav='app-back']::view-transition-old(root),
-:root[data-nav='page']::view-transition-old(root) {
-  animation: none;
-}
-
-/* Within an app, and into or out of one: forward comes in from the right,
-   back from the left. The fade is quicker than the slide, so the new screen
-   is solid while it is still settling and the two are seen together only
-   briefly. */
 @keyframes app-fade {
   from {
     opacity: 0;
   }
 }
 
-@keyframes app-slide {
-  from {
-    translate: var(--app-slide) 0;
-  }
-}
-
-:root[data-nav='app-forward']::view-transition-new(root),
-:root[data-nav='app-back']::view-transition-new(root) {
-  animation:
-    160ms ease-out both app-fade,
-    320ms cubic-bezier(0.2, 0, 0, 1) both app-slide;
-}
-
-:root[data-nav='app-forward']::view-transition-new(root) {
-  --app-slide: 32px;
-}
-
-:root[data-nav='app-back']::view-transition-new(root) {
-  --app-slide: -32px;
-}
-
-/* Any other change of page has no direction to show, so it settles: a short
-   rise and fade, over before the eye has to follow it. */
-@keyframes page-settle {
-  from {
-    opacity: 0;
-    translate: 0 8px;
-  }
-}
-
-:root[data-nav='page']::view-transition-new(root) {
-  animation: page-settle 220ms cubic-bezier(0.2, 0, 0, 1) both;
-}
-
 /* A card turning over as it becomes the page it opens, and the page turning
    back into its card (router/viewTransitions.js). All of it at once, as one
    motion: the card turns over about its upright as it grows from where it
    sits until it is the page area, its corners rounding out into the screen's
-   edges, while its picture and name fly into the top bar (the morphs above)
-   and the rest of the new screen fades in around it. The way back is the same
-   played the other way.
+   edges, while the rest of the new screen fades in around it. The way back is
+   the same played the other way.
 
    Smooth because everything shares one curve and one length, so nothing
    arrives before the rest, and the turn is one movement: the card's face
@@ -761,12 +617,9 @@ body {
 
    Each face is drawn at its own size from its top-left corner and clipped to
    the box, never stretched to fit it, so the page shows more of itself as the
-   box grows — its header first. The page is pictured as its shell, and its
-   contents slide in once it has arrived (page-arrive, below).
+   box grows — its header first, and the page whole as it arrives.
 
-   Everything else on the screen only fades, held still: one thing moving, not
-   a slide behind the card. After the rules above, which would otherwise slide
-   or lift it. */
+   Everything else on the screen only fades, held still: one thing moving. */
 @keyframes card-turn-away {
   to {
     transform: rotateY(90deg);
@@ -779,9 +632,7 @@ body {
   }
 }
 
-:root[data-nav='card']::view-transition-group(morph-card),
-:root[data-nav='card']::view-transition-group(morph-icon),
-:root[data-nav='card']::view-transition-group(morph-label) {
+:root[data-nav='card']::view-transition-group(morph-card) {
   animation-duration: 0.5s;
   animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -821,50 +672,3 @@ body {
   animation: app-fade 0.3s ease-out both;
 }
 
-/* The page's contents while the card becomes the page: not there yet, so
-   the page is pictured as its ground and its header. Only an app screen's
-   content area (AppScreen's <main>), never its header, which the name lands
-   in. */
-[data-morph-page].page-entering main {
-  opacity: 0;
-}
-
-/* Then, as soon as the card has become the page, they slide in, one block
-   after another: the deck, the tiles, each group of rows. Short and close
-   together, on the same curve as the card, so they carry its motion on
-   rather than start a new one. A screen whose content is one wrapper has its
-   wrapper's children brought in instead. */
-@keyframes page-item-in {
-  from {
-    opacity: 0;
-    translate: 0 16px;
-  }
-}
-
-[data-morph-page].page-arrive main > :not(:only-child),
-[data-morph-page].page-arrive main > :only-child > * {
-  animation: page-item-in 0.36s cubic-bezier(0.32, 0.72, 0, 1) both;
-}
-
-[data-morph-page].page-arrive main > :nth-child(2),
-[data-morph-page].page-arrive main > :only-child > :nth-child(2) {
-  animation-delay: 40ms;
-}
-[data-morph-page].page-arrive main > :nth-child(3),
-[data-morph-page].page-arrive main > :only-child > :nth-child(3) {
-  animation-delay: 80ms;
-}
-[data-morph-page].page-arrive main > :nth-child(4),
-[data-morph-page].page-arrive main > :only-child > :nth-child(4) {
-  animation-delay: 120ms;
-}
-[data-morph-page].page-arrive main > :nth-child(n + 5),
-[data-morph-page].page-arrive main > :only-child > :nth-child(n + 5) {
-  animation-delay: 160ms;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-rise {
-    animation: none;
-  }
-}

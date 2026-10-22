@@ -164,7 +164,6 @@ const handleClear = async (when) => {
 
     <div v-else-if="sunday">
       <ScheduleServicePanel
-        class="animate-rise"
         :sunday="sunday"
         :members="members"
         :roles="roles"

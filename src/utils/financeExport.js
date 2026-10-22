@@ -1,4 +1,5 @@
 import XLSX from 'xlsx-js-style'
+import { fitColumns } from './sheetColumns'
 import { getChurchIdentity } from '../composables/useAppSettings'
 import { accentCell } from '../composables/useBrandTheme'
 import { toPesos } from './moneyUtils'
@@ -86,9 +87,10 @@ const statementSheet = (statement) => {
     ],
   ]
 
+  // Sized to the lines and the amounts (sheetColumns.js), below the title and
+  // above the closing note, which both run on across the empty cells.
   const ws = XLSX.utils.aoa_to_sheet(rows)
-  ws['!cols'] = [{ wch: 44 }, { wch: 16 }]
-  return ws
+  return fitColumns(ws, { from: 4, skip: [rows.length - 1], min: 12, max: 60 })
 }
 
 /** The book behind the statement, so any figure can be traced to its entries. */
@@ -120,9 +122,10 @@ const entriesSheet = (entries) => {
     ])
   }
 
+  // Sized to the entries themselves (sheetColumns.js); a long description
+  // stops at 50 rather than pushing the amounts off the screen.
   const ws = XLSX.utils.aoa_to_sheet(rows)
-  ws['!cols'] = [{ wch: 12 }, { wch: 34 }, { wch: 36 }, { wch: 16 }, { wch: 14 }, { wch: 14 }]
-  return ws
+  return fitColumns(ws, { min: 10, max: 30, maxFor: { 1: 50, 2: 40 } })
 }
 
 export const exportStatement = (statement, entries = []) => {

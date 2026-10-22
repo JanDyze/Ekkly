@@ -38,6 +38,9 @@ const props = defineProps({
   clickable: { type: Boolean, default: false },
   // What the table is, for a screen reader.
   label: { type: String, default: '' },
+  // Fills the height it is given and scrolls its rows inside itself, under
+  // headings that stay, so the page around it holds still (AppScreen's fill).
+  fill: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['row-click', 'row-contextmenu'])
@@ -59,15 +62,28 @@ const ALIGN = { right: 'justify-self-end text-right', center: 'justify-self-cent
 </script>
 
 <template>
-  <div ref="box" role="table" :aria-label="label || undefined" class="rounded-2xl bg-white ring-1 ring-gray-200/70 dark:bg-gray-800 dark:ring-gray-700/70">
+  <div
+    ref="box"
+    role="table"
+    :aria-label="label || undefined"
+    :class="['rounded-2xl bg-white ring-1 ring-gray-200/70 dark:bg-gray-800 dark:ring-gray-700/70', fill ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : '']"
+  >
+    <div :class="fill ? 'min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:thin]' : 'contents'">
+    <!-- The column names, inside what scrolls so they are exactly as wide as
+         the rows under them: outside it, a table scrolling its own rows had
+         its names a scrollbar's width out from their columns. They stay at
+         the top of the table as it scrolls, or under the screen's header
+         where the page is what scrolls. -->
     <div
       role="row"
-      class="sticky top-(--screen-head,0px) z-20 grid items-center gap-4 rounded-t-2xl border-b border-gray-100 bg-white/95 px-4 py-2.5 text-xs font-semibold text-gray-500 backdrop-blur transition-[top] duration-300 dark:border-gray-700/60 dark:bg-gray-800/95 dark:text-gray-400"
+      :class="[
+        'sticky z-20 grid items-center gap-4 rounded-t-2xl border-b border-gray-100 bg-white/95 px-4 py-2.5 text-xs font-semibold text-gray-500 backdrop-blur dark:border-gray-700/60 dark:bg-gray-800/95 dark:text-gray-400',
+        fill ? 'top-0' : 'top-(--screen-head,0px) transition-[top] duration-300',
+      ]"
       :style="{ gridTemplateColumns: template }"
     >
       <span v-for="column in shown" :key="column.key" role="columnheader" :class="['truncate', ALIGN[column.align] || '']">{{ column.label }}</span>
     </div>
-
     <div v-for="(section, s) in sections" :key="section.key" role="rowgroup">
       <div
         v-if="section.label"
@@ -112,5 +128,6 @@ const ALIGN = { right: 'justify-self-end text-right', center: 'justify-self-cent
     </div>
 
     <slot name="empty" />
+    </div>
   </div>
 </template>

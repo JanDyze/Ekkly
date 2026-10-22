@@ -91,7 +91,6 @@ const drawing = computed(() => DOODLES[props.doodle] || DOODLES.tea)
   stroke: color-mix(in srgb, var(--color-primary) 60%, transparent);
   stroke-width: 2;
   stroke-linejoin: round;
-  animation: doodle-in 700ms 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .doodle-touch-line {
   fill: none;
@@ -130,15 +129,4 @@ const drawing = computed(() => DOODLES[props.doodle] || DOODLES.tea)
   }
 }
 
-@keyframes doodle-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .doodle-touch {
-    animation: none;
-  }
-}
 </style>

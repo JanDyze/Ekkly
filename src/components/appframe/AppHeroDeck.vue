@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ChevronLeft, ChevronRight, X } from '../../icons'
 import AppHero from './AppHero.vue'
 import { useSounds } from '../../composables/useSounds'
@@ -31,6 +31,12 @@ import { useSounds } from '../../composables/useSounds'
 // progress, not news, and lowers the mark instead, so the next one added
 // brings it back. Such a card is passed in even at level 0, where it is not
 // shown, so the mark can follow the pile all the way down.
+//
+// Either way, nothing stays put away longer than a week (REMIND_AFTER). An
+// app left open for days — installed on a phone, a tab never closed — never
+// ends its session, and a chore's pile can sit at the same number for months;
+// a card put away and then forgotten would be gone with it. So a week on, it
+// comes back, in case it was put away and never seen to.
 //
 // Cards: `{ key, tone, dismissible, ... }`, and whatever else the app's own
 // faces need. Give a card's key whatever would make it news again — `claims:3`
@@ -69,11 +75,29 @@ const props = defineProps({
 
 const STORE = 'ekkly:dismissed-cards'
 
+// How long a card stays put away at most, however it was put away.
+const REMIND_AFTER = 7 * 24 * 60 * 60 * 1000
+
+// The time, kept to the hour, so a card a week old comes back while the app
+// is open as well as when it is opened.
+const now = ref(Date.now())
+let clock = null
+onMounted(() => {
+  clock = setInterval(() => (now.value = Date.now()), 60 * 60 * 1000)
+})
+onBeforeUnmount(() => clearInterval(clock))
+
+const fresh = (at) => Number.isFinite(at) && now.value - at < REMIND_AFTER
+
+// This session's dismissals: { id: when }. A list of ids is what was kept
+// before they had a time, and starts its week now.
 const readDismissed = () => {
   try {
-    return new Set(JSON.parse(sessionStorage.getItem(STORE) || '[]'))
+    const saved = JSON.parse(sessionStorage.getItem(STORE) || '{}')
+    if (Array.isArray(saved)) return Object.fromEntries(saved.map((id) => [id, Date.now()]))
+    return saved && typeof saved === 'object' ? saved : {}
   } catch {
-    return new Set()
+    return {}
   }
 }
 
@@ -82,12 +106,17 @@ const { prime, swipe, tuck, lift } = useSounds()
 const dismissed = ref(readDismissed())
 const idOf = (card) => `${props.scope}:${card.key}`
 
-// The `remember` cards' marks: the level each was put away at, per device.
+// The `remember` cards' marks: { id: { level, at } }, the level each was put
+// away at and when, per device. A bare number is a mark from before marks
+// had a time, and starts its week now.
 const KEPT_STORE = 'ekkly:put-away-cards'
 
 const readKept = () => {
   try {
-    return JSON.parse(localStorage.getItem(KEPT_STORE) || '{}') || {}
+    const saved = JSON.parse(localStorage.getItem(KEPT_STORE) || '{}') || {}
+    return Object.fromEntries(
+      Object.entries(saved).map(([id, mark]) => [id, Number.isFinite(mark) ? { level: mark, at: Date.now() } : mark])
+    )
   } catch {
     return {}
   }
@@ -108,18 +137,18 @@ const levelOf = (card) => (Number.isFinite(card.level) ? card.level : 0)
 
 const isPutAway = (card) => {
   if (!card.dismissible) return false
-  if (!card.remember) return dismissed.value.has(idOf(card))
+  if (!card.remember) return fresh(dismissed.value[idOf(card)])
   const mark = kept.value[idOf(card)]
-  return Number.isFinite(mark) && levelOf(card) <= mark
+  return Boolean(mark) && Number.isFinite(mark.level) && levelOf(card) <= mark.level && fresh(mark.at)
 }
 
 // The pile shrank under its mark: the mark follows it down, so the next one
-// added is news again.
+// added is news again. It keeps its time, so the week still runs.
 watch(
   () => props.cards.filter((card) => card.remember).map((card) => [idOf(card), levelOf(card)]),
   (pairs) => {
-    const lower = pairs.filter(([id, level]) => Number.isFinite(kept.value[id]) && level < kept.value[id])
-    if (lower.length) writeKept({ ...kept.value, ...Object.fromEntries(lower) })
+    const lower = pairs.filter(([id, level]) => Number.isFinite(kept.value[id]?.level) && level < kept.value[id].level)
+    if (lower.length) writeKept({ ...kept.value, ...Object.fromEntries(lower.map(([id, level]) => [id, { ...kept.value[id], level }])) })
   },
   { immediate: true }
 )
@@ -139,13 +168,15 @@ const dismiss = (card) => {
   setTimeout(() => {
     leaving.value = null
     if (card.remember) {
-      writeKept({ ...kept.value, [idOf(card)]: levelOf(card) })
+      writeKept({ ...kept.value, [idOf(card)]: { level: levelOf(card), at: Date.now() } })
     } else {
-      const next = new Set(dismissed.value)
-      next.add(idOf(card))
+      // Only the ones still within their week are kept, so the list does not
+      // grow for as long as the app is left open.
+      const next = Object.fromEntries(Object.entries(dismissed.value).filter(([, at]) => fresh(at)))
+      next[idOf(card)] = Date.now()
       dismissed.value = next
       try {
-        sessionStorage.setItem(STORE, JSON.stringify([...next]))
+        sessionStorage.setItem(STORE, JSON.stringify(next))
       } catch {
         // Not remembered past this page; it is still gone from it.
       }

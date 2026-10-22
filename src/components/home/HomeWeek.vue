@@ -1,8 +1,9 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { formatTimeRange } from '../../utils/sgUtils'
 import PanelRest from './PanelRest.vue'
+import { useRowsThatFit } from '../../composables/useRowsThatFit'
 
 // The coming seven days, for the home of all apps on a desktop, as a compact
 // timeline beside the day's work: only the days with something on, each a
@@ -11,10 +12,13 @@ import PanelRest from './PanelRest.vue'
 // church's colour. The titles and times are what is read, so the day's label
 // is small and said once.
 //
-// The home keeps to one screen, so the card takes the height it is given and
-// the week scrolls inside it rather than the page; Open calendar has the
-// month. With little on, it keeps its height, the room left saying so
-// (PanelRest). Everything is the home's already (useToday), gated as it is.
+// The home keeps to one screen, so the card is the height its column gives
+// it: the events that fit show whole (useRowsThatFit; a day's label is not
+// counted, and goes with its last event), and under them how many more this
+// week, leading to the calendar, rather than a list scrolling inside the
+// card or an event cut off part way. Open calendar has the month. With
+// little on, it keeps its height, the room left saying so (PanelRest).
+// Everything is the home's already (useToday), gated as it is.
 
 const props = defineProps({
   // useToday's `week`: { date, day, isToday } for the coming seven.
@@ -42,26 +46,31 @@ const rows = computed(() =>
 )
 const total = computed(() => rows.value.filter((row) => !row.day).length)
 
+const rowsBox = ref(null)
+const { shown } = useRowsThatFit(rowsBox, { heading: (el) => el.hasAttribute('data-day') })
+const more = computed(() => total.value - shown.value)
+
 const dayLink = (date) => ({ name: 'Events', query: { date } })
 </script>
 
 <template>
   <section aria-labelledby="home-week" class="@container flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-900 dark:ring-white/10">
-    <header class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 pt-4 pb-3 dark:border-white/10">
-      <h2 id="home-week" class="flex items-center gap-2.5 text-base font-semibold whitespace-nowrap text-gray-900 dark:text-white">
+    <header class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 pt-2.5 pb-2 dark:border-white/10">
+      <h2 id="home-week" class="flex items-center gap-2.5 text-sm font-semibold whitespace-nowrap text-gray-900 dark:text-white">
         This week
-        <span v-if="total" class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-bold tabular-nums text-gray-600 dark:bg-white/10 dark:text-gray-300">{{ total }}</span>
+        <span v-if="total" class="rounded-full bg-gray-100 px-1.5 py-px text-[11px] font-bold tabular-nums text-gray-600 dark:bg-white/10 dark:text-gray-300">{{ total }}</span>
       </h2>
       <!-- "Calendar" alone where the column is narrow, so the heading keeps to one line. -->
-      <RouterLink to="/events/calendar" class="text-sm font-semibold whitespace-nowrap text-primary hover:underline dark:text-primary-light">
+      <RouterLink to="/events/calendar" class="text-xs font-semibold whitespace-nowrap text-primary hover:underline dark:text-primary-light">
         <span class="hidden @[18rem]:inline">Open calendar</span><span class="@[18rem]:hidden">Calendar</span>
       </RouterLink>
     </header>
 
-    <ol v-if="rows.length" :class="['min-h-0 overflow-y-auto overscroll-contain [scrollbar-width:thin]', total <= 3 ? 'shrink-0' : 'flex-1']">
+    <ol v-if="rows.length" ref="rowsBox" class="min-h-0 overflow-hidden">
       <li
         v-for="row in rows"
         :key="row.key"
+        :data-day="row.day ? '' : undefined"
         :class="[
           'px-5',
           row.day ? 'pt-3 pb-1 not-first:border-t not-first:border-gray-100 dark:not-first:border-white/10' : 'pb-1.5 last:pb-3',
@@ -85,7 +94,14 @@ const dayLink = (date) => ({ name: 'Events', query: { date } })
       </li>
     </ol>
 
-    <PanelRest v-if="rows.length && total <= 3" few doodle="hammock" title="The rest of the week is open." />
+    <RouterLink
+      v-if="more"
+      to="/events/calendar"
+      class="mt-auto shrink-0 border-t border-gray-100 px-5 py-2 text-xs font-semibold text-primary hover:underline dark:border-white/10 dark:text-primary-light"
+    >
+      {{ more }} more this week
+    </RouterLink>
+    <PanelRest v-if="rows.length && total <= 3 && !more" few doodle="hammock" title="The rest of the week is open." />
     <PanelRest v-if="!rows.length" doodle="hammock" title="A quiet week" line="Nothing on the calendar yet." />
 
   </section>

@@ -47,7 +47,7 @@ const closeSearch = () => emit('close')
         class="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-gray-400"
       />
       <input
-        ref="inputRef"
+        ref="inputRef" data-page-search
         :value="searchQuery"
         @input="emit('update:searchQuery', $event.target.value)"
         @keyup.escape="closeSearch"
@@ -84,7 +84,7 @@ const closeSearch = () => emit('close')
           class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
         />
         <input
-          ref="desktopInputRef"
+          ref="desktopInputRef" data-page-search
           :value="searchQuery"
           @input="emit('update:searchQuery', $event.target.value)"
           @keyup.escape="closeSearch"

@@ -28,7 +28,7 @@ defineProps({
     <span v-if="card.more" :class="['grid grid-cols-2 gap-px', art]">
       <AppArt v-for="item in card.peek" :key="item.path" :app-key="item.art" class="size-full" />
     </span>
-    <SectionGlyph v-else-if="!card.art" :name="card.glyph || ''" :data-morph-icon="card.path" :class="art" />
-    <AppArt v-else :app-key="card.art" :play="play" :flat="flat" :data-morph-icon="card.path" :class="[art, flat ? 'text-(--hue)' : '']" />
+    <SectionGlyph v-else-if="!card.art" :name="card.glyph || ''" :class="art" />
+    <AppArt v-else :app-key="card.art" :play="play" :flat="flat" :class="[art, flat ? 'text-(--hue)' : '']" />
   </span>
 </template>

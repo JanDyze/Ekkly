@@ -38,13 +38,19 @@ export const AGE_BANDS = [
 ]
 
 /**
- * A stored age wins over the birth date: it is what the rest of the app shows,
- * and some records carry an age with no birth date at all.
+ * The birth date wins, and the stored age is only for a record with none.
+ *
+ * It used to be the other way round, and the stored age is written once, on
+ * the day the record is saved, and never again: a child added at twelve was
+ * twelve, and in Kids, for good, and "turns 30" on the birthday list was a
+ * year out by the next one. Some records carry an age with no birth date at
+ * all; for those the stored one is all there is.
  */
 export const ageOf = (member) => {
-  if (typeof member?.age === 'number' && Number.isFinite(member.age)) return member.age
   const derived = calculateAgeFromDate(member?.dateOfBirth)
-  return Number.isFinite(derived) ? derived : null
+  if (Number.isFinite(derived)) return derived
+  if (typeof member?.age === 'number' && Number.isFinite(member.age)) return member.age
+  return null
 }
 
 /** The band someone falls in, or null when the record says nothing about age. */

@@ -45,8 +45,11 @@ import { useBottomBar } from '../composables/useBottomBar'
 import { useLiveSky } from '../composables/useLiveSky'
 import { useHomeChurch } from '../composables/useHomeChurch'
 import { useMotion } from '../composables/useMotion'
+import { useSimpleView } from '../composables/useSimpleView'
+import { themeOverride } from '../composables/useTheme'
 import { homeCardName } from '../data/homeCards'
 import CardStyleSheet from './home/CardStyleSheet.vue'
+import HomePanelSwitches from './home/HomePanelSwitches.vue'
 
 // The people rail. On a wide screen it is a permanent right-hand column, the
 // way Facebook keeps its contacts list; anywhere narrower it collapses into a
@@ -86,8 +89,10 @@ const { bottomBar, setBottomBar } = useBottomBar()
 const { liveSky, setLiveSky } = useLiveSky()
 const { homeChurch, setHomeChurch } = useHomeChurch()
 
-// How much moves between pages: full, simple or off, a tap at a time.
+// Whether a card turns over into the page it opens: on or off, a tap at a time.
 const { motionLabel, nextMotion } = useMotion()
+// Simple view: the quiet home, and the apps after it (useSimpleView).
+const { simpleView, setSimpleView } = useSimpleView()
 
 const openSettings = () => {
   showPeoplePanel.value = false
@@ -125,7 +130,7 @@ const askToLink = () => {
 
 const openMyProfile = () => {
   showPeoplePanel.value = false
-  router.push(`/members/${myMember.value.id || myMember.value.firestoreId}`)
+  router.push(`/people/${myMember.value.id || myMember.value.firestoreId}`)
 }
 
 
@@ -419,7 +424,19 @@ watch(railIsVisible, (visible) => {
               />
             </button>
             <div v-if="showPreferences" id="drawer-preferences" class="pb-1 pl-8">
+              <!-- Light or dark is the person's to choose, except while live
+                   sky sets it from the sky (AdminLayout): then it says so. -->
+              <p
+                v-if="themeOverride !== null"
+                class="flex w-full items-center gap-3 rounded-xl p-2.5 text-left"
+              >
+                <Moon v-if="themeOverride" class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
+                <Sun v-else class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
+                <span class="flex-1 text-sm text-gray-700 dark:text-slate-200">Appearance</span>
+                <span class="text-xs text-gray-400 dark:text-slate-500">Follows the live sky</span>
+              </p>
               <button
+                v-else
                 @click="toggleTheme($event)"
                 class="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
               >
@@ -458,6 +475,8 @@ watch(railIsVisible, (visible) => {
                 <span class="flex-1 text-sm text-gray-700 dark:text-slate-200">Home layout</span>
                 <span class="text-xs text-gray-400 dark:text-slate-500">{{ layoutIsDefault ? 'Default' : 'Yours · Reset' }}</span>
               </button>
+              <!-- Which of the home's panels show (useHomeLayout). -->
+              <HomePanelSwitches />
               <button
                 @click="setBottomBar(!bottomBar)"
                 role="switch"
@@ -489,6 +508,16 @@ watch(railIsVisible, (visible) => {
                 <Church class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
                 <span class="flex-1 text-sm text-gray-700 dark:text-slate-200">Church picture</span>
                 <span class="text-xs text-gray-400 dark:text-slate-500">{{ homeChurch ? 'On' : 'Off' }}</span>
+              </button>
+              <button
+                @click="setSimpleView(!simpleView)"
+                role="switch"
+                :aria-checked="simpleView"
+                class="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
+              >
+                <Layout class="h-4 w-4 shrink-0 text-primary dark:text-primary-light" />
+                <span class="flex-1 text-sm text-gray-700 dark:text-slate-200">Simple view</span>
+                <span class="text-xs text-gray-400 dark:text-slate-500">{{ simpleView ? 'On' : 'Off' }}</span>
               </button>
               <button
                 @click="nextMotion"

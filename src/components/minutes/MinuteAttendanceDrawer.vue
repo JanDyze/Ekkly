@@ -140,7 +140,7 @@ const initials = (member) =>
                 spellcheck="false"
                 placeholder="Find someone..."
                 aria-label="Find someone"
-                class="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-transparent focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none dark:border-gray-600 dark:bg-gray-900/50 dark:text-white"
+                class="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-transparent focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none dark:border-gray-600 dark:bg-gray-900/50 dark:text-white dark:focus:bg-gray-800"
               />
             </div>
             <!-- Who this meeting is for. Remembered on the minute, so the

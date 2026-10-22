@@ -12,7 +12,8 @@ import { useMediaQuery } from '../../composables/useMediaQuery'
 import { useTheme } from '../../composables/useTheme'
 import { isRailCollapsed } from '../../composables/usePresence'
 import { tipsFor } from '../../data/yunitTips'
-import { feel, setYunitSound, yunitSound } from '../../utils/yunitFeedback'
+import { feel, setYunitSound, yunitHeard, yunitSound } from '../../utils/yunitFeedback'
+import { useSundayService } from '../../composables/useSundayService'
 
 // YUNIT on the home of all apps: a character standing on it, not a card on
 // it. He says hello, and is talked to without leaving the home.
@@ -239,7 +240,7 @@ const railShown = useMediaQuery('(min-width: 1280px)')
 const startled = ref(false)
 let startledTimer = null
 watch(isRailCollapsed, (collapsed) => {
-  if (!props.besideRail || !props.anchor || !railShown.value || open.value || carried.value) return
+  if (!props.besideRail || !props.anchor || !railShown.value || open.value || carried.value || roaming.value) return
   mascot.value?.play(collapsed ? 'stumbleRight' : 'rollLeft')
   feel(collapsed ? 'stumble' : 'knocked')
   startled.value = true
@@ -320,8 +321,8 @@ const hideBubble = () => {
 // On a desktop he says it in the bubble beside him instead (the template),
 // which never goes: while he is saying something, that, and between times
 // the last thing he offered to be asked (`offered`, kept by say), or, before
-// he has offered anything, today's, or what he is for. So what a tap on him
-// brought up stays until he offers something else; a tap elsewhere, or the
+// he has offered anything, today’s, or what he is for. So what he offered
+// stays until he offers something else; a tap on him, a tap elsewhere, or the
 // moment passing, only drops a hello said over it ("Oh! I must have nodded
 // off."), never the question.
 const offered = shallowRef(null)
@@ -359,7 +360,7 @@ const say = (next, voice = null) => {
     }, length / total)
   }
   speak(length)
-  if (voice) {
+  if (voice && yunitHeard.value) {
     clip = new Audio(`/voice/yunit/${voice.file}`)
     clip.volume = 0.9
     // Before anyone has touched the page, the browser keeps it quiet; he still
@@ -412,7 +413,7 @@ const pipeUp = async () => {
   const tip = nextTip()
   if (!tip) return
   writeStore('sessionStorage', PROMPTED, String(count + 1))
-  const voice = yunitSound.value ? await voiceFor(tip.key) : null
+  const voice = yunitHeard.value ? await voiceFor(tip.key) : null
   const line = { hello: '', line: tip.line, tip }
   schedulePrompt(NEXT)
   clearTimeout(wakeTimer)
@@ -423,7 +424,17 @@ const pipeUp = async () => {
 }
 let wakeTimer = null
 // Turned quiet, he stops mid-word rather than finishing aloud.
-watch(yunitSound, (on) => !on && hush())
+watch(yunitHeard, (on) => !on && hush())
+
+// During the Sunday service (useSundayService) he wears a tie and makes no
+// sound at all (yunitFeedback). When it starts while he is there, he says so
+// in his bubble, and only there; when it ends, he says that too.
+const { inService } = useSundayService()
+watch(inService, (on) => {
+  if (chatting.value && open.value) return
+  stir()
+  say(on ? { hello: 'Shh.', line: 'The service is starting. I’ll keep quiet.' } : { hello: '', line: 'The service is over.' })
+})
 
 // In the dark (dark mode) he has a lantern, lit, its light round him. Coming
 // onto the home in the dark, it is simply lit. When the dark comes while he
@@ -537,8 +548,8 @@ watch(bubble, (on) => {
   if (on) followBubble()
 })
 
-// Tapped, he does something of his own (YunitMascot) and says the next thing
-// he can be asked. Tapped awake, he says so instead. In the middle of a
+// Tapped, he does something of his own (YunitMascot) and says a word back
+// (TAP_REPLIES). Tapped awake, he says so instead. In the middle of a
 // conversation that is showing, he only answers the tap: a hello there would
 // be talking over it.
 let wokeAt = -1
@@ -563,9 +574,17 @@ const onTap = () => {
   if (performance.now() - wokeAt < 400) return
   stir()
   if (quiet()) return
-  const tip = nextTip()
-  if (tip) say({ hello: '', line: tip.line, tip })
+  // A word back, and no more. Each tap used to bring the next thing he can
+  // be asked, with its button and "Talk to YUNIT" under it — three lines for
+  // a poke. The questions come with his hello and when he pipes up; a tap is
+  // only a tap, and once it has passed the bubble goes back to what he last
+  // offered.
+  tapAt = (tapAt + 1 + Math.floor(Math.random() * (TAP_REPLIES.length - 1))) % TAP_REPLIES.length
+  say({ hello: '', line: TAP_REPLIES[tapAt] })
 }
+// What he says to a tap: short, and never the same twice running.
+const TAP_REPLIES = ['Yes?', 'Hi there!', 'Hehe, that tickles!', 'I’m here!', 'Need anything?', 'Hello again!']
+let tapAt = -1
 
 let helloTimer = null
 onMounted(() => {
@@ -594,7 +613,7 @@ onMounted(() => {
 /* ------------------------------------------------------ playing, idle */
 
 // Left alone on the home, he plays rather than only waiting to doze: every
-// twenty to forty-five seconds, one thing — a jump, a wave, a peek, a look
+// one to two minutes, one thing — a jump, a wave, a peek, a look
 // about, or hide-and-seek. Only while someone is there (the page showing,
 // moved on lately) and nothing else is going on (no conversation, nothing
 // being said, not carried, not asleep), and silently but for hide-and-seek's
@@ -661,32 +680,69 @@ const roamStyle = computed(() => {
   if (!at) return { display: 'none' }
   return { left: `${at.left}px`, top: `${at.top}px`, width: `${ROAM_SIZE}px`, height: `${ROAM_SIZE}px`, clipPath: at.clip || 'none' }
 })
+// The card he is behind, which side of it, and how far down it. Kept rather
+// than where it was, because the board moves under him while he hides: the
+// people rail opening or closing narrows and widens every column, and a
+// window resized does the same. He was left at the spot the card had been,
+// cut at an edge that was no longer there; now he goes with the card.
+let roamCard = null
+const roamSpot = ({ el, right, down }) => {
+  const card = el.getBoundingClientRect()
+  const top = Math.round(card.top + (card.height - ROAM_SIZE) * down)
+  const left = Math.round(right ? card.right - ROAM_SIZE * (1 - PEEKS) : card.left - ROAM_SIZE * PEEKS)
+  const clip = right ? `inset(-40% -40% -40% ${Math.round(card.right - left)}px)` : `inset(-40% ${Math.round(left + ROAM_SIZE - card.left)}px -40% -40%)`
+  return { left, top, right, clip }
+}
+// Measured every frame while he is away, as his bubble is (followBubble), so
+// he travels with the card through the rail's animation rather than jumping
+// once it has finished. A card taken off the board sends him home.
+let roamFrame = 0
+const followCard = () => {
+  if (!roamCard) return
+  if (!roamCard.el.isConnected) {
+    comeHome(true)
+    return
+  }
+  const next = roamSpot(roamCard)
+  const at = roamAt.value
+  if (!at || at.left !== next.left || at.top !== next.top || at.clip !== next.clip) roamAt.value = next
+  roamFrame = requestAnimationFrame(followCard)
+}
+watch(roaming, (on) => {
+  cancelAnimationFrame(roamFrame)
+  if (on) roamFrame = requestAnimationFrame(followCard)
+})
 const roam = async () => {
   if (!props.anchor || reduced || roaming.value) return
   const cards = [...document.querySelectorAll('[data-panel]')].filter((el) => el.dataset.panel !== 'yunit' && el.offsetHeight > 80)
   if (!cards.length) return
-  const card = cards[Math.floor(Math.random() * cards.length)].getBoundingClientRect()
+  const el = cards[Math.floor(Math.random() * cards.length)]
+  const box = el.getBoundingClientRect()
   // Out of whichever side of the card has room, part way down it.
-  const right = card.right + ROAM_SIZE * PEEKS + 8 < window.innerWidth
-  const top = Math.round(card.top + (card.height - ROAM_SIZE) * (0.2 + Math.random() * 0.6))
-  const left = Math.round(right ? card.right - ROAM_SIZE * (1 - PEEKS) : card.left - ROAM_SIZE * PEEKS)
-  const clip = right ? `inset(-40% -40% -40% ${Math.round(card.right - left)}px)` : `inset(-40% ${Math.round(left + ROAM_SIZE - card.left)}px -40% -40%)`
+  const chosen = { el, right: box.right + ROAM_SIZE * PEEKS + 8 < window.innerWidth, down: 0.2 + Math.random() * 0.6 }
 
   hideBubble()
   curled.value = true
   await pause(380)
-  const el = mascot.value?.$el
-  if (!el) return
+  const him = mascot.value?.$el
+  if (!him) return
   // Away where he stands...
-  await vanish(el)
+  await vanish(him)
   // ...and straight in behind the card, cut at its edge from the first frame,
   // a ball growing out of nothing there, turned round on a card's right so
-  // his face is the side that peeks.
-  roamAt.value = { left, top, right, clip }
+  // his face is the side that peeks. Measured now, not before he left: the
+  // board may have moved while he curled up.
+  if (!chosen.el.isConnected) {
+    him.style.opacity = ''
+    curled.value = false
+    return
+  }
+  roamCard = chosen
+  roamAt.value = roamSpot(chosen)
   roaming.value = true
   await nextTick()
-  el.style.scale = right ? '-1 1' : ''
-  await appear(el)
+  him.style.scale = chosen.right ? '-1 1' : ''
+  await appear(him)
   // Uncurled where he is, the peek already showing.
   curled.value = false
   mascot.value?.play('peek')
@@ -697,6 +753,7 @@ const roam = async () => {
 // "Ta-da!"; at once, without the trip, when the conversation is opening.
 const comeHome = async (quick = false) => {
   if (!roaming.value) return
+  roamCard = null
   const el = mascot.value?.$el
   if (quick || !el) {
     roaming.value = false
@@ -718,6 +775,13 @@ const comeHome = async (quick = false) => {
   feel('peekaboo')
   say({ hello: 'Ta-da!', line: '' })
 }
+// Asleep or hiding, never both: he only goes to hide awake (free, above), and
+// should sleep come for him while he is behind a card, he comes home at once
+// and dozes there, where he can be found.
+watch(mood, (now) => {
+  if (now === 'sleeping' && roaming.value) comeHome(true)
+})
+
 const schedulePlay = () => {
   clearTimeout(playTimer)
   previewTimers.forEach(clearTimeout)
@@ -730,7 +794,7 @@ const schedulePlay = () => {
       }
       schedulePlay()
     },
-    20000 + Math.random() * 25000
+    60000 + Math.random() * 60000
   )
 }
 
@@ -744,6 +808,8 @@ const schedulePlay = () => {
 //                           each with its sound
 //   ?yunit-mood=sleeping    held in a mood (any of YUNIT_MOODS)
 //   ?yunit-say=Hello there  a line said in his bubble
+//   ?service=on             the Sunday service on (or off), whatever the
+//                           day: his tie, and not a sound (useSundayService)
 // That page only; nothing is kept. Played again whenever they change.
 const route = useRoute()
 // Each action's sound, where it is not named the same (yunitFeedback).
@@ -908,6 +974,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('pointerup', onPutDown)
   window.removeEventListener('pointercancel', onPutDown)
   clearTimeout(startledTimer)
+  cancelAnimationFrame(roamFrame)
   clearTimeout(lanternTimer)
   clearTimeout(rainbowTimer)
   clearTimeout(playTimer)
@@ -962,8 +1029,10 @@ onBeforeUnmount(() => {
           <h2 class="text-base font-black tracking-tight"><YunitWordmark /></h2>
           <p class="truncate text-xs text-white/75" aria-live="polite">{{ status }}</p>
         </div>
-        <!-- His sounds, off for whoever is asking him things in a quiet room. -->
+        <!-- His sounds, off for whoever is asking him things in a quiet room.
+             Gone during the service, when there are none to turn on. -->
         <button
+          v-if="!inService"
           type="button"
           class="yunit-round"
           :aria-label="yunitSound ? 'Turn YUNIT’s sounds off' : 'Turn YUNIT’s sounds on'"
@@ -1043,6 +1112,7 @@ onBeforeUnmount(() => {
           :lantern="lantern"
           :umbrella="umbrella"
           :raincoat="umbrella"
+          :tie="inService"
           :class="[
             'yunit-dock-him shrink-0 transition-[width,height] duration-300 ease-out motion-reduce:transition-none',
             // Drawn over his bubble, so his umbrella, which stands above his

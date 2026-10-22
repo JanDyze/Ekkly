@@ -2,16 +2,20 @@
 // the same shape as Schedules (see its routes.js): a launcher home, its
 // sections one step in, and a person's record a step further.
 //
-// It keeps the address the roll always had. /members is the home now, and a
-// record is still /members/:id, which the top bar, the people rail, Accounts
-// and Minutes all link to. The sections' fixed names sit beside :id, and the
-// router tries a fixed path before a parameter, so no record is ever mistaken
-// for one of them.
+// The app is at /people, a record at /people/:id, which the top bar, the
+// people rail, Accounts and Minutes all link to. The sections' fixed names sit
+// beside :id, and the router tries a fixed path before a parameter, so no
+// record is ever mistaken for one of them.
+//
+// It was at /members, the address the roll had before it was an app, so
+// anything still pointing there (a bookmark, a link in a message already
+// sent) is sent on to the same place under /people.
 
 export const peopleRoutes = [
   {
-    path: 'members',
-    meta: { capability: 'members.view', app: 'members', frame: 'app', art: 'members' },
+    path: 'people',
+    // simple: every screen here has a simple-view layout (useSimpleHere).
+    meta: { capability: 'members.view', app: 'members', frame: 'app', art: 'members', simple: true },
     children: [
       {
         path: '',
@@ -68,6 +72,14 @@ export const peopleRoutes = [
         component: () => import('./PeopleGlance.vue'),
       },
       {
+        // The people behind a figure on Overview: the same screen as a
+        // ministry's, its query saying which (utils/peopleFacets.js).
+        path: 'glance/people',
+        name: 'PeopleFacet',
+        meta: { art: 'people-glance', depth: 2 },
+        component: () => import('./PeopleMinistry.vue'),
+      },
+      {
         // Filling in other people's records is for whoever may edit them.
         path: 'missing',
         name: 'PeopleMissing',
@@ -82,11 +94,23 @@ export const peopleRoutes = [
         component: () => import('./PeopleAdd.vue'),
       },
       {
+        // `ownRecord`: anyone linked to a member record may open their own,
+        // read-only, without being able to see the roll (the router's guard).
+        // It is where "My profile" leads, from the top bar and the people
+        // drawer.
         path: ':id',
         name: 'MemberDetails',
-        meta: { art: 'people-everyone', depth: 2 },
+        meta: { art: 'people-everyone', depth: 2, ownRecord: true },
         component: () => import('./PersonRecord.vue'),
       },
     ],
+  },
+  {
+    path: 'members/:rest(.*)*',
+    redirect: (to) => ({
+      path: ['/people', ...[].concat(to.params.rest || [])].filter(Boolean).join('/'),
+      query: to.query,
+      hash: to.hash,
+    }),
   },
 ]

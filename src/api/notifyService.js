@@ -52,7 +52,9 @@ const isRepeat = (signature) => {
  * @param {object} [detail.event] `{ type, icon }`, for the event kinds, so the
  *                                tray shows the event's own mark
  */
-export const notify = async (kind, { title, body = "", url, event = null } = {}) => {
+// `to`: the member records it is for, by their key on the roll (memberKey).
+// Left out, it goes to everyone the kind allows, as it always did.
+export const notify = async (kind, { title, body = "", url, event = null, to = null } = {}) => {
   if (!title || !title.trim()) return null;
   if (isRepeat(`${kind}|${title}|${body}`)) return null;
 
@@ -75,6 +77,7 @@ export const notify = async (kind, { title, body = "", url, event = null } = {})
         body,
         url: url || notificationKind(kind).url,
         event,
+        ...(Array.isArray(to) && to.length ? { to } : {}),
       }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);

@@ -1,5 +1,6 @@
 import { computed, ref, watch } from "vue";
 import { AGE_BANDS, UNKNOWN_BAND, ageOf, groupByBand } from "../utils/ageBands";
+import { birthdayParts, daysUntilBirthday } from "../utils/memberUtils";
 import { Baby, Cake, Church, ClockCounterClockwise, IdentificationCard, Tag, TextAa } from "../icons";
 
 /**
@@ -68,23 +69,9 @@ const text = (value) => String(value || "").trim().toLowerCase();
 const byName = (a, b) =>
   text(`${a.firstName} ${a.lastName}`).localeCompare(text(`${b.firstName} ${b.lastName}`));
 
-/**
- * How many sleeps until the next one. A birthday is a day and a month — the
- * year on the record is when they were born, not when to expect the cake — so
- * it is compared as day-of-year, rolling into next year once it has passed.
- */
-export const daysUntilBirthday = (member) => {
-  const iso = member?.dateOfBirth;
-  if (!iso) return Infinity;
-  const dob = new Date(iso);
-  if (Number.isNaN(dob.getTime())) return Infinity;
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const next = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
-  if (next < today) next.setFullYear(next.getFullYear() + 1);
-  return Math.round((next - today) / 86400000);
-};
+// How many sleeps until the next one lives with the other birthday readings
+// (memberUtils), and is passed on from here for the callers that look for it.
+export { daysUntilBirthday };
 
 /**
  * Insertion order, near enough. A member record carries no created timestamp,
@@ -112,6 +99,16 @@ const comparators = {
   birthday: (a, b) => daysUntilBirthday(a) - daysUntilBirthday(b),
   ministry: (a, b) => (firstOf(a.ministries) || "￿").localeCompare(firstOf(b.ministries) || "￿"),
   tag: (a, b) => (firstOf(a.tags) || "￿").localeCompare(firstOf(b.tags) || "￿"),
+};
+
+/**
+ * One of the roll's orders as a comparator, ties falling back to the name: for
+ * whatever else lists people the way the roll does (the export), so a sheet
+ * comes out in the order the list on screen was in.
+ */
+export const compareMembers = (key) => {
+  const compare = comparators[key] || comparators.name;
+  return (a, b) => compare(a, b) || comparators.name(a, b);
 };
 
 /** The letter somebody files under; anything not A-Z shares a "#" heading. */
@@ -149,12 +146,12 @@ const groupByBirthMonth = (members) => {
   const undated = [];
 
   members.forEach((member) => {
-    const dob = member?.dateOfBirth ? new Date(member.dateOfBirth) : null;
-    if (!dob || Number.isNaN(dob.getTime())) {
+    const parts = birthdayParts(member?.dateOfBirth);
+    if (!parts) {
       undated.push(member);
       return;
     }
-    const month = dob.getMonth();
+    const month = parts.month - 1;
     if (!buckets.has(month)) buckets.set(month, []);
     buckets.get(month).push(member);
   });
@@ -165,7 +162,7 @@ const groupByBirthMonth = (members) => {
     const list = buckets.get(month);
     if (!list) continue;
     // Within a month it is the day that matters, not who is older.
-    list.sort((a, b) => new Date(a.dateOfBirth).getDate() - new Date(b.dateOfBirth).getDate());
+    list.sort((a, b) => birthdayParts(a.dateOfBirth).day - birthdayParts(b.dateOfBirth).day);
     sections.push({
       band: { key: `month:${month}`, label: MONTHS[month], dotClass: PLAIN_DOT },
       members: list,
@@ -222,7 +219,6 @@ const groupByValues = (members, field, emptyLabel) => {
 export function useMemberSorting() {
   const sortBy = ref(readStoredSort());
   const sortOrder = ref("asc");
-  const familyMemberSort = ref("age");
 
   watch(sortBy, (value) => {
     try {
@@ -257,29 +253,13 @@ export function useMemberSorting() {
     return [{ band: null, members }];
   };
 
-  // Sort family members
-  const sortFamilyMembers = (familyMembers) => {
-    const sorted = [...familyMembers];
-    sorted.sort((a, b) => {
-      if (familyMemberSort.value === "name") return comparators.name(a, b);
-      if (familyMemberSort.value === "age") return (b.age || 0) - (a.age || 0);
-      if (familyMemberSort.value === "dateOfBirth") {
-        return new Date(a.dateOfBirth || 0) - new Date(b.dateOfBirth || 0);
-      }
-      return 0;
-    });
-    return sorted;
-  };
-
   return {
     sortBy,
     sortOrder,
     sortOptions: SORT_OPTIONS,
     currentSort,
-    familyMemberSort,
     sortMembers,
     arrangeMembers,
-    sortFamilyMembers,
   };
 }
 
