@@ -8,6 +8,16 @@
 
 export const versionHistory = [
   {
+    version: '0.37.2',
+    date: '2026-10-24',
+    title: 'Your church, on your phone',
+    summary: 'Add the app to your phone and it carries your church’s own name and logo.',
+    highlights: [
+      'Fill in your own birthday, photo and number from your record.',
+      'The home-screen icon is your church’s, not Ekkly’s.',
+    ],
+  },
+  {
     version: '0.37.1',
     date: '2026-10-24',
     title: 'Roles, made plain',

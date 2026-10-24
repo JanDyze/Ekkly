@@ -46,6 +46,11 @@ const grantedFor = new Set()
 export const loadChurchProfile = async () => {
   profile.value = await getChurchProfile()
   setChurchName(profile.value?.name)
+  // iOS labels a home-screen icon from this tag, not the manifest, so it says
+  // the church's name rather than Ekkly's when someone adds the app.
+  if (profile.value?.name) {
+    document.querySelector("meta[name='apple-mobile-web-app-title']")?.setAttribute('content', profile.value.name)
+  }
   return profile.value
 }
 

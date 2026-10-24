@@ -26,6 +26,7 @@ import { getDisplayName, getFullName, listPhrase } from '../../utils/memberUtils
 import { ATTENDANCE_STYLE, STATE_WORD, longDay } from '../../utils/attendanceGrid'
 import { INSTRUMENTS } from '../../data/instruments'
 import { useSimpleView } from '../../composables/useSimpleView'
+import { usePermissions } from '../../composables/usePermissions'
 
 // A person's record on a desktop. The phone's record (PersonRecord) is a
 // column of boxes read top to bottom; spread across a desktop's width, the
@@ -48,11 +49,18 @@ import { useSimpleView } from '../../composables/useSimpleView'
 // Everything it shows is worked out by PersonRecord, which also owns the
 // editor, the photo and deleting; this only lays it out and asks for them.
 
+// How often someone came is for those who may see attendance; anyone else
+// reading the record is not shown the section at all.
+const seesAttendance = computed(() => usePermissions().can('attendance.view'))
+
 const props = defineProps({
   // The record, or null while it loads or when it is not on the roll.
   member: { type: Object, default: null },
   loading: { type: Boolean, default: false },
   canEdit: { type: Boolean, default: false },
+  // Looks after People: deletes records and says where someone serves. Someone
+  // editing only their own record (canEdit without this) does neither.
+  canManage: { type: Boolean, default: false },
   // Your own record: nobody rings or texts themselves.
   isMe: { type: Boolean, default: false },
   // Whether this person may see the roll at all (PersonRecord's peopleOpen).
@@ -223,7 +231,7 @@ const back = computed(() => (props.peopleOpen ? { name: 'PeopleHome' } : { path:
   >
     <template v-if="member && canEdit" #action>
       <button
-        v-if="simpleView"
+        v-if="simpleView && canManage"
         type="button"
         class="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-red-600 ring-1 ring-red-200 transition-colors hover:bg-red-50 dark:text-red-400 dark:ring-red-500/30 dark:hover:bg-red-500/10"
         @click="emit('delete')"
@@ -414,7 +422,7 @@ const back = computed(() => (props.peopleOpen ? { name: 'PeopleHome' } : { path:
                 <span v-else class="text-gray-400 dark:text-gray-500">
                   Not recorded
                   <button
-                    v-if="canEdit"
+                    v-if="canEdit && (detail.step !== 3 || canManage)"
                     type="button"
                     class="ml-1 text-sm font-semibold text-primary hover:underline dark:text-primary-light"
                     @click="emit('edit', detail.step)"
@@ -432,7 +440,7 @@ const back = computed(() => (props.peopleOpen ? { name: 'PeopleHome' } : { path:
           <div class="flex items-end justify-between gap-3 border-b border-gray-200 pb-2 dark:border-gray-800">
             <h2 id="person-church" class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">In the church</h2>
             <button
-              v-if="canEdit"
+              v-if="canManage"
               type="button"
               class="text-xs font-semibold text-primary hover:underline dark:text-primary-light"
               @click="emit('edit', 3)"
@@ -500,7 +508,7 @@ const back = computed(() => (props.peopleOpen ? { name: 'PeopleHome' } : { path:
         </section>
 
         <!-- Attendance: only the gatherings this person was expected at. -->
-        <section aria-labelledby="person-attendance">
+        <section v-if="seesAttendance" aria-labelledby="person-attendance">
           <div class="flex items-end justify-between gap-3 border-b border-gray-200 pb-2 dark:border-gray-800">
             <h2 id="person-attendance" class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Attendance</h2>
             <p v-if="counted" class="text-sm tabular-nums text-gray-500 dark:text-gray-400">

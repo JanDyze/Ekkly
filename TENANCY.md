@@ -253,6 +253,15 @@ they are.
 
 ---
 
+## Each church's installed app
+
+A church adding Ekkly to a phone gets its own app: `/manifest.webmanifest`
+is rewritten (vercel.json, and the dev server) to `/api/public?manifest`, which
+answers with the church's short name, its colour and its logo, Ekkly's icons
+listed after for a launcher that cannot use the logo. iOS takes the label from
+`apple-mobile-web-app-title`, which the app sets to the church's name once it
+has loaded the church. The platform's own address gets Ekkly's.
+
 ## Custom domains
 
 To give a church `app.uecp-calapan.com`, open the church in the console, then
@@ -311,10 +320,6 @@ church.
 
 ## Not done yet
 
-- **Installed app name and icon per church.** The PWA manifest in
-  `vite.config.js` says "Ekkly", with Ekkly's icons, for every church. A church
-  installing its app gets Ekkly on the home screen rather than its own name
-  and logo until the manifest is served per church.
 - **Rules deployment.** `firestore.rules` now covers the console's collections
   (`platform`, `platformLog`, `supportRequests`, and each church's
   `subscription`, `payments`, `usage`). Until it is deployed, the browser cannot

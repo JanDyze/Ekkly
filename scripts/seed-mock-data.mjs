@@ -41,6 +41,7 @@ import { fileURLToPath } from 'node:url'
 import { initializeApp, cert } from 'firebase-admin/app'
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { AUDIT_COLLECTION } from '../lib/auditEntry.js'
+import { PRIVATE_COLLECTION, splitPrivate } from '../lib/memberPrivate.js'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const SEED = 'seed-mock-data'
@@ -331,6 +332,8 @@ async function main() {
       if (snap.size) console.log(`  ${name.padEnd(18)} ${snap.size}`)
       total += snap.size
       if (WRITE) snap.docs.forEach((d) => writer.delete(d.ref))
+      // A person's private part goes with them (lib/memberPrivate.js).
+      if (WRITE && name === 'members') snap.docs.forEach((d) => writer.delete(church.collection(PRIVATE_COLLECTION).doc(d.id)))
     }
     // A mock join request someone approved left an access document behind.
     const access = await church.collection('access').get()
@@ -372,7 +375,14 @@ async function main() {
 
   // Everyone gets a document id now, so the records that point at a person by
   // it (follow-up) can be written in the same run.
-  people.forEach((p) => add('members', p, church.collection('members').doc().id))
+  // How to reach each of them is kept beside their record, as the app keeps
+  // it (lib/memberPrivate.js).
+  people.forEach((p) => {
+    const id = church.collection('members').doc().id
+    const { open, closed } = splitPrivate(p)
+    add('members', open, id)
+    ;(docs[PRIVATE_COLLECTION] ||= []).push({ id, data: closed })
+  })
 
   // One of each behind and one ahead, spread evenly so every week of the
   // calendar, the coming fortnight and the coming month have some.

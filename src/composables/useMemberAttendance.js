@@ -1,5 +1,6 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { subscribeToAttendance } from '../api/attendanceService'
+import { usePermissions } from './usePermissions'
 import { useMinutes } from './useMinutes'
 import { useEvents } from './useEvents'
 import { useRecurringSchedules } from './useRecurringSchedules'
@@ -69,6 +70,12 @@ export function useMemberAttendance(member, options = {}) {
   const records = computed(() => mergeAttendanceRecords(documents.value, minutes.value))
 
   onMounted(() => {
+    // Read only by those who may see attendance (firestore.rules): a
+    // person's record shows nobody else how often they came.
+    if (!usePermissions().can('attendance.view')) {
+      loading.value = false
+      return
+    }
     unsubscribe = subscribeToAttendance((rows) => {
       documents.value = rows
       loading.value = false

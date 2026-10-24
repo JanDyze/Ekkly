@@ -58,6 +58,8 @@ const props = defineProps({
   allTags: { type: Array, default: () => [] },
   busy: { type: Boolean, default: false },
   canDelete: { type: Boolean, default: false },
+  // Their own record, edited by someone who does not look after People.
+  selfEdit: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['close', 'save', 'delete'])
@@ -65,21 +67,26 @@ const emit = defineEmits(['close', 'save', 'delete'])
 const toast = useToast()
 const isAdd = computed(() => props.mode === 'add')
 
-const STEPS = [
+const ALL_STEPS = [
   { key: 'name', label: 'Name', title: 'What is their name?', fields: ['image', 'firstName', 'lastName', 'nickname'] },
   { key: 'personal', label: 'Personal', title: 'A little about them', fields: ['dateOfBirth', 'sex', 'civilStatus', 'occupation'] },
   { key: 'contact', label: 'Contact', title: 'How to reach them', fields: ['contactNumber', 'email', 'address', 'addressParts'] },
   { key: 'church', label: 'Church', title: 'Their place in the church', fields: ['isMember', 'ministries', 'instruments', 'tags'] },
 ]
 
-const FIELDS = STEPS.flatMap((s) => s.fields)
+// Someone editing their own record (selfEdit) is not shown the Church step:
+// their ministries and whether they are a member are for those who look after
+// People to say, and the database rules hold them to that.
+const steps = computed(() => (props.selfEdit ? ALL_STEPS.filter((s) => s.key !== 'church') : ALL_STEPS))
+
+const FIELDS = ALL_STEPS.flatMap((s) => s.fields)
 
 // In simple view (useSimpleView) the editor is the form most systems have:
 // every part at once under its heading, one scroll, Cancel and Save at the
 // foot. Steps are for a phone's small screen and a thumb; someone who asked
 // for the plain way gets the plain way.
 const { simpleView: simple } = useSimpleView()
-const shownSteps = computed(() => (simple.value ? STEPS : [STEPS[step.value]]))
+const shownSteps = computed(() => (simple.value ? steps.value : [steps.value[step.value]]))
 const LIST_FIELDS = ['ministries', 'instruments', 'tags']
 
 // Somebody being added is nearly always somebody who has just walked in, so a
@@ -118,14 +125,14 @@ watch(
   (open) => {
     if (!open) return
     draft.value = baseline()
-    step.value = Math.min(Math.max(props.startStep, 0), STEPS.length - 1)
+    step.value = Math.min(Math.max(props.startStep, 0), steps.value.length - 1)
     direction.value = 'forward'
     nameError.value = false
     // In simple view every part is on the one form, so asked for a part (a
     // missing birthday's "Add"), it opens scrolled to that part's heading.
     if (simple.value && step.value > 0) {
       nextTick(() =>
-        dialogRef.value?.querySelector(`[data-step="${STEPS[step.value].key}"]`)?.scrollIntoView({ block: 'start' })
+        dialogRef.value?.querySelector(`[data-step="${steps.value[step.value].key}"]`)?.scrollIntoView({ block: 'start' })
       )
     }
   },
@@ -165,10 +172,10 @@ const canSave = computed(
 )
 
 const age = computed(() => calculateAgeFromDate(draft.value.dateOfBirth))
-const isLast = computed(() => step.value === STEPS.length - 1)
+const isLast = computed(() => step.value === steps.value.length - 1)
 
 const goTo = (index) => {
-  if (index === step.value || index < 0 || index >= STEPS.length) return
+  if (index === step.value || index < 0 || index >= steps.value.length) return
   // The name is the one thing a record cannot be without, so it is checked on
   // the way out of its step rather than only at the very end.
   if (step.value === 0 && index > 0 && nameMissing.value) {
@@ -385,7 +392,7 @@ const chip = (on) => [
                changed something on. -->
           <nav v-if="!simple" aria-label="Profile sections" class="shrink-0 px-4 pb-3 pt-3">
             <ol class="grid grid-cols-4 gap-2">
-              <li v-for="(s, i) in STEPS" :key="s.key">
+              <li v-for="(s, i) in steps" :key="s.key">
                 <button
                   type="button"
                   @click="goTo(i)"
@@ -800,7 +807,7 @@ const chip = (on) => [
               Back
             </button>
             <span class="flex-1 text-center text-xs tabular-nums text-gray-400 dark:text-gray-500">
-              {{ step + 1 }} of {{ STEPS.length }}
+              {{ step + 1 }} of {{ steps.length }}
             </span>
             <button
               type="button"

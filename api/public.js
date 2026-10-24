@@ -32,6 +32,7 @@
 //      and the inward-facing types (meetings, training) are not published at
 //      all. Neither are birthdays, which is why no member documents are read.
 import { loadChurch, resolveChurchId } from "../lib/tenant.js";
+import { resolveTheme } from "../lib/platformDefaults.js";
 import {
   collectOccurrences,
   zonedDateString,
@@ -415,6 +416,52 @@ async function serveImage(firestore, req, res) {
   return res.end(decoded.buffer);
 }
 
+/**
+ * The church's own installed app (GET /manifest.webmanifest, rewritten here by
+ * vercel.json): its name under the icon, its colour in the title bar, and its
+ * logo as the icon where it has uploaded one. One deployment serves every
+ * church, so a manifest built into the app could only ever say "Ekkly", and a
+ * congregation adding its app to a phone got Ekkly's name and mark instead of
+ * its own. Ekkly's icons stay listed after the logo, for a launcher that
+ * cannot use the logo and for a church that has none.
+ */
+async function serveManifest(church, res) {
+  // The platform's own address has no church, and is Ekkly's.
+  const settings = church ? await church.ref.collection("appSettings").doc("church").get() : null;
+  const platform = church ? await church.ref.firestore.collection("platform").doc("public").get() : null;
+  const data = settings?.exists ? settings.data() || {} : {};
+  const theme = resolveTheme(platform?.exists ? platform.data()?.theme : null, data.theme);
+  const name = String(data.church?.shortName || church?.data?.name || "Ekkly").trim();
+  const stamp = data.updatedAt?.toMillis?.() || 0;
+  const logo = church ? publicImage(data.church?.logo, "logo", stamp, church.id) : "";
+
+  res.setHeader("Content-Type", "application/manifest+json; charset=utf-8");
+  // A minute at the edge: a church renaming itself is reflected by the next
+  // install, and a busy morning of installs costs one read.
+  res.setHeader("Cache-Control", "public, max-age=0, s-maxage=60");
+  res.statusCode = 200;
+  // Written out rather than through res.json, which would call it JSON.
+  return res.end(JSON.stringify({
+    id: "/",
+    name,
+    short_name: name.length > 12 ? name.split(/\s+/)[0].slice(0, 12) : name,
+    description: church
+      ? String(data.church?.fullName || `${name}, in one app.`)
+      : "Your church, in one app — people, gatherings, schedules, minutes and more.",
+    theme_color: theme.primary,
+    background_color: "#ffffff",
+    display: "standalone",
+    start_url: "/",
+    icons: [
+      ...(logo ? [{ src: logo, sizes: "512x512", purpose: "any" }] : []),
+      { src: "/icons/pwa-64x64.png", sizes: "64x64", type: "image/png" },
+      { src: "/icons/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+      { src: "/icons/pwa-512x512.png", sizes: "512x512", type: "image/png" },
+      { src: "/icons/maskable-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+    ],
+  }));
+}
+
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
@@ -432,11 +479,13 @@ export default async function handler(req, res) {
   }
 
   try {
+    if (req.query.manifest && !church) return await serveManifest(null, res);
     if (!church) return res.status(404).json({ error: "No church here" });
     const firestore = church.ref;
     const timeZone = church.data.timezone || DEFAULT_TIMEZONE;
 
     if (req.query.image) return await serveImage(firestore, req, res);
+    if (req.query.manifest) return await serveManifest(church, res);
 
     const settings = await firestore.collection("appSettings").doc("church").get();
     const data = settings.exists ? settings.data() || {} : {};

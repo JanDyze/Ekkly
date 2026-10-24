@@ -24,6 +24,15 @@ installable PWA.
   (`DEV_API_ROUTES` in `vite.config.js`, `/api/platform` included; never
   `/api/notify` or `/api/email`). On localhost, add `?church=<id>` to pick a
   church.
+- **Try things against the emulators, not the live project.** `npm run
+  emulators` (Firebase's auth and Firestore emulators; needs Java 21 or
+  later), then `npm run seed:emulator` once (a whole sample church, "sample",
+  with a test account per ministry, password `test1234`), then `npm run
+  dev:emulator` and `/login?church=sample`. The emulators enforce
+  `firestore.rules`. `npm run dev` reads the live project, whose daily reads
+  are shared by every church: opening every screen as every role there once
+  spent a day's reads in an hour and stopped every church's app until
+  midnight Pacific.
 - `npm run dev:all` does not work and is not needed: `server.js` is a
   leftover from the church app, saved as UTF-16 so Node cannot read it, and
   nothing calls it.

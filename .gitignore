@@ -48,3 +48,6 @@ data/bible/
 # Rendered ads. They are re-made from the HTML beside them with
 # marketing/scripts/render.mjs, so only the source is kept.
 marketing/**/out/
+
+# Firebase emulators (npm run emulators)
+.emulator-data/

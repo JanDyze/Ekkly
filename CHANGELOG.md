@@ -11,6 +11,24 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.2] — 2026-10-24
+
+A church's installed app carries its own name and logo, and everyone can keep
+their own record up to date.
+
+### Added
+
+- **Your church's own app on the home screen.** Adding Ekkly to a phone now
+  gives it the church's name, colour and logo rather than Ekkly's.
+- **Keep your own record up to date.** Anyone can open their own record and
+  fill in their photo, birthday and how to reach them. What they serve in
+  stays with those who look after People.
+
+### Fixed
+
+- A person's record no longer asks for attendance, or a small group's
+  meetings, from someone whose ministry does not include them.
+
 ## [0.37.1] — 2026-10-24
 
 Roles are set one ministry at a time, and an administrator can see the app

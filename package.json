@@ -1,7 +1,7 @@
 {
   "name": "ekkly",
   "private": true,
-  "version": "0.37.1",
+  "version": "0.37.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,10 @@
     "preview": "vite preview",
     "deploy": "node scripts/deploy.mjs",
     "build:icons": "node scripts/build-ui-icons.mjs && node scripts/build-event-icons.mjs",
-    "sync:bible": "node scripts/sync-bible.mjs"
+    "sync:bible": "node scripts/sync-bible.mjs",
+    "dev:emulator": "vite --mode emulator",
+    "emulators": "firebase emulators:start --only auth,firestore --project church-test-fe084",
+    "seed:emulator": "node scripts/seed-emulator.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",

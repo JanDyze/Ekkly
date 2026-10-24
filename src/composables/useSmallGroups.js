@@ -1,4 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
+import { usePermissions } from './usePermissions'
 import {
   subscribeToSmallGroups,
   subscribeToAllSgSessions,
@@ -56,6 +57,11 @@ export function useAllSgSessions() {
   onMounted(() => {
     sessionSubscribers += 1
     if (unsubscribeSessions) return
+    // Read only by those who may see small groups (firestore.rules).
+    if (!usePermissions().can('smallgroups.view')) {
+      sessionsLoading.value = false
+      return
+    }
     unsubscribeSessions = subscribeToAllSgSessions((data) => {
       sessions.value = data
       sessionsLoading.value = false

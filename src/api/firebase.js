@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from './firestore';
+import { connectAuthEmulator, getAuth } from "firebase/auth";
+import { connectFirestoreEmulator, getFirestore } from './firestore';
 import { getStorage } from "firebase/storage";
 
 /**
@@ -46,6 +46,16 @@ export const analytics =
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// `npm run dev:emulator`: everything is read from and written to Firebase's
+// emulators on this machine (`npm run emulators`, filled by
+// `npm run seed:emulator`), never the live project. Trying every screen as
+// every role against the live data spent the project's daily reads for every
+// church using it; the emulators have no quota and no congregation.
+if (import.meta.env.MODE === "emulator") {
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+  connectFirestoreEmulator(db, "127.0.0.1", 8085);
+}
 export const storage = getStorage(app);
 
 export default app;

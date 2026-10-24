@@ -137,6 +137,7 @@ async function main() {
     const batch = db.batch()
     access.docs.forEach((d) => batch.delete(d.ref))
     mocks.forEach((d) => batch.delete(d.ref))
+    mocks.forEach((d) => batch.delete(church.collection('memberPrivate').doc(d.id)))
     tasks.forEach((d) => batch.delete(d.ref))
     uids.forEach((uid) => batch.delete(church.collection('appAdmins').doc(uid)))
     await batch.commit()
@@ -203,10 +204,11 @@ async function main() {
 
     // The member record is what a ministry's permissions hang off. Updated in
     // place on a second run, so the roll never holds two of the same person.
+    // The email is how to reach them, so it is kept beside the record
+    // (lib/memberPrivate.js), not on it.
     const record = {
       firstName: 'Test',
       lastName: account.name,
-      email: account.email,
       uid: user.uid,
       ministries: account.ministries,
       tags: [],
@@ -218,8 +220,10 @@ async function main() {
     }
     const existing = existingByUid.get(user.uid)
     const memberId = existing ? existing.data().id : nextId++
-    if (existing) await existing.ref.update(record)
-    else await members.add({ ...record, id: memberId })
+    const memberRef = existing ? existing.ref : members.doc()
+    if (existing) await memberRef.update(record)
+    else await memberRef.set({ ...record, id: memberId })
+    await church.collection('memberPrivate').doc(memberRef.id).set({ email: account.email }, { merge: true })
 
     await church.collection('tasks').add({
       title: `Test task for the ${account.name.toLowerCase()}`,

@@ -75,6 +75,12 @@ const apiDevServer = (env) => ({
   name: 'uec-api-dev',
   apply: 'serve',
   configureServer(server) {
+    // Each church's installed app is described by /api/public (vercel.json
+    // rewrites /manifest.webmanifest there); the same here.
+    server.middlewares.use((req, res, next) => {
+      if (req.url.startsWith('/manifest.webmanifest')) req.url = req.originalUrl = '/api/public?manifest=1'
+      next()
+    })
     for (const [route, modulePath] of Object.entries(DEV_API_ROUTES)) {
       server.middlewares.use(route, async (req, res, next) => {
         // .env.local holds the service account and the API keys, but only
@@ -147,7 +153,16 @@ const { version } = JSON.parse(
 )
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => ({
+// `npm run dev:emulator` (mode emulator): the API routes the dev server runs
+// talk to the emulators too, as the browser does (src/api/firebase.js). The
+// Admin SDK reads these two the moment it starts.
+const emulatorEnv = (mode) => {
+  if (mode !== 'emulator') return
+  process.env.FIRESTORE_EMULATOR_HOST ||= '127.0.0.1:8085'
+  process.env.FIREBASE_AUTH_EMULATOR_HOST ||= '127.0.0.1:9099'
+}
+
+export default defineConfig(({ mode }) => (emulatorEnv(mode), {
   define: {
     __APP_VERSION__: JSON.stringify(version),
   },
@@ -160,23 +175,12 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['ekkly-mark.svg', 'ekkly-mark.png', 'icons/apple-touch-icon.png'],
-      // The platform's, for every church, until the manifest is served per
-      // church (TENANCY.md, "Not done yet").
-      manifest: {
-        name: 'Ekkly',
-        short_name: 'Ekkly',
-        description: 'Your church, in one app — people, gatherings, schedules, minutes and more.',
-        theme_color: '#1d64d8',
-        background_color: '#ffffff',
-        display: 'standalone',
-        start_url: '/',
-        icons: [
-          { src: '/icons/pwa-64x64.png', sizes: '64x64', type: 'image/png' },
-          { src: '/icons/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icons/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/icons/maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-        ],
-      },
+      // Not built here: each church's installed app has its own name, colour
+      // and logo, so the manifest is served per church by /api/public
+      // (`?manifest`, which vercel.json rewrites /manifest.webmanifest to;
+      // index.html links it). Ekkly's own is what that route answers on the
+      // platform's address.
+      manifest: false,
       workbox: {
         // mp3 for the app's few recorded sounds (src/assets/sounds), which are
         // small and should play offline like everything else.

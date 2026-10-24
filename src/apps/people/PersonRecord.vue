@@ -60,6 +60,12 @@ const { ministryMark, tagMark } = useLabelMarks()
 // the gate has to be here rather than in the router.
 const { canManage, canView } = usePermissions()
 const canEdit = computed(() => canManage('members'))
+// Someone may keep their own record up to date — their photo, birthday, how
+// to reach them — though not what it grants (MemberEditSheet's selfEdit
+// leaves the Church step out, and the database rules hold them to that).
+// Declared as a function of isMe, which is worked out further down.
+const canEditRecord = computed(() => canEdit.value || isMe.value)
+const selfEdit = computed(() => !canEdit.value && isMe.value)
 
 // Someone who may not see the roll can still open their own record (the
 // route's ownRecord), and the way out of it is then the home, not People.
@@ -148,7 +154,7 @@ onMounted(() => {
   // "Edit" on the People list's context menu arrives as ?edit=1. It is consumed
   // once and dropped from the URL: it says how you got here, not what the
   // record is, so a refresh or a back-and-forward should not re-open the form.
-  if (route.query.edit === '1' && canEdit.value) {
+  if (route.query.edit === '1' && canEditRecord.value) {
     openEditor()
     router.replace({ path: route.path, query: {} })
   }
@@ -384,7 +390,8 @@ const handleImageUpdate = async (base64Image) => {
     v-if="wide"
     :member="member ? localMember : null"
     :loading="loading"
-    :can-edit="canEdit"
+    :can-edit="canEditRecord"
+    :can-manage="canEdit"
     :is-me="isMe"
     :people-open="peopleOpen"
     :intro="introParts"
@@ -436,7 +443,7 @@ const handleImageUpdate = async (base64Image) => {
       </div>
 
       <button
-        v-if="member && canEdit"
+        v-if="member && canEditRecord"
         @click="openEditor()"
         class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
       >
@@ -495,7 +502,7 @@ const handleImageUpdate = async (base64Image) => {
               <!-- Always drawn, not revealed on hover: there is no hover on a
                    phone, and this was the only way to change a photo. -->
               <button
-                v-if="canEdit"
+                v-if="canEditRecord"
                 @click="showImageCropper = true"
                 aria-label="Change photo"
                 class="absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-white bg-primary p-1.5 text-white transition-colors hover:bg-primary-hover dark:border-gray-800"
@@ -570,7 +577,7 @@ const handleImageUpdate = async (base64Image) => {
               </div>
               <!-- Both details it asks for live on the Personal step. -->
               <button
-                v-if="canEdit"
+                v-if="canEditRecord"
                 @click="openEditor(1)"
                 class="shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-500/20"
               >
@@ -771,6 +778,7 @@ const handleImageUpdate = async (base64Image) => {
       :all-tags="allTags"
       :busy="savingEdit"
       :can-delete="canEdit"
+      :self-edit="selfEdit"
       @close="showEditor = false"
       @save="saveEdit"
       @delete="handleDelete"

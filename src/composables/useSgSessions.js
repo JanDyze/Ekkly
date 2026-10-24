@@ -1,4 +1,5 @@
 import { ref, watch, onUnmounted, unref } from 'vue'
+import { usePermissions } from './usePermissions'
 import {
   subscribeToGroupSessions,
   addSgSession,
@@ -30,7 +31,9 @@ export function useSgSessions(groupId) {
     (id) => {
       stop()
       sessions.value = []
-      if (!id) {
+      // What a group said and who came is read only by those who may see
+      // small groups (firestore.rules); anyone else would only be refused.
+      if (!id || !usePermissions().can('smallgroups.view')) {
         loading.value = false
         return
       }
@@ -76,7 +79,7 @@ export function useSessionPhotos(sessionId) {
     (id) => {
       stop()
       photos.value = []
-      if (!id) return
+      if (!id || !usePermissions().can('smallgroups.view')) return
       loading.value = true
       unsubscribe = subscribeToSessionPhotos(id, (data) => {
         photos.value = data
