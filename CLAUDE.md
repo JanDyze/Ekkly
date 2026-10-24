@@ -255,8 +255,8 @@ screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
    `AppSidePanel`'s shape, drawn by `DeskColumn`) and on a desktop it lays
    out the always-true card beside tiles for what needs you, over the
    sections as columns between rules. Events, Finances, Prayer, Minutes,
-   Inventory, Songs, Teaching, Small groups, Attendance and Schedules do;
-   Gallery, Presentation and Videos keep the board until theirs are worked
+   Inventory, Songs, Teaching, Small groups, Attendance, Schedules and
+   Gallery do; Presentation and Videos keep the board until theirs are worked
    out. People and Tasks keep their own (`PeopleDesk`, `TasksDesk`). One screen, the page never
    scrolling; a list holding more scrolls inside its panel. A card the side
    list already says is left off the desktop's deck (`wide`). A section on a

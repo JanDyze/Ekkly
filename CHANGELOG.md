@@ -11,6 +11,15 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.4] — 2026-10-24
+
+### Changed
+
+- The Gallery opens on a computer the way the other apps now do: the latest
+  albums, and for whoever puts photos up, the albums still waiting for them.
+- "See the app as Treasurer sees it" reads right for every ministry, teams
+  included (it said "as a Media").
+
 ## [0.37.3] — 2026-10-24
 
 On a computer, ten more apps open the way People does: what needs you at the

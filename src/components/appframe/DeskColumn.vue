@@ -13,7 +13,7 @@ import DateTile from './DateTile.vue'
 //
 // Rows are AppSidePanel's: { key, to?, title, line?, aside?, tone? } and one
 // picture, the first of `date` (with `weekday`, `past`, `highlight`),
-// `member`, `members`, `icon`. A row `{ key, heading }` is a small label over
+// `photo`, `member`, `members`, `icon`. A row `{ key, heading }` is a small label over
 // the rows under it.
 
 const props = defineProps({
@@ -84,6 +84,7 @@ const ROW = '-mx-3 flex min-w-0 items-center gap-3 rounded-xl px-3 py-2 transiti
             :class="[ROW, row.to ? 'hover:bg-gray-200/50 dark:hover:bg-white/5' : '']"
           >
             <DateTile v-if="row.date" :date="row.date" :weekday="row.weekday" :past="row.past" :highlight="row.highlight" />
+            <img v-else-if="row.photo" :src="row.photo" alt="" loading="lazy" class="size-10 shrink-0 rounded-xl object-cover" />
             <MemberAvatar v-else-if="row.member" :member="row.member" alt="" size="h-10 w-10" class="shrink-0" />
             <MemberAvatar v-else-if="(row.members || []).length" :member="row.members[0]" alt="" size="h-10 w-10" class="shrink-0" />
             <span

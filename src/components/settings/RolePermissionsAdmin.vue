@@ -214,7 +214,7 @@ const summary = computed(() => {
             @click="seeAsPicked"
           >
             <Eye class="h-4 w-4" />
-            See the app as a {{ picked }}
+            See the app as {{ picked }} sees it
           </button>
         </div>
 

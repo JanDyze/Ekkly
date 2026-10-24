@@ -25,7 +25,9 @@ const stop = () => {
     class="flex shrink-0 items-center justify-center gap-3 bg-amber-500 px-4 py-2 text-sm font-semibold text-white"
   >
     <Eye class="h-4 w-4 shrink-0" />
-    <span class="min-w-0 truncate">Seeing Ekkly as a {{ previewing }}</span>
+    <!-- "as Media sees it" reads for a team as well as "as Treasurer
+         sees it" does for a role; "as a Media" did not. -->
+    <span class="min-w-0 truncate">Seeing Ekkly as {{ previewing }} sees it</span>
     <button
       type="button"
       class="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-white/20 px-3 text-xs font-bold transition-colors hover:bg-white/30"

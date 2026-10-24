@@ -234,10 +234,33 @@ const simpleStats = computed(() => [
     ? [{ key: 'waiting', label: 'Waiting for photos', value: emptyAlbums.value.length, to: { name: 'GalleryWaiting' }, warn: waitingThisWeek.value.length > 0 }]
     : []),
 ])
+
+// On a desktop the sections show themselves (AppHome's `columns`): the latest
+// albums, and for whoever puts photos up, the albums still waiting for them.
+const columns = computed(() => [
+  { key: 'latest', title: 'Latest albums', to: { name: 'Gallery' }, rows: latestAlbums.value, empty: 'No photos yet.' },
+  ...(canEdit.value
+    ? [
+        {
+          key: 'waiting',
+          title: 'Waiting for photos',
+          to: { name: 'GalleryWaiting' },
+          rows: emptyAlbums.value.map((album) => ({
+            key: String(album.id),
+            icon: Camera,
+            title: album.title || 'Untitled',
+            line: album.date ? formatShortDate(album.date) : '',
+            to: albumLink(album),
+          })),
+          empty: 'Every album has its photos.',
+        },
+      ]
+    : []),
+])
 </script>
 
 <template>
-  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="gallery" label="Gallery this week" :doors="doors" name="Gallery">
+  <AppHome :columns="columns" :stats="simpleStats" :loading="loading" :cards="cards" scope="gallery" label="Gallery this week" :doors="doors" name="Gallery">
     <!-- 1. What matters this week, most important on top -->
     <template #card="{ card }">
       <!-- A gathering with no photos: its date, the way a calendar shows

@@ -743,7 +743,7 @@ Church Settings and the platform console share one layout. Copy
   never a grid of tick-boxes across columns, which on Settings' width
   scrolled sideways and had to be read off two axes at once.
 - **Roles** is edited one ministry at a time, with a sentence over it saying
-  what the ministry adds up to, and "See the app as a …": the administrator
+  what the ministry adds up to, and "See the app as … sees it": the administrator
   is shown the app as that ministry is (`seeAs` in `usePermissions`), with an
   amber bar over every screen to stop (`SeeAsBar`). Only the screens follow;
   the database still knows them as an administrator.
