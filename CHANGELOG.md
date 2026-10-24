@@ -11,6 +11,26 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.1] — 2026-10-24
+
+Roles are set one ministry at a time, and an administrator can see the app
+exactly as a ministry does before trusting it to them.
+
+### Added
+
+- **See the app as a ministry** (Settings → Roles): an administrator is
+  shown Ekkly as that ministry's people are, with a bar across the top to
+  stop. Nothing is changed for anyone else.
+
+### Changed
+
+- **Roles** is set one ministry at a time: each part of the app is Nothing,
+  See or Change, under a sentence saying what the ministry can do. It used to
+  be a grid of tick-boxes that scrolled sideways.
+- Settings uses the whole width, without the people list down the side.
+- Account links say what each person's link gives them (their ministries,
+  or Administrator), and the buttons beside them say what they do.
+
 ## [0.37.0] — 2026-10-24
 
 What each ministry may see is now kept by the database itself, not only by

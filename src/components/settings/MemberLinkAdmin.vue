@@ -277,27 +277,39 @@ const handleDemote = async (admin) => {
             <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
               {{ getFullName(member) }}
             </p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 inline-flex items-center gap-1">
-              <UserCheck class="h-3 w-3" /> linked
+            <!-- What the link gives them: their ministries, or that they
+                 administer the church, which gives everything. -->
+            <p class="text-xs text-gray-500 dark:text-gray-400 inline-flex items-center gap-1 truncate max-w-full">
+              <UserCheck class="h-3 w-3 shrink-0" />
+              <span class="truncate">{{
+                adminUids.has(member.uid)
+                  ? 'Administrator'
+                  : (member.ministries || []).length
+                    ? member.ministries.join(', ')
+                    : 'Linked, no ministry'
+              }}</span>
             </p>
           </div>
+          <!-- Words, not bare icons: a shield and a broken link were
+               guesswork for what each would do to someone's access. -->
           <button
             v-if="!adminUids.has(member.uid)"
             @click="handlePromote(member)"
             :disabled="busyId === memberKey(member)"
-            class="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-50"
+            class="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-gray-600 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-50 dark:text-gray-300"
             :aria-label="`Make ${getFullName(member)} an administrator`"
-            title="Make administrator"
           >
             <ShieldCheck class="h-4 w-4" />
+            <span class="hidden sm:inline">Make admin</span>
           </button>
           <button
             @click="handleUnlink(member)"
             :disabled="busyId === memberKey(member)"
-            class="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+            class="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-gray-600 hover:bg-red-50 hover:text-red-600 dark:text-gray-300 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
             :aria-label="`Unlink ${getFullName(member)}`"
           >
             <Link2Off class="h-4 w-4" />
+            <span class="hidden sm:inline">Unlink</span>
           </button>
         </li>
       </ul>
@@ -324,10 +336,11 @@ const handleDemote = async (admin) => {
           <button
             @click="handleDemote(admin)"
             :disabled="busyId === admin.uid"
-            class="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+            class="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-gray-600 hover:bg-red-50 hover:text-red-600 dark:text-gray-300 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
             :aria-label="`Remove ${admin.email} as administrator`"
           >
             <UserX class="h-4 w-4" />
+            <span class="hidden sm:inline">Remove admin</span>
           </button>
         </li>
       </ul>

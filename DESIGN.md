@@ -427,6 +427,7 @@ Route `meta` options that change the shell:
 | `hideTopbar: true` | Top bar hidden, people rail kept | A page with its own header that you still browse from (Bible) |
 | `frame: 'app'` | Top bar kept on every screen (its mark a back arrow to all apps, then the trail of how deep you are); no people rail. The app's home is a launcher (`AppHome`: its deck, then its `AppShortcut`s) and every screen sits in `AppScreen`, from `src/components/appframe/` | An app of its own inside Ekkly (Schedules, People). One centred column on every section; sections are a step off the home, not tabs, and the way back up is the top bar's mark (a section has no back arrow of its own). A screen never scrolls as a page: its header (name, buttons) stands still and only the content under it scrolls (`AppScreen`). On a desktop the home is a board like the home of all apps': the always-true card over the sections down the left, Needs attention and Good to know as the phone's cards, and the app's side list (`AppSidePanel`) on the right, on plain ground, never scrolling. A section on a desktop has the app's rail down its left (`AppRail`): the way home in the church's colour, then every section as its card, the open one ringed. A section is laid out for the desktop's width with `AppScreen`'s `desk`: its `ListGroup`s lay their rows out as cards across it (`deskGrid.js`'s `DESK_ROWS`, which a screen's own list can use too; `flat` keeps a group one block), a list of records with several facts each is a `DeskTable` (columns under names that stay in view, dropping the least needed as the screen narrows: Everyone, Tasks, the book); where a screen is mostly its table, the page holds still and the table scrolls its own rows under its headings (`AppScreen`'s `fill` with `DeskTable`'s `fill`, People's tables), and a short table never scrolls sideways, and a record or a workspace is two or three columns (a person, an item, a group, a sermon, a month's video). A phone's screen is unchanged |
 | `root: true` | Unpadded, people rail kept | The home of all apps only |
+| `noRail: true` | Top bar and padding kept; no people rail | A page whose own columns need the width: Settings, its list beside the open section |
 | `ownLayout: true` | Top bar kept; unpadded; no people rail | A page with a column of its own down the side that needs the width (All apps on a desktop; on a phone it asks for focus with `useFocusMode`) |
 
 ## Anatomy of a list page
@@ -721,7 +722,8 @@ Church Settings and the platform console share one layout. Copy
 - **Phone:** a list of sections grouped under small headings. Each row shows an
   icon, a label, and a status line that says where the section stands ("2
   requests waiting"). Use amber for a status that needs action.
-- **Desktop:** the list down the side, with the open section beside it.
+- **Desktop:** the list down the side, with the open section beside it, and
+  no people rail (`meta.noRail`), so a section has the width for its tables.
 - **URL:** the open section lives in `?section=`, so back, refresh and a shared
   link all land in the same place.
 - **Cards:** each section is built from
@@ -736,6 +738,15 @@ Church Settings and the platform console share one layout. Copy
   nothing to type beside it — a logo, a switch — still saves on the spot.
 - **Switches:** on/off settings use
   [ToggleSwitch](src/components/common/ToggleSwitch.vue).
+- **A choice of a few levels** (Roles: Nothing, See, Change) is a row of
+  buttons in one grey track, `role="radiogroup"`, the chosen one filled —
+  never a grid of tick-boxes across columns, which on Settings' width
+  scrolled sideways and had to be read off two axes at once.
+- **Roles** is edited one ministry at a time, with a sentence over it saying
+  what the ministry adds up to, and "See the app as a …": the administrator
+  is shown the app as that ministry is (`seeAs` in `usePermissions`), with an
+  amber bar over every screen to stop (`SeeAsBar`). Only the screens follow;
+  the database still knows them as an administrator.
 
 ### Toolbar
 

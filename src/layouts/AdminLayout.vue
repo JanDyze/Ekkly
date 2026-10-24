@@ -12,6 +12,7 @@ import { useLiveSky } from '../composables/useLiveSky'
 import { themeOverride } from '../composables/useTheme'
 import { useSimpleView } from '../composables/useSimpleView'
 import SimpleSidebar from '../components/simple/SimpleSidebar.vue'
+import SeeAsBar from '../components/common/SeeAsBar.vue'
 
 // The heartbeat belongs to the signed-in shell rather than to any one panel:
 // this layout only exists while someone is authenticated, and unmounting it
@@ -85,6 +86,12 @@ const isApp = computed(() => route.matched.some((record) => record.meta?.frame =
 const isOwnLayout = computed(() => Boolean(route.meta?.ownLayout))
 const bare = computed(() => isFocus.value || isApp.value || isOwnLayout.value)
 
+// A page that keeps the usual padding but needs the rail's width for its own
+// columns (meta.noRail): Settings, a list of sections beside the open one,
+// whose tables and grids had a narrow column left between the list and the
+// people.
+const hidesRail = computed(() => bare.value || Boolean(route.meta?.noRail))
+
 // The home of all apps lays itself out, edge to edge, like an app's home.
 const isRoot = computed(() => Boolean(route.meta?.root))
 
@@ -123,6 +130,9 @@ const KEPT_ALIVE = ['PeopleEveryone', 'SongsAll']
            leaving the section's own back arrow, but it carries the trail of
            how deep you are now (useTrail), which goes up to any level at
            once where a section's arrow goes up one. -->
+      <!-- Over everything else while an administrator sees the app as a
+           ministry does (Settings → Roles), with the way back. -->
+      <SeeAsBar />
       <div v-show="!isFocus && !hidesTopbar" class="contents">
         <Topbar />
       </div>
@@ -163,7 +173,7 @@ const KEPT_ALIVE = ['PeopleEveryone', 'SongsAll']
 
     <!-- People rail - wide screens; a drawer everywhere else. A focus route
          is a task, so the live presence list sits it out too. -->
-    <div v-show="!bare" class="contents">
+    <div v-show="!hidesRail" class="contents">
       <RightSidebar />
     </div>
 

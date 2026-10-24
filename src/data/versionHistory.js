@@ -8,6 +8,17 @@
 
 export const versionHistory = [
   {
+    version: '0.37.1',
+    date: '2026-10-24',
+    title: 'Roles, made plain',
+    summary: 'Set what each ministry can do one ministry at a time, and see the app as they do.',
+    highlights: [
+      'Each part of the app: Nothing, See or Change.',
+      'See the app as a ministry before trusting it to them.',
+      'Settings uses the whole width of the screen.',
+    ],
+  },
+  {
     version: '0.37.0',
     date: '2026-10-24',
     title: 'Kept for the right people',

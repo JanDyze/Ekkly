@@ -255,7 +255,7 @@ const churchRoutes = [
       {
         path: 'settings',
         name: 'Settings',
-        meta: { adminOnly: true },
+        meta: { adminOnly: true, noRail: true },
         component: () => import('../views/Settings.vue')
       }
     ]

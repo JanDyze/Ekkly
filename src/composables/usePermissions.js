@@ -63,12 +63,14 @@ export const initPermissions = () => {
  */
 const asked = new Set()
 const watchStoredCaps = () => {
+  // Not while an administrator is seeing the app as a ministry: the screens
+  // then follow the ministry on purpose, and the rules still let them in.
   const { storedCaps, isGranted } = useChurchAccess()
   const { isAdmin, capabilities } = usePermissions()
   watch(
     () => [isGranted.value, isAdmin.value, storedCaps.value, [...capabilities.value].sort().join(' ')],
     ([granted, admin, stored, mine]) => {
-      if (!granted || admin) return
+      if (!granted || admin || seeingAs.value) return
       if (stored && [...stored].sort().join(' ') === mine) return
       if (asked.has(mine)) return
       asked.add(mine)
@@ -92,12 +94,46 @@ const watchStoredCaps = () => {
  */
 const OPEN_ACCESS = false
 
+/*
+ * Seeing the app as a ministry sees it (Settings → Roles, "See the app as"):
+ * an administrator, otherwise let through everything, is shown exactly the
+ * screens and buttons the ministry's people are — the way to check a role
+ * without signing in as one of them. Only what is shown changes: the
+ * database still knows them as the administrator they are. Kept for the
+ * tab's session, so a reload does not drop them back mid-check, and ended
+ * from the bar every screen shows meanwhile (SeeAsBar).
+ */
+const SEE_AS_KEY = 'ekkly:seeAs'
+const readSeeAs = () => {
+  try {
+    return sessionStorage.getItem(SEE_AS_KEY) || ''
+  } catch {
+    return ''
+  }
+}
+const seeingAs = ref(readSeeAs())
+
+/** Starts seeing the app as `ministry`, or stops with ''. */
+export const seeAs = (ministry) => {
+  seeingAs.value = ministry || ''
+  try {
+    if (ministry) sessionStorage.setItem(SEE_AS_KEY, ministry)
+    else sessionStorage.removeItem(SEE_AS_KEY)
+  } catch {
+    // The choice still holds for this page; only a reload forgets it.
+  }
+}
+
 export function usePermissions() {
   const { user } = useAuth()
 
-  const isAdmin = computed(
+  /** Whether this account administers the church, seeing-as or not. */
+  const isRealAdmin = computed(
     () => OPEN_ACCESS || Boolean(user.value && admins.value.some((a) => a.uid === user.value.uid))
   )
+  // Only an administrator can see the app as someone else.
+  const previewing = computed(() => (isRealAdmin.value ? seeingAs.value : ''))
+  const isAdmin = computed(() => isRealAdmin.value && !previewing.value)
 
   // Nobody holds the role yet. The bootstrap button that claims it lives in
   // Settings, so admin-only routes have to stay open while this is true or a
@@ -115,7 +151,9 @@ export function usePermissions() {
    * never from `tags`: tags are free text anyone with member-edit rights can
    * type, so honouring them here would let a label spell its way into a role.
    */
-  const myMinistries = computed(() => myMember.value?.ministries || [])
+  const myMinistries = computed(() =>
+    previewing.value ? [previewing.value] : myMember.value?.ministries || []
+  )
 
   const capabilities = computed(() => {
     const granted = new Set(BASELINE_CAPABILITIES)
@@ -149,6 +187,8 @@ export function usePermissions() {
 
   return {
     isAdmin,
+    isRealAdmin,
+    previewing,
     hasNoAdmins,
     myMember,
     myMinistries,
