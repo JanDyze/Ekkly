@@ -3,7 +3,9 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Moon, Sun } from '../icons'
 import GoogleSignInButton from '../components/auth/GoogleSignInButton.vue'
+import TestSignIn from '../components/auth/TestSignIn.vue'
 import { useAppSettings } from '../composables/useAppSettings'
+import { useAuth } from '../composables/useAuth'
 import { useTheme } from '../composables/useTheme'
 import { useToast } from '../composables/useToast'
 import bundledHero from '../assets/hero-cover.webp'
@@ -19,10 +21,14 @@ import bundledHero from '../assets/hero-cover.webp'
 //
 // Wide screens get the same picture rather than a split, for the same reason —
 // half a screen of white holding one button is a panel with nothing in it.
+//
+// The one exception is TestSignIn, folded under the button in development, for
+// signing in as each role's test account in turn (see authService).
 
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const { testSignInEnabled } = useAuth()
 
 const { church: churchInfo, logoUrl, landing } = useAppSettings()
 const { isDark, toggleTheme } = useTheme()
@@ -143,6 +149,14 @@ const handleSignedIn = (user) => {
         <div class="rise" style="--d: 560ms">
           <GoogleSignInButton @signed-in="handleSignedIn" @error="fail($event)" />
         </div>
+
+        <TestSignIn
+          v-if="testSignInEnabled"
+          class="rise mt-5"
+          style="--d: 600ms"
+          @signed-in="handleSignedIn"
+          @error="fail($event)"
+        />
 
         <!-- What the removed "create one" link used to answer. -->
         <p

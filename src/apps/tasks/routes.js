@@ -22,7 +22,8 @@ export const tasksRoutes = [
       {
         path: 'mine',
         name: 'TasksMine',
-        meta: { art: 'tasks-mine', title: 'Mine', depth: 1 },
+        // mine: open to whoever is given a task, without tasks.view.
+        meta: { art: 'tasks-mine', title: 'Mine', depth: 1, mine: true },
         component: () => import('./TasksList.vue'),
       },
       {

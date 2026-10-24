@@ -11,6 +11,7 @@ import { memberKey } from '../utils/sgUtils'
 import { isAssignedTo, isDueToday, isOverdue } from '../utils/taskUtils'
 import { isCalledOff } from '../../lib/eventStatus'
 import { isRecorded } from '../../lib/attendance'
+import { capabilityAppEnabled } from './useChurchApps'
 
 // What is true across every app today, for the home of all apps (Apps.vue):
 // whose birthday it is, when you are next serving, what is on, what you owe,
@@ -96,8 +97,11 @@ export function useToday() {
 
   /* --------------------------------------------------------------- tasks */
 
+  // Whoever is given a task sees it, whether or not they may look at the
+  // church's other tasks: tasks.view is for the whole list, and "My tasks"
+  // opens without it (meta.mine). Only a church without the app has none.
   const myTasks = computed(() => {
-    if (!can('tasks.view') || !myMember.value) return []
+    if (!capabilityAppEnabled('tasks.view') || !myMember.value) return []
     const id = memberKey(myMember.value)
     return tasks.value.filter((task) => !task.done && isAssignedTo(task, id))
   })

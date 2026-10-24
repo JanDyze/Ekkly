@@ -174,10 +174,25 @@ const doors = computed(() => {
 })
 
 const FACES = 6
+
+// Simple view's figures (AppHome's `stats`), each opening what it counts.
+const simpleStats = computed(() => [
+  {
+    key: 'reach',
+    label: stats.value.reach ? `Came in ${stats.value.reach.monthLabel}` : 'Came this month',
+    value: stats.value.reach?.count ?? 0,
+    to: { name: 'AttendanceMonths' },
+  },
+  ...(canRecord.value
+    ? [{ key: 'owed', label: 'To record', value: awaiting.value.length, to: { name: 'AttendanceOwed' }, warn: awaiting.value.length > 0 }]
+    : []),
+  { key: 'recorded', label: 'Gatherings counted', value: recorded.value.length, to: { name: 'Attendance' } },
+  { key: 'quiet', label: 'Not seen lately', value: quietPeople.value.length, to: { name: 'AttendanceQuiet' } },
+])
 </script>
 
 <template>
-  <AppHome :cards="cards" scope="attendance" label="Attendance today" :doors="doors" name="Attendance">
+  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="attendance" label="Attendance today" :doors="doors" name="Attendance">
     <!-- 1. What matters about attendance, most important on top -->
     <template #card="{ card }">
       <!-- A gathering still to count: its date, the way a calendar shows it. -->

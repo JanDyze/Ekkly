@@ -212,7 +212,9 @@ const sexes = computed(() => {
 // its column pads by the same amount and never scrolls sideways, so that
 // reach is never a sliver of sideways scroll.
 const COLUMN = 'flex min-h-0 min-w-0 flex-col px-7 first:pl-0 last:pr-0'
-const HEAD = 'group flex shrink-0 items-center justify-between gap-3 pb-3'
+// Padded a little past its words, and rounded, so the focus ring has room
+// round "Birthdays" and "See all" rather than touching them.
+const HEAD = 'group -mx-2 -mt-1 mb-2 flex shrink-0 items-center justify-between gap-3 rounded-lg px-2 py-1'
 const ROW = '-mx-3 flex items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-gray-200/50 dark:hover:bg-white/5'
 </script>
 

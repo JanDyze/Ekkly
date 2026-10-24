@@ -889,7 +889,9 @@ let appsObserver = null
 watch(appsList, (list) => {
   appsObserver?.disconnect()
   const el = list?.$el
-  if (el && typeof ResizeObserver !== 'undefined') {
+  // A component's $el is the comment Vue leaves while it renders nothing
+  // (simple view, or on the way out), which ResizeObserver refuses.
+  if (el instanceof Element && typeof ResizeObserver !== 'undefined') {
     appsObserver = new ResizeObserver(measureApps)
     appsObserver.observe(el)
     ;[...el.children].forEach((child) => appsObserver.observe(child))

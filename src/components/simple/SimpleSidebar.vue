@@ -33,6 +33,8 @@ const sections = computed(() =>
   (app.value?.children || [])
     .filter((child) => child.name && child.meta?.depth === 1 && child.meta?.title)
     .filter((child) => !child.meta.capability || can(child.meta.capability))
+    // As AppRail: only "My tasks" for someone let into that screen alone.
+    .filter((child) => child.meta.mine || !app.value.meta?.capability || can(app.value.meta.capability))
     .map((child) => ({ key: child.name, name: child.meta.title, to: { name: child.name }, art: child.meta.art || '' }))
 )
 

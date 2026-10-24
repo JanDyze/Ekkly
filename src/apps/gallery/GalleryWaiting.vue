@@ -96,7 +96,7 @@ const openAlbum = (album) => router.push({ name: 'GalleryAlbum', params: { id: a
 
       <div
         v-if="loading"
-        class="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70"
+        class="rows-round divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70"
       >
         <div v-for="i in 5" :key="i" class="flex items-center gap-3 px-3 py-2 sm:px-4">
           <div class="h-9 w-9 shrink-0 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-600"></div>

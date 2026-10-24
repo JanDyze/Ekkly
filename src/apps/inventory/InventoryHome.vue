@@ -256,10 +256,20 @@ const doors = computed(() => {
       : []),
   ]
 })
+
+// Simple view's figures (AppHome's `stats`), each opening what it counts,
+// and its one action.
+const simpleStats = computed(() => [
+  { key: 'items', label: 'Things', value: counts.value.items, note: `${counts.value.pieces.toLocaleString()} pieces`, to: { name: 'InventoryAll' } },
+  { key: 'out', label: 'Out on loan', value: counts.value.out, to: { name: 'InventoryBorrowed' }, warn: overdue.value.length > 0 },
+  { key: 'repair', label: 'Needs repair', value: needsRepair.value.length, to: { name: 'InventoryRepair' } },
+  { key: 'value', label: 'Worth', value: `₱${Math.round(counts.value.value / 100).toLocaleString()}`, to: { name: 'InventoryAll' } },
+])
+const simpleAction = computed(() => (canEdit.value ? { label: 'New item', to: { name: 'InventoryAdd' } } : null))
 </script>
 
 <template>
-  <AppHome :cards="cards" scope="inventory" label="Inventory this week" :doors="doors" name="Inventory">
+  <AppHome :stats="simpleStats" :action="simpleAction" :loading="loading" :cards="cards" scope="inventory" label="Inventory this week" :doors="doors" name="Inventory">
     <!-- 1. What needs doing, most important on top -->
     <template #card="{ card }">
       <!-- Loans: which things, and who has them. -->

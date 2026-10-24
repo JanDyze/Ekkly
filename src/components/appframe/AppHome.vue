@@ -4,7 +4,9 @@ import AppScreen from './AppScreen.vue'
 import AppHeroDeck from './AppHeroDeck.vue'
 import AppShortcuts from './AppShortcuts.vue'
 import PanelRest from '../home/PanelRest.vue'
+import SimpleAppHome from '../simple/SimpleAppHome.vue'
 import { useMediaQuery } from '../../composables/useMediaQuery'
+import { useSimpleView } from '../../composables/useSimpleView'
 
 // An app's home: on a phone, its deck over its sections (the standard every
 // app keeps, CLAUDE.md "Adding an app"); on a desktop, a board laid out the
@@ -29,6 +31,11 @@ import { useMediaQuery } from '../../composables/useMediaQuery'
 //
 // The cards are the app's own, drawn by its `card` slot as the deck draws
 // them, so an app moves to this by handing over what it handed the deck.
+//
+// In simple view (Preferences) none of that: the same cards, doors and side
+// list as a plain dashboard (SimpleAppHome), with the app's `stats` across
+// the top and its main `action` beside its name. Every app on AppHome is in
+// simple view through this, so none is left showing its full home there.
 
 defineProps({
   cards: { type: Array, required: true },
@@ -39,16 +46,36 @@ defineProps({
   // The sections (AppShortcuts' `doors`), and the app's name for them.
   doors: { type: Array, required: true },
   name: { type: String, required: true },
+  // Simple view's figures ([{ key, label, value, to, warn?, note? }]) and main
+  // action ({ label, to }); the full home has its deck and doors instead.
+  stats: { type: Array, default: () => [] },
+  action: { type: Object, default: null },
+  loading: { type: Boolean, default: false },
 })
 
 const wide = useMediaQuery('(min-width: 1024px)')
+const { simpleView } = useSimpleView()
 
 // The tones the dismiss button sits on in white (as the deck's does).
 const DISMISS_LIGHT = ['accent', 'celebrate']
 </script>
 
 <template>
-  <AppScreen :board="wide">
+  <SimpleAppHome
+    v-if="simpleView"
+    :name="name"
+    :cards="cards"
+    :doors="doors"
+    :stats="stats"
+    :action="action"
+    :loading="loading"
+  >
+    <template v-if="$slots.side" #side>
+      <slot name="side" />
+    </template>
+  </SimpleAppHome>
+
+  <AppScreen v-else :board="wide">
     <div v-if="!wide" class="flex flex-col gap-4">
       <AppHeroDeck :cards="cards" :scope="scope" :label="label" >
         <template #card="slot">

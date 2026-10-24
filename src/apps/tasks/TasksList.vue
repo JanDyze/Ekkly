@@ -412,7 +412,7 @@ const emptyLine = computed(() => {
               </h2>
               <div
                 :class="[
-                  'divide-y overflow-hidden rounded-2xl bg-white ring-1 dark:bg-gray-800',
+                  'rows-round divide-y overflow-hidden rounded-2xl bg-white ring-1 dark:bg-gray-800',
                   group.key === 'overdue'
                     ? 'divide-red-100 ring-red-200 dark:divide-red-900/40 dark:ring-red-900/50'
                     : 'divide-gray-100 ring-gray-200/70 dark:divide-gray-700/60 dark:ring-gray-700/70',
@@ -449,7 +449,7 @@ const emptyLine = computed(() => {
               </button>
               <div
                 v-if="mode === 'done' || showDone"
-                class="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70"
+                class="rows-round divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70"
               >
                 <TaskListItem
                   v-for="task in doneShown"

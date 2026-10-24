@@ -477,7 +477,7 @@ const copyLyrics = async (song) => {
           <!-- Loading: shaped like the rows it is standing in for -->
           <div
             v-if="isLoading"
-            class="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70"
+            class="rows-round divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70"
           >
             <div v-for="i in 8" :key="i" class="flex items-center gap-3 px-4 py-3">
               <div class="h-10 w-16 shrink-0 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-600"></div>
@@ -647,7 +647,7 @@ const copyLyrics = async (song) => {
                 <span class="text-xs font-semibold tabular-nums text-gray-400 dark:text-gray-500">{{ youtubeResults.length }}</span>
               </div>
 
-              <div class="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70">
+              <div class="rows-round divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70">
                 <p v-if="youtubeResults.length === 0" class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                   Nothing on YouTube for "{{ youtubeQuery }}".
                 </p>

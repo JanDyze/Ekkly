@@ -70,6 +70,26 @@
   }
 }
 
+/* rows-round goes on a block of rows that clips at its rounded corners
+   (ListGroup, SimpleRows): its first and last rows take its corners. The
+   focus ring is drawn just inside a row (:focus-visible, below), so on a
+   square row it ran into the block's curve and its corners were shaved off;
+   a row with the block's corners has a ring that follows them. */
+@utility rows-round {
+  & > :first-child {
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+  }
+  & > :last-child {
+    border-bottom-left-radius: inherit;
+    border-bottom-right-radius: inherit;
+  }
+  /* A list's row is often a link or a button inside its <li>. */
+  & > li > :where(a, button) {
+    border-radius: inherit;
+  }
+}
+
 /* Theme colors */
 @theme {
   --color-primary: #1d64d8;
@@ -285,6 +305,23 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: -2px;
+}
+
+/* Except a link that is only words ("See all", "Open calendar"): drawn
+   inside, the ring ran through its letters. It has no edge of its own to be
+   clipped at, so it is ringed just outside, with the corners a little
+   rounded. Such links are the ones underlined on hover. */
+[class*='hover:underline']:focus-visible {
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* And a button in the church's colour ("Add person", "New task"): a ring in
+   that same colour drawn inside it could not be seen at all. White, a step
+   further in, so the button's own edge still shows round it. */
+.bg-primary:focus-visible {
+  outline-color: #fff;
+  outline-offset: -4px;
 }
 
 /* A field's focus ring (focus:ring-2, on nearly every input) drawn inside it,

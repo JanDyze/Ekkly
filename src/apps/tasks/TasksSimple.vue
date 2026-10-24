@@ -86,10 +86,10 @@ const list = computed(() =>
             v-for="stat in stats"
             :key="stat.key"
             :to="stat.to"
-            class="flex flex-col rounded-xl bg-white p-5 ring-1 ring-gray-200 transition-colors hover:ring-gray-300 dark:bg-gray-800 dark:ring-gray-700 dark:hover:ring-gray-600"
+            class="flex min-w-0 flex-col rounded-xl bg-white p-5 ring-1 ring-gray-200 transition-colors hover:ring-gray-300 dark:bg-gray-800 dark:ring-gray-700 dark:hover:ring-gray-600"
           >
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ stat.label }}</span>
-            <span :class="['mt-2 text-3xl font-bold tabular-nums', stat.warn ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white']">
+            <span :class="['mt-2 truncate text-2xl font-bold tabular-nums sm:text-3xl', stat.warn ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white']">
               {{ loading ? '–' : stat.value.toLocaleString() }}
             </span>
             <span class="mt-auto flex items-center gap-1 pt-3 text-sm font-semibold text-primary dark:text-primary-light">
@@ -99,7 +99,7 @@ const list = computed(() =>
           </RouterLink>
         </section>
 
-        <div class="grid gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-2 lg:grid-rows-[minmax(0,1fr)]">
+        <div class="grid grid-cols-[minmax(0,1fr)] gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-2 lg:grid-rows-[minmax(0,1fr)]">
           <section aria-labelledby="tasks-simple-needs" class="flex min-h-0 flex-col">
             <h2 id="tasks-simple-needs" class="mb-3 text-base font-semibold text-gray-900 dark:text-white">Needs your attention</h2>
             <SimpleRows :rows="needs" class="min-h-0 lg:overflow-y-auto">

@@ -251,10 +251,18 @@ const doors = computed(() => {
       : []),
   ]
 })
+
+// Simple view's figures (AppHome's `stats`), each opening what it counts.
+const simpleStats = computed(() => [
+  { key: 'songs', label: 'Songs', value: songs.value.length, to: { name: 'SongList' } },
+  { key: 'sung', label: 'Sung this year', value: sungThisYear.value, to: { name: 'SongsSung' } },
+  { key: 'sundays', label: 'Sundays planned', value: comingSets.value.length, to: { name: 'SongsSunday' } },
+  { key: 'lyrics', label: 'Without lyrics', value: withoutLyrics.value.length, to: { name: 'SongsLyrics' } },
+])
 </script>
 
 <template>
-  <AppHome :cards="cards" scope="songs" label="Songs this week" :doors="doors" name="Songs">
+  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="songs" label="Songs this week" :doors="doors" name="Songs">
     <!-- 1. What the songs need this week, most important on top -->
     <template #card="{ card }">
       <!-- This week's Sunday, dated the way a calendar shows it, its

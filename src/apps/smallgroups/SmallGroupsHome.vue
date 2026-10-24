@@ -223,10 +223,20 @@ const doors = computed(() => [
   ...(can('members.view') ? [{ key: 'unplaced', title: 'Not in a group', art: 'smallgroups-unplaced', to: { name: 'SmallGroupsUnplaced' } }] : []),
   { key: 'forms', title: 'Forms', art: 'smallgroups-forms', to: { name: 'SmallGroupsForms' } },
 ])
+
+// Simple view's figures (AppHome's `stats`), each opening what it counts.
+const simpleStats = computed(() => [
+  { key: 'groups', label: 'Groups meeting', value: active.value.length, to: { name: 'SmallGroupsAll' } },
+  { key: 'week', label: 'Met this week', value: thisWeek.value.length, to: { name: 'SmallGroupsSessions' } },
+  ...(unlogged.value.length
+    ? [{ key: 'unlogged', label: 'Meetings to log', value: unlogged.value.length, to: { name: 'SmallGroupsSessions' }, warn: true }]
+    : []),
+  { key: 'unplaced', label: 'Not in a group', value: ungrouped.value.length, to: { name: 'SmallGroupsUnplaced' } },
+])
 </script>
 
 <template>
-  <AppHome :cards="cards" scope="smallgroups" label="Small groups this week" :doors="doors" name="Small groups">
+  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="smallgroups" label="Small groups this week" :doors="doors" name="Small groups">
     <!-- 1. What needs doing, most important on top -->
     <template #card="{ card }">
       <DeckCard

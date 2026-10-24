@@ -191,7 +191,7 @@ const onCreate = (details) => {
           <div
             v-if="group.rows.length"
             :class="[
-              'divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70',
+              'rows-round divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70',
               group.covers.length ? 'mt-2' : '',
             ]"
           >

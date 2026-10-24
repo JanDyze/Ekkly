@@ -466,7 +466,11 @@ const createChurchRouter = () => {
         to.meta.ownRecord &&
         myMember.value &&
         [myMember.value.id, myMember.value.firestoreId].map(String).includes(String(to.params.id))
-      if (capability && !can(capability) && !own) return { path: HOME, query: { denied: to.path } }
+      // And a screen of someone's own things (meta.mine, "My tasks") opens
+      // for anyone in the church: being given a task is reason enough to see
+      // it, without leave to read everyone else's.
+      const mine = to.matched.some((record) => record.meta.mine)
+      if (capability && !can(capability) && !own && !mine) return { path: HOME, query: { denied: to.path } }
     }
 
     return true

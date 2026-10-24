@@ -257,10 +257,24 @@ const doors = computed(() => {
     { key: 'calendar', title: 'What’s taught', art: 'teaching-calendar', to: { name: 'TeachingCalendar' } },
   ]
 })
+
+// Simple view's figures (AppHome's `stats`), each opening what it counts.
+const simpleStats = computed(() => [
+  { key: 'classes', label: 'Classes', value: activeClasses.value.length, to: { name: 'TeachingSchool' } },
+  { key: 'sundays', label: 'Sundays planned ahead', value: comingDates.value.length, to: { name: 'TeachingCalendar' } },
+  {
+    key: 'lessons',
+    label: 'Classes without a lesson',
+    value: classesWithoutLesson.value.length,
+    to: { name: 'TeachingCalendar' },
+    warn: classesWithoutLesson.value.length > 0,
+  },
+  { key: 'sermons', label: 'Messages to prepare', value: sermonsToWrite.value.length, to: { name: 'TeachingSermons' }, warn: sermonsToWrite.value.length > 0 },
+])
 </script>
 
 <template>
-  <AppHome :cards="cards" scope="teaching" label="Teaching this week" :doors="doors" name="Teaching">
+  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="teaching" label="Teaching this week" :doors="doors" name="Teaching">
     <!-- 1. What needs doing before Sunday, most important on top -->
     <template #card="{ card }">
       <!-- Your own message or lesson: the Sunday it is for. -->

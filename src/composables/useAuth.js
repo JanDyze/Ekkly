@@ -72,6 +72,8 @@ export function useAuth() {
     updateDisplayName,
     loginWithGoogle: authService.loginWithGoogle,
     consumePendingGoogleSignIn: authService.consumePendingGoogleSignIn,
+    loginWithPassword: authService.loginWithPassword,
+    testSignInEnabled: authService.testSignInEnabled,
     logout: authService.logout,
     getAuthErrorMessage: authService.getAuthErrorMessage,
   }

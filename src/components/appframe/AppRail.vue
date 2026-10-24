@@ -48,6 +48,9 @@ const sections = computed(() =>
   (app.value?.children || [])
     .filter((child) => child.name && child.meta?.depth === 1 && child.meta?.title)
     .filter((child) => !child.meta.capability || can(child.meta.capability))
+    // Someone let into one screen of an app only (meta.mine, "My tasks")
+    // is not shown the sections the app's own capability keeps from them.
+    .filter((child) => child.meta.mine || !app.value.meta?.capability || can(app.value.meta.capability))
     .map((child, index) => ({
       key: child.name,
       to: { name: child.name },

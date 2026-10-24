@@ -324,9 +324,15 @@ church.
   PayMongo's documentation but has not been run with real keys. Try it with the
   test keys and PayMongo's test cards before going live, including a card that
   asks for 3-D Secure, a declined card, and a renewal (the webhook).
-- **Roles.** `OPEN_ACCESS` in `usePermissions.js` still gives every member of a
-  church every page. Churches are separated from each other; ministries within a
-  church are not.
+- **Roles are enforced by the app, not the database.** `OPEN_ACCESS` is off, so
+  each ministry sees only the pages its capabilities open. But the Firestore
+  rules check only that someone belongs to the church, and the app loads the
+  whole roll (contact numbers and addresses included) for every member, so
+  anyone let in can read finances, prayer concerns, minutes and the directory
+  through the browser's developer tools. Churches are separated from each
+  other; ministries within a church are separated only on screen. Closing
+  this means rules that read the member's ministries and `rolePermissions`,
+  or moving the sensitive collections behind `api/` routes.
 - **Rules tests.** The rules have not been run against the Firestore emulator.
   Check them in the Firebase console's Rules Playground before real data goes in:
   - a non-member reading `churches/uec/members/x`: denied

@@ -225,10 +225,19 @@ const doors = computed(() => {
       : []),
   ]
 })
+
+// Simple view's figures (AppHome's `stats`), each opening what it counts.
+const simpleStats = computed(() => [
+  { key: 'albums', label: 'Albums', value: withPhotos.value.length, to: { name: 'Gallery' } },
+  { key: 'new', label: 'New photos', value: newPhotos.value.length, to: { name: 'GalleryRecent' } },
+  ...(canEdit.value
+    ? [{ key: 'waiting', label: 'Waiting for photos', value: emptyAlbums.value.length, to: { name: 'GalleryWaiting' }, warn: waitingThisWeek.value.length > 0 }]
+    : []),
+])
 </script>
 
 <template>
-  <AppHome :cards="cards" scope="gallery" label="Gallery this week" :doors="doors" name="Gallery">
+  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="gallery" label="Gallery this week" :doors="doors" name="Gallery">
     <!-- 1. What matters this week, most important on top -->
     <template #card="{ card }">
       <!-- A gathering with no photos: its date, the way a calendar shows

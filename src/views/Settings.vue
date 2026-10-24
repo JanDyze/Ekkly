@@ -373,7 +373,7 @@ const { open: openWhatsNew } = useVersionCheck()
              with rounded corners and a border needs room around it, and a
              phone has none to spare. From sm up it is a card again. -->
         <ul
-          class="divide-y divide-gray-100 border-y border-gray-200 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800 sm:overflow-hidden sm:rounded-xl sm:border"
+          class="rows-round divide-y divide-gray-100 border-y border-gray-200 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800 sm:overflow-hidden sm:rounded-xl sm:border"
         >
           <li v-for="item in group.items" :key="item.key">
             <button

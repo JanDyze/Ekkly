@@ -234,7 +234,7 @@ const ACTION =
       </div>
 
       <!-- A phone: the same rows, stacked. -->
-      <ul class="divide-y divide-gray-100 overflow-hidden rounded-xl bg-white ring-1 ring-gray-200 lg:hidden dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700">
+      <ul class="rows-round divide-y divide-gray-100 overflow-hidden rounded-xl bg-white ring-1 ring-gray-200 lg:hidden dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700">
         <li v-for="member in shown" :key="keyOf(member)" class="flex items-center gap-3 px-4 py-3">
           <RouterLink :to="recordOf(member)" class="flex min-w-0 flex-1 items-center gap-3">
             <MemberAvatar :member="member" alt="" size="h-10 w-10" class="shrink-0" />

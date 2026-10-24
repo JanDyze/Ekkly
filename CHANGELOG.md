@@ -11,6 +11,33 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.36.1] — 2026-10-24
+
+Simple view now reaches every app, and the keyboard's focus ring is drawn
+properly on every card and list. A task given to you is yours to see, even
+where your ministry cannot see the whole list.
+
+### Added
+
+- **Simple view in every app.** Each app's home is a plain dashboard there:
+  its figures, what needs you, what is good to know and its live list, with
+  its main action (New event, New request, New item) beside its name.
+- A test sign-in for whoever builds Ekkly, shown only on a development
+  server, to see the app as each ministry sees it.
+
+### Changed
+
+- **My tasks opens for anyone given a task**, without leave to read the
+  church's other tasks, and the home's task card shows them too.
+- The focus ring follows a list's rounded corners instead of being cut off,
+  sits outside a link that is only words, and shows on buttons in the
+  church's colour.
+
+### Fixed
+
+- Simple view's figures and lists no longer run off the edge of a phone.
+- An error on every app page from the home's app list.
+
 ## [0.36.0] — 2026-10-22
 
 Tickets: anyone in the church can now report a bug, suggest an idea, ask a

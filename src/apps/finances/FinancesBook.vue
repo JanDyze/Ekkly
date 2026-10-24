@@ -303,7 +303,7 @@ const closeSearch = () => {
     <!-- The entries, in one white block, each with its colour on its edge. -->
     <ul
       v-else
-      class="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70"
+      class="rows-round divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70"
     >
       <li
         v-for="{ entry, balance } in rows"

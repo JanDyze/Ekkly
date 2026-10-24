@@ -73,7 +73,7 @@ const dayLink = (date) => ({ name: 'Events', query: { date } })
         :data-day="row.day ? '' : undefined"
         :class="[
           'px-5',
-          row.day ? 'pt-3 pb-1 not-first:border-t not-first:border-gray-100 dark:not-first:border-white/10' : 'pb-1.5 last:pb-3',
+          row.day ? 'pt-3 pb-1 not-first:border-t not-first:border-gray-100 dark:not-first:border-white/10' : 'pb-0.5 last:pb-2',
           row.isToday ? 'bg-primary/[0.06] dark:bg-primary-light/10' : '',
         ]"
       >
@@ -87,7 +87,9 @@ const dayLink = (date) => ({ name: 'Events', query: { date } })
         >
           {{ row.label }}
         </RouterLink>
-        <RouterLink v-else :to="dayLink(row.date)" class="group flex min-w-0 items-baseline gap-3 text-sm">
+        <!-- Padded inside its own rounded box, so the focus ring (drawn just
+             inside it) has room round the words rather than touching them. -->
+        <RouterLink v-else :to="dayLink(row.date)" class="group -mx-2 flex min-w-0 items-baseline gap-3 rounded-lg px-2 py-0.5 text-sm">
           <span class="w-[4.5rem] shrink-0 text-xs tabular-nums text-gray-500 dark:text-gray-400">{{ formatTimeRange(row.event.time) || 'All day' }}</span>
           <span class="min-w-0 truncate font-medium text-gray-900 group-hover:underline dark:text-gray-100">{{ row.event.title || 'A gathering' }}</span>
         </RouterLink>

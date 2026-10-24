@@ -38,7 +38,7 @@ const songPage = (song) => ({ name: 'SongDetails', params: { id: song.id } })
     <div class="flex flex-col gap-5">
       <div
         v-if="loading"
-        class="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70"
+        class="rows-round divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70"
       >
         <div v-for="i in 8" :key="i" class="flex items-center gap-3 px-4 py-3">
           <div class="h-10 w-16 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-600" />

@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppArt from '../common/AppArt.vue'
 import MemberAvatar from '../members/MemberAvatar.vue'
@@ -38,6 +38,11 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
 })
 
+// Inside an app's simple home (SimpleAppHome) the same list is drawn the way
+// simple view draws every list (SimpleRows): a heading over one white block of
+// larger lines, and no doodle in the room under a few.
+const simple = inject('simpleHome', false)
+
 const items = computed(() => props.rows.filter((row) => !row.heading))
 const people = (row) => (row.members || []).filter(Boolean)
 
@@ -51,7 +56,69 @@ const ASIDE = {
 </script>
 
 <template>
-  <section class="@container flex min-h-[9rem] flex-1 flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-800/70 dark:ring-white/10">
+  <section v-if="simple" class="flex min-h-0 flex-col">
+    <div class="mb-3 flex items-center justify-between gap-3">
+      <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ title }}</h2>
+      <RouterLink
+        v-if="link"
+        :to="link.to"
+        class="shrink-0 text-sm font-semibold text-primary hover:underline dark:text-primary-light"
+      >
+        {{ link.label }}
+      </RouterLink>
+    </div>
+    <div class="rows-round min-h-0 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 lg:overflow-y-auto dark:bg-gray-800 dark:ring-gray-700">
+      <p v-if="loading && !items.length" class="px-4 py-4 text-base text-gray-500 dark:text-gray-400">Loading…</p>
+      <p v-else-if="!items.length" class="px-4 py-4 text-base text-gray-600 dark:text-gray-300">
+        {{ [empty.title, empty.line].filter(Boolean).join('. ') }}
+      </p>
+      <template v-else>
+      <template v-for="row in rows" :key="row.key">
+        <p
+          v-if="row.heading"
+          :class="[
+            'border-t border-gray-100 px-4 pt-3 pb-1 text-sm font-semibold first:border-t-0 lg:px-5 dark:border-gray-700/60',
+            row.today ? 'text-primary dark:text-primary-light' : 'text-gray-500 dark:text-gray-400',
+          ]"
+        >
+          {{ row.heading }}
+        </p>
+        <component
+          :is="row.to ? RouterLink : 'div'"
+          v-else
+          :to="row.to || undefined"
+          :class="[
+            'flex min-w-0 items-center gap-4 border-t border-gray-100 px-4 py-3 first:border-t-0 lg:px-5 dark:border-gray-700/60',
+            row.to ? 'transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40' : '',
+          ]"
+        >
+          <slot name="picture" :row="row">
+            <DateTile v-if="row.date" :date="row.date" :weekday="row.weekday" :past="row.past" :highlight="row.highlight" />
+            <img v-else-if="row.photo" :src="row.photo" alt="" class="size-11 shrink-0 rounded-xl object-cover" />
+            <span v-else-if="row.member || people(row).length" class="shrink-0">
+              <MemberAvatar :member="row.member || people(row)[0]" alt="" size="h-11 w-11" />
+            </span>
+            <span v-else-if="row.icon" class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light">
+              <component :is="row.icon" class="size-5" />
+            </span>
+          </slot>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-base font-semibold text-gray-900 dark:text-white">{{ row.title }}</span>
+            <span v-if="row.line" class="block truncate text-sm text-gray-500 dark:text-gray-400">{{ row.line }}</span>
+          </span>
+          <span
+            v-if="row.aside"
+            :class="['shrink-0 text-sm font-semibold tabular-nums', ASIDE[row.tone] || 'text-gray-500 dark:text-gray-400']"
+          >
+            {{ row.aside }}
+          </span>
+        </component>
+      </template>
+      </template>
+    </div>
+  </section>
+
+  <section v-else class="@container flex min-h-[9rem] flex-1 flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-800/70 dark:ring-white/10">
     <header class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 pt-2.5 pb-2 dark:border-white/10">
       <h2 class="flex min-w-0 items-center gap-2.5 text-sm font-semibold text-gray-900 dark:text-white">
         <span class="truncate">{{ title }}</span>

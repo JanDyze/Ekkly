@@ -54,7 +54,7 @@ const noteOf = ({ sunday, leader }) =>
       <div v-if="loading || sundaysLoading" class="flex flex-col gap-5">
         <div v-for="n in 2" :key="n">
           <div class="mb-2 h-3 w-40 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-          <div class="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70">
+          <div class="rows-round divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70">
             <div v-for="i in 4" :key="i" class="flex items-center gap-3 px-4 py-3">
               <div class="size-9 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-600" />
               <div class="flex-1 space-y-2">

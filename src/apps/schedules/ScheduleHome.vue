@@ -376,10 +376,28 @@ const doors = computed(() => {
     ...(canPlan.value ? [{ key: 'who', title: 'Who serves', art: 'schedules-who', to: { name: 'SchedulesTeam' } }] : []),
   ]
 })
+
+// Simple view's figures (AppHome's `stats`), each opening what it counts.
+const simpleStats = computed(() => [
+  { key: 'sundays', label: 'Sundays coming', value: comingSundays.value.length, to: { name: 'SchedulesCalendar' } },
+  ...(myMember.value ? [{ key: 'mine', label: 'Your turns', value: myUpcoming.value.length, to: { name: 'SchedulesMine' } }] : []),
+  ...(canPlan.value
+    ? [
+        {
+          key: 'gaps',
+          label: 'Roles to fill',
+          value: gaps.value.reduce((sum, row) => sum + row.empty.length, 0),
+          to: { name: 'SchedulesTeam' },
+          warn: gaps.value.length > 0,
+        },
+        { key: 'drafts', label: 'Months in draft', value: drafts.value.length, to: { name: 'SchedulesCalendar' } },
+      ]
+    : []),
+])
 </script>
 
 <template>
-  <AppHome :cards="cards" scope="schedules" label="Schedules today" :doors="doors" name="Schedules">
+  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="schedules" label="Schedules today" :doors="doors" name="Schedules">
     <!-- 1. What matters about Sunday, most important on top -->
     <template #card="{ card }">
       <!-- Something on a Sunday: its date, the way a calendar shows it. -->

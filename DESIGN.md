@@ -151,12 +151,19 @@ CHANGELOG.md.
   coming), and its Everyone is a records table (`PeopleEveryoneSimple`:
   search, a filter, sortable headings, View/Edit/Delete, pages of 25; on a
   phone the rows stack). Each is handed the full screen's own `cards` and
-  figures, so the two views never disagree. A section's other screens are as
-  they are on a desktop (their tables and the record's layout are already
-  standard); only the rail steps aside for the sidebar (`AppScreen`), in
-  every app. An app opts its own simple screens in with `meta.simple` on its
-  parent route (`useSimpleHere()`); lists of a line each are `SimpleRows`
-  (`components/simple/`).
+  figures, so the two views never disagree. Every other app's home is in
+  simple view through `AppHome` itself (`SimpleAppHome`): the app's name and
+  main `action`, its `stats` as figures, Needs your attention and Good to
+  know from the same deck cards, its `side` list drawn plainly beside them
+  (`AppSidePanel` reads `simpleHome`), and on a phone its sections. A new
+  app on `AppHome` is in simple view without doing anything; handing
+  `AppHome` its `stats` (and an `action`, where it has a page that adds one)
+  is what makes its dashboard read like People's. A section's other screens
+  are as they are on a desktop (their tables and the record's layout are
+  already standard); only the rail steps aside for the sidebar
+  (`AppScreen`), in every app. An app opts its own simple screens in with
+  `meta.simple` on its parent route (`useSimpleHere()`); lists of a line
+  each are `SimpleRows` (`components/simple/`).
   **YUNIT is on the home** wherever the church has him (`HomeYunit`), as a
   character standing on it, never a card or a panel. He stands large, so he
   is what is seen there. On a phone a frosted "Talk to YUNIT" button stands
@@ -934,6 +941,22 @@ required: <span class="text-red-500">*</span>
 
 Touch targets are at least `h-10`. Use `h-11` for main actions in a bottom bar.
 
+**The focus ring** is one rule for everything (`:focus-visible` in
+`style.css`): 2px in the church's colour, drawn just inside the element and
+following its corners, so a parent's overflow never clips it. Three things
+keep it right, and are checked by tabbing through a page:
+
+- A block of rows that clips at rounded corners (`overflow-hidden rounded-2xl`
+  with `divide-y`) gets `rows-round`, so its first and last rows take its
+  corners and their ring follows them rather than being shaved off. ListGroup,
+  SimpleRows and Settings already have it; a list of your own needs it too
+  (not a `DESK_ROWS` grid, whose rows are cards with corners of their own).
+- A row whose words run to its edges (a week's line, a column heading that is
+  a link) is padded a few pixels with `rounded-lg` (and a negative margin to
+  keep its place), so the ring has room round the words.
+- A link that is only words (`hover:underline`) is ringed just outside instead,
+  and a button in the church's colour (`bg-primary`) in white, a step in.
+
 ### Loading
 
 Show placeholders shaped like the content: `animate-pulse bg-gray-200
@@ -1089,6 +1112,8 @@ The words depend on why the list is empty (see Tasks.vue):
 - [ ] Checked as someone who can view but not manage: no dead buttons
 - [ ] Loading, empty, and "search found nothing" states all shown
 - [ ] Long names truncate instead of wrapping the layout
+- [ ] Tabbed through: every ring visible, whole, and clear of the words
+- [ ] Looks right in simple view (Preferences) too
 - [ ] The FAB doesn't cover the last row
 - [ ] Back from a record returns to the same scroll position
 - [ ] `npm run build` passes

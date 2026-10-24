@@ -48,7 +48,7 @@ const {
   videoPrepMonth,
   weekly,
 } = useEventsOverview()
-const { myMember } = usePermissions()
+const { myMember, canManage } = usePermissions()
 
 const dateOf = (key) => {
   const [y, m, d] = String(key).split('-').map(Number)
@@ -283,10 +283,30 @@ const doors = computed(() => [
   { key: 'weekly', title: 'Every week', art: 'events-weekly', to: { name: 'EventsWeekly' } },
   { key: 'videos', title: 'Videos', art: 'videos', to: { name: 'VideosHome' } },
 ])
+
+// Simple view's figures (AppHome's `stats`), each opening what it counts.
+const simpleStats = computed(() => [
+  { key: 'week', label: 'This week', value: week.value.reduce((sum, day) => sum + day.count, 0), to: { name: 'Events' } },
+  { key: 'ahead', label: 'Next two weeks', value: ahead.value.length, to: { name: 'EventsUpcoming' } },
+  { key: 'oneoffs', label: 'Special events coming', value: oneOffs.value.length, to: { name: 'EventsUpcoming' } },
+  { key: 'weekly', label: 'Every week', value: weekly.value.length, to: { name: 'EventsWeekly' } },
+])
+const simpleAction = computed(() =>
+  canManage('events') ? { label: 'New event', to: { name: 'Events', query: { add: '1' } } } : null
+)
 </script>
 
 <template>
-  <AppHome :cards="cards" scope="events" label="Events today" :doors="doors" name="Events">
+  <AppHome
+    :cards="cards"
+    scope="events"
+    label="Events today"
+    :doors="doors"
+    name="Events"
+    :stats="simpleStats"
+    :action="simpleAction"
+    :loading="loading"
+  >
     <!-- 1. What is on, and what has changed, most important on top -->
     <template #card="{ card }">
       <!-- Something on a day: its date, the way a calendar shows it. -->

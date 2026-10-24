@@ -208,10 +208,24 @@ const doors = computed(() => [
   { key: 'accounts', title: 'Accounts', art: 'finances-accounts', to: { name: 'FinancesAccounts' } },
   { key: 'months', title: 'By month', art: 'finances-months', to: { name: 'FinancesMonths' } },
 ])
+
+// Simple view's figures (AppHome's `stats`), each opening what it counts.
+const simpleStats = computed(() => [
+  { key: 'balance', label: 'Balance today', value: peso(balancesToday.value.total), to: { name: 'FinancesAccounts' } },
+  { key: 'in', label: 'Money in this month', value: peso(current.value.income), to: { name: 'FinancesStatement' } },
+  { key: 'out', label: 'Money out this month', value: peso(current.value.expenses), to: { name: 'FinancesStatement' } },
+  {
+    key: 'missed',
+    label: 'Offerings to enter',
+    value: missedSundays.value.length,
+    to: { name: 'FinancesMonths' },
+    warn: missedSundays.value.length > 0,
+  },
+])
 </script>
 
 <template>
-  <AppHome :cards="cards" scope="finances" label="Finances today" :doors="doors" name="Finances">
+  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="finances" label="Finances today" :doors="doors" name="Finances">
     <!-- 1. What needs doing about the money, most important on top -->
     <template #card="{ card }">
       <!-- A Sunday whose offering is missing: its date. -->

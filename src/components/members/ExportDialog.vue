@@ -225,7 +225,7 @@ useFocusTrap(dialogRef, () => props.showExport, close);
               <h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                 What for
               </h3>
-              <ul class="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+              <ul class="rows-round divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
                 <li v-for="preset in PRESETS" :key="preset.key">
                   <button
                     type="button"

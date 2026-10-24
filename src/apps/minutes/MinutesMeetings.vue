@@ -271,7 +271,7 @@ const handleCancelMinute = () => {
 
       <div
         v-if="loading"
-        class="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70"
+        class="rows-round divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70"
       >
         <div v-for="i in 8" :key="`skeleton-${i}`" class="flex items-center gap-4 p-3 sm:p-4">
           <div class="h-12 w-12 shrink-0 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-600"></div>

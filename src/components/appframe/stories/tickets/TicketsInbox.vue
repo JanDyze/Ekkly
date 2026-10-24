@@ -15,7 +15,7 @@ at(1400, () => (arrived.value = true))
 
 const HEAD = 'mt-4 mb-1.5 px-1 text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400'
 const BLOCK =
-  'divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700'
+  'rows-round divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700'
 </script>
 
 <template>

@@ -40,7 +40,7 @@ const grid = computed(() => desk.value && !props.flat)
     <div
       :class="[
         'divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200/70 dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700/70',
-        grid ? DESK_ROWS : '',
+        grid ? DESK_ROWS : 'rows-round',
       ]"
     >
       <slot />

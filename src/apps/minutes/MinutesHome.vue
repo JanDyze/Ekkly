@@ -199,10 +199,18 @@ const doors = computed(() => [
   },
   { key: 'decisions', title: 'Decisions', art: 'minutes-decisions', to: { name: 'MinutesDecisions' } },
 ])
+
+// Simple view's figures (AppHome's `stats`), each opening what it counts.
+const simpleStats = computed(() => [
+  { key: 'meetings', label: 'Meetings', value: meetings.value.length, to: { name: 'MinutesMeetings' } },
+  { key: 'write', label: 'To write up', value: toWriteUp.value.length, to: { name: 'MinutesWriteUp' }, warn: toWriteUp.value.length > 0 },
+  { key: 'actions', label: 'Action items not on Tasks', value: notOnList.value.length, to: { name: 'MinutesActions' } },
+  { key: 'decisions', label: 'Decisions', value: decisions.value.length, to: { name: 'MinutesDecisions' } },
+])
 </script>
 
 <template>
-  <AppHome :cards="cards" scope="minutes" label="Minutes this week" :doors="doors" name="Minutes">
+  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="minutes" label="Minutes this week" :doors="doors" name="Minutes">
     <!-- 1. What needs doing, most important on top -->
     <template #card="{ card }">
       <!-- The next meeting, dated the way a calendar shows it. A scheduled

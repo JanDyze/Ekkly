@@ -3,6 +3,7 @@ import {
   GoogleAuthProvider,
   getRedirectResult,
   onAuthStateChanged,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
   signOut,
@@ -18,6 +19,13 @@ import {
 //
 // The UI is only half of it. Email/Password must also be switched off under
 // Firebase Authentication > Sign-in method, or the REST API still accepts it.
+//
+// One password path came back, for test accounts only: loginWithPassword,
+// behind a form the sign-in page shows in development (testSignInEnabled).
+// It is there so each role can be signed into in turn to see what it sees;
+// scripts/seed-test-accounts.mjs makes the accounts. It needs Email/Password
+// switched back on in the console, which lets the old password accounts in
+// again too, so switch it off once the testing is done.
 
 // Firebase error codes are not fit to show a user — map them to plain English.
 // Only the codes Google sign-in can actually raise: the password-only ones
@@ -39,6 +47,10 @@ const ERROR_MESSAGES = {
   // Firebase only accepts sign-ins from domains listed under Authentication >
   // Settings > Authorized domains. A phone hitting the dev server by LAN IP
   // trips this until that IP is added there.
+  // The test sign-in's own. Firebase answers a wrong password and an unknown
+  // address with the same code, on purpose, and so does this.
+  "auth/invalid-credential": "That email and password don't match a test account.",
+  "auth/invalid-email": "That doesn't look like an email address.",
   "auth/unauthorized-domain":
     "This address isn't authorised for Google sign-in. Add it to Firebase Authentication > Settings > Authorized domains.",
 };
@@ -117,6 +129,17 @@ export const loginWithGoogle = async () => {
 export const consumePendingGoogleSignIn = async () => {
   const credential = await getRedirectResult(auth);
   return credential?.user || null;
+};
+
+// The test-account form shows only where it was asked for: always under the
+// dev server, and in a build only with VITE_TEST_SIGN_IN=true.
+export const testSignInEnabled =
+  import.meta.env.DEV || import.meta.env.VITE_TEST_SIGN_IN === "true";
+
+// Sign in to a test account (see the note at the top of this file).
+export const loginWithPassword = async (email, password) => {
+  const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
+  return credential.user;
 };
 
 // Sign the current user out

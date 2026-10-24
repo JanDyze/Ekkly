@@ -8,6 +8,17 @@
 
 export const versionHistory = [
   {
+    version: '0.36.1',
+    date: '2026-10-24',
+    title: 'Simple view, everywhere',
+    summary: 'Every app now opens on a plain dashboard in Simple view.',
+    highlights: [
+      'Figures, what needs you and the latest, in every app.',
+      'A task given to you shows in My tasks and on your home.',
+      'Clearer outlines when you move around with the keyboard.',
+    ],
+  },
+  {
     version: '0.36.0',
     date: '2026-10-22',
     title: 'Tell us what you think',

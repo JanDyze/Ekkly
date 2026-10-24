@@ -249,10 +249,22 @@ const doors = computed(() => {
     },
   ]
 })
+
+// Simple view's figures (AppHome's `stats`), each opening what it counts,
+// and its one action.
+const simpleStats = computed(() => [
+  { key: 'open', label: 'Being prayed for', value: open.value.length, to: { name: 'PrayerConcerns' } },
+  { key: 'urgent', label: 'Urgent', value: urgent.value.length, to: { name: 'PrayerNow' }, warn: urgent.value.length > 0 },
+  { key: 'new', label: 'New this week', value: newThisWeek.value.length, to: { name: 'PrayerConcerns', query: { show: 'new' } } },
+  { key: 'answered', label: 'Answered this year', value: answeredThisYear.value, to: { name: 'PrayerAnswered' } },
+])
+const simpleAction = computed(() =>
+  canEdit.value ? { label: 'New request', to: { name: 'PrayerConcerns', query: { add: '1' } } } : null
+)
 </script>
 
 <template>
-  <AppHome :cards="cards" scope="prayer" label="Prayer this week" :doors="doors" name="Prayer">
+  <AppHome :stats="simpleStats" :action="simpleAction" :loading="loading" :cards="cards" scope="prayer" label="Prayer this week" :doors="doors" name="Prayer">
     <!-- 1. What to pray for this week, most pressing on top -->
     <template #card="{ card }">
       <DeckCard

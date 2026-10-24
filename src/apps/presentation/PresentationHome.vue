@@ -261,10 +261,24 @@ const doors = computed(() => [
   },
   ...(canSeeSongs.value ? [{ key: 'songs', title: 'Songs', art: 'songs', to: '/songs' }] : []),
 ])
+
+// Simple view's figures (AppHome's `stats`), each opening what it counts.
+const simpleStats = computed(() => [
+  { key: 'services', label: 'Services ahead', value: upcoming.value.length, to: { name: 'Services' } },
+  {
+    key: 'next',
+    label: 'Next service',
+    value: nextService.value ? (nextService.value.days === 0 ? 'Today' : nextService.value.days === 1 ? 'Tomorrow' : `In ${nextService.value.days} days`) : '–',
+    to: { name: 'Services' },
+  },
+  ...(canSeeSongs.value
+    ? [{ key: 'words', label: 'Songs missing words', value: wordsMissing.value.length, to: { name: 'PresentationLyrics' }, warn: wordsMissing.value.length > 0 }]
+    : []),
+])
 </script>
 
 <template>
-  <AppHome :cards="cards" scope="presentation" label="Presentation this week" :doors="doors" name="Presentation">
+  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="presentation" label="Presentation this week" :doors="doors" name="Presentation">
     <!-- 1. What the booth should see to this week, most important on top -->
     <template #card="{ card }">
       <!-- Something about this Sunday: its date, the way a calendar shows it. -->

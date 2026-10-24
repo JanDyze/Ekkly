@@ -213,10 +213,21 @@ const doors = computed(() => {
     ...(canEdit.value ? [{ key: 'look', title: 'Look and sound', art: 'videos-look', to: { name: 'VideosLook' } }] : []),
   ]
 })
+
+// Simple view's figures (AppHome's `stats`), each opening what it counts.
+const simpleStats = computed(() => [
+  {
+    key: 'month',
+    label: `Announcements in ${monthName(thisMonth)}`,
+    value: thisMonthScenes.value.filter((scene) => !scene.hidden).length,
+    to: { name: 'VideosMonth', params: { month: thisMonth } },
+  },
+  { key: 'changes', label: 'Changes coming', value: changesAhead.value.length, to: { name: 'VideosMonth', params: { month: thisMonth } } },
+])
 </script>
 
 <template>
-  <AppHome :cards="cards" scope="videos" label="Videos this week" :doors="doors" name="Videos">
+  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="videos" label="Videos this week" :doors="doors" name="Videos">
     <!-- 1. What needs doing, most important on top -->
     <template #card="{ card }">
       <!-- The video for the first gathering, dated the way a calendar

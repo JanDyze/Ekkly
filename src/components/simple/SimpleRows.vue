@@ -29,7 +29,7 @@ const emit = defineEmits(['act'])
       'overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700',
       columns
         ? 'grid gap-px bg-gray-100 lg:grid-cols-2 dark:bg-gray-700/60 *:bg-white dark:*:bg-gray-800 lg:[&>*:last-child:nth-child(odd)]:col-span-2'
-        : 'divide-y divide-gray-100 dark:divide-gray-700/60',
+        : 'rows-round divide-y divide-gray-100 dark:divide-gray-700/60',
     ]"
   >
     <component

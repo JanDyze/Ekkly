@@ -35,6 +35,18 @@ installable PWA.
   with the page it was sent from (Alt+T on any page sends one, as
   `useQuickTicket`). `show <id>`, `set <id> kind=… where=… status=…` and
   `answer <id> "…"` read, re-file and answer one; the header says more.
+- `node scripts/seed-test-accounts.mjs --church <id> --write` makes an
+  email-and-password account for every ministry with permissions, plus an
+  administrator, a plain member and an outsider (`<key>@<id>.test`), each
+  with a task of its own. Sign in with them from the folded "Sign in with a
+  test account" link under the Google button, which shows only under
+  `npm run dev` (or a build with `VITE_TEST_SIGN_IN=true`); Email/Password
+  must be on in Firebase. `--remove --write` takes them all out.
+- `node scripts/seed-mock-data.mjs --church <id> --write` fills every app
+  with marked mock records (people, events, songs, prayer, minutes, a year
+  of the books, inventory, small groups, teaching, follow-up, join
+  requests); `--remove --write` takes out exactly those. Run
+  `seed-lineups.mjs` after it for rosters.
 - `/ad`, `/ad-plan` and `/ad-results` make, plan and learn from the Facebook
   and Instagram ads in `marketing/`. Ads never bump the app version.
 
@@ -76,7 +88,9 @@ installable PWA.
   the app lists leave it out and it opens from the avatar's drawer instead.
 - **Access is by capability.** Capabilities are `<area>.view` and
   `<area>.manage`, and the areas are listed in `lib/capabilities.js`. A route
-  sets `meta.capability` (or `meta.adminOnly`). A component hides what
+  sets `meta.capability` (or `meta.adminOnly`). A screen of someone's own
+  things sets `meta.mine` and opens without the app's capability ("My
+  tasks": being given a task is reason enough to see it). A component hides what
   `usePermissions().canManage(area)` refuses rather than disabling it.
 - **Icons come from `src/icons`, which is generated.** Import any Phosphor name
   (`import { Bell } from '../icons'`) and run `npm run build:icons`. Append
@@ -207,7 +221,10 @@ screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
    Every app's home is built this way now, Presentation and Videos included
    (the older `AppHero`, `AppActionsSheet` and `SectionGlyph` are no longer
    on any home), and through one component, `AppHome`: hand it the deck's
-   `cards` and its `#card` slot, and the `doors`. On a desktop it lays them
+   `cards` and its `#card` slot, and the `doors`. Hand it `stats` too (the
+   app's figures, each opening what it counts) and, where the app has a page
+   that adds one, an `action`: in simple view `AppHome` is a plain
+   dashboard of those and the same cards (`SimpleAppHome`). On a desktop it lays them
    out as the home of all apps is laid out: the always-true card and the
    sections down the left, the other cards as the phone's own in Needs
    attention and Good to know, and in a third column the app's `#side`, one

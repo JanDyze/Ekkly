@@ -274,7 +274,7 @@ const backToList = () => {
       <div class="w-full space-y-4 lg:w-72 lg:shrink-0">
         <div v-for="group in [2, 3, 2]" :key="group" class="space-y-1.5">
           <div class="h-3 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-          <div class="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800">
+          <div class="rows-round divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800">
             <div v-for="row in group" :key="row" class="flex items-center gap-3 px-3 py-3">
               <div class="h-9 w-9 shrink-0 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
               <div class="flex-1 space-y-1.5">
@@ -319,7 +319,7 @@ const backToList = () => {
             {{ group.label }}
           </h2>
           <ul
-            class="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800"
+            class="rows-round divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800"
           >
             <li v-for="item in group.items" :key="item.key">
               <button
