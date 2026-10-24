@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { ArrowsLeftRight, Camera, Clock, Warning } from '../../icons'
+import { ArrowsLeftRight, Camera, Clock, Package, Warning } from '../../icons'
 import AppHome from '../../components/appframe/AppHome.vue'
 import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
@@ -266,10 +266,25 @@ const simpleStats = computed(() => [
   { key: 'value', label: 'Worth', value: `₱${Math.round(counts.value.value / 100).toLocaleString()}`, to: { name: 'InventoryAll' } },
 ])
 const simpleAction = computed(() => (canEdit.value ? { label: 'New item', to: { name: 'InventoryAdd' } } : null))
+
+// On a desktop the sections show themselves (AppHome's `columns`): what is
+// out on loan, what needs repair, and what still has no photo.
+const itemRow = (line) => (item) => ({
+  key: item.id,
+  icon: Package,
+  title: item.name || 'A thing',
+  line: line(item),
+  to: { name: 'InventoryItem', params: { id: item.id } },
+})
+const columns = computed(() => [
+  { key: 'loans', title: 'Out on loan', to: { name: 'InventoryBorrowed' }, rows: outOnLoan.value, empty: 'Nothing is out on loan.' },
+  { key: 'repair', title: 'Needs repair', to: { name: 'InventoryRepair' }, rows: needsRepair.value.map(itemRow((item) => item.repairNote || item.location)), empty: 'Nothing is waiting for repair.' },
+  { key: 'photos', title: 'To photograph', to: { name: 'InventoryPhotos' }, rows: unphotographed.value.slice(0, 40).map(itemRow((item) => [item.category, item.location].filter(Boolean).join(' · '))), empty: 'Everything has a photo.' },
+])
 </script>
 
 <template>
-  <AppHome :stats="simpleStats" :action="simpleAction" :loading="loading" :cards="cards" scope="inventory" label="Inventory this week" :doors="doors" name="Inventory">
+  <AppHome :columns="columns" :stats="simpleStats" :action="simpleAction" :loading="loading" :cards="cards" scope="inventory" label="Inventory this week" :doors="doors" name="Inventory">
     <!-- 1. What needs doing, most important on top -->
     <template #card="{ card }">
       <!-- Loans: which things, and who has them. -->

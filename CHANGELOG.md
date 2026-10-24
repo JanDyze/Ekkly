@@ -11,6 +11,19 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.3] — 2026-10-24
+
+On a computer, ten more apps open the way People does: what needs you at the
+top, and each section's own list in columns beneath.
+
+### Changed
+
+- **Events, Finances, Prayer, Minutes, Inventory, Songs, Teaching, Small
+  groups, Attendance and Schedules** each open on a computer with their main
+  card, tiles for what needs you, and three columns of their sections' own
+  lists — the coming fortnight, the months' totals, the action items and
+  decisions, what is out on loan — instead of a board of cards.
+
 ## [0.37.2] — 2026-10-24
 
 A church's installed app carries its own name and logo, and everyone can keep

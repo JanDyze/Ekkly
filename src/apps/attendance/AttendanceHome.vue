@@ -11,7 +11,8 @@ import AppArt from '../../components/common/AppArt.vue'
 import MemberAvatar from '../../components/members/MemberAvatar.vue'
 import { useAttendanceOverview } from '../../composables/useAttendanceOverview'
 import { usePermissions } from '../../composables/usePermissions'
-import { getDisplayName, listPhrase } from '../../utils/memberUtils'
+import { getDisplayName, getFullName, listPhrase } from '../../utils/memberUtils'
+import { clockLabel } from '../../utils/timeUtils'
 
 // The Attendance app's home, built the way People's and Schedules' are. One
 // screen, and two things on it:
@@ -189,10 +190,46 @@ const simpleStats = computed(() => [
   { key: 'recorded', label: 'Gatherings counted', value: recorded.value.length, to: { name: 'Attendance' } },
   { key: 'quiet', label: 'Not seen lately', value: quietPeople.value.length, to: { name: 'AttendanceQuiet' } },
 ])
+
+// On a desktop the sections show themselves (AppHome's `columns`): the last
+// gatherings counted, the ones still to count, and who has not been seen.
+const columns = computed(() => [
+  { key: 'counted', title: 'Last counted', to: { name: 'Attendance' }, rows: recentCounts.value, empty: 'Nothing counted yet.' },
+  ...(canRecord.value
+    ? [
+        {
+          key: 'owed',
+          title: 'To record',
+          to: { name: 'AttendanceOwed' },
+          rows: [...awaiting.value].reverse().slice(0, 40).map((row) => ({
+            key: row.occurrenceKey || `${row.eventTitle}:${row.date}`,
+            date: row.date,
+            title: row.eventTitle || 'A gathering',
+            line: clockLabel(row.time) || '',
+            to: { name: 'AttendanceOwed' },
+          })),
+          empty: 'Every gathering is counted.',
+        },
+      ]
+    : []),
+  {
+    key: 'quiet',
+    title: 'Not seen lately',
+    to: { name: 'AttendanceQuiet' },
+    rows: quietPeople.value.slice(0, 40).map((row) => ({
+      key: row.id,
+      member: row.member,
+      title: getFullName(row.member),
+      line: `Last came ${new Date(`${row.date}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`,
+      to: { name: 'MemberDetails', params: { id: row.member.id || row.member.firestoreId } },
+    })),
+    empty: 'Everyone has been seen lately.',
+  },
+])
 </script>
 
 <template>
-  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="attendance" label="Attendance today" :doors="doors" name="Attendance">
+  <AppHome :columns="columns" :stats="simpleStats" :loading="loading" :cards="cards" scope="attendance" label="Attendance today" :doors="doors" name="Attendance">
     <!-- 1. What matters about attendance, most important on top -->
     <template #card="{ card }">
       <!-- A gathering still to count: its date, the way a calendar shows it. -->

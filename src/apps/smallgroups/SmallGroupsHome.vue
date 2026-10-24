@@ -233,10 +233,44 @@ const simpleStats = computed(() => [
     : []),
   { key: 'unplaced', label: 'Not in a group', value: ungrouped.value.length, to: { name: 'SmallGroupsUnplaced' } },
 ])
+
+// On a desktop the sections show themselves (AppHome's `columns`): this
+// week's groups, the meetings logged lately, and who is in no group yet.
+const columns = computed(() => [
+  { key: 'week', title: 'This week’s groups', to: { name: 'SmallGroupsAll' }, rows: groupsByDay.value, empty: 'No groups meet this week.' },
+  {
+    key: 'sessions',
+    title: 'Met this week',
+    to: { name: 'SmallGroupsSessions' },
+    rows: thisWeek.value.map((s) => {
+      const group = active.value.find((g) => idOf(g) === s.groupId)
+      return {
+        key: s.id || `${s.groupId}:${s.date}`,
+        date: String(s.date).slice(0, 10),
+        title: group?.name || 'A group',
+        line: [s.lesson?.title, s.attendance?.presentIds ? `${s.attendance.presentIds.length} came` : ''].filter(Boolean).join(' · '),
+        to: group ? groupTo(group) : { name: 'SmallGroupsSessions' },
+      }
+    }),
+    empty: 'No meetings logged this week.',
+  },
+  {
+    key: 'unplaced',
+    title: 'Not in a group',
+    to: { name: 'SmallGroupsUnplaced' },
+    rows: ungrouped.value.slice(0, 40).map((m) => ({
+      key: m.firestoreId || m.id,
+      member: m,
+      title: [m.firstName, m.lastName].filter(Boolean).join(' '),
+      to: { name: 'MemberDetails', params: { id: m.id || m.firestoreId } },
+    })),
+    empty: 'Everyone is in a group.',
+  },
+])
 </script>
 
 <template>
-  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="smallgroups" label="Small groups this week" :doors="doors" name="Small groups">
+  <AppHome :columns="columns" :stats="simpleStats" :loading="loading" :cards="cards" scope="smallgroups" label="Small groups this week" :doors="doors" name="Small groups">
     <!-- 1. What needs doing, most important on top -->
     <template #card="{ card }">
       <DeckCard

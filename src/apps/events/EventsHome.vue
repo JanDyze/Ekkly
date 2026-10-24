@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { CalendarX, Clock, FilmSlate, Flag, MapPin, Sparkle } from '../../icons'
+import { CalendarX, Clock, FilmSlate, Flag, MapPin, Repeat, Sparkle } from '../../icons'
 import AppHome from '../../components/appframe/AppHome.vue'
 import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
@@ -273,6 +273,39 @@ const fortnight = computed(() => {
     }))
 })
 
+/* ---------------------------------------------------- a desktop's columns */
+
+// On a desktop the sections show themselves (AppHome's `columns`): the
+// coming fortnight, the one-off events further ahead, and the week's
+// standing gatherings.
+const WEEKDAYS = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays']
+const special = computed(() =>
+  calendar.value
+    .filter((e) => e.date >= today && !e.isRecurring && !e.overrideOf && !isCalledOff(e))
+    .slice(0, 30)
+    .map((e) => ({
+      key: `${e.id || e.title}:${e.date}`,
+      to: dayOf(e.date),
+      date: e.date,
+      title: e.title || 'An event',
+      line: [clockLabel(e.time) || 'All day', e.location].filter(Boolean).join(' · '),
+    }))
+)
+const everyWeek = computed(() =>
+  weekly.value.map((s) => ({
+    key: s.id || s.title,
+    to: { name: 'EventsWeekly' },
+    icon: Repeat,
+    title: s.title || 'A gathering',
+    line: [WEEKDAYS[s.weekday] || '', clockLabel(s.time), s.location].filter(Boolean).join(' · '),
+  }))
+)
+const columns = computed(() => [
+  { key: 'fortnight', title: 'Next two weeks', to: { name: 'Events' }, rows: fortnight.value, empty: 'Nothing on the calendar for two weeks.' },
+  { key: 'special', title: 'Special events', to: { name: 'EventsUpcoming' }, rows: special.value, empty: 'No special events planned yet.' },
+  { key: 'weekly', title: 'Every week', to: { name: 'EventsWeekly' }, rows: everyWeek.value, empty: 'No gatherings repeat every week yet.' },
+])
+
 /* -------------------------------------------------------------- the doors */
 
 // A door is its name and nothing more. What is on this week and what comes
@@ -306,6 +339,7 @@ const simpleAction = computed(() =>
     :stats="simpleStats"
     :action="simpleAction"
     :loading="loading"
+    :columns="columns"
   >
     <!-- 1. What is on, and what has changed, most important on top -->
     <template #card="{ card }">

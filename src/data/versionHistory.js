@@ -8,6 +8,16 @@
 
 export const versionHistory = [
   {
+    version: '0.37.3',
+    date: '2026-10-24',
+    title: 'More room on a computer',
+    summary: 'Ten apps now open on a computer the way People does.',
+    highlights: [
+      'What needs you along the top.',
+      'Each section’s own list in columns beneath.',
+    ],
+  },
+  {
     version: '0.37.2',
     date: '2026-10-24',
     title: 'Your church, on your phone',

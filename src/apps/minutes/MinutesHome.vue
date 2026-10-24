@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { CalendarCheck, ListChecks, NotePencil } from '../../icons'
+import { CalendarCheck, Gavel, ListChecks, NotePencil } from '../../icons'
 import AppHome from '../../components/appframe/AppHome.vue'
 import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
@@ -207,10 +207,42 @@ const simpleStats = computed(() => [
   { key: 'actions', label: 'Action items not on Tasks', value: notOnList.value.length, to: { name: 'MinutesActions' } },
   { key: 'decisions', label: 'Decisions', value: decisions.value.length, to: { name: 'MinutesDecisions' } },
 ])
+
+// On a desktop the sections show themselves (AppHome's `columns`): the
+// meetings lately, what they asked someone to do, and what they decided.
+const columns = computed(() => [
+  { key: 'meetings', title: 'Lately', to: { name: 'MinutesMeetings' }, rows: recentMeetings.value, empty: 'No meetings yet.' },
+  {
+    key: 'actions',
+    title: 'Action items',
+    to: { name: 'MinutesActions' },
+    rows: notOnList.value.slice(0, 40).map((item) => ({
+      key: item.key,
+      icon: ListChecks,
+      title: item.task || 'An action item',
+      line: [item.servant, item.timeline, item.minute?.title].filter(Boolean).join(' · '),
+      to: { name: 'MinutesActions' },
+    })),
+    empty: 'Every action item is on Tasks or done.',
+  },
+  {
+    key: 'decisions',
+    title: 'Decisions',
+    to: { name: 'MinutesDecisions' },
+    rows: decisions.value.slice(0, 40).map((d) => ({
+      key: d.key,
+      icon: Gavel,
+      title: d.text,
+      line: [d.topic, d.minute?.title].filter(Boolean).join(' · '),
+      to: { name: 'MinutesDecisions' },
+    })),
+    empty: 'No decisions written down yet.',
+  },
+])
 </script>
 
 <template>
-  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="minutes" label="Minutes this week" :doors="doors" name="Minutes">
+  <AppHome :columns="columns" :stats="simpleStats" :loading="loading" :cards="cards" scope="minutes" label="Minutes this week" :doors="doors" name="Minutes">
     <!-- 1. What needs doing, most important on top -->
     <template #card="{ card }">
       <!-- The next meeting, dated the way a calendar shows it. A scheduled

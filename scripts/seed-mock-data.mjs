@@ -425,6 +425,20 @@ async function main() {
       const items = some(agenda, Math.min(agenda.length, between(2, 4)))
       const discussions = Object.fromEntries(items.map((a) => [a, pick(DISCUSS)]))
       const decisions = Object.fromEntries(items.filter(() => chance(0.7)).map((a) => [a, pick(DECIDE)]))
+      const actions = some(ACTIONS, between(1, 3)).map((text) => ({ text, assignee: fullName(pick(adults)), due: day(between(7, 30), date) }))
+      // Written up the way YUNIT writes a meeting up (api/enhance.js): each
+      // item under its heading ending in what was decided, and who does what
+      // as a table, which is where the app reads decisions and action items
+      // from (utils/minuteDecisions.js, utils/minuteActionItems.js).
+      const writeUp = [
+        `${items.length} items discussed. ${Object.keys(decisions).length} decided.`,
+        ...items.flatMap((a) => ['', `### ${a}`, discussions[a], ...(decisions[a] ? [`**Decided:** ${decisions[a]}`] : [])]),
+        '',
+        '## Who does what',
+        '| Task | Who | By when | Status |',
+        '| --- | --- | --- | --- |',
+        ...actions.map((x) => `| ${x.text} | ${x.assignee} | ${x.due} | ${chance(0.3) ? 'Done' : 'Pending'} |`),
+      ].join('\n')
       add('minutes', {
         title: `${title} — ${new Date(`${date}T00:00:00Z`).toLocaleString('en', { month: 'long', timeZone: 'UTC' })}`,
         date,
@@ -441,8 +455,8 @@ async function main() {
           agenda: items,
           discussions,
           decisions,
-          actionItems: some(ACTIONS, between(1, 3)).map((text) => ({ text, assignee: fullName(pick(adults)), due: day(between(7, 30), date) })),
-          overallSummary: `${items.length} items discussed. ${Object.keys(decisions).length} decided.`,
+          actionItems: actions,
+          overallSummary: writeUp,
           rawDiscussions: {},
         },
         createdBy: '',

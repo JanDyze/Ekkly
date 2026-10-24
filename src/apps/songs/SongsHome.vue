@@ -259,10 +259,26 @@ const simpleStats = computed(() => [
   { key: 'sundays', label: 'Sundays planned', value: comingSets.value.length, to: { name: 'SongsSunday' } },
   { key: 'lyrics', label: 'Without lyrics', value: withoutLyrics.value.length, to: { name: 'SongsLyrics' } },
 ])
+
+// On a desktop the sections show themselves (AppHome's `columns`): what is
+// planned for the coming Sundays, what the church sings most, and the songs
+// still without their words.
+const songRow = (song) => ({
+  key: song.id,
+  icon: MusicNotes,
+  title: song.title || 'A song',
+  line: song.category || '',
+  to: { name: 'SongDetails', params: { id: song.id } },
+})
+const columns = computed(() => [
+  { key: 'sundays', title: 'Coming Sundays', to: { name: 'SongsSunday' }, rows: comingSongs.value, empty: 'No songs planned yet.' },
+  { key: 'sung', title: 'Most sung', to: { name: 'SongsSung' }, rows: mostSung.value.slice(0, 30).map(songRow), empty: 'Nothing sung yet this year.' },
+  { key: 'lyrics', title: 'Without lyrics', to: { name: 'SongsLyrics' }, rows: withoutLyrics.value.slice(0, 40).map(songRow), empty: 'Every song has its words.' },
+])
 </script>
 
 <template>
-  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="songs" label="Songs this week" :doors="doors" name="Songs">
+  <AppHome :columns="columns" :stats="simpleStats" :loading="loading" :cards="cards" scope="songs" label="Songs this week" :doors="doors" name="Songs">
     <!-- 1. What the songs need this week, most important on top -->
     <template #card="{ card }">
       <!-- This week's Sunday, dated the way a calendar shows it, its

@@ -261,10 +261,26 @@ const simpleStats = computed(() => [
 const simpleAction = computed(() =>
   canEdit.value ? { label: 'New request', to: { name: 'PrayerConcerns', query: { add: '1' } } } : null
 )
+
+// On a desktop the sections show themselves (AppHome's `columns`): what is
+// being prayed for most, what came in this week, and what was answered.
+const concernRow = (name) => (c) => ({
+  key: idOf(c),
+  member: personOf(c) || undefined,
+  icon: personOf(c) ? undefined : HandsPraying,
+  title: c.title || 'Prayer concern',
+  line: lineOf(c),
+  to: openOne(name, c),
+})
+const columns = computed(() => [
+  { key: 'now', title: 'Praying now', to: { name: 'PrayerNow' }, rows: prayingNow.value, empty: 'Nothing on the prayer list.' },
+  { key: 'new', title: 'New this week', to: { name: 'PrayerConcerns', query: { show: 'new' } }, rows: newThisWeek.value.map(concernRow('PrayerConcerns')), empty: 'Nothing new this week.' },
+  { key: 'answered', title: 'Answered lately', to: { name: 'PrayerAnswered' }, rows: answeredLately.value.map(concernRow('PrayerAnswered')), empty: 'Nothing marked answered lately.' },
+])
 </script>
 
 <template>
-  <AppHome :stats="simpleStats" :action="simpleAction" :loading="loading" :cards="cards" scope="prayer" label="Prayer this week" :doors="doors" name="Prayer">
+  <AppHome :columns="columns" :stats="simpleStats" :action="simpleAction" :loading="loading" :cards="cards" scope="prayer" label="Prayer this week" :doors="doors" name="Prayer">
     <!-- 1. What to pray for this week, most pressing on top -->
     <template #card="{ card }">
       <DeckCard

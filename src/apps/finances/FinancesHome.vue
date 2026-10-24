@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { ArrowCircleDown, ArrowCircleUp, ArrowsLeftRight, FileText, HandCoins, Scales, Tag } from '../../icons'
+import { ArrowCircleDown, ArrowCircleUp, ArrowsLeftRight, Bank, ChartBar, Coins, FileText, HandCoins, Scales, Tag, Wallet } from '../../icons'
 import AppHome from '../../components/appframe/AppHome.vue'
 import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import { categoryLabel } from '../../data/financeChart'
@@ -222,10 +222,41 @@ const simpleStats = computed(() => [
     warn: missedSundays.value.length > 0,
   },
 ])
+
+// On a desktop the sections show themselves (AppHome's `columns`): the book's
+// latest lines, each month's totals, and what is in each account today.
+const columns = computed(() => [
+  { key: 'book', title: 'Latest in the book', to: { name: 'Finances' }, rows: latestEntries.value, empty: 'Nothing entered yet.' },
+  {
+    key: 'months',
+    title: 'By month',
+    to: { name: 'FinancesMonths' },
+    rows: months.value.map((m) => ({
+      key: m.key,
+      icon: ChartBar,
+      title: m.label,
+      line: `${peso(m.income)} in · ${peso(m.expenses)} out`,
+      aside: `${m.net < 0 ? '−' : '+'}${peso(m.net)}`,
+      tone: m.net < 0 ? 'urgent' : 'accent',
+      to: { name: 'Finances', params: { month: m.key } },
+    })),
+    empty: 'No months entered yet.',
+  },
+  {
+    key: 'accounts',
+    title: 'Accounts today',
+    to: { name: 'FinancesAccounts' },
+    rows: [
+      { key: 'cash', icon: Wallet, title: 'Cash on hand', aside: peso(balancesToday.value.cash), to: { name: 'FinancesAccounts' } },
+      { key: 'bank', icon: Bank, title: 'Cash in bank', aside: peso(balancesToday.value.bank), to: { name: 'FinancesAccounts' } },
+      { key: 'total', icon: Coins, title: 'Together', aside: peso(balancesToday.value.total), to: { name: 'FinancesAccounts' } },
+    ],
+  },
+])
 </script>
 
 <template>
-  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="finances" label="Finances today" :doors="doors" name="Finances">
+  <AppHome :columns="columns" :stats="simpleStats" :loading="loading" :cards="cards" scope="finances" label="Finances today" :doors="doors" name="Finances">
     <!-- 1. What needs doing about the money, most important on top -->
     <template #card="{ card }">
       <!-- A Sunday whose offering is missing: its date. -->

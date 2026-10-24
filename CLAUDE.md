@@ -250,7 +250,14 @@ screen that scrolls itself, like that grid, uses `AppScreen`'s `fill` (and
    on along the top, and the sections as columns of their own content between
    rules, not cards. A person's record has a desktop layout of its own too
    (`PersonDesk`), and its sections are tables (`DeskTable`) where a phone
-   has lists. Copy those to the other apps once they are settled. One screen, the page never
+   has lists. Most apps now follow People's desktop home through `AppHome`
+   itself: hand it `columns` ([{ key, title, to, rows, empty }], rows in
+   `AppSidePanel`'s shape, drawn by `DeskColumn`) and on a desktop it lays
+   out the always-true card beside tiles for what needs you, over the
+   sections as columns between rules. Events, Finances, Prayer, Minutes,
+   Inventory, Songs, Teaching, Small groups, Attendance and Schedules do;
+   Gallery, Presentation and Videos keep the board until theirs are worked
+   out. People and Tasks keep their own (`PeopleDesk`, `TasksDesk`). One screen, the page never
    scrolling; a list holding more scrolls inside its panel. A card the side
    list already says is left off the desktop's deck (`wide`). A section on a
    desktop stands beside the app's rail (`AppRail`, drawn by `AppScreen`):

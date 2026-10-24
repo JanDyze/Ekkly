@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { BookOpenText, Microphone, UsersFour, UsersThree } from '../../icons'
+import { BookOpenText, Microphone, Student, UsersFour, UsersThree } from '../../icons'
 import AppHome from '../../components/appframe/AppHome.vue'
 import AppSidePanel from '../../components/appframe/AppSidePanel.vue'
 import CardPanes from '../../components/appframe/CardPanes.vue'
@@ -271,10 +271,25 @@ const simpleStats = computed(() => [
   },
   { key: 'sermons', label: 'Messages to prepare', value: sermonsToWrite.value.length, to: { name: 'TeachingSermons' }, warn: sermonsToWrite.value.length > 0 },
 ])
+
+// On a desktop the sections show themselves (AppHome's `columns`): the coming
+// messages, the Sunday school classes, and the classes still without a lesson.
+const classRow = (cls) => ({
+  key: cls.id,
+  icon: Student,
+  title: cls.name || 'A class',
+  line: [cls.ages, cls.room].filter(Boolean).join(' · '),
+  to: { name: 'TeachingClass', params: { classId: cls.id } },
+})
+const columns = computed(() => [
+  { key: 'messages', title: 'Coming Sundays', to: { name: 'TeachingSermons' }, rows: comingMessages.value, empty: 'No messages planned yet.' },
+  { key: 'classes', title: 'Sunday school', to: { name: 'TeachingSchool' }, rows: activeClasses.value.map(classRow), empty: 'No classes yet.' },
+  { key: 'nolesson', title: 'No lesson this Sunday', to: { name: 'TeachingCalendar' }, rows: classesWithoutLesson.value.map(classRow), empty: 'Every class has its lesson.' },
+])
 </script>
 
 <template>
-  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="teaching" label="Teaching this week" :doors="doors" name="Teaching">
+  <AppHome :columns="columns" :stats="simpleStats" :loading="loading" :cards="cards" scope="teaching" label="Teaching this week" :doors="doors" name="Teaching">
     <!-- 1. What needs doing before Sunday, most important on top -->
     <template #card="{ card }">
       <!-- Your own message or lesson: the Sunday it is for. -->

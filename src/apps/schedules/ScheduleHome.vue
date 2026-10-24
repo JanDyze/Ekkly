@@ -394,10 +394,64 @@ const simpleStats = computed(() => [
       ]
     : []),
 ])
+
+// On a desktop the sections show themselves (AppHome's `columns`): the next
+// Sunday's line-up, the Sundays coming, and then — for whoever plans — the
+// roles nobody is on yet, or for everyone else the Sundays they serve.
+const roleNames = (list) => list.map((role) => role.label || role.name).filter(Boolean).join(', ')
+const columns = computed(() => [
+  {
+    key: 'lineup',
+    title: next.value ? `Line-up, ${formatShortDate(next.value.date)}` : 'Line-up',
+    to: next.value ? sundayLink(next.value.date) : { name: 'SchedulesCalendar' },
+    rows: lineup.value,
+    empty: 'Nobody is on the next Sunday yet.',
+  },
+  {
+    key: 'coming',
+    title: 'Coming Sundays',
+    to: { name: 'SchedulesCalendar' },
+    rows: comingSundays.value.map((s) => ({
+      key: s.date,
+      date: s.date,
+      title: s.theme || 'Sunday',
+      line: s.draft ? 'Still a draft' : 'Published',
+      to: sundayLink(s.date),
+    })),
+    empty: 'No Sundays this month or next.',
+  },
+  canPlan.value
+    ? {
+        key: 'gaps',
+        title: 'Roles to fill',
+        to: { name: 'SchedulesTeam' },
+        rows: gaps.value.map((g) => ({
+          key: g.date,
+          date: g.date,
+          title: `${g.empty.length} ${g.empty.length === 1 ? 'role' : 'roles'} open`,
+          line: roleNames(g.empty),
+          to: sundayLink(g.date),
+        })),
+        empty: 'Every role is filled.',
+      }
+    : {
+        key: 'mine',
+        title: 'Your turns',
+        to: { name: 'SchedulesMine' },
+        rows: myUpcoming.value.map((s) => ({
+          key: s.date,
+          date: s.date,
+          title: roleNames(myRolesOn(s)) || 'Serving',
+          line: s.theme || '',
+          to: sundayLink(s.date),
+        })),
+        empty: 'You are not on a Sunday yet.',
+      },
+])
 </script>
 
 <template>
-  <AppHome :stats="simpleStats" :loading="loading" :cards="cards" scope="schedules" label="Schedules today" :doors="doors" name="Schedules">
+  <AppHome :columns="columns" :stats="simpleStats" :loading="loading" :cards="cards" scope="schedules" label="Schedules today" :doors="doors" name="Schedules">
     <!-- 1. What matters about Sunday, most important on top -->
     <template #card="{ card }">
       <!-- Something on a Sunday: its date, the way a calendar shows it. -->
