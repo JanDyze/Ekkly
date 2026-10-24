@@ -192,6 +192,7 @@ export default async function handler(req, res) {
     {
       churchId: grant.churchId,
       actor: { id: MCP_ACTOR_ID, name: actorFor(grant.name), uid: grant.uid },
+      isAdmin: Boolean(access?.isAdmin),
     },
     () => respondToBody(body, { allowWrites: grant.allowWrites, apps, capabilities: access?.capabilities || null })
   );

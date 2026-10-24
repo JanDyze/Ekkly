@@ -1,4 +1,5 @@
 import { onMounted, onUnmounted, ref } from 'vue'
+import { usePermissions } from './usePermissions'
 import { addLesson, blankLesson, deleteLesson, saveLessonReview, subscribeToLessons, updateLesson } from '../api/lessonsService'
 
 // Shared across callers, like useTasks: the Teaching app's home, its sections
@@ -12,6 +13,12 @@ export function useLessons() {
   onMounted(() => {
     subscribers += 1
     if (unsubscribe) return
+    // Read only by those who may see lessons (firestore.rules); anyone
+    // else's listener would only be refused.
+    if (!usePermissions().can('teaching.view')) {
+      loading.value = false
+      return
+    }
     unsubscribe = subscribeToLessons((data) => {
       lessons.value = data
       loading.value = false

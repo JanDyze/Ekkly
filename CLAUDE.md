@@ -92,6 +92,12 @@ installable PWA.
   things sets `meta.mine` and opens without the app's capability ("My
   tasks": being given a task is reason enough to see it). A component hides what
   `usePermissions().canManage(area)` refuses rather than disabling it.
+  The database rules enforce the same capabilities, read from `caps` on the
+  account's access document (`lib/caps.js`; TENANCY.md, "Roles are enforced
+  by the database too"). A new collection that holds anything sensitive gets
+  a `match` of its own in `firestore.rules` and is added to the catch-all's
+  exclusions; a service write that changes what someone may see calls
+  `syncCapabilities()`. Contact details go through `lib/memberPrivate.js`.
 - **Icons come from `src/icons`, which is generated.** Import any Phosphor name
   (`import { Bell } from '../icons'`) and run `npm run build:icons`. Append
   `Fill` for the solid weight. Don't edit `src/icons/index.js` or import an

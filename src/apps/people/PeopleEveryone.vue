@@ -232,7 +232,10 @@ const memberGroups = computed(() => arrangeMembers(filteredMembers.value));
 // and a tag grants nothing, so the two are not offered on equal terms. Tagging
 // is one tap from the search bar; a ministry can only be applied to a
 // selection someone picked deliberately, and states what it hands out first.
-const { canManage, roleMap } = usePermissions();
+const { canManage, roleMap, isAdmin, hasNoAdmins } = usePermissions();
+// A ministry carries permissions, so only an administrator gives or takes
+// one (the database rules hold everyone else to that too).
+const canGrant = computed(() => isAdmin.value || hasNoAdmins.value);
 const { ministryNames } = useMinistries();
 const canTag = computed(() => canManage("members"));
 
@@ -1064,6 +1067,7 @@ const onMenu = (key) => {
         <!-- Ministry sits beside Tag rather than inside its sheet: they write
              different fields and only one of them grants access. -->
         <button
+          v-if="canGrant"
           type="button"
           @click="openSheetForPicked('ministries')"
           :disabled="!pickedCount"

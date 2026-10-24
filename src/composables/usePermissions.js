@@ -1,5 +1,7 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { subscribeToRolePermissions } from '../api/rolePermissionsService'
+import { syncCapabilities } from '../api/userAccountsService'
+import { useChurchAccess } from './useChurchAccess'
 import { subscribeToAdmins } from '../api/adminsService'
 import { subscribeToMembers } from '../api/membersService'
 import { useAuth } from './useAuth'
@@ -45,7 +47,35 @@ export const initPermissions = () => {
     markLoaded('members')
   })
 
+  ready.then(watchStoredCaps)
   return ready
+}
+
+/*
+ * The database rules hold this account to the `caps` stored on its access
+ * document, worked out by the server from the same roles and ministries this
+ * file reads (lib/caps.js). When the two disagree — a role changed, a
+ * ministry was given, the first sign-in since capabilities were stored — the
+ * screens would offer what the rules refuse, so the server is asked to work
+ * them out again. Once per disagreement: if the server still answers
+ * differently it is right (it read the records afresh), and asking again
+ * would only loop. Administrators are let through by the rules regardless.
+ */
+const asked = new Set()
+const watchStoredCaps = () => {
+  const { storedCaps, isGranted } = useChurchAccess()
+  const { isAdmin, capabilities } = usePermissions()
+  watch(
+    () => [isGranted.value, isAdmin.value, storedCaps.value, [...capabilities.value].sort().join(' ')],
+    ([granted, admin, stored, mine]) => {
+      if (!granted || admin) return
+      if (stored && [...stored].sort().join(' ') === mine) return
+      if (asked.has(mine)) return
+      asked.add(mine)
+      syncCapabilities()
+    },
+    { immediate: true }
+  )
 }
 
 /*

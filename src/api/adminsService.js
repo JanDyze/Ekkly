@@ -1,4 +1,5 @@
 import { db } from './firebase'
+import { syncCapabilities } from './userAccountsService'
 import {
   collection,
   doc,
@@ -74,6 +75,9 @@ export const addAdmin = async (user, addedBy) => {
 
 export const removeAdmin = async (uid) => {
   await deleteDoc(doc(db, ADMINS_COLLECTION, uid))
+  // No longer let through as an administrator, they are held to what their
+  // ministries carry, stored for the database rules (lib/caps.js).
+  syncCapabilities()
 }
 
 /**

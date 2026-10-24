@@ -1,5 +1,6 @@
 import { db } from './firebase'
 import { collection, doc, setDoc, deleteDoc, onSnapshot, Timestamp } from './firestore'
+import { syncCapabilities } from './userAccountsService'
 
 // One document per ministry tag, keyed by the tag name exactly as it appears
 // on a member record, holding the capabilities that tag grants.
@@ -29,8 +30,12 @@ export const setRolePermissions = async (tag, capabilities, updatedBy) => {
     updatedBy: updatedBy?.email || updatedBy?.uid || '',
     updatedAt: Timestamp.now(),
   })
+  // What the ministry may do is stored on each of its people's access too,
+  // for the database rules (lib/caps.js); not awaited, the rules catch up.
+  syncCapabilities()
 }
 
 export const clearRolePermissions = async (tag) => {
   await deleteDoc(doc(db, ROLES_COLLECTION, tag))
+  syncCapabilities()
 }

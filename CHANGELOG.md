@@ -11,6 +11,27 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.0] — 2026-10-24
+
+What each ministry may see is now kept by the database itself, not only by
+which screens the app shows. A church's books, prayer concerns, minutes and
+everyone's phone numbers are read only by the people whose ministry gives
+them leave.
+
+### Changed
+
+- **Each ministry sees only what it is given, all the way down.** The books,
+  prayer concerns, minutes, follow-up notes, attendance, inventory, lessons
+  and small group sessions are refused to anyone whose ministry does not
+  include them, however they ask.
+- **Phone numbers, emails and addresses** are seen only by those who may
+  see People, and by the person themselves. Names, birthdays and photos are
+  still seen by everyone in the church.
+- **Only an administrator gives someone a ministry**, links an account to a
+  record, or changes what a ministry may do, since each of those is access.
+  Others editing a person see their ministries without changing them.
+- The activity log is read by administrators only.
+
 ## [0.36.1] — 2026-10-24
 
 Simple view now reaches every app, and the keyboard's focus ring is drawn

@@ -1,4 +1,5 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { usePermissions } from './usePermissions'
 import { subscribeToAttendance, addAttendance, updateAttendance, deleteAttendance } from '../api/attendanceService'
 import { useEvents } from './useEvents'
 import { useMembers } from './useMembers'
@@ -47,6 +48,12 @@ export function useAttendance() {
   const { recurringEvents, schedules } = useRecurringEvents(events, members)
 
   onMounted(() => {
+    // Read only by those who may see attendance (firestore.rules); anyone
+    // else's listener would only be refused.
+    if (!usePermissions().can('attendance.view')) {
+      loading.value = false
+      return
+    }
     unsubscribe = subscribeToAttendance((data) => {
       attendance.value = data
       loading.value = false

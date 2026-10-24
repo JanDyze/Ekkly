@@ -8,6 +8,17 @@
 
 export const versionHistory = [
   {
+    version: '0.37.0',
+    date: '2026-10-24',
+    title: 'Kept for the right people',
+    summary: 'What each ministry may see is now protected by the database itself.',
+    highlights: [
+      'The books, prayer concerns and minutes only reach those given them.',
+      'Phone numbers and addresses are seen by those who look after People.',
+      'Only an administrator gives someone a ministry.',
+    ],
+  },
+  {
     version: '0.36.1',
     date: '2026-10-24',
     title: 'Simple view, everywhere',

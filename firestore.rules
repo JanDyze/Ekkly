@@ -46,6 +46,35 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/churches/$(churchId)/appAdmins/$(request.auth.uid));
     }
 
+    // What this account may do in the church, as the server worked it out
+    // from its ministries and the church's role grants (lib/caps.js) and
+    // stored on its access document. The app hides what these refuse; the
+    // rules refuse it whatever the browser asks.
+    function caps(churchId) {
+      return get(/databases/$(database)/documents/churches/$(churchId)/access/$(request.auth.uid)).data.get('caps', []);
+    }
+
+    // One capability ("finances.view"), which an administrator always has.
+    function can(churchId, cap) {
+      return hasAccess(churchId) && (isChurchAdmin(churchId) || cap in caps(churchId));
+    }
+
+    // Any one of several.
+    function canAny(churchId, list) {
+      return hasAccess(churchId) && (isChurchAdmin(churchId) || caps(churchId).hasAny(list));
+    }
+
+    // A write that leaves these fields as they were.
+    function keeps(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // The member record `memberId` belongs to this account.
+    function ownRecord(churchId, memberId) {
+      return hasAccess(churchId)
+        && get(/databases/$(database)/documents/churches/$(churchId)/members/$(memberId)).data.get('uid', null) == request.auth.uid;
+    }
+
     /* ------------------------------------------------------------ platform */
 
     // Readable by the account it names, so the app can tell a platform
@@ -185,21 +214,127 @@ service cloud.firestore {
       }
 
       match /auditLog/{entryId} {
-        allow read: if hasAccess(churchId);
+        // Every write's fields are previewed here — the ledger's amounts, a
+        // person's number — so it is read where it is shown, by the church's
+        // administrators.
+        allow read: if isChurchAdmin(churchId);
         allow create: if hasAccess(churchId)
           && request.resource.data.actorUid == request.auth.uid
           && request.resource.data.at == request.time;
         allow update, delete: if false;
       }
 
-      // Everything else the church keeps — the roll, the calendar, the ledger,
-      // minutes, songs, settings — is open to everyone in the church, exactly
-      // as the whole database was open to every signed-in account before. The
-      // collections above are excluded by name, because rules allow a request
-      // if any matching rule does and this match would otherwise reopen them.
+      /* ------------------------------------------- held to a capability */
+
+      // Each of these is read with an area's `.view` and changed with its
+      // `.manage` (lib/capabilities.js), as the app's own screens decide.
+      match /ledgerEntries/{docId} {
+        allow read: if can(churchId, 'finances.view');
+        allow write: if can(churchId, 'finances.manage');
+      }
+      match /ledgerSettings/{docId} {
+        allow read: if can(churchId, 'finances.view');
+        allow write: if can(churchId, 'finances.manage');
+      }
+      match /prayerConcerns/{docId} {
+        allow read: if can(churchId, 'prayer.view');
+        allow write: if can(churchId, 'prayer.manage');
+      }
+      match /minutes/{docId} {
+        allow read: if can(churchId, 'minutes.view');
+        allow write: if can(churchId, 'minutes.manage');
+      }
+      match /followUps/{docId} {
+        allow read: if can(churchId, 'consolidation.view');
+        allow write: if can(churchId, 'consolidation.manage');
+      }
+      match /attendance/{docId} {
+        allow read: if can(churchId, 'attendance.view');
+        allow write: if can(churchId, 'attendance.manage');
+      }
+      match /inventory/{docId} {
+        allow read: if can(churchId, 'inventory.view');
+        allow write: if can(churchId, 'inventory.manage');
+      }
+      match /lessons/{docId} {
+        allow read: if can(churchId, 'teaching.view');
+        allow write: if can(churchId, 'teaching.manage');
+      }
+      match /teachingClasses/{docId} {
+        allow read: if can(churchId, 'teaching.view');
+        allow write: if can(churchId, 'teaching.manage');
+      }
+      // A Sunday's message is planned in Schedules' preaching sheet and
+      // written up in Teaching, so either app reads and plans it.
+      match /sermons/{docId} {
+        allow read: if canAny(churchId, ['lineups.view', 'teaching.view']);
+        allow write: if canAny(churchId, ['preaching.manage', 'teaching.manage', 'lineups.manage']);
+      }
+      // A group's name and who leads it are seen across the app; what was
+      // said and who came are the group's.
+      match /smallGroups/{docId} {
+        allow read: if hasAccess(churchId);
+        allow write: if can(churchId, 'smallgroups.manage');
+      }
+      match /sgSessions/{docId} {
+        allow read: if can(churchId, 'smallgroups.view');
+        allow write: if can(churchId, 'smallgroups.manage');
+      }
+      match /sgSessionPhotos/{docId} {
+        allow read: if can(churchId, 'smallgroups.view');
+        allow write: if can(churchId, 'smallgroups.manage');
+      }
+
+      // What each ministry may do. Read by everyone (each app works out its
+      // own screens from it); granted only by administrators, since a grant
+      // here is access to whatever it names.
+      match /rolePermissions/{ministry} {
+        allow read: if hasAccess(churchId);
+        allow write: if isChurchAdmin(churchId);
+      }
+
+      // The roll. Everyone in the church reads it: names, birthdays and faces
+      // are on every line-up and the home. Changing it is for those who may
+      // manage People, except that the ministries on a record and the account
+      // it belongs to decide what that account may see, so only an
+      // administrator changes those. Someone may change their own record
+      // (their photo, their details), but not what it grants or whose it is.
+      match /members/{memberId} {
+        allow read: if hasAccess(churchId);
+        allow create: if can(churchId, 'members.manage')
+          && (isChurchAdmin(churchId)
+            || (request.resource.data.get('ministries', []).size() == 0
+              && request.resource.data.get('uid', null) == null));
+        allow delete: if can(churchId, 'members.manage');
+        allow update: if (can(churchId, 'members.manage')
+            && (isChurchAdmin(churchId) || keeps(['ministries', 'uid'])))
+          || (hasAccess(churchId)
+            && resource.data.get('uid', null) == request.auth.uid
+            && keeps(['ministries', 'uid', 'isMember', 'id']));
+      }
+
+      // How to reach someone (lib/memberPrivate.js), beside their record and
+      // under its id: read and changed by those who may see and manage People,
+      // and by the person the record belongs to.
+      match /memberPrivate/{memberId} {
+        allow read: if can(churchId, 'members.view') || ownRecord(churchId, memberId);
+        allow write: if can(churchId, 'members.manage') || ownRecord(churchId, memberId);
+      }
+
+      // Everything else the church keeps — the calendar, songs, schedules,
+      // links, the gallery, tasks and tickets, settings — is open to everyone
+      // in the church, as the whole database was before capabilities reached
+      // the rules. The collections above are excluded by name, because rules
+      // allow a request if any matching rule does and this match would
+      // otherwise reopen them.
       match /{collectionId}/{document=**} {
         allow read, write: if hasAccess(churchId)
-          && !(collectionId in ['access', 'joinRequests', 'appAdmins', 'auditLog', 'subscription', 'payments', 'usage']);
+          && !(collectionId in [
+            'access', 'joinRequests', 'appAdmins', 'auditLog', 'subscription', 'payments', 'usage',
+            'ledgerEntries', 'ledgerSettings', 'prayerConcerns', 'minutes', 'followUps', 'attendance',
+            'inventory', 'lessons', 'teachingClasses', 'sermons', 'smallGroups', 'sgSessions',
+            'sgSessionPhotos', 'rolePermissions', 'members', 'memberPrivate'
+          ]);
       }
     }
   }

@@ -32,6 +32,10 @@ import { initChurchApps } from './useChurchApps'
 const profile = ref(null)
 const status = ref('signed-out')
 const joinRequest = ref(null)
+// The capabilities the database rules hold this account to (`caps` on its
+// access document, written by the server; lib/caps.js), or null before any
+// were written. usePermissions compares them with its own working.
+const storedCaps = ref(null)
 
 let watchingUid = null
 let firstAnswer = Promise.resolve('signed-out')
@@ -83,6 +87,7 @@ export const initChurchAccess = (user) => {
   stop()
   watchingUid = uid
   joinRequest.value = null
+  storedCaps.value = null
 
   if (!uid) {
     status.value = 'signed-out'
@@ -113,8 +118,9 @@ export const initChurchAccess = (user) => {
     }
 
     unsubscribers.push(
-      subscribeToMyAccess(uid, (exists) => {
+      subscribeToMyAccess(uid, (exists, data) => {
         hasAccess = exists
+        storedCaps.value = Array.isArray(data?.caps) ? data.caps : null
         settle()
       }),
       subscribeToMyJoinRequest(uid, (request) => {
@@ -136,6 +142,7 @@ export function useChurchAccess() {
     profile,
     status,
     joinRequest,
+    storedCaps,
     churchName,
     isGranted,
     requestToJoin,

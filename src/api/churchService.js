@@ -1,4 +1,5 @@
 import { db } from './firebase'
+import { syncCapabilities } from './userAccountsService'
 import {
   collection,
   doc,
@@ -144,14 +145,18 @@ export const getChurchProfile = async (churchId = getChurchId()) => {
 
 /* ---------------------------------------------------------------- access */
 
-/** Calls back with true or false as the signed-in account's access comes and goes. */
+/**
+ * Calls back with true or false as the signed-in account's access comes and
+ * goes, and the access document itself: its `caps` are what the database
+ * rules hold this account to (lib/caps.js).
+ */
 export const subscribeToMyAccess = (uid, callback) =>
   onSnapshot(
     doc(db, ACCESS_COLLECTION, uid),
-    (snapshot) => callback(snapshot.exists()),
+    (snapshot) => callback(snapshot.exists(), snapshot.exists() ? snapshot.data() : null),
     (error) => {
       console.error('Error checking access:', error)
-      callback(false)
+      callback(false, null)
     }
   )
 
@@ -232,6 +237,9 @@ export const approveJoinRequest = async (request, reviewer) => {
     reviewedAt: serverTimestamp(),
   })
   await batch.commit()
+  // What they may see is stored on the new access for the database rules
+  // (lib/caps.js); not awaited, their app asks again if it is not there yet.
+  syncCapabilities()
 }
 
 export const declineJoinRequest = async (request, reviewer, note = '') => {

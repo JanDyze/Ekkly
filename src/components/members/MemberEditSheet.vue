@@ -37,6 +37,15 @@ import {
 } from '../../utils/memberUtils'
 import { samplePerson } from '../../data/samplePeople'
 import { useSimpleView } from '../../composables/useSimpleView'
+import { usePermissions } from '../../composables/usePermissions'
+
+// A ministry carries permissions, so giving or taking one is an
+// administrator's (and the database rules hold everyone else to that). Anyone
+// else editing the record sees what the person serves in without being able
+// to change it. A church with no administrator yet keeps it open, as the rest
+// of Settings does, so it can be set up at all.
+const { isAdmin, hasNoAdmins } = usePermissions()
+const canGrant = computed(() => isAdmin.value || hasNoAdmins.value)
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -671,9 +680,17 @@ const chip = (on) => [
                   <fieldset>
                     <legend :class="label">Ministries</legend>
                     <p class="-mt-0.5 mb-2 text-xs text-gray-500 dark:text-gray-400">
-                      A ministry grants access to parts of the app.
+                      {{
+                        canGrant
+                          ? 'A ministry grants access to parts of the app.'
+                          : 'A ministry grants access to parts of the app, so an administrator gives it.'
+                      }}
                     </p>
-                    <div v-if="ministryOptions.length" class="flex flex-wrap gap-2">
+                    <div v-if="!canGrant" class="flex flex-wrap gap-2">
+                      <span v-for="name in draft.ministries" :key="name" :class="chip(true)">{{ name }}</span>
+                      <span v-if="!draft.ministries.length" class="text-sm text-gray-500 dark:text-gray-400">None yet.</span>
+                    </div>
+                    <div v-else-if="ministryOptions.length" class="flex flex-wrap gap-2">
                       <button
                         v-for="name in ministryOptions"
                         :key="name"

@@ -1,4 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
+import { usePermissions } from './usePermissions'
 import { subscribeToPrayerConcerns, addPrayerConcern, updatePrayerConcern, deletePrayerConcern } from '../api/prayerConcernsService'
 
 // Shared across callers, like useTasks and useMembers: the Prayer app's home,
@@ -20,6 +21,12 @@ const retain = () => {
   clearTimeout(releaseTimer)
   releaseTimer = null
   if (unsubscribe) return
+  // Read only by those who may see prayer concerns (firestore.rules); anyone
+  // else's listener would only be refused.
+  if (!usePermissions().can('prayer.view')) {
+    loading.value = false
+    return
+  }
   // Only the first load shows placeholders. A reconnect after the grace
   // period keeps showing what it already has until the fresh list lands.
   if (!prayerConcerns.value.length) loading.value = true

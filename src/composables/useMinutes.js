@@ -1,4 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
+import { usePermissions } from './usePermissions'
 import { subscribeToMinutes, addMinute, updateMinute, deleteMinute } from '../api/minutesService'
 
 // Shared across callers, like useTasks: the Minutes app's home and its
@@ -13,6 +14,12 @@ export function useMinutes() {
   onMounted(() => {
     subscribers += 1
     if (unsubscribe) return
+    // Read only by those who may see minutes (firestore.rules); anyone
+    // else's listener would only be refused.
+    if (!usePermissions().can('minutes.view')) {
+      loading.value = false
+      return
+    }
     unsubscribe = subscribeToMinutes((data) => {
       minutes.value = data
       loading.value = false

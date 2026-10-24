@@ -1,4 +1,5 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { usePermissions } from './usePermissions'
 import { addTeachingClass, subscribeToTeachingClasses, updateTeachingClass } from '../api/teachingClassesService'
 import { AGE_BANDS } from '../utils/ageBands'
 
@@ -18,6 +19,12 @@ export function useTeachingClasses() {
   onMounted(() => {
     subscribers += 1
     if (unsubscribe) return
+    // Read only by those who may see Sunday school classes (firestore.rules); anyone
+    // else's listener would only be refused.
+    if (!usePermissions().can('teaching.view')) {
+      loading.value = false
+      return
+    }
     unsubscribe = subscribeToTeachingClasses((data) => {
       classes.value = data
       loading.value = false

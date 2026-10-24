@@ -1,4 +1,5 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { usePermissions } from './usePermissions'
 import {
   subscribeToEntries,
   subscribeToOpening,
@@ -30,6 +31,12 @@ export function useLedger() {
   onMounted(() => {
     subscribers += 1
     if (unsubscribeEntries) return
+    // Read only by those who may see the books (firestore.rules); anyone
+    // else's listener would only be refused.
+    if (!usePermissions().can('finances.view')) {
+      loading.value = false
+      return
+    }
     unsubscribeEntries = subscribeToEntries((data) => {
       entries.value = data
       loading.value = false

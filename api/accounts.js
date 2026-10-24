@@ -15,7 +15,8 @@
 // from Firebase Console → Project settings → Service accounts).
 import { getAuth } from "firebase-admin/auth";
 import { Timestamp } from "firebase-admin/firestore";
-import { requireChurchAdmin } from "../lib/tenant.js";
+import { requireChurchAdmin, requireChurchUser } from "../lib/tenant.js";
+import { syncChurchCaps } from "../lib/caps.js";
 
 // Firestore caps a batched write at 500 operations.
 const BATCH_LIMIT = 500;
@@ -34,6 +35,25 @@ export default async function handler(req, res) {
   // address, so it is for the app's own origin only.
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+
+  // `caps`: work out again what everyone in the church may see, for the
+  // database rules (lib/caps.js). Anyone in the church may ask — the answer
+  // comes only from records they cannot change for themselves (the role
+  // grants, ministries and account links, all administrators' to set), so
+  // asking can only bring the stored caps up to date, never widen them.
+  if (body.action === "caps") {
+    try {
+      const caller = await requireChurchUser(req);
+      if (caller.error) return res.status(caller.status).json({ error: caller.error });
+      const { caps, changed } = await syncChurchCaps(caller.church.ref);
+      return res.status(200).json({ caps: caps[caller.uid] || [], changed });
+    } catch (error) {
+      console.error("Error syncing capabilities:", error);
+      return res.status(500).json({ error: error.message || "Failed to sync capabilities" });
+    }
+  }
 
   try {
     const admin = await requireChurchAdmin(req);

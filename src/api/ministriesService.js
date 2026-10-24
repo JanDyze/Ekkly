@@ -1,4 +1,5 @@
 import { db } from './firebase'
+import { syncCapabilities } from './userAccountsService'
 import {
   collection,
   doc,
@@ -129,6 +130,9 @@ export const addMinistryToMembers = async (members, ministry) => {
   await inBatches(targets, (batch, member) =>
     batch.update(refFor(member), { ministries: arrayUnion(name) })
   )
+  // A ministry carries permissions, stored for the database rules too
+  // (lib/caps.js); not awaited, the rules catch up.
+  syncCapabilities()
   return targets.length
 }
 
@@ -151,6 +155,7 @@ export const removeMinistryFromMembers = async (members, ministry) => {
     const variants = [...new Set((member.ministries || []).filter((m) => same(m, name)))]
     batch.update(refFor(member), { ministries: arrayRemove(...variants) })
   })
+  syncCapabilities()
   return targets.length
 }
 
@@ -188,6 +193,7 @@ export const renameMinistry = async (oldName, newName, ministryId = null) => {
     await updateDoc(doc(db, MINISTRIES_COLLECTION, ministryId), { name: newName })
   }
 
+  syncCapabilities()
   return docs.length
 }
 
@@ -210,5 +216,6 @@ export const deleteMinistry = async (name, ministryId = null) => {
     await deleteDoc(doc(db, MINISTRIES_COLLECTION, ministryId))
   }
 
+  syncCapabilities()
   return docs.length
 }

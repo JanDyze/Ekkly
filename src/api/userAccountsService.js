@@ -207,3 +207,30 @@ export const syncAccountsFromAuth = async () => {
  * and the next sign-in by that account puts it straight back.
  */
 export const removeUserAccount = (uid) => deleteDoc(doc(db, ACCOUNTS_COLLECTION, uid))
+
+/**
+ * Asks the server to work out again what everyone in the church may see, for
+ * the database rules (`caps` on each access document; lib/caps.js). Called
+ * after anything that changes it — a role's grants, someone's ministries,
+ * which account a record belongs to, a new member let in — and by anyone
+ * whose stored caps no longer match their app's own working. Any member may
+ * ask: the answer comes from records only administrators can change.
+ * Resolves with this account's caps; never throws, since the next change or
+ * sign-in asks again.
+ */
+export const syncCapabilities = async () => {
+  try {
+    const token = await auth.currentUser?.getIdToken()
+    if (!token) return null
+    const response = await fetch('/api/accounts', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...churchHeaders() },
+      body: JSON.stringify({ action: 'caps' }),
+    })
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    return (await response.json()).caps || null
+  } catch (error) {
+    console.error('Error syncing capabilities:', error)
+    return null
+  }
+}

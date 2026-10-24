@@ -1,4 +1,5 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { usePermissions } from './usePermissions'
 import {
   addItem,
   deleteItem,
@@ -24,6 +25,12 @@ export function useInventory() {
   onMounted(() => {
     subscribers += 1
     if (unsubscribe) return
+    // Read only by those who may see the inventory (firestore.rules); anyone
+    // else's listener would only be refused.
+    if (!usePermissions().can('inventory.view')) {
+      loading.value = false
+      return
+    }
     unsubscribe = subscribeToInventory((data) => {
       items.value = data
       loading.value = false

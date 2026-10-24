@@ -1,11 +1,15 @@
-import { db } from "./firebase";
+import { auth, db } from "./firebase";
+import { syncCapabilities } from "./userAccountsService";
+import { PRIVATE_COLLECTION, splitPrivate } from "../../lib/memberPrivate.js";
 import {
   collection,
   getDocs,
   addDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   doc,
+  setDoc,
   onSnapshot,
   query,
   where,
@@ -14,6 +18,13 @@ import {
 import { inBatches } from './batchWrite';
 
 const MEMBERS_COLLECTION = "members";
+
+// How to reach someone — their number, email and address — is kept apart
+// from the rest of their record (lib/memberPrivate.js), readable only by those
+// who may see People and by the person themselves. A record written before
+// the split still carries these fields itself until
+// scripts/split-member-contacts.mjs moves them; they are read from either
+// place, the private one winning.
 
 // Helper to normalize member data from Firestore
 const normalizeMember = (data, docId) => {
@@ -39,6 +50,7 @@ const normalizeMember = (data, docId) => {
     // record whose address was only ever typed.
     addressParts: data.addressParts || null,
     contactNumber: data.contactNumber || '',
+    email: data.email || '',
     occupation: data.occupation || '',
     relatives: data.relatives || {},
     // What this member does in the church. The only field that grants access
@@ -75,38 +87,92 @@ export const getMemberByUid = async (uid) => {
   return found ? normalizeMember(found.data(), found.id) : null;
 };
 
-// Subscribe to members changes (real-time)
+// Subscribe to members changes (real-time), each with how to reach them where
+// this account may see it.
 export const subscribeToMembers = (callback) => {
   const membersRef = collection(db, MEMBERS_COLLECTION);
-  
-  // Helper to process snapshot
-  const processSnapshot = (snapshot) => {
-    const members = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return normalizeMember(data, doc.id);
-    });
+  let docs = [];
+  let loaded = false;
+  // Private details by member document id.
+  let privateById = {};
+  let unsubscribePrivate = null;
+  // Who cannot read every member's details still reads their own.
+  let ownOnly = false;
+  let ownId = null;
+
+  const emit = () => {
+    if (!loaded) return;
+    const members = docs.map((d) => normalizeMember({ ...d.data(), ...(privateById[d.id] || {}) }, d.id));
     // Sort by numeric id
     members.sort((a, b) => (a.id || 0) - (b.id || 0));
     callback(members);
   };
-  
+
+  const watchOwn = () => {
+    const uid = auth.currentUser?.uid;
+    const own = uid ? docs.find((d) => d.data().uid === uid) : null;
+    if (!own || own.id === ownId) return;
+    unsubscribePrivate?.();
+    ownId = own.id;
+    unsubscribePrivate = onSnapshot(
+      doc(db, PRIVATE_COLLECTION, own.id),
+      (snapshot) => {
+        privateById = snapshot.exists() ? { [own.id]: snapshot.data() } : {};
+        emit();
+      },
+      () => {}
+    );
+  };
+
+  unsubscribePrivate = onSnapshot(
+    collection(db, PRIVATE_COLLECTION),
+    (snapshot) => {
+      privateById = Object.fromEntries(snapshot.docs.map((d) => [d.id, d.data()]));
+      emit();
+    },
+    () => {
+      // Not someone who may see People: their own details only.
+      ownOnly = true;
+      unsubscribePrivate = null;
+      watchOwn();
+    }
+  );
+
   // Use simple query (orderBy requires index - can be added later in Firebase Console)
   // To enable orderBy, create a composite index on 'id' field in Firebase Console
-  return onSnapshot(
+  const unsubscribeMembers = onSnapshot(
     membersRef,
-    processSnapshot,
+    (snapshot) => {
+      docs = snapshot.docs;
+      loaded = true;
+      if (ownOnly) watchOwn();
+      emit();
+    },
     (error) => {
       console.error("Error subscribing to members:", error);
       callback([]);
     }
   );
+
+  return () => {
+    unsubscribeMembers();
+    unsubscribePrivate?.();
+  };
+};
+
+/** Writes a record's private part beside it, merged into what is there. */
+const writePrivate = async (firestoreId, closed) => {
+  if (!Object.keys(closed).length) return;
+  await setDoc(doc(db, PRIVATE_COLLECTION, firestoreId), closed, { merge: true });
 };
 
 // Add a new member
 export const addMember = async (memberData) => {
   try {
     const membersRef = collection(db, MEMBERS_COLLECTION);
-    const docRef = await addDoc(membersRef, memberData);
+    const { open, closed } = splitPrivate(memberData);
+    const docRef = await addDoc(membersRef, open);
+    await writePrivate(docRef.id, closed);
     return docRef.id;
   } catch (error) {
     console.error("Error adding member:", error);
@@ -123,7 +189,15 @@ export const updateMember = async (firestoreId, memberData) => {
     const dataToUpdate = Object.fromEntries(
       Object.entries(rest).filter(([, v]) => v !== undefined)
     );
-    await updateDoc(memberRef, dataToUpdate);
+    const { open, closed } = splitPrivate(dataToUpdate);
+    // Written to the private document, and taken off the open record in case
+    // it still carries them from before the split.
+    await writePrivate(firestoreId, closed);
+    Object.keys(closed).forEach((key) => (open[key] = deleteField()));
+    if (Object.keys(open).length) await updateDoc(memberRef, open);
+    // Ministries and the account a record belongs to decide what someone may
+    // see, which is stored for the database rules too (lib/caps.js).
+    if ("ministries" in dataToUpdate || "uid" in dataToUpdate) syncCapabilities();
   } catch (error) {
     console.error("Error updating member:", error);
     throw error;
@@ -135,6 +209,8 @@ export const deleteMember = async (firestoreId) => {
   try {
     const memberRef = doc(db, MEMBERS_COLLECTION, firestoreId);
     await deleteDoc(memberRef);
+    await deleteDoc(doc(db, PRIVATE_COLLECTION, firestoreId)).catch(() => {});
+    syncCapabilities();
   } catch (error) {
     console.error("Error deleting member:", error);
     throw error;
@@ -157,8 +233,17 @@ export const deleteMember = async (firestoreId) => {
 export const addMembers = async (records, firstId) => {
   const membersRef = collection(db, MEMBERS_COLLECTION);
   const numbered = records.map((record, i) => ({ ...record, id: firstId + i }));
-  await inBatches(numbered, (batch, record) => {
-    batch.set(doc(membersRef), record);
+  // Two writes each, the record and its private part under the same id.
+  const writes = numbered.flatMap((record) => {
+    const ref = doc(membersRef);
+    const { open, closed } = splitPrivate(record);
+    return [
+      { ref, data: open },
+      ...(Object.keys(closed).length ? [{ ref: doc(db, PRIVATE_COLLECTION, ref.id), data: closed }] : []),
+    ];
+  });
+  await inBatches(writes, (batch, write) => {
+    batch.set(write.ref, write.data);
   });
   return numbered.length;
 };

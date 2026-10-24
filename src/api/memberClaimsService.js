@@ -1,4 +1,5 @@
 import { db } from './firebase'
+import { syncCapabilities } from './userAccountsService'
 import {
   collection,
   doc,
@@ -130,6 +131,9 @@ export const approveMemberClaim = async (claim, member, reviewer) => {
       })
     )
   )
+  // The account now acts as the record, and has what its ministries carry,
+  // stored for the database rules too (lib/caps.js).
+  syncCapabilities()
 }
 
 export const rejectMemberClaim = async (claim, reviewer, note = '') => {
@@ -145,4 +149,5 @@ export const rejectMemberClaim = async (claim, reviewer, note = '') => {
 /** Breaks an existing link, freeing both the account and the member record. */
 export const unlinkMember = async (member) => {
   await updateDoc(doc(db, MEMBERS_COLLECTION, member.firestoreId), { uid: null })
+  syncCapabilities()
 }

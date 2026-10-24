@@ -324,15 +324,24 @@ church.
   PayMongo's documentation but has not been run with real keys. Try it with the
   test keys and PayMongo's test cards before going live, including a card that
   asks for 3-D Secure, a declined card, and a renewal (the webhook).
-- **Roles are enforced by the app, not the database.** `OPEN_ACCESS` is off, so
-  each ministry sees only the pages its capabilities open. But the Firestore
-  rules check only that someone belongs to the church, and the app loads the
-  whole roll (contact numbers and addresses included) for every member, so
-  anyone let in can read finances, prayer concerns, minutes and the directory
-  through the browser's developer tools. Churches are separated from each
-  other; ministries within a church are separated only on screen. Closing
-  this means rules that read the member's ministries and `rolePermissions`,
-  or moving the sensitive collections behind `api/` routes.
+- **Roles are enforced by the database too.** Each access document carries
+  `caps`, what that account may do, worked out on the server from its
+  ministries and `rolePermissions` (`lib/caps.js`, the same sum as
+  `lib/audience.js` and `usePermissions`) and stored for the rules to read.
+  The app asks the server to work them out again after anything that changes
+  them (`syncCapabilities`: role grants, someone's ministries or account
+  link, letting someone in, removing an administrator), and whenever its own
+  working disagrees with what is stored. The rules hold the books, prayer,
+  minutes, follow-up, attendance, inventory, teaching, small group sessions
+  and sermons to their area's `.view` and `.manage`; the audit log to
+  administrators; role grants, and the ministries and account on a member
+  record, to administrators (so nobody gives themselves access). How to reach
+  someone (number, email, address) is kept apart in `memberPrivate`
+  (`lib/memberPrivate.js`), readable with `members.view` or by the person.
+  The calendar, songs, schedules, links, gallery, tasks and settings stay open
+  to everyone in the church. `scripts/sync-caps.mjs` and
+  `scripts/split-member-contacts.mjs` brought existing churches over; the
+  rules are tested against the emulator with one account per kind of person.
 - **Rules tests.** The rules have not been run against the Firestore emulator.
   Check them in the Firebase console's Rules Playground before real data goes in:
   - a non-member reading `churches/uec/members/x`: denied
