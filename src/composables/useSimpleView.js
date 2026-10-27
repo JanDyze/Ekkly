@@ -6,8 +6,11 @@ import { motionLevel } from './useMotion'
 
 /**
  * Simple view, for whoever finds Ekkly's screens busy: the same records with
- * the pictures, the character and the arranging taken away, larger and fewer
- * things on each screen. Turned on in Preferences ("Simple view").
+ * the pictures, the character and the arranging taken away, and fewer things
+ * on each screen. Not larger: it once set everything a size or two up, and
+ * the figures and lists read as shouting, so it keeps the app's own sizes,
+ * a page's title and its figures only a step above the rest. Turned on in
+ * Preferences ("Simple view").
  *
  * The home reads it first (HomeSimple). The apps follow, each reading this
  * same switch, so it is turned on once and means the same everywhere.

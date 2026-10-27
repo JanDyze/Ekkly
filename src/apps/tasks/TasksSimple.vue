@@ -68,7 +68,7 @@ const list = computed(() =>
   <div class="flex h-full flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
     <div class="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-6 px-4 pt-6 pb-[max(1rem,env(safe-area-inset-bottom),calc(var(--bottom-bar-space)+0.75rem))] lg:px-8 lg:pt-8">
       <header class="flex shrink-0 flex-wrap items-center justify-between gap-3">
-        <h1 class="text-2xl font-bold tracking-tight text-gray-900 lg:text-3xl dark:text-white">Tasks</h1>
+        <h1 class="text-xl font-bold tracking-tight text-gray-900 lg:text-2xl dark:text-white">Tasks</h1>
         <RouterLink
           v-if="canEdit"
           :to="{ name: 'Tasks', query: { add: 'true' } }"
@@ -86,10 +86,10 @@ const list = computed(() =>
             v-for="stat in stats"
             :key="stat.key"
             :to="stat.to"
-            class="flex min-w-0 flex-col rounded-xl bg-white p-5 ring-1 ring-gray-200 transition-colors hover:ring-gray-300 dark:bg-gray-800 dark:ring-gray-700 dark:hover:ring-gray-600"
+            class="flex min-w-0 flex-col rounded-xl bg-white p-5 border border-gray-200 transition-colors hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:hover:border-gray-600"
           >
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ stat.label }}</span>
-            <span :class="['mt-2 truncate text-2xl font-bold tabular-nums sm:text-3xl', stat.warn ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white']">
+            <span :class="['mt-2 truncate text-xl font-bold tabular-nums sm:text-2xl', stat.warn ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white']">
               {{ loading ? '–' : stat.value.toLocaleString() }}
             </span>
             <span class="mt-auto flex items-center gap-1 pt-3 text-sm font-semibold text-primary dark:text-primary-light">
@@ -101,10 +101,10 @@ const list = computed(() =>
 
         <div class="grid grid-cols-[minmax(0,1fr)] gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-2 lg:grid-rows-[minmax(0,1fr)]">
           <section aria-labelledby="tasks-simple-needs" class="flex min-h-0 flex-col">
-            <h2 id="tasks-simple-needs" class="mb-3 text-base font-semibold text-gray-900 dark:text-white">Needs your attention</h2>
+            <h2 id="tasks-simple-needs" class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Needs your attention</h2>
             <SimpleRows :rows="needs" class="min-h-0 lg:overflow-y-auto">
               <template #empty>
-                <p v-if="!needs.length" class="flex items-center gap-3 px-4 py-4 text-base text-gray-600 dark:text-gray-300">
+                <p v-if="!needs.length" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                   <CheckCircle class="size-5 text-primary dark:text-primary-light" />
                   Nothing needs you right now.
                 </p>
@@ -114,12 +114,12 @@ const list = computed(() =>
 
           <section aria-labelledby="tasks-simple-yours" class="flex min-h-0 flex-col">
             <div class="mb-3 flex items-center justify-between gap-3">
-              <h2 id="tasks-simple-yours" class="text-base font-semibold text-gray-900 dark:text-white">{{ myMemberId ? 'Your tasks' : 'Open tasks' }}</h2>
+              <h2 id="tasks-simple-yours" class="text-sm font-semibold text-gray-900 dark:text-white">{{ myMemberId ? 'Your tasks' : 'Open tasks' }}</h2>
               <RouterLink :to="{ name: myMemberId ? 'TasksMine' : 'Tasks' }" class="text-sm font-semibold text-primary hover:underline dark:text-primary-light">See all</RouterLink>
             </div>
             <SimpleRows :rows="list" class="min-h-0 lg:overflow-y-auto">
               <template #empty>
-                <p v-if="!list.length" class="px-4 py-4 text-base text-gray-600 dark:text-gray-300">
+                <p v-if="!list.length" class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                   {{ myMemberId ? 'Nothing is on you.' : 'Nothing is open.' }}
                 </p>
               </template>

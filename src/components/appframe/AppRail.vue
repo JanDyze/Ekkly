@@ -31,10 +31,6 @@ import { sectionHue } from '../../data/appHues'
 // A screen further in (a record, a Sunday) marks the section it belongs to,
 // the one whose drawing it borrows. An app with fewer than two sections has
 // nowhere to go between, and draws no rail.
-//
-// Its cards never carry the morph keys a home's tiles do: a section's name
-// flies into its header from the tile that opened it (router/viewTransitions.js),
-// and a second card with the same key would catch it on the way.
 
 const route = useRoute()
 const { can } = usePermissions()

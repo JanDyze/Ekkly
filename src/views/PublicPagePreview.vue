@@ -289,11 +289,10 @@ const undoHide = () => {
 
 /* ------------------------------------------------- the morph, both ways */
 
-// The builder's floating window grows into this screen and shrinks back out of
-// it (src/router/viewTransitions.js). This screen's half of that is one named
-// element: the part the window was showing, or the whole page when it was
-// showing the top. Whatever was last chosen here becomes that part, so going
-// back lands the builder on it and the window shows it.
+// The builder's floating window once grew into this screen and shrank back
+// out of it; pages no longer animate into each other, but the part this
+// screen was showing is still handed back, so going back lands the builder
+// on whatever was last chosen here and the window shows it.
 const twinId = computed(() => selected.value || part)
 const backLink = computed(() => ({ path: '/public-page', query: twinId.value ? { part: twinId.value } : {} }))
 

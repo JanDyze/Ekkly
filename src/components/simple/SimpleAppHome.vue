@@ -71,7 +71,7 @@ const sections = computed(() =>
   <div class="flex h-full flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
     <div class="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-6 px-4 pt-6 pb-[max(1rem,env(safe-area-inset-bottom),calc(var(--bottom-bar-space)+0.75rem))] lg:px-8 lg:pt-8">
       <header class="flex shrink-0 flex-wrap items-center justify-between gap-3">
-        <h1 class="text-2xl font-bold tracking-tight text-gray-900 lg:text-3xl dark:text-white">{{ name }}</h1>
+        <h1 class="text-xl font-bold tracking-tight text-gray-900 lg:text-2xl dark:text-white">{{ name }}</h1>
         <RouterLink
           v-if="action"
           :to="action.to"
@@ -93,10 +93,10 @@ const sections = computed(() =>
             v-for="stat in stats"
             :key="stat.key"
             :to="stat.to"
-            class="flex min-w-0 flex-col rounded-xl bg-white p-5 ring-1 ring-gray-200 transition-colors hover:ring-gray-300 dark:bg-gray-800 dark:ring-gray-700 dark:hover:ring-gray-600"
+            class="flex min-w-0 flex-col rounded-xl bg-white p-5 border border-gray-200 transition-colors hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:hover:border-gray-600"
           >
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ stat.label }}</span>
-            <span :class="['mt-2 truncate text-2xl font-bold tabular-nums sm:text-3xl', stat.warn ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white']">
+            <span :class="['mt-2 truncate text-xl font-bold tabular-nums sm:text-2xl', stat.warn ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white']">
               {{ loading ? '–' : typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value }}
             </span>
             <span v-if="stat.note" class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ stat.note }}</span>
@@ -112,10 +112,10 @@ const sections = computed(() =>
                beside them they take a column each. -->
           <div :class="['flex min-h-0 min-w-0 flex-col gap-6', $slots.side ? '' : 'lg:contents']">
             <section aria-labelledby="simple-app-needs" class="flex min-h-0 flex-[0_1_auto] flex-col">
-              <h2 id="simple-app-needs" class="mb-3 text-base font-semibold text-gray-900 dark:text-white">Needs your attention</h2>
+              <h2 id="simple-app-needs" class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Needs your attention</h2>
               <SimpleRows :rows="needs" class="min-h-0 lg:overflow-y-auto">
                 <template #empty>
-                  <p v-if="!needs.length" class="flex items-center gap-3 px-4 py-4 text-base text-gray-600 dark:text-gray-300">
+                  <p v-if="!needs.length" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                     <CheckCircle class="size-5 text-primary dark:text-primary-light" />
                     Nothing needs you right now.
                   </p>
@@ -124,7 +124,7 @@ const sections = computed(() =>
             </section>
 
             <section v-if="good.length" aria-labelledby="simple-app-good" class="flex min-h-0 flex-[0_1_auto] flex-col">
-              <h2 id="simple-app-good" class="mb-3 text-base font-semibold text-gray-900 dark:text-white">Good to know</h2>
+              <h2 id="simple-app-good" class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Good to know</h2>
               <SimpleRows :rows="good" class="min-h-0 lg:overflow-y-auto" />
             </section>
           </div>
@@ -136,7 +136,7 @@ const sections = computed(() =>
 
         <!-- On a phone the sidebar is a drawer, so the sections are here too. -->
         <section v-if="sections.length" aria-labelledby="simple-app-sections" class="flex flex-col lg:hidden">
-          <h2 id="simple-app-sections" class="mb-3 text-base font-semibold text-gray-900 dark:text-white">Sections</h2>
+          <h2 id="simple-app-sections" class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Sections</h2>
           <SimpleRows :rows="sections" />
         </section>
       </div>

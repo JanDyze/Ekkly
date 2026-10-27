@@ -2,8 +2,8 @@
 //
 // An app inside Ekkly is a stack: its home (depth 0) is a launcher, each
 // section is one step in (depth 1), and a Sunday is a step further (depth 2).
-// `frame: 'app'` hands it the whole screen, and the depths are what the slide
-// between screens reads to know which way to go (src/router/viewTransitions.js).
+// `frame: 'app'` hands it the whole screen, and the depths are what the top
+// bar's trail and the app's rail read to know where a screen stands.
 //
 // The capability keeps its lineups name, because it is what the grants say.
 

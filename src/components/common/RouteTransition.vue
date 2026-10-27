@@ -13,7 +13,7 @@ import { useRouter } from 'vue-router'
  * navy. That covered the wait, but it also dropped a screen of its own between
  * every slow page and the next, which read as the app stumbling rather than
  * moving. A bar leaves the page that was tapped on in place, under the finger,
- * until the next one slides in over it (router/viewTransitions.js).
+ * until the next one appears.
  *
  * It only appears for a navigation that is actually slow. A chunk the browser
  * already has swaps in a few milliseconds, and a bar flickering over that is

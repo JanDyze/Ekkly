@@ -1,6 +1,5 @@
 import { watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
-import { installViewTransitions } from './viewTransitions'
 import AdminLayout from '../layouts/AdminLayout.vue'
 import { initAuth, useAuth } from '../composables/useAuth'
 import { initPermissions, usePermissions } from '../composables/usePermissions'
@@ -475,10 +474,6 @@ const createChurchRouter = () => {
 
     return true
   })
-
-  // Installed after the guards, so only a navigation they let through is
-  // animated.
-  installViewTransitions(router)
 
   return router
 }

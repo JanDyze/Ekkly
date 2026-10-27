@@ -69,8 +69,8 @@ const mobileView = ref(readView());
 // Switching between them, each face on screen glides from its place in one
 // to its place in the other, growing or shrinking as it goes, so the eye
 // keeps hold of who was where instead of the roll simply being redrawn. Only
-// the faces in view take part: measuring the whole roll would cost what the
-// view transition into a record once did (router/viewTransitions.js). Faces
+// the faces in view take part: measuring the whole roll would cost more than
+// the motion is worth. Faces
 // with nowhere to come from fade in. None of it for anyone who has asked for
 // less motion.
 const FACE = "[data-member-avatar]";

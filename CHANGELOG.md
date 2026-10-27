@@ -11,6 +11,22 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.5] — 2026-10-27
+
+Calmer: no more turning card between pages, and Simple view at a normal size.
+
+### Changed
+
+- **Pages no longer turn over like a card** when one opens another. Every
+  page simply appears.
+- **Simple view's text is a size smaller**: titles, figures and lists read at
+  the app's normal sizes instead of a step or two up.
+
+### Fixed
+
+- The edge of Simple view's figure cards and lists no longer looks cut off
+  until the card is focused.
+
 ## [0.37.4] — 2026-10-24
 
 ### Changed

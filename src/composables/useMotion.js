@@ -3,20 +3,21 @@ import { clearUserPref, saveUserPrefs, subscribeToUserPrefs } from '../api/userP
 import { useAuth } from './useAuth'
 
 /**
- * How much moves between pages, for this person (router/viewTransitions.js):
+ * How much moves on screen, for this person:
  *
- *   full — the card turning over into the page it opens, and the page
- *          turning back into its card on the way out;
- *   off  — pages simply change.
+ *   full — the few motions that show where something went: People's faces
+ *          finding their places when the roll is sorted again, and the
+ *          home closing like a window as simple view is switched;
+ *   off  — nothing moves.
  *
- * That card is the only thing that moves between pages: the slides, the
- * settling and the rising in were taken out, so there is no `simple` any
- * more. Whoever chose it asked for less motion, and now has none (readLevel).
+ * Pages never animate into each other; the last motion between them, a card
+ * turning over into the page it opened, was taken out too. There is no
+ * `simple` any more: whoever chose it asked for less motion, and now has none
+ * (readLevel).
  *
- * Full unless they choose otherwise in Preferences, because it is what makes
- * going between apps easy to follow; but some people find motion tiring, and
- * it is theirs to turn down. A device asking for less motion gets none
- * whatever is chosen here.
+ * Full unless they choose otherwise in Preferences; some people find motion
+ * tiring, and it is theirs to turn down. A device asking for less motion gets
+ * none whatever is chosen here.
  *
  * Kept against the account like their other preferences (userPrefs), with the
  * device holding a head start, and module-level so the router can read it

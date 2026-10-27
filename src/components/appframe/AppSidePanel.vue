@@ -58,7 +58,7 @@ const ASIDE = {
 <template>
   <section v-if="simple" class="flex min-h-0 flex-col">
     <div class="mb-3 flex items-center justify-between gap-3">
-      <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ title }}</h2>
+      <h2 class="text-sm font-semibold text-gray-900 dark:text-white">{{ title }}</h2>
       <RouterLink
         v-if="link"
         :to="link.to"
@@ -67,9 +67,9 @@ const ASIDE = {
         {{ link.label }}
       </RouterLink>
     </div>
-    <div class="rows-round min-h-0 overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 lg:overflow-y-auto dark:bg-gray-800 dark:ring-gray-700">
-      <p v-if="loading && !items.length" class="px-4 py-4 text-base text-gray-500 dark:text-gray-400">Loading…</p>
-      <p v-else-if="!items.length" class="px-4 py-4 text-base text-gray-600 dark:text-gray-300">
+    <div class="rows-round min-h-0 overflow-hidden rounded-2xl bg-white border border-gray-200 lg:overflow-y-auto dark:bg-gray-800 dark:border-gray-700">
+      <p v-if="loading && !items.length" class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">Loading…</p>
+      <p v-else-if="!items.length" class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
         {{ [empty.title, empty.line].filter(Boolean).join('. ') }}
       </p>
       <template v-else>
@@ -77,7 +77,7 @@ const ASIDE = {
         <p
           v-if="row.heading"
           :class="[
-            'border-t border-gray-100 px-4 pt-3 pb-1 text-sm font-semibold first:border-t-0 lg:px-5 dark:border-gray-700/60',
+            'border-t border-gray-100 px-4 pt-3 pb-1 text-xs font-semibold first:border-t-0 lg:px-5 dark:border-gray-700/60',
             row.today ? 'text-primary dark:text-primary-light' : 'text-gray-500 dark:text-gray-400',
           ]"
         >
@@ -103,12 +103,12 @@ const ASIDE = {
             </span>
           </slot>
           <span class="min-w-0 flex-1">
-            <span class="block truncate text-base font-semibold text-gray-900 dark:text-white">{{ row.title }}</span>
-            <span v-if="row.line" class="block truncate text-sm text-gray-500 dark:text-gray-400">{{ row.line }}</span>
+            <span class="block truncate text-sm font-semibold text-gray-900 dark:text-white">{{ row.title }}</span>
+            <span v-if="row.line" class="block truncate text-xs text-gray-500 dark:text-gray-400">{{ row.line }}</span>
           </span>
           <span
             v-if="row.aside"
-            :class="['shrink-0 text-sm font-semibold tabular-nums', ASIDE[row.tone] || 'text-gray-500 dark:text-gray-400']"
+            :class="['shrink-0 text-xs font-semibold tabular-nums', ASIDE[row.tone] || 'text-gray-500 dark:text-gray-400']"
           >
             {{ row.aside }}
           </span>

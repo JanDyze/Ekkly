@@ -8,6 +8,16 @@
 
 export const versionHistory = [
   {
+    version: '0.37.5',
+    date: '2026-10-27',
+    title: 'A little calmer',
+    summary: 'Pages simply appear, and Simple view is at a normal size.',
+    highlights: [
+      'No more card turning over between pages.',
+      'Smaller, quieter text in Simple view.',
+    ],
+  },
+  {
     version: '0.37.3',
     date: '2026-10-24',
     title: 'More room on a computer',

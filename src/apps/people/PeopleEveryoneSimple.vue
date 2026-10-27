@@ -163,7 +163,7 @@ const ACTION =
 
     <template v-else>
       <!-- A desk: the table. -->
-      <div class="hidden min-h-0 flex-1 overflow-hidden rounded-xl bg-white ring-1 ring-gray-200 lg:flex lg:flex-col dark:bg-gray-800 dark:ring-gray-700">
+      <div class="hidden min-h-0 flex-1 overflow-hidden rounded-xl bg-white border border-gray-200 lg:flex lg:flex-col dark:bg-gray-800 dark:border-gray-700">
         <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:thin]">
         <table class="w-full table-fixed text-sm">
           <thead class="sticky top-0 z-10 border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
@@ -234,7 +234,7 @@ const ACTION =
       </div>
 
       <!-- A phone: the same rows, stacked. -->
-      <ul class="rows-round divide-y divide-gray-100 overflow-hidden rounded-xl bg-white ring-1 ring-gray-200 lg:hidden dark:divide-gray-700/60 dark:bg-gray-800 dark:ring-gray-700">
+      <ul class="rows-round divide-y divide-gray-100 overflow-hidden rounded-xl bg-white border border-gray-200 lg:hidden dark:divide-gray-700/60 dark:bg-gray-800 dark:border-gray-700">
         <li v-for="member in shown" :key="keyOf(member)" class="flex items-center gap-3 px-4 py-3">
           <RouterLink :to="recordOf(member)" class="flex min-w-0 flex-1 items-center gap-3">
             <MemberAvatar :member="member" alt="" size="h-10 w-10" class="shrink-0" />

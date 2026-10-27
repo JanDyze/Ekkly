@@ -145,10 +145,7 @@ const KEPT_ALIVE = ['PeopleEveryone', 'SongsAll']
            scrolling areas would otherwise make room twice. The home and an
            app's screens run to the foot of the screen behind the bar and make
            room for it themselves (style.css, --bottom-bar-space). -->
-      <!-- data-morph-page: where a page appears, so a tapped card can grow
-           into it and the page shrink back into its card (the card becoming the page in
-           router/viewTransitions.js). -->
-      <main data-morph-page :class="['flex-1 overflow-hidden bg-white dark:bg-gray-900 print-main', bare || isRoot ? '' : 'pb-(--bottom-bar-space)']">
+      <main :class="['flex-1 overflow-hidden bg-white dark:bg-gray-900 print-main', bare || isRoot ? '' : 'pb-(--bottom-bar-space)']">
         <!-- A focus route gets the raw box and handles its own padding and
              safe areas: the deck should reach the edges of the screen. -->
         <div :class="['h-full print-main', bare || isRoot ? '' : 'p-0 sm:p-4 lg:px-8 lg:py-3 [--bottom-bar-space:0px]']">

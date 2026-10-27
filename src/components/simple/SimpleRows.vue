@@ -26,7 +26,7 @@ const emit = defineEmits(['act'])
 <template>
   <div
     :class="[
-      'overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700',
+      'overflow-hidden rounded-2xl bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700',
       columns
         ? 'grid gap-px bg-gray-100 lg:grid-cols-2 dark:bg-gray-700/60 *:bg-white dark:*:bg-gray-800 lg:[&>*:last-child:nth-child(odd)]:col-span-2'
         : 'rows-round divide-y divide-gray-100 dark:divide-gray-700/60',
@@ -39,17 +39,17 @@ const emit = defineEmits(['act'])
       :to="row.to || undefined"
       :type="row.action && !row.to ? 'button' : undefined"
       :class="[
-        'flex w-full items-center gap-4 px-4 py-3.5 text-left lg:px-5 lg:py-4',
+        'flex w-full items-center gap-4 px-4 py-3 text-left lg:px-5',
         row.to || row.action ? 'transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40' : '',
       ]"
       @click="row.action && !row.to ? emit('act', row) : undefined"
     >
-      <MemberAvatar v-if="row.member" :member="row.member" alt="" size="h-11 w-11 lg:h-12 lg:w-12" class="shrink-0" />
-      <AppArt v-else-if="row.art" :app-key="row.art" class="size-11 shrink-0 lg:size-12" />
+      <MemberAvatar v-if="row.member" :member="row.member" alt="" size="h-10 w-10" class="shrink-0" />
+      <AppArt v-else-if="row.art" :app-key="row.art" class="size-10 shrink-0" />
       <span
         v-else-if="row.icon"
         :class="[
-          'flex size-11 shrink-0 items-center justify-center rounded-xl lg:size-12',
+          'flex size-10 shrink-0 items-center justify-center rounded-xl',
           row.warn
             ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300'
             : 'bg-primary/10 text-primary dark:bg-primary-light/15 dark:text-primary-light',
@@ -58,8 +58,8 @@ const emit = defineEmits(['act'])
         <component :is="row.icon" class="size-5" />
       </span>
       <span class="min-w-0 flex-1">
-        <span class="block text-base font-semibold text-gray-900 lg:text-lg dark:text-white">{{ row.title }}</span>
-        <span v-if="row.detail" class="block text-sm text-gray-500 lg:text-base dark:text-gray-400">{{ row.detail }}</span>
+        <span class="block text-sm font-semibold text-gray-900 lg:text-base dark:text-white">{{ row.title }}</span>
+        <span v-if="row.detail" class="block text-xs text-gray-500 lg:text-sm dark:text-gray-400">{{ row.detail }}</span>
       </span>
       <span
         v-if="row.badge"
@@ -72,7 +72,7 @@ const emit = defineEmits(['act'])
       >
         {{ row.badge.toLocaleString() }}
       </span>
-      <ChevronRight v-if="row.to || row.action" class="size-5 shrink-0 text-gray-300 dark:text-gray-600" />
+      <ChevronRight v-if="row.to || row.action" class="size-4 shrink-0 text-gray-300 dark:text-gray-600" />
     </component>
     <slot name="empty" />
   </div>

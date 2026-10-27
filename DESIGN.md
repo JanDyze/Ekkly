@@ -840,17 +840,17 @@ secondary: text-sm text-gray-500 dark:text-gray-400 mt-0.5 truncate
 
 ### Moving between screens
 
-One animation moves between pages, and only one: a tapped card turns over
-as it grows into the page it opens, and the page turns back into it on the
-way out (`src/router/viewTransitions.js`; `data-morph-card="/path"` on the
-card, `data-morph-page` on the page area). Every other change of page is
-instant. The slides between an app's screens, the settling of other pages,
-a record pushing in over its list, the list sliding back, and blocks rising
-into place one after another (`animate-rise`) were all taken out: each moved
-differently, so going between screens felt different depending on where you
-were. Don't add an entrance animation to a page or its blocks, and don't add
-a `<Transition>` around the router view. Preferences > Transitions is On (the
-card) or Off. The one other screen-wide motion is not a change of page:
+Nothing moves between pages: every change of page is instant. The last
+animation between them, a tapped card turning over as it grew into the page
+it opened, was taken out on 2026-10-27, after the slides between an app's
+screens, the settling of other pages, a record pushing in over its list,
+the list sliding back, and blocks rising into place (`animate-rise`): each
+moved differently, so going between screens felt different depending on
+where you were. Don't add an entrance animation to a page or its blocks,
+don't add a `<Transition>` around the router view, and don't bring back
+View Transitions. Preferences > Transitions (`useMotion`) now turns the few
+motions inside a screen on or off. The one screen-wide motion is not a
+change of page:
 turning Simple view on or off on the home closes it like a church window
 and opens it onto the other (`HomeModeShutter`, timed by `useSimpleView`):
 Ekkly's window's own four panes, large enough to fill the screen, close in

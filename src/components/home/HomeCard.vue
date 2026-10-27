@@ -27,8 +27,7 @@ const props = defineProps({
   // What the card opens: a RouterLink, or a button.
   as: { type: [String, Object], default: 'button' },
   // { name, tagline, art, glyph, more, peek, path } — `path` is where it
-  // opens, which the card growing into its page is keyed by
-  // (router/viewTransitions.js).
+  // opens.
   card: { type: Object, required: true },
   // A section inside an app rather than an app on the home.
   section: { type: Boolean, default: false },
@@ -54,7 +53,6 @@ const press = computed(() => `transition-[background-color,box-shadow] duration-
   <component
     v-if="variant === 'accent'"
     :is="as"
-    :data-morph-card="card.more ? undefined : card.path"
     :class="['home-card group relative flex min-w-0 flex-col items-start gap-2.5 overflow-hidden rounded-2xl p-3.5 pl-4.5 pr-8 text-left lg:pr-3.5 @max-[17rem]:pl-3.5 @max-[17rem]:pr-2.5', press]"
   >
     <span class="home-stripe absolute inset-y-0 left-0 w-1" />
@@ -71,7 +69,6 @@ const press = computed(() => `transition-[background-color,box-shadow] duration-
   <component
     v-else-if="variant === 'illustrated'"
     :is="as"
-    :data-morph-card="card.more ? undefined : card.path"
     :class="['home-wash group relative isolate flex min-h-29 min-w-0 flex-col items-start justify-between gap-2 overflow-hidden rounded-2xl p-3.5 text-left', press]"
   >
     <AppArt v-if="card.art && !card.more" :app-key="card.art" flat class="home-hue pointer-events-none absolute -bottom-5 -right-4 -z-10 size-24 opacity-25" />
@@ -88,7 +85,6 @@ const press = computed(() => `transition-[background-color,box-shadow] duration-
   <component
     v-else-if="variant === 'compact'"
     :is="as"
-    :data-morph-card="card.more ? undefined : card.path"
     :class="['home-card group flex h-16 min-w-0 items-center gap-2.5 rounded-2xl px-3 text-left', press]"
   >
     <HomeCardIcon :card="card" :play="play" size="size-10" art="size-6.5" />
@@ -104,7 +100,6 @@ const press = computed(() => `transition-[background-color,box-shadow] duration-
   <component
     v-else-if="variant === 'orbit'"
     :is="as"
-    :data-morph-card="card.more ? undefined : card.path"
     :class="['home-node group absolute flex aspect-square flex-col items-center justify-center gap-1 rounded-full text-center', press]"
   >
     <HomeCardIcon :card="card" :play="play" size="size-10" art="size-7" ground="" />
@@ -116,7 +111,6 @@ const press = computed(() => `transition-[background-color,box-shadow] duration-
   <component
     v-else-if="variant === 'list'"
     :is="as"
-    :data-morph-card="card.more ? undefined : card.path"
     :class="['home-card group relative isolate flex h-15 min-w-0 items-center gap-3 overflow-hidden rounded-2xl px-3 text-left', press]"
   >
     <svg class="home-hue pointer-events-none absolute inset-y-0 right-0 -z-10 h-full w-32 opacity-15" viewBox="0 0 120 60" preserveAspectRatio="none" aria-hidden="true">
@@ -135,7 +129,6 @@ const press = computed(() => `transition-[background-color,box-shadow] duration-
   <component
     v-else
     :is="as"
-    :data-morph-card="card.more ? undefined : card.path"
     :class="['home-wash group relative isolate flex min-h-27 min-w-0 flex-col items-start justify-between gap-2 overflow-hidden rounded-2xl p-3.5 text-left', press]"
   >
     <svg class="home-hue pointer-events-none absolute bottom-0 right-0 -z-10 h-full w-3/4 opacity-20" viewBox="0 0 120 100" preserveAspectRatio="none" aria-hidden="true">

@@ -57,8 +57,7 @@ const props = defineProps({
 const router = useRouter()
 const warm = () => prefetchRoute(router, props.to)
 
-// The path this tile opens, which the section's header carries too, so its
-// name can fly up into the header and back (router/viewTransitions.js).
+// The path this tile opens.
 const morphKey = computed(() => router.resolve(props.to).path)
 
 const card = computed(() => ({
