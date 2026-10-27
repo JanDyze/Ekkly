@@ -14,7 +14,8 @@
     "sync:bible": "node scripts/sync-bible.mjs",
     "dev:emulator": "vite --mode emulator",
     "emulators": "firebase emulators:start --only auth,firestore --project church-test-fe084",
-    "seed:emulator": "node scripts/seed-emulator.mjs"
+    "seed:emulator": "node scripts/seed-emulator.mjs",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-ekkly-rules \"node scripts/test-rules.mjs\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",
@@ -35,6 +36,7 @@
     "xlsx-js-style": "^1.2.0"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@phosphor-icons/core": "^2.1.1",
     "@vitejs/plugin-vue": "^6.0.1",
     "sharp": "^0.35.3",

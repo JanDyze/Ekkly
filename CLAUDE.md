@@ -36,8 +36,11 @@ installable PWA.
 - `npm run dev:all` does not work and is not needed: `server.js` is a
   leftover from the church app, saved as UTF-16 so Node cannot read it, and
   nothing calls it.
-- `npm run build` regenerates icons, then builds. There are no tests and no
-  linter, so a clean build is the check. Run it before saying a change works.
+- `npm run build` regenerates icons, then builds. There is no linter, so a
+  clean build is the check. Run it before saying a change works.
+- `npm run test:rules` tries `firestore.rules` as each kind of person a church
+  has (`scripts/test-rules.mjs`, on the Firestore emulator, Java 21 or later).
+  Run it after any change to the rules; it is the only test there is.
 - `/commit` and `/deploy` are project skills. Use them instead of committing,
   versioning or deploying by hand.
 - `node scripts/tickets.mjs` lists every church's open bugs and ideas, each

@@ -347,11 +347,8 @@ church.
   to everyone in the church. `scripts/sync-caps.mjs` and
   `scripts/split-member-contacts.mjs` brought existing churches over; the
   rules are tested against the emulator with one account per kind of person.
-- **Rules tests.** The rules have not been run against the Firestore emulator.
-  Check them in the Firebase console's Rules Playground before real data goes in:
-  - a non-member reading `churches/uec/members/x`: denied
-  - a member of another church doing the same: denied
-  - a member creating their own `joinRequests` document in a church they're
-    already in: denied
-  - a member writing `churches/uec/subscription/apps`: denied
-  - anyone but a platform admin reading `platform/private`: denied
+- **Rules tests.** `npm run test:rules` runs `scripts/test-rules.mjs` against the
+  Firestore emulator (Java 21 or later): each kind of person a church has,
+  allowed or refused, fifty-nine lines including another church, a stranger,
+  someone with no stored caps, a member writing `subscription/apps` and
+  anyone reading `platform/private`. Run it after any change to the rules.
