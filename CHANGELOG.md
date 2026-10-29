@@ -11,6 +11,16 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.6] — 2026-10-29
+
+YUNIT no longer covers the apps on a phone's home.
+
+### Fixed
+
+- **On a phone, the apps on the home no longer slide behind YUNIT** and his
+  "Talk to YUNIT" button. The apps now scroll in their own place, ending
+  above where he stands, so every app can be seen and tapped.
+
 ## [0.37.5] — 2026-10-27
 
 Calmer: no more turning card between pages, and Simple view at a normal size.

@@ -8,6 +8,16 @@
 
 export const versionHistory = [
   {
+    version: '0.37.6',
+    date: '2026-10-29',
+    title: 'YUNIT out of the way',
+    summary: 'On a phone, the apps on the home no longer hide behind YUNIT.',
+    highlights: [
+      'The apps scroll above where YUNIT stands.',
+      'Every app can be seen and tapped.',
+    ],
+  },
+  {
     version: '0.37.5',
     date: '2026-10-27',
     title: 'A little calmer',

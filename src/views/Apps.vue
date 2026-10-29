@@ -621,8 +621,8 @@ const showWeek = computed(() => wide.value && allApps.value.some((item) => item.
 // YUNIT on the home (HomeYunit), wherever the church has him. On a phone he
 // stands at the foot of the church's room, left of the church; the room keeps
 // his height free (--foot-space, below), as it does the bottom bar's, so no
-// app goes behind him, and the home grows a scroll for it where there is no
-// room, as it does for the bar. On a desktop he has a place among the panels
+// app goes behind him: the apps scroll in their own place above it, and the
+// home itself scrolls only where there is no room even for that. On a desktop he has a place among the panels
 // like any of them (useHomeLayout; under the week to begin with, at the foot
 // of the right-hand column, beside the people rail), anywhere in any column:
 // a place his and his bubble's height (yunitSpot), which he stands in. Last in a column he
@@ -1003,7 +1003,7 @@ const lineOf = (item) => {
     <!-- Its foot keeps the footer's low hills clear on a desktop (--hill-band),
          so a panel ends above them rather than over them. -->
     <main
-      :class="[yunitDocked ? 'h-auto min-h-full' : 'h-full', footerOn ? 'lg:pb-(--hill-band)' : 'lg:pb-5']"
+      :class="['h-full', footerOn ? 'lg:pb-(--hill-band)' : 'lg:pb-5']"
       class="relative mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:grid lg:h-full lg:max-w-[112rem] lg:grid-cols-1 lg:grid-rows-[minmax(0,1fr)] lg:gap-5 lg:px-6 lg:pt-5">
       <!-- 1. Today, most important on top: on a phone, the deck. On a desktop,
            under the greeting and beside the apps: what needs attention
@@ -1338,12 +1338,17 @@ const lineOf = (item) => {
       <!-- Drawn in the style the church chose, or the one this person chose for
            themselves (HomeAppCards, useHomeCards). -->
       <!-- With every app on the home (CardStyleSheet), they scroll in their
-           own place and the church keeps a little room under them. The rows
+           own place and the church keeps a little room under them. So they
+           do with YUNIT there: he stands fixed at the foot of the screen, and
+           when the whole home scrolled instead, the tiles went by behind him
+           and his button. Scrolling in their own place, they end above his
+           room (--foot-space); only a screen too short for even a few rows
+           (min-h) scrolls the home as well. The rows
            keep the tiles' own height (auto-rows-max, shrink-0): a tile clips
            what it holds, so it would otherwise be squeezed flat, not scrolled. -->
       <HomeAppCards
         v-else
-        :class="showAllApps ? ['-mx-0.5 -mt-0.5 min-h-0 shrink auto-rows-max overflow-y-auto overscroll-contain p-0.5 *:shrink-0', churchOverApps ? 'pb-(--church-room) apps-fade' : ''] : ''"
+        :class="showAllApps || yunitDocked ? ['-mx-0.5 -mt-0.5 shrink auto-rows-max overflow-y-auto overscroll-contain p-0.5 *:shrink-0', showAllApps ? 'min-h-0' : 'min-h-[9rem]', churchOverApps ? 'pb-(--church-room) apps-fade' : ''] : ''"
         :variant="cardStyle"
         :apps="homeApps"
         :others="homeOthers"
