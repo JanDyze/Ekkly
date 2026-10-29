@@ -43,6 +43,9 @@ installable PWA.
   Run it after any change to the rules; it is the only test there is.
 - `/commit` and `/deploy` are project skills. Use them instead of committing,
   versioning or deploying by hand.
+- **Every finished change is committed, pushed and deployed straight away,
+  without asking.** Work on `main` directly: commit there with `/commit`,
+  then `/deploy` (which, on `main`, builds and pushes it).
 - `node scripts/tickets.mjs` lists every church's open bugs and ideas, each
   with the page it was sent from (Alt+T on any page sends one, as
   `useQuickTicket`). `show <id>`, `set <id> kind=… where=… status=…` and
