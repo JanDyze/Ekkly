@@ -11,6 +11,15 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.8] — 2026-10-31
+
+YUNIT's round button on a phone just opens the chat.
+
+### Changed
+
+- **Tapping YUNIT's round button on a phone no longer makes him grin with
+  three lines round him** every time. He simply opens the conversation.
+
 ## [0.37.7] — 2026-10-31
 
 YUNIT on a phone is now a small round chat button.

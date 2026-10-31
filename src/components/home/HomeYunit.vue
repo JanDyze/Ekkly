@@ -1110,7 +1110,10 @@ onBeforeUnmount(() => {
              doing is lost on the way. -->
         <!-- On a phone, at rest, he is a chat bubble: a white circle
              floating at the corner of the screen, taking no height of the
-             home's, a tap on it opening the conversation. -->
+             home's, a tap on it opening the conversation. As a button he
+             does not react to the tap (taps-off) or draw his sparks: a grin
+             and three lines round him on every tap, crowded into the circle,
+             only got in the way of opening the chat. -->
         <span
           :class="dot ? 'flex size-16 items-center justify-center rounded-full bg-white/90 shadow-lg ring-1 ring-black/5 backdrop-blur-md dark:bg-gray-900/80 dark:ring-white/10' : 'contents'"
         >
@@ -1121,8 +1124,8 @@ onBeforeUnmount(() => {
           :arrive="firstThisVisit"
           :fidget="false"
           :curled="curled"
-          :taps-off="roaming"
-          :sparks="mood !== 'idle' || startled"
+          :taps-off="roaming || dot"
+          :sparks="!dot && (mood !== 'idle' || startled)"
           :lantern="lantern"
           :umbrella="umbrella"
           :raincoat="umbrella"
