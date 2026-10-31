@@ -619,10 +619,10 @@ const showWeek = computed(() => wide.value && allApps.value.some((item) => item.
 /* ------------------------------------------------------------------ YUNIT */
 
 // YUNIT on the home (HomeYunit), wherever the church has him. On a phone he
-// stands at the foot of the church's room, left of the church; the room keeps
-// his height free (--foot-space, below), as it does the bottom bar's, so no
-// app goes behind him: the apps scroll in their own place above it, and the
-// home itself scrolls only where there is no room even for that. On a desktop he has a place among the panels
+// is a chat bubble, a round button floating at the right-hand corner of the
+// screen that opens the conversation, taking no height of the home's: the
+// apps scroll in their own place, with a little air at their foot so the
+// last can be scrolled out from under him. On a desktop he has a place among the panels
 // like any of them (useHomeLayout; under the week to begin with, at the foot
 // of the right-hand column, beside the people rail), anywhere in any column:
 // a place his and his bubble's height (yunitSpot), which he stands in. Last in a column he
@@ -1348,7 +1348,7 @@ const lineOf = (item) => {
            what it holds, so it would otherwise be squeezed flat, not scrolled. -->
       <HomeAppCards
         v-else
-        :class="showAllApps || yunitDocked ? ['-mx-0.5 -mt-0.5 shrink auto-rows-max overflow-y-auto overscroll-contain p-0.5 *:shrink-0', showAllApps ? 'min-h-0' : 'min-h-[9rem]', churchOverApps ? 'pb-(--church-room) apps-fade' : ''] : ''"
+        :class="showAllApps || yunitDocked ? ['-mx-0.5 -mt-0.5 shrink auto-rows-max overflow-y-auto overscroll-contain p-0.5 *:shrink-0', showAllApps ? 'min-h-0' : 'min-h-[9rem]', churchOverApps ? 'pb-(--church-room) apps-fade' : yunitDocked ? 'pb-20' : ''] : ''"
         :variant="cardStyle"
         :apps="homeApps"
         :others="homeOthers"
@@ -1487,8 +1487,8 @@ const lineOf = (item) => {
       <HomeScene part="land" footer class="scene-lift land-slide absolute bottom-0 max-w-none" :style="landStyle" />
     </div>
 
-    <!-- YUNIT: on a phone at the foot of the church's room, left of the
-         church; on a desktop told where his place on the board is: at the
+    <!-- YUNIT: on a phone a round chat button floating at the corner of the
+         screen; on a desktop told where his place on the board is: at the
          right-hand end of his own, or left of the church in the church's
          column. -->
     <HomeYunit
@@ -1496,7 +1496,7 @@ const lineOf = (item) => {
       :name="name"
       :anchor="yunitAnchor"
       :perch="yunitOnHill ? yunitPerch : null"
-      :side="wide ? 'right' : 'left'"
+      side="right"
       :beside-rail="wide && yunitBesideRail"
       :sky="sky['data-sky'] ? { phase: sky['data-sky'], weather: sky['data-weather'], rainbow: sky['data-rainbow'] !== undefined } : null"
       :movable="wide && homeArranging"
@@ -1574,14 +1574,14 @@ const lineOf = (item) => {
      bar's room when it is on, and YUNIT's when he is there (HomeYunit). */
   --foot-space: var(--bottom-bar-space);
 }
-/* YUNIT's place on a phone: clear of the home indicator, or above the bottom
-   bar when it is on (--yunit-foot, which HomeYunit stands on), and his own
-   height, the mascot beside the button to talk to him, with a little air
-   above him. A desktop gives him a place of his own on the board instead. */
+/* YUNIT on a phone: a round button floating at the right-hand corner, clear
+   of the home indicator, or above the bottom bar when it is on (--yunit-foot,
+   which HomeYunit stands on). He takes no room of his own: the apps keep a
+   little air at the foot of their list instead, so the last can be scrolled
+   out from under him. A desktop gives him a place on the board instead. */
 @media (width < 64rem) {
   .home-scene.with-yunit {
     --yunit-foot: max(0.75rem, env(safe-area-inset-bottom), calc(var(--bottom-bar-space) + 0.5rem));
-    --foot-space: calc(var(--yunit-foot) + 5.5rem);
   }
 }
 @media (min-width: 1024px) {

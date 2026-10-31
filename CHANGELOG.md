@@ -11,6 +11,16 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.7] — 2026-10-31
+
+YUNIT on a phone is now a small round chat button.
+
+### Changed
+
+- **On a phone, YUNIT floats in a round button** at the bottom-right corner
+  of the home instead of standing in a strip of his own with a "Talk to
+  YUNIT" button. The apps get that room back; tap him to talk to him.
+
 ## [0.37.6] — 2026-10-29
 
 YUNIT no longer covers the apps on a phone's home.

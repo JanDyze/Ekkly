@@ -108,6 +108,10 @@ const placeholder = computed(() => (chatting.value ? 'Reply to YUNIT…' : 'Ask 
 // window or the column changes — every frame of
 // the rail opening, so he travels with the column rather than jumping.
 const right = computed(() => props.side === 'right')
+// On a phone, at rest, he is a round button floating at the corner of the
+// screen rather than standing in a room of his own at the foot of the home:
+// the room took the height of a row of apps.
+const dot = computed(() => !props.anchor && !open.value)
 const spot = ref(null)
 const place = () => {
   const el = props.anchor
@@ -564,6 +568,8 @@ const onWake = () => {
 const onTap = () => {
   // Away behind a card, a click brings him home.
   if (roaming.value) return comeHome()
+  // On a phone he is a chat bubble (dot): a tap opens the conversation.
+  if (dot.value) return talk()
   // Cross from being tapped too much (YunitMascot), he is not answering, and
   // stops whatever he was saying.
   if (mascot.value?.cross) {
@@ -1015,7 +1021,9 @@ onBeforeUnmount(() => {
       ref="stage"
       :class="[
         inPlace ? 'relative z-30 flex h-full flex-col justify-end' : 'absolute flex flex-col',
-        !anchor && 'yunit-foot inset-x-4 mx-auto max-w-2xl',
+        // On a phone, at rest, a round button floating at the right-hand
+        // corner (dot); talking, the conversation the width of the screen.
+        !anchor && (open ? 'yunit-foot inset-x-4 mx-auto max-w-2xl' : 'yunit-foot right-4'),
         !anchor && open && 'top-[calc(env(safe-area-inset-top)+0.75rem)]',
         !anchor && open && keyboard && 'yunit-on-keyboard',
         open ? '' : 'justify-end',
@@ -1100,6 +1108,12 @@ onBeforeUnmount(() => {
         <!-- On the church's hill (perch) he stands there, out of his place;
              anywhere else, here. Moved, not made again, so nothing he is
              doing is lost on the way. -->
+        <!-- On a phone, at rest, he is a chat bubble: a white circle
+             floating at the corner of the screen, taking no height of the
+             home's, a tap on it opening the conversation. -->
+        <span
+          :class="dot ? 'flex size-16 items-center justify-center rounded-full bg-white/90 shadow-lg ring-1 ring-black/5 backdrop-blur-md dark:bg-gray-900/80 dark:ring-white/10' : 'contents'"
+        >
         <Teleport defer :to="roaming ? roamEl : perch || 'body'" :disabled="!roaming && !onHill">
         <YunitMascot
           ref="mascot"
@@ -1118,7 +1132,7 @@ onBeforeUnmount(() => {
             // Drawn over his bubble, so his umbrella, which stands above his
             // box, lies over it rather than under it.
             'relative z-10',
-            open ? 'size-14' : roaming || onHill ? 'pointer-events-auto size-full' : anchor ? 'size-24' : 'size-20',
+            open ? 'size-14' : roaming || onHill ? 'pointer-events-auto size-full' : anchor ? 'size-24' : 'size-12',
             movable && !open ? (carried ? 'cursor-grabbing' : 'cursor-grab') : '',
           ]"
           @click="onTap"
@@ -1126,6 +1140,7 @@ onBeforeUnmount(() => {
           @wake="onWake"
         />
         </Teleport>
+        </span>
         <!-- His place kept while he is away behind a card, so his bubble
              does not spread into it. -->
         <span v-if="roaming" class="yunit-dock-him size-24 shrink-0" aria-hidden="true" />
@@ -1179,20 +1194,6 @@ onBeforeUnmount(() => {
             </button>
           </div>
         </template>
-        <!-- On a phone, at rest: a button to talk to him. -->
-        <button
-          v-else-if="!open"
-          type="button"
-          :class="[
-            'mb-2 flex h-11 shrink-0 items-center gap-2 rounded-full bg-white/85 px-4 text-[15px] font-semibold text-gray-900 ring-1 ring-white/70 backdrop-blur-md transition-colors hover:bg-white dark:bg-gray-900/75 dark:text-white dark:ring-white/10 dark:hover:bg-gray-900/90',
-            movable ? (carried ? 'cursor-grabbing' : 'cursor-grab') : '',
-          ]"
-          @pointerdown="onGrab($event, 'button')"
-          @click="talk"
-        >
-          <ChatCircleDots class="size-5 text-primary dark:text-primary-light" />
-          Talk to YUNIT
-        </button>
         <div
           :class="
             open
