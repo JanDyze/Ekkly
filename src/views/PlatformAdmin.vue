@@ -19,6 +19,7 @@ import {
   Tray,
   UsersThree,
   Kanban,
+  MapTrifold,
 } from '../icons'
 import { initAuth, useAuth } from '../composables/useAuth'
 import { useMediaQuery } from '../composables/useMediaQuery'
@@ -39,6 +40,7 @@ import PlatformColoursAdmin from '../components/platform/PlatformColoursAdmin.vu
 import AiAdmin from '../components/platform/AiAdmin.vue'
 import PlatformAdminsAdmin from '../components/platform/PlatformAdminsAdmin.vue'
 import PlatformActivity from '../components/platform/PlatformActivity.vue'
+import RoadmapsAdmin from '../components/platform/RoadmapsAdmin.vue'
 
 // The platform's console: everything the people who run Ekkly do, from saying
 // yes to a new church to choosing which AI model writes up minutes.
@@ -196,6 +198,14 @@ const GROUPS = computed(() => [
   {
     label: 'Platform',
     items: [
+      {
+        // Where Ekkly itself is heading, drawn as a candy map.
+        key: 'roadmaps',
+        label: 'Roadmaps',
+        icon: MapTrifold,
+        status: 'The end goal, the steps taken and the sidetracks',
+        component: RoadmapsAdmin,
+      },
       {
         key: 'ai',
         label: 'AI',

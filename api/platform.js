@@ -34,6 +34,7 @@ import {
   sendSupportRequest,
 } from "../lib/platform/support.js";
 import { deleteTicket, listTickets, updateTicket } from "../lib/platform/tickets.js";
+import { deleteRoadmap, listRoadmaps, saveRoadmap } from "../lib/platform/roadmaps.js";
 import { readConfig, saveAi, saveBranding, saveCatalog, saveDefaults, saveTheme } from "../lib/platform/config.js";
 import { addDomain, domainStatus, removeDomain, setPrimaryDomain } from "../lib/platform/domains.js";
 import { frontDoorReport, recordFrontDoor, recordLead } from "../lib/platform/frontDoor.js";
@@ -74,6 +75,10 @@ const PLATFORM_ACTIONS = {
   tickets: () => listTickets(),
   updateTicket,
   deleteTicket,
+  // Ekkly's own roadmaps: an end goal, the steps to it, the sidetracks taken
+  roadmaps: () => listRoadmaps(),
+  saveRoadmap,
+  deleteRoadmap,
   // the platform's own settings
   config: () => readConfig(),
   saveBranding,

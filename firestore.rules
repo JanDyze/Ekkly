@@ -119,6 +119,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Ekkly's own roadmaps: an end goal and the steps and sidetracks to it.
+    // Written and read through /api/platform's roadmap actions, so the
+    // browser needs nothing here beyond a platform administrator looking.
+    match /roadmaps/{roadmapId} {
+      allow read: if isPlatformAdmin();
+      allow write: if false;
+    }
+
     // What the front door has seen: a count per day, and the church names
     // visitors typed into it. Written only by /api/platform, which takes the
     // signal from a visitor who has not signed in and may never — so the

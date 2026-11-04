@@ -11,6 +11,21 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.9] — 2026-11-04
+
+Ekkly's own roadmap, drawn as a candy map in the platform console.
+
+### Added
+
+- **Roadmaps, in the platform console** (Platform → Roadmaps). Name an end
+  goal and the road to it winds up the screen like a level map: each step a
+  numbered sweet with up to three stars for how it went, the sidetracks taken
+  as wrapped sweets on dotted trails off the road (back on the road if
+  finished, a dead end if dropped), a flag over where things stand now, and
+  the goal as a lollipop at the top. Everything is changed from the map
+  itself, and every change is written to the console's Activity. Only the
+  people who run Ekkly see it; churches see nothing new.
+
 ## [0.37.8] — 2026-10-31
 
 YUNIT's round button on a phone just opens the chat.
