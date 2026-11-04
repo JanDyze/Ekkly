@@ -279,6 +279,7 @@ const percent = (p) => (p.steps ? Math.round((p.done / p.steps) * 100) : 0)
       <!-- How a goal is going, and the way onto its road. -->
       <MapPopup
         :show="popupOpen && !!popupWorld"
+        :anchor="popupId"
         :x="popupWorld?.x || 0"
         :yb="(popupWorld?.yb || 0) + BLOCK_H - TOKEN / 2"
         :reach="TOKEN / 2 + 6"

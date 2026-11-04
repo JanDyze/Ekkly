@@ -581,6 +581,7 @@ const LABEL = 'pointer-events-none absolute top-1/2 w-max -translate-y-1/2 text-
       <!-- What a stop is, and what can be done with it. -->
       <MapPopup
         :show="popupOpen && !!popupStop"
+        :anchor="popupId"
         :x="popupStop?.x || 0"
         :yb="popupStop?.yb || 0"
         :reach="popupStop?.reach || 30"

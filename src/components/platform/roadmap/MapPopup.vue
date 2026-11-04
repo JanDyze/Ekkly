@@ -21,6 +21,9 @@ const props = defineProps({
   height: { type: Number, default: 600 },
   // The colour its words and buttons take; the map's own when left out.
   hue: { type: String, default: '' },
+  // Which piece it is about: moving to another one fades this popup and
+  // pops a new one from there, rather than changing the words in place.
+  anchor: { type: String, default: '' },
 })
 
 const W_MAX = 290
@@ -51,7 +54,7 @@ const place = computed(() => {
 
 <template>
   <Transition name="rm-pop">
-    <div v-if="show" class="absolute z-30" :style="place.style" role="dialog" @click.stop>
+    <div v-if="show" :key="anchor" class="absolute z-30" :style="place.style" role="dialog" @click.stop>
       <div class="rm-popup-card relative rounded-2xl p-4">
         <slot />
         <!-- The tail, a turned square half hidden under the card's edge. -->
