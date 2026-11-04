@@ -11,6 +11,18 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.14] — 2026-11-04
+
+Calmer movement on the roadmaps.
+
+### Changed
+
+- **Opening a goal fades into its road**, and going back fades out to the map
+  of goals, instead of cutting from one to the other.
+- **A road opens at the flag** rather than at Start, so there is no long
+  scroll up the road each time. Finishing a step only moves the map if the
+  flag would otherwise go out of sight.
+
 ## [0.37.13] — 2026-11-04
 
 Roadmaps get a page of their own, and colour.

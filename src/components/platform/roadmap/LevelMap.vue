@@ -207,15 +207,12 @@ const scrollToBottomOf = (p, smooth) => {
   el.scrollTo({ top, behavior: smooth && !reducedMotion() ? 'smooth' : 'auto' })
 }
 
-// Opening a roadmap starts at the foot of the map and rolls up to the flag,
-// the way a level map shows you where you are.
+// A road opens already at the flag. It used to start at the foot and roll
+// all the way up, which on a long road was a long, busy scroll every time.
 const arrive = async () => {
   await nextTick()
-  const el = scroller.value
-  if (!el || !width.value) return
-  el.scrollTop = el.scrollHeight
-  const target = layout.value.here || (layout.value.reached ? layout.value.goal : layout.value.add)
-  requestAnimationFrame(() => scrollToBottomOf(target, true))
+  if (!scroller.value || !width.value) return
+  scrollToBottomOf(layout.value.here || (layout.value.reached ? layout.value.goal : layout.value.add), false)
 }
 
 watch(() => [props.roadmap.id, width.value > 0], arrive)
@@ -230,13 +227,17 @@ watch(
   { flush: 'post' }
 )
 
-// Finishing a step moves the flag on, and the map follows it.
+// Finishing a step moves the flag on; the map follows it only if it would
+// otherwise move out of sight.
 const hereId = computed(() => (layout.value.steps.find((s) => s.current) || {}).id || '')
 watch([() => props.roadmap.id, hereId], ([id, step], [wasId, wasStep]) => {
   // Opening another roadmap is arrive()'s to scroll, not this.
   if (id !== wasId || !wasStep || step === wasStep) return
   const target = layout.value.here || layout.value.goal
-  setTimeout(() => scrollToBottomOf(target, true), 250)
+  const el = scroller.value
+  if (!el || !target) return
+  const y = yOf(target) - el.scrollTop
+  if (y < 90 || y > el.clientHeight - 60) setTimeout(() => scrollToBottomOf(target, true), 250)
 })
 
 /* -------------------------------------------------- stars for a new finish */

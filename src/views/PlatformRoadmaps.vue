@@ -300,10 +300,22 @@ const askDeleteRoadmap = () => {
       </button>
     </div>
 
-    <template v-else>
-      <LevelMap v-if="selected" :roadmap="selected" @open-stop="openStop" @add-step="addStep" @open-goal="editGoal" />
-      <GoalsMap v-else :roadmaps="roadmaps" @open="openGoal" />
-    </template>
+    <!-- Into a goal and back out: the map in front fades and settles while
+         the one behind fades away, together rather than one after the
+         other. -->
+    <div v-else class="relative flex min-h-0 flex-1 flex-col">
+      <Transition name="zoom">
+        <LevelMap
+          v-if="selected"
+          :key="selected.id"
+          :roadmap="selected"
+          @open-stop="openStop"
+          @add-step="addStep"
+          @open-goal="editGoal"
+        />
+        <GoalsMap v-else :roadmaps="roadmaps" @open="openGoal" />
+      </Transition>
+    </div>
 
     <StopSheet
       :show="stopSheet.show"
@@ -340,3 +352,31 @@ const askDeleteRoadmap = () => {
     />
   </div>
 </template>
+
+<style scoped>
+.zoom-enter-active,
+.zoom-leave-active {
+  transition:
+    opacity 0.2s ease,
+    transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* The one leaving stays where it was, under the one arriving. */
+.zoom-leave-active {
+  position: absolute;
+  inset: 0;
+}
+.zoom-enter-from {
+  opacity: 0;
+  transform: scale(0.97);
+}
+.zoom-leave-to {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zoom-enter-active,
+  .zoom-leave-active {
+    transition: none;
+  }
+}
+</style>
