@@ -20,6 +20,8 @@ const props = defineProps({
   parentTitle: { type: String, default: '' },
   moves: { type: Object, default: () => ({ earlier: false, later: false }) },
   saving: { type: Boolean, default: false },
+  // The goal's colour (goalHue), for the sheet's own pieces.
+  hue: { type: String, default: '' },
 })
 
 const emit = defineEmits(['close', 'save', 'delete', 'move', 'add-side'])
@@ -82,6 +84,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
     <Transition name="sheet">
       <div
         v-if="show"
+        :style="{ '--hue': hue || 'var(--color-primary)' }"
         class="fixed inset-0 z-100 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4"
         @click.self="emit('close')"
       >
@@ -91,13 +94,13 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
           aria-modal="true"
           aria-labelledby="stop-sheet-title"
           tabindex="-1"
-          class="sheet-panel flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white sm:max-w-md sm:rounded-2xl dark:border-gray-700 dark:bg-gray-800"
+          class="sheet-panel flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl rm-popup-card sm:max-w-md sm:rounded-2xl"
         >
           <div
-            class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-linear-to-r from-primary/10 to-transparent px-4 py-3.5 dark:border-gray-700 dark:from-primary-light/10"
+            class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-linear-to-r from-(--hue)/12 to-transparent px-4 py-3.5 dark:border-gray-700 dark:from-(--hue)/20"
           >
             <div class="flex min-w-0 items-center gap-3">
-              <div class="shrink-0 rounded-xl bg-primary p-2.5">
+              <div class="rm-token rm-btn shrink-0 rounded-xl p-2.5">
                 <component :is="isSide ? ArrowBendUpRight : MapPin" class="h-5 w-5 text-white" />
               </div>
               <div class="min-w-0">
@@ -159,7 +162,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
                   :class="[
                     'flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
                     form.status === s.key
-                      ? 'bg-primary text-white dark:bg-primary-light dark:text-gray-900'
+                      ? 'bg-(--hue) text-white'
                       : 'text-gray-600 hover:bg-white dark:text-gray-300 dark:hover:bg-gray-800',
                   ]"
                 >
@@ -198,7 +201,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
                 v-if="!isSide"
                 type="button"
                 @click="emit('add-side', stop.id)"
-                class="flex h-9 items-center gap-1.5 rounded-lg bg-violet-50 px-3 text-sm font-semibold text-violet-700 hover:bg-violet-100 dark:bg-violet-400/10 dark:text-violet-300 dark:hover:bg-violet-400/20"
+                class="rm-token rm-btn rm-btn--plain flex h-10 items-center gap-1.5 rounded-xl px-3.5 text-sm font-bold text-gray-700 dark:text-gray-200"
               >
                 <ArrowBendUpRight class="size-4" />
                 Add a sidetrack
@@ -207,7 +210,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
                 v-if="moves.earlier"
                 type="button"
                 @click="emit('move', stop.id, -1)"
-                class="flex h-9 items-center gap-1.5 rounded-lg bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                class="rm-token rm-btn rm-btn--plain flex h-10 items-center gap-1.5 rounded-xl px-3.5 text-sm font-bold text-gray-700 dark:text-gray-200"
               >
                 <ArrowDown class="size-4" />
                 Earlier
@@ -216,7 +219,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
                 v-if="moves.later"
                 type="button"
                 @click="emit('move', stop.id, 1)"
-                class="flex h-9 items-center gap-1.5 rounded-lg bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                class="rm-token rm-btn rm-btn--plain flex h-10 items-center gap-1.5 rounded-xl px-3.5 text-sm font-bold text-gray-700 dark:text-gray-200"
               >
                 <ArrowUp class="size-4" />
                 Later
@@ -247,7 +250,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
               type="button"
               @click="save"
               :disabled="!canSave"
-              class="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
+              class="rm-token rm-btn h-10 rounded-xl px-5 text-sm font-black tracking-wide text-white uppercase disabled:opacity-50"
             >
               {{ isNew ? 'Add' : 'Update' }}
             </button>
@@ -258,6 +261,8 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
   </Teleport>
 </template>
 
+<style src="./roadmap3d.css"></style>
+
 <style scoped>
 /* The sheet fades in where it stands rather than sliding up. */
 .sheet-enter-active,
@@ -267,6 +272,14 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
 .sheet-enter-from,
 .sheet-leave-to {
   opacity: 0;
+}
+/* The card itself pops open, a touch past full size and back, the way the
+   map's own popups do. Nothing slides. */
+.sheet-enter-active .sheet-panel {
+  transition: transform 0.24s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.sheet-enter-from .sheet-panel {
+  transform: scale(0.92);
 }
 
 /* The stars open out under the choice rather than appearing. */
@@ -284,6 +297,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
 
 @media (prefers-reduced-motion: reduce) {
   .sheet-enter-active,
+  .sheet-enter-active .sheet-panel,
   .sheet-leave-active,
   .grow-enter-active,
   .grow-leave-active {

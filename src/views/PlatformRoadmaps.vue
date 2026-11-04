@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Loader2, MapTrifold, PencilSimple, Plus, ShieldAlert } from '../icons'
+import { ArrowLeftBold, Loader2, MapTrifold, PencilSimple, PlusBold, ShieldAlert } from '../icons'
 import ConfirmationModal from '../components/common/ConfirmationModal.vue'
 import GoalsMap from '../components/platform/roadmap/GoalsMap.vue'
 import LevelMap from '../components/platform/roadmap/LevelMap.vue'
@@ -11,7 +11,7 @@ import { deleteRoadmap, listRoadmaps, saveRoadmap } from '../api/roadmapService'
 import { initAuth, useAuth } from '../composables/useAuth'
 import { isPlatformAdmin } from '../api/platformService'
 import { useToast } from '../composables/useToast'
-import { addSide, canMove, groupStops, moveStop, progressOf, putStop, removeStop } from '../utils/roadmap'
+import { addSide, canMove, goalHue, groupStops, moveStop, progressOf, putStop, removeStop } from '../utils/roadmap'
 
 // Ekkly's own roadmaps, a page of their own off the platform console: where
 // Ekkly is heading. Each goal has a road of its own, the steps taken to it
@@ -178,6 +178,17 @@ const saveStop = (stop) => {
 
 const move = (id, by) => persist(moveStop(selected.value.stops, id, by))
 
+// From a stop's popup on the map: finished, with how it went, or a new
+// number of stars for one already finished.
+const completeStop = (id, stars) => {
+  const stop = selected.value.stops.find((s) => s.id === id)
+  if (stop) persist(putStop(selected.value.stops, { ...stop, status: 'done', stars }))
+}
+const rateStop = (id, stars) => {
+  const stop = selected.value.stops.find((s) => s.id === id)
+  if (stop) persist(putStop(selected.value.stops, { ...stop, stars }))
+}
+
 /* ---------------------------------------------------------------- delete */
 
 const confirm = ref({ show: false, title: '', message: '', run: null })
@@ -228,27 +239,36 @@ const askDeleteRoadmap = () => {
 <template>
   <div class="flex h-dvh flex-col bg-white dark:bg-gray-900">
     <!-- A slim bar: the way back, where you are, and the one thing to do. -->
+    <!-- A slim bar: the way back, where you are and how far along, and the
+         one thing to do. On a goal's road it takes the goal's colour. -->
     <header
-      class="flex shrink-0 items-center gap-2 border-b border-gray-100 px-2 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-4 dark:border-gray-800"
+      class="relative z-10 flex shrink-0 items-center gap-2 border-b-2 border-gray-100 bg-white px-2 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-4 dark:border-gray-800 dark:bg-gray-900"
+      :style="{ '--hue': selected ? goalHue(selected.id) : 'var(--color-primary)' }"
     >
       <button
         type="button"
         @click="selected ? showAll() : router.push('/platform')"
         :aria-label="selected ? 'All goals' : 'Back to the console'"
-        class="flex size-10 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+        class="rm-token rm-btn rm-btn--plain flex size-10 shrink-0 items-center justify-center rounded-xl text-gray-600 dark:text-gray-300"
       >
-        <ArrowLeft class="size-5" />
+        <ArrowLeftBold class="size-5" />
       </button>
 
-      <div class="min-w-0 flex-1">
-        <h1 class="truncate text-base font-bold text-gray-900 dark:text-white">
+      <div class="min-w-0 flex-1 px-1">
+        <h1 class="truncate text-base leading-tight font-black text-gray-900 dark:text-white">
           {{ selected ? selected.title : 'Roadmaps' }}
         </h1>
-        <p v-if="!loading && allowed" class="truncate text-xs text-gray-500 dark:text-gray-400">
-          <template v-if="selected">{{ progress.done }} of {{ progress.steps }} steps</template>
-          <template v-else-if="roadmaps.length">
-            {{ roadmaps.length }} {{ roadmaps.length === 1 ? 'goal' : 'goals' }}<template v-if="reachedCount"> · {{ reachedCount }} reached</template>
-          </template>
+        <div v-if="!loading && allowed && selected" class="mt-1 flex items-center gap-2">
+          <span class="h-2.5 w-full max-w-44 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+            <span
+              class="block h-full rounded-full bg-(--hue)"
+              :style="{ width: `${progress.steps ? (progress.done / progress.steps) * 100 : 0}%` }"
+            ></span>
+          </span>
+          <span class="shrink-0 text-xs font-black text-(--hue) tabular-nums">{{ progress.done }}/{{ progress.steps }}</span>
+        </div>
+        <p v-else-if="!loading && allowed && roadmaps.length" class="truncate text-xs font-semibold text-gray-500 dark:text-gray-400">
+          {{ roadmaps.length }} {{ roadmaps.length === 1 ? 'goal' : 'goals' }}<template v-if="reachedCount"> · {{ reachedCount }} reached</template>
         </p>
       </div>
 
@@ -257,7 +277,7 @@ const askDeleteRoadmap = () => {
         type="button"
         @click="editGoal"
         aria-label="Change this goal"
-        class="flex size-10 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+        class="rm-token rm-btn rm-btn--plain flex size-10 shrink-0 items-center justify-center rounded-xl text-gray-600 dark:text-gray-300"
       >
         <PencilSimple class="size-5" />
       </button>
@@ -265,9 +285,9 @@ const askDeleteRoadmap = () => {
         v-else-if="allowed && roadmaps.length"
         type="button"
         @click="startGoal"
-        class="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover"
+        class="rm-token rm-btn flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-4 text-sm font-black tracking-wide text-white uppercase"
       >
-        <Plus class="size-4" />
+        <PlusBold class="size-4" />
         New goal
       </button>
     </header>
@@ -283,8 +303,8 @@ const askDeleteRoadmap = () => {
 
     <!-- Nothing yet, and the way to begin. -->
     <div v-else-if="!roadmaps.length" class="flex flex-1 flex-col items-center justify-center px-6 text-center">
-      <span class="flex size-20 items-center justify-center rounded-full bg-primary/10 dark:bg-primary-light/15">
-        <MapTrifold class="size-10 text-primary dark:text-primary-light" />
+      <span class="rm-token flex size-24 items-center justify-center rounded-full text-white" style="--hue: var(--color-primary); --lip: 8px">
+        <MapTrifold class="size-11" />
       </span>
       <p class="mt-4 text-xl font-black text-gray-900 dark:text-white">No goals yet</p>
       <p class="mt-1 max-w-xs text-sm text-gray-500 dark:text-gray-400">
@@ -293,9 +313,10 @@ const askDeleteRoadmap = () => {
       <button
         type="button"
         @click="startGoal"
-        class="mt-5 flex h-11 items-center gap-1.5 rounded-full bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover"
+        class="rm-token rm-btn mt-6 flex h-12 items-center gap-2 rounded-xl px-6 text-sm font-black tracking-wide text-white uppercase"
+        style="--hue: var(--color-primary)"
       >
-        <Plus class="size-4" />
+        <PlusBold class="size-4" />
         Add a goal
       </button>
     </div>
@@ -310,6 +331,9 @@ const askDeleteRoadmap = () => {
           :roadmap="selected"
           @open-stop="openStop"
           @add-step="addStep"
+          @add-side="startSide"
+          @complete="completeStop"
+          @rate="rateStop"
           @open-goal="editGoal"
         />
         <GoalsMap v-else :roadmaps="roadmaps" @open="openGoal" />
@@ -324,6 +348,7 @@ const askDeleteRoadmap = () => {
       :parent-title="sheetPlace.parentTitle"
       :moves="sheetMoves"
       :saving="saving"
+      :hue="selected ? goalHue(selected.id) : ''"
       @close="stopSheet.show = false"
       @save="saveStop"
       @delete="askDeleteStop"
@@ -336,6 +361,7 @@ const askDeleteRoadmap = () => {
       :roadmap="goalSheet.isNew ? null : selected"
       :others="goalChoices"
       :saving="saving"
+      :hue="selected && !goalSheet.isNew ? goalHue(selected.id) : ''"
       @close="goalSheet.show = false"
       @save="saveGoal"
       @delete="askDeleteRoadmap"
@@ -351,6 +377,8 @@ const askDeleteRoadmap = () => {
     />
   </div>
 </template>
+
+<style src="../components/platform/roadmap/roadmap3d.css"></style>
 
 <style scoped>
 .fade-enter-active,

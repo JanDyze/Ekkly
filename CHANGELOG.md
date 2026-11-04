@@ -11,6 +11,25 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.17] — 2026-11-04
+
+The roadmaps become a game map: chunky 3D pieces and popups.
+
+### Changed
+
+- **Every piece has depth.** Steps, sidetracks, goals and buttons stand on
+  a darker edge of their goal's colour and press down when tapped; the road
+  has a kerb; each goal stands on a raised island with its name on a raised
+  sign and a badge of how far along it is ("2/4", "Done!"). A finished step
+  shows a check, and a reached goal throws up three stars.
+- **Tap a piece for a popup** beside it: a step's name, where it stands, its
+  stars and notes, with **Mark done** (which asks how it went, with three
+  stars, right there), **Edit** and **Sidetrack**; a goal's progress bar,
+  next step and **Open the road**. The full sheets for typing pop open too,
+  with chunky buttons in the goal's colour.
+- **The bar on a goal's road** shows a progress bar in the goal's colour.
+- A short road sits in the middle of the screen rather than at its foot.
+
 ## [0.37.16] — 2026-11-04
 
 The roadmaps really stop sliding.

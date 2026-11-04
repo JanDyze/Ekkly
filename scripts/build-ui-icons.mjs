@@ -31,6 +31,11 @@ const FILL_DIR = path.join(ROOT, "node_modules/@phosphor-icons/core/assets/fill"
 // fill of the same colour — used for the small pictures of an app's sections
 // (SectionGlyph): `DoorOpenDuotone` -> assets/duotone/door-open-duotone.svg.
 const DUOTONE_DIR = path.join(ROOT, "node_modules/@phosphor-icons/core/assets/duotone");
+// And `Bold`, the heavier stroke, for a glyph that has to hold its own on a
+// chunky piece — the roadmaps' 3D stops: `CheckBold` -> assets/bold/check-bold.svg.
+// (Phosphor's fill weight is no use there: a filled check is a check cut out
+// of a filled square.)
+const BOLD_DIR = path.join(ROOT, "node_modules/@phosphor-icons/core/assets/bold");
 const OUT_DIR = path.join(ROOT, "src/icons");
 const OUT = path.join(OUT_DIR, "index.js");
 
@@ -86,10 +91,11 @@ function main() {
     process.exit(1);
   }
 
-  // asset name -> the directory it came from. Fill- and duotone-weight files
-  // already carry a `-fill` or `-duotone` suffix, so the weights cannot collide.
+  // asset name -> the directory it came from. Fill-, duotone- and bold-weight
+  // files already carry a `-fill`, `-duotone` or `-bold` suffix, so the
+  // weights cannot collide.
   const available = new Map();
-  for (const dir of [SVG_DIR, FILL_DIR, DUOTONE_DIR]) {
+  for (const dir of [SVG_DIR, FILL_DIR, DUOTONE_DIR, BOLD_DIR]) {
     if (!fs.existsSync(dir)) continue;
     for (const file of fs.readdirSync(dir)) {
       if (!file.endsWith(".svg")) continue;

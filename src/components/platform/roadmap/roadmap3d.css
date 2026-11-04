@@ -1,0 +1,177 @@
+/* The roadmaps' 3D pieces (DESIGN.md, "The roadmap's level map").
+ *
+ * The one page in Ekkly drawn with depth, because it is meant to be played
+ * with like a game's level map: every piece stands on a darker edge of its
+ * own colour (its "lip") and presses down into it when tapped, the way a
+ * chunky game button does. Everything else in the app stays flat.
+ *
+ * A piece takes its colour from --hue, the goal's own colour (goalHue), set
+ * by the map. Nothing here transitions where a piece is (left, bottom): the
+ * pieces never slide.
+ */
+
+.rm-token {
+  --tok: var(--hue);
+  --tok-edge: color-mix(in srgb, var(--tok) 66%, black);
+  --lip: 6px;
+  background-color: var(--tok);
+  background-image: linear-gradient(to bottom, rgb(255 255 255 / 0.24), rgb(255 255 255 / 0) 60%);
+  box-shadow:
+    0 var(--lip) 0 var(--tok-edge),
+    var(--halo, 0 0 0 0 transparent);
+  transition-property: filter, transform, box-shadow;
+  transition-duration: 0.15s, 0.08s, 0.08s;
+  transition-timing-function: ease-out;
+}
+
+@media (hover: hover) {
+  .rm-token:hover {
+    filter: brightness(1.07);
+  }
+}
+
+/* Pressed: down into its own edge. */
+.rm-token:active,
+.rm-token.is-pressed {
+  transform: translateY(calc(var(--lip) - 2px));
+  box-shadow:
+    0 2px 0 var(--tok-edge),
+    var(--halo, 0 0 0 0 transparent);
+}
+
+/* A step still ahead: grey, unlit. */
+.rm-token--ahead {
+  --tok: var(--color-gray-200);
+  --tok-edge: var(--color-gray-300);
+  background-image: none;
+}
+.dark .rm-token--ahead {
+  --tok: var(--color-gray-700);
+  --tok-edge: var(--color-gray-800);
+}
+
+/* A sidetrack taken: the goal's colour, softened. */
+.rm-token--soft {
+  --tok: color-mix(in srgb, var(--hue) 30%, white);
+  --tok-edge: color-mix(in srgb, var(--hue) 55%, white);
+  color: color-mix(in srgb, var(--hue) 75%, black);
+}
+.dark .rm-token--soft {
+  --tok: color-mix(in srgb, var(--hue) 70%, var(--color-gray-900));
+  --tok-edge: color-mix(in srgb, var(--hue) 40%, var(--color-gray-950));
+  color: color-mix(in srgb, var(--hue) 20%, white);
+}
+
+/* A sidetrack under way. */
+.rm-token--amber {
+  --tok: var(--color-amber-400);
+}
+
+/* A sidetrack dropped. */
+.rm-token--muted {
+  --tok: var(--color-gray-100);
+  --tok-edge: var(--color-gray-300);
+  background-image: none;
+}
+.dark .rm-token--muted {
+  --tok: var(--color-gray-800);
+  --tok-edge: var(--color-gray-950);
+}
+
+/* Where the road is now: a ring of the goal's colour round the step. */
+.rm-current {
+  --halo: 0 0 0 10px color-mix(in srgb, var(--hue) 22%, transparent);
+}
+
+/* A raised pill for a name or a word: white on a grey edge. */
+.rm-pill {
+  background: var(--color-white);
+  border: 2px solid var(--color-gray-200);
+  box-shadow: 0 3px 0 var(--color-gray-200);
+}
+.dark .rm-pill {
+  background: var(--color-gray-800);
+  border-color: var(--color-gray-700);
+  box-shadow: 0 3px 0 var(--color-gray-700);
+}
+
+/* The ground a goal stands on: a raised island in its colour. */
+.rm-island {
+  background: color-mix(in srgb, var(--hue) 20%, white);
+  box-shadow: 0 10px 0 color-mix(in srgb, var(--hue) 40%, white);
+}
+.dark .rm-island {
+  background: color-mix(in srgb, var(--hue) 32%, var(--color-gray-900));
+  box-shadow: 0 10px 0 color-mix(in srgb, var(--hue) 18%, var(--color-gray-950));
+}
+
+/* A popup's buttons: chunky, in the goal's colour, or plain. */
+.rm-btn {
+  --lip: 4px;
+}
+.rm-btn--plain {
+  --tok: var(--color-white);
+  --tok-edge: var(--color-gray-200);
+  background-image: none;
+  border: 2px solid var(--color-gray-200);
+}
+.dark .rm-btn--plain {
+  --tok: var(--color-gray-800);
+  --tok-edge: var(--color-gray-700);
+  border-color: var(--color-gray-700);
+}
+
+/* A popup: a raised card with a tail pointing at what it is about. */
+.rm-popup-card {
+  background: var(--color-white);
+  border: 2px solid var(--color-gray-200);
+  box-shadow: 0 5px 0 var(--color-gray-200);
+}
+.dark .rm-popup-card {
+  background: var(--color-gray-800);
+  border-color: var(--color-gray-700);
+  box-shadow: 0 5px 0 var(--color-gray-700);
+}
+
+/* Pops open from its tail, a touch past full size and back; fades away. */
+.rm-pop-enter-active {
+  transition:
+    opacity 0.12s ease-out,
+    transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.25);
+}
+.rm-pop-leave-active {
+  transition: opacity 0.1s ease-in;
+}
+.rm-pop-enter-from {
+  opacity: 0;
+  transform: scale(0.8);
+}
+.rm-pop-leave-to {
+  opacity: 0;
+}
+
+/* A star just earned pops in the same way. */
+.rm-star-in {
+  animation: rm-star-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+}
+@keyframes rm-star-in {
+  from {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rm-token,
+  .rm-pop-enter-active,
+  .rm-pop-leave-active {
+    transition: none;
+  }
+  .rm-token:active,
+  .rm-token.is-pressed {
+    transform: none;
+  }
+  .rm-star-in {
+    animation: none;
+  }
+}

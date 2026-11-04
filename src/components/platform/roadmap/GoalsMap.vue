@@ -1,7 +1,8 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Flag, Trophy } from '../../../icons'
-import { goalHue, progressOf } from '../../../utils/roadmap'
+import { ArrowRightBold, TrophyFill } from '../../../icons'
+import { currentStepId, goalHue, progressOf } from '../../../utils/roadmap'
+import MapPopup from './MapPopup.vue'
 
 // Every goal on one map, the world map above each goal's own road
 // (LevelMap). Read from the bottom up like the roads: a goal that comes after
@@ -9,11 +10,11 @@ import { goalHue, progressOf } from '../../../utils/roadmap'
 // that lead into each other read as a climb and the ones that run side by
 // side stand side by side.
 //
-// Each goal is a big round stop in its own colour (goalHue), in a soft halo
-// of it, with how many of its steps are done inside and its name
-// underneath; nothing else, so the map reads at a glance. A road takes the
-// colour of the goal below it once that goal is reached. Opening a goal
-// opens its road.
+// Each goal is a world of its own colour (goalHue): a chunky trophy piece on
+// a raised island (roadmap3d.css), how far along it is on a badge, its name
+// on a raised sign under it. A road between two goals takes the colour of
+// the one below once that one is reached. Tapping a goal pops up how it is
+// going and the way onto its road.
 
 const props = defineProps({
   roadmaps: { type: Array, required: true },
@@ -32,15 +33,20 @@ onMounted(() => {
     viewH.value = entry.contentRect.height
   })
   observer.observe(scroller.value)
+  window.addEventListener('keydown', onKey)
 })
-onBeforeUnmount(() => observer?.disconnect())
+onBeforeUnmount(() => {
+  observer?.disconnect()
+  window.removeEventListener('keydown', onKey)
+})
 
-// A goal's stop: the ring and circle on top, its name in the room under it.
-const RING = 104
-const NAME_H = 44
-const BLOCK_H = RING + NAME_H
-const ROW = BLOCK_H + 48
-const PAD = 28
+// A goal's place, top to bottom: the piece (84 across, on an 8px edge), the
+// island under it, and the sign with its name.
+const TOKEN = 84
+const ISLAND_Y = 76 // the island's middle, down from the top
+const BLOCK_H = 178
+const ROW = BLOCK_H + 34
+const PAD = 36
 
 const clamp = (value, lo, hi) => Math.min(hi, Math.max(lo, value))
 
@@ -69,7 +75,7 @@ const layout = computed(() => {
 
   // Two across on a phone; on a wider screen, as many to a row as fit.
   const GAP = 16
-  const slotW = clamp((W - GAP * 3) / 2, 120, 190)
+  const slotW = clamp((W - GAP * 3) / 2, 130, 200)
   const perRow = Math.max(1, Math.floor((W - GAP) / (slotW + GAP)))
 
   // Rows from the bottom. Within a row, each goal stands over the middle of
@@ -110,33 +116,42 @@ const layout = computed(() => {
   const height = Math.max(contentH, viewH.value)
   const base = PAD + Math.max(0, (viewH.value - contentH) / 2)
 
-  const stops = goals.map((g) => {
+  const worlds = goals.map((g) => {
     const p = placed.get(g.id)
-    return { ...g, x: p.x, yb: base + p.row * ROW, hue: goalHue(g.id), progress: progressOf(g.stops) }
+    const progress = progressOf(g.stops)
+    const nextId = currentStepId(g.stops)
+    return {
+      ...g,
+      x: p.x,
+      yb: base + p.row * ROW,
+      hue: goalHue(g.id),
+      progress,
+      next: g.stops.find((s) => s.id === nextId)?.title || '',
+    }
   })
-  const stopById = new Map(stops.map((s) => [s.id, s]))
+  const byWorld = new Map(worlds.map((w) => [w.id, w]))
 
-  // From the top of the goal below to the foot of the goal above's circle,
-  // passing behind its name.
+  // From island to island, under both pieces and behind the upper sign.
+  const islandUp = BLOCK_H - ISLAND_Y
   const roads = []
-  stops.forEach((s) => {
-    ;(s.after || []).forEach((id) => {
-      const from = stopById.get(id)
-      if (!from || from.yb >= s.yb) return
+  worlds.forEach((w) => {
+    ;(w.after || []).forEach((id) => {
+      const from = byWorld.get(id)
+      if (!from || from.yb >= w.yb) return
       const x1 = from.x
-      const y1 = height - (from.yb + BLOCK_H - 4)
-      const x2 = s.x
-      const y2 = height - (s.yb + NAME_H)
+      const y1 = height - (from.yb + islandUp)
+      const x2 = w.x
+      const y2 = height - (w.yb + islandUp)
       const mid = (y1 + y2) / 2
       roads.push({
-        key: `${id}-${s.id}`,
+        key: `${id}-${w.id}`,
         d: `M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2}`,
         hue: from.progress.reached ? from.hue : '',
       })
     })
   })
 
-  return { W, height, slotW, stops, roads }
+  return { W, height, slotW, worlds, roads }
 })
 
 // The map opens at its foot, where the goals begin.
@@ -148,20 +163,43 @@ watch(
   }
 )
 
-// How far along: a ring round the goal's circle.
-const CIRC = 2 * Math.PI * 48
-const ringOffset = (p) => CIRC * (1 - (p.steps ? p.done / p.steps : 0))
+/* ----------------------------------------------------------------- popup */
+
+const popupId = ref('')
+const popupOpen = ref(false)
+const popupWorld = computed(() => layout.value.worlds.find((w) => w.id === popupId.value) || null)
+
+const toggle = (id) => {
+  if (popupOpen.value && popupId.value === id) return (popupOpen.value = false)
+  popupId.value = id
+  popupOpen.value = true
+}
+const closePopup = () => (popupOpen.value = false)
+const onKey = (event) => {
+  if (event.key === 'Escape') closePopup()
+}
+
+const badge = (w) => {
+  if (w.progress.reached) return 'Done!'
+  if (!w.progress.steps) return 'New'
+  return `${w.progress.done}/${w.progress.steps}`
+}
+const percent = (p) => (p.steps ? Math.round((p.done / p.steps) * 100) : 0)
 </script>
 
 <template>
-  <div ref="scroller" class="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-white dark:bg-gray-900">
+  <div
+    ref="scroller"
+    class="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-linear-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900"
+    @click="closePopup"
+  >
     <div class="relative w-full" :style="{ height: `${layout.height}px` }">
-      <!-- Each goal's soft pool of colour, under everything. -->
+      <!-- Each world's soft light, under everything. -->
       <span
-        v-for="goal in layout.stops"
-        :key="`pool-${goal.id}`"
-        class="pointer-events-none absolute size-30 -translate-x-1/2 translate-y-1/2 rounded-full bg-(--hue)/10 dark:bg-(--hue)/15"
-        :style="{ '--hue': goal.hue, left: `${goal.x}px`, bottom: `${goal.yb + NAME_H + RING / 2}px` }"
+        v-for="w in layout.worlds"
+        :key="`light-${w.id}`"
+        class="pointer-events-none absolute size-52 -translate-x-1/2 translate-y-1/2 rounded-full bg-(--hue)/10 dark:bg-(--hue)/8"
+        :style="{ '--hue': w.hue, left: `${w.x}px`, bottom: `${w.yb + BLOCK_H - ISLAND_Y}px` }"
       ></span>
 
       <svg
@@ -171,76 +209,117 @@ const ringOffset = (p) => CIRC * (1 - (p.steps ? p.done / p.steps : 0))
         :viewBox="`0 0 ${layout.W} ${layout.height}`"
         aria-hidden="true"
       >
+        <!-- Roads between goals, in depth: kerb, surface, dashes. -->
         <g fill="none" stroke-linecap="round">
+          <g transform="translate(0 5)">
+            <path
+              v-for="road in layout.roads"
+              :key="`kerb-${road.key}`"
+              :d="road.d"
+              stroke-width="20"
+              :style="road.hue ? { stroke: `color-mix(in srgb, ${road.hue} 66%, black)` } : null"
+              :class="road.hue ? '' : 'stroke-gray-300 dark:stroke-gray-950'"
+            />
+          </g>
           <path
             v-for="road in layout.roads"
-            :key="`bed-${road.key}`"
+            :key="`top-${road.key}`"
             :d="road.d"
-            stroke-width="16"
+            stroke-width="20"
             :style="road.hue ? { stroke: road.hue } : null"
-            :class="road.hue ? '' : 'stroke-gray-200 dark:stroke-gray-700'"
+            :class="road.hue ? '' : 'stroke-gray-100 dark:stroke-gray-700'"
           />
           <path
             v-for="road in layout.roads"
             :key="`line-${road.key}`"
             :d="road.d"
-            stroke-width="2.5"
-            stroke-dasharray="7 9"
-            class="stroke-white dark:stroke-gray-900"
-            :class="road.hue ? 'opacity-70' : ''"
+            stroke-width="3"
+            stroke-dasharray="8 10"
+            :class="road.hue ? 'stroke-white/60' : 'stroke-gray-300 dark:stroke-gray-500'"
           />
         </g>
       </svg>
 
-      <button
-        v-for="goal in layout.stops"
-        :key="goal.id"
-        type="button"
-        class="group absolute flex -translate-x-1/2 flex-col items-center rounded-3xl transition-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        :style="{ '--hue': goal.hue, left: `${goal.x}px`, bottom: `${goal.yb}px`, width: `${layout.slotW}px`, height: `${BLOCK_H}px` }"
-        :aria-label="`${goal.title}: ${goal.progress.done} of ${goal.progress.steps} steps done${goal.progress.reached ? ', reached' : ''}`"
-        @click="emit('open', goal.id)"
+      <!-- The worlds. -->
+      <div
+        v-for="w in layout.worlds"
+        :key="w.id"
+        class="pointer-events-none absolute -translate-x-1/2"
+        :style="{ '--hue': w.hue, left: `${w.x}px`, bottom: `${w.yb}px`, width: `${layout.slotW}px`, height: `${BLOCK_H}px` }"
       >
-        <span class="relative flex shrink-0 items-center justify-center" :style="{ width: `${RING}px`, height: `${RING}px` }">
-          <svg viewBox="0 0 104 104" class="absolute inset-0 size-full -rotate-90" aria-hidden="true">
-            <circle cx="52" cy="52" r="48" fill="none" stroke-width="6" class="stroke-(--hue)/20" />
-            <circle
-              cx="52"
-              cy="52"
-              r="48"
-              fill="none"
-              stroke-width="6"
-              stroke-linecap="round"
-              :stroke-dasharray="CIRC"
-              :stroke-dashoffset="ringOffset(goal.progress)"
-              class="stroke-(--hue) transition-[stroke-dashoffset] duration-500"
-            />
-          </svg>
-          <span
-            class="flex size-21 flex-col items-center justify-center rounded-full bg-(--hue) text-white transition-[filter] group-hover:brightness-110"
-          >
-            <template v-if="goal.progress.reached">
-              <Trophy class="size-8" />
-              <span class="mt-0.5 text-[10px] font-bold tracking-wider uppercase">Reached</span>
-            </template>
-            <template v-else-if="goal.progress.steps">
-              <span class="text-2xl leading-none font-black tabular-nums">
-                {{ goal.progress.done }}<span class="text-sm font-bold opacity-75">/{{ goal.progress.steps }}</span>
-              </span>
-              <span class="mt-1 text-[10px] font-semibold opacity-85">steps</span>
-            </template>
-            <Flag v-else class="size-8" />
-          </span>
-        </span>
-        <!-- The name, on a patch of ground so the road arriving from below
-             passes behind it to the circle. -->
         <span
-          class="mt-2 line-clamp-2 max-w-full rounded-md bg-white px-1.5 text-center text-sm leading-snug font-bold text-gray-900 dark:bg-gray-900 dark:text-white"
+          class="rm-island absolute left-1/2 h-13 w-38 -translate-x-1/2 -translate-y-1/2 rounded-[50%]"
+          :style="{ top: `${ISLAND_Y}px` }"
+        ></span>
+        <button
+          type="button"
+          class="rm-token pointer-events-auto absolute top-0 left-1/2 flex -translate-x-1/2 items-center justify-center rounded-full text-white focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-primary"
+          :style="{ width: `${TOKEN}px`, height: `${TOKEN}px`, '--lip': '8px' }"
+          :aria-label="`${w.title}: ${w.progress.done} of ${w.progress.steps} steps done${w.progress.reached ? ', reached' : ''}`"
+          :aria-expanded="popupOpen && popupId === w.id"
+          @click.stop="toggle(w.id)"
         >
-          {{ goal.title }}
+          <TrophyFill class="size-10" />
+          <span
+            :class="[
+              'rm-pill absolute -top-2 -right-4 rounded-full px-2 py-0.5 text-xs font-black tabular-nums',
+              w.progress.reached ? 'text-amber-600 dark:text-amber-400' : 'text-(--hue)',
+            ]"
+          >
+            {{ badge(w) }}
+          </span>
+        </button>
+        <span
+          class="rm-pill absolute bottom-1 left-1/2 line-clamp-2 w-max max-w-full -translate-x-1/2 rounded-xl px-3 py-1 text-center text-sm leading-snug font-black text-gray-900 dark:text-white"
+        >
+          {{ w.title }}
         </span>
-      </button>
+      </div>
+
+      <!-- How a goal is going, and the way onto its road. -->
+      <MapPopup
+        :show="popupOpen && !!popupWorld"
+        :x="popupWorld?.x || 0"
+        :yb="(popupWorld?.yb || 0) + BLOCK_H - TOKEN / 2"
+        :reach="TOKEN / 2 + 6"
+        :width="layout.W"
+        :height="layout.height"
+        :hue="popupWorld?.hue || ''"
+      >
+        <template v-if="popupWorld">
+          <p class="text-[11px] font-black tracking-wider text-(--hue) uppercase">
+            {{ popupWorld.progress.reached ? 'Goal reached' : 'Goal' }}
+          </p>
+          <p class="mt-0.5 text-base leading-snug font-bold text-gray-900 dark:text-white">{{ popupWorld.title }}</p>
+
+          <!-- How far along, as a chunky bar. -->
+          <div class="mt-3 h-3.5 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+            <div class="h-full rounded-full bg-(--hue)" :style="{ width: `${percent(popupWorld.progress)}%` }"></div>
+          </div>
+          <p class="mt-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
+            <template v-if="popupWorld.progress.steps">
+              {{ popupWorld.progress.done }} of {{ popupWorld.progress.steps }} steps<template v-if="popupWorld.progress.sides">
+                · {{ popupWorld.progress.sides }} {{ popupWorld.progress.sides === 1 ? 'sidetrack' : 'sidetracks' }}</template
+              >
+            </template>
+            <template v-else>No steps yet</template>
+          </p>
+          <p v-if="popupWorld.next && !popupWorld.progress.reached" class="mt-2 text-sm text-gray-700 dark:text-gray-200">
+            <span class="font-bold">Next:</span> {{ popupWorld.next }}
+          </p>
+
+          <button
+            type="button"
+            class="rm-token rm-btn mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-black tracking-wide text-white uppercase"
+            @click.stop="emit('open', popupWorld.id)"
+          >
+            Open the road
+            <ArrowRightBold class="size-4" />
+          </button>
+        </template>
+      </MapPopup>
     </div>
   </div>
 </template>
 
+<style src="./roadmap3d.css"></style>

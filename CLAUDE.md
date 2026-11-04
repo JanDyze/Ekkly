@@ -115,7 +115,7 @@ installable PWA.
   `syncCapabilities()`. Contact details go through `lib/memberPrivate.js`.
 - **Icons come from `src/icons`, which is generated.** Import any Phosphor name
   (`import { Bell } from '../icons'`) and run `npm run build:icons`. Append
-  `Fill` for the solid weight. Don't edit `src/icons/index.js` or import an
+  `Fill` for the solid weight, `Bold` for the heavy one. Don't edit `src/icons/index.js` or import an
   icon library (`@heroicons/vue` is installed but unused).
 - **Schedules is planned by teams** (`src/data/scheduleTeams.js`): every role
   belongs to Worship, Preaching, Ushers or Welcome, and each team's planners

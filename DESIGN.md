@@ -753,42 +753,57 @@ Church Settings and the platform console share one layout. Copy
 Ekkly's own roadmap is a page of its own off the console
 ([PlatformRoadmaps.vue](src/views/PlatformRoadmaps.vue), at
 `/platform/roadmaps`), the whole screen under a slim bar of a back arrow,
-where you are and one action, because the maps need the room. It draws the
-roadmap the way a puzzle game lays out its levels.
+where you are with a progress bar, and one action. It is drawn the way a
+puzzle game lays out its levels, and it is meant to be fun to look at.
 
 **A goal's road** (`/platform/roadmaps/<id>`,
 [LevelMap.vue](src/components/platform/roadmap/LevelMap.vue)): a road winding
-up from Start to the goal, each step a numbered round stop with up to three
-stars, sidetracks as smaller stops on dotted trails off the road, and a flag
-over the first step not yet done. Read bottom up, it opens rolling up to the
-flag. One road is one goal, because "where we are" and "the next step" only
-mean something on a line.
+up from Start to the goal, each step a numbered round piece (a check once
+done) with up to three stars, sidetracks as smaller pieces on dotted trails
+off the road, a flag over the step you are on, and the goal a big trophy
+piece on its own island. Read bottom up, it opens already at the flag, and a
+short road sits in the middle of the screen. One road is one goal, because
+"where we are" and "the next step" only mean something on a line.
 
 **All goals** ([GoalsMap.vue](src/components/platform/roadmap/GoalsMap.vue)),
-the page's home: every goal as a big round stop with a ring of how far along
-it is, its steps done inside and its name under it. A goal that comes after
-others (`after`, set in the goal's sheet) stands a row above them, over their
-middle, joined by roads, so goals that lead into each other read as a climb
-and goals that run alongside stand side by side.
+the page's home: every goal a trophy piece on a raised island, a badge of its
+steps done ("2/4", "Done!"), its name on a raised sign. A goal that comes
+after others (`after`, set in the goal's sheet) stands a row above them,
+over their middle, joined by roads, so goals that lead into each other read
+as a climb and goals that run alongside stand side by side.
 
-It should be fun, which here means colour and room, not decoration:
+**Popups, not pages.** Tapping a piece pops up a card beside it with a tail
+pointing at it ([MapPopup.vue](src/components/platform/roadmap/MapPopup.vue)):
+a step's name, where it stands, its stars, and what to do — Mark done (which
+asks "How did it go?" with three stars, right there), Edit, Sidetrack; a
+goal's progress bar, next step and Open the road. The full sheets are one
+tap further, for typing.
+
+**The one page with depth** ([roadmap3d.css](src/components/platform/roadmap/roadmap3d.css)).
+It was asked for: "3D and overall fun to look at". Every piece (`rm-token`)
+stands on a darker edge of its own colour and presses down into it when
+tapped, like a chunky game button; the road has a kerb; goals stand on
+islands (`rm-island`); names sit on raised signs (`rm-pill`); popups and the
+sheets are raised cards (`rm-popup-card`). Glyphs on pieces use Phosphor's
+bold weight (`CheckBold`). It is not the rest of the app's style: everywhere
+else stays flat, and none of these classes are for use outside the roadmap.
 
 - **Each goal has a colour of its own** (`goalHue`, from Ekkly's palette in
-  `appHues.js`, fixed by the goal's id): its stop on the map, its road
-  travelled, its steps done, its flag and the soft pool of colour it stands
-  in. A road between goals takes the colour of the goal below once it is
-  reached.
-- **Words are plain and few.** A step's name sits beside it with no box and
-  no date (the sheet has those); only the step you are on says "Here now". A
-  goal on the map shows its name and nothing else.
-- **Nothing slides.** Moving between the map of goals and a road is a
-  fade; the sheets fade in where they stand; stops, goals and the flag are
-  simply in their new place when the road changes, and a road opens already
-  at the flag. Sliding things read as fuss here. Only colour answers a
-  pointer, and stars just earned appear.
-- **Flat.** Only the mapping idea is the game's; the look is Ekkly's. It was
-  first drawn as a candy land (lollipops, glossy sweets), which was not what
-  was asked for, then as grey boxes and labels, which was cluttered and dull.
+  `appHues.js`, fixed by the goal's id), set as `--hue`: its pieces, its
+  road travelled, its flag, its island, its popups and sheets. A road
+  between goals takes the colour of the goal below once it is reached.
+- **Words are few.** A step's name sits beside it, plain; dates and notes
+  are in its popup.
+- **Motion pops; nothing slides.** Popups and sheets pop open from where
+  they are (a touch past full size and back) and fade away; stars just
+  earned pop in; pieces press. Moving between the map of goals and a road is
+  a fade, and anything rearranged is simply in its new place. Every button in
+  the app transitions `all` (style.css), which takes in `left` and
+  `bottom`, so anything placed by them here names what it transitions, or
+  it slides into place as the map opens.
+- How it got here: first a candy land (lollipops, glossy sweets; only the
+  mapping idea was wanted), then flat grey boxes (cluttered and dull), then
+  flat colour with slides (the slides read badly), then this.
 
 ### Toolbar
 

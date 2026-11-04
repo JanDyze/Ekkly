@@ -15,6 +15,8 @@ const props = defineProps({
   // already come after it, which would make a loop.
   others: { type: Array, default: () => [] },
   saving: { type: Boolean, default: false },
+  // The goal's colour (goalHue), for the sheet's own pieces.
+  hue: { type: String, default: '' },
 })
 
 const emit = defineEmits(['close', 'save', 'delete'])
@@ -62,6 +64,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
     <Transition name="sheet">
       <div
         v-if="show"
+        :style="{ '--hue': hue || 'var(--color-primary)' }"
         class="fixed inset-0 z-100 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4"
         @click.self="emit('close')"
       >
@@ -71,13 +74,13 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
           aria-modal="true"
           aria-labelledby="goal-sheet-title"
           tabindex="-1"
-          class="sheet-panel flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white sm:max-w-md sm:rounded-2xl dark:border-gray-700 dark:bg-gray-800"
+          class="sheet-panel flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl rm-popup-card sm:max-w-md sm:rounded-2xl"
         >
           <div
-            class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-linear-to-r from-primary/10 to-transparent px-4 py-3.5 dark:border-gray-700 dark:from-primary-light/10"
+            class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-linear-to-r from-(--hue)/12 to-transparent px-4 py-3.5 dark:border-gray-700 dark:from-(--hue)/20"
           >
             <div class="flex min-w-0 items-center gap-3">
-              <div class="shrink-0 rounded-xl bg-primary p-2.5">
+              <div class="rm-token rm-btn shrink-0 rounded-xl p-2.5">
                 <Trophy class="h-5 w-5 text-white" />
               </div>
               <div class="min-w-0">
@@ -136,7 +139,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
                   :class="[
                     'flex max-w-full items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ring-1 transition-colors',
                     form.after.includes(other.id)
-                      ? 'bg-primary/10 text-primary ring-primary/40 dark:bg-primary-light/15 dark:text-primary-light dark:ring-primary-light/40'
+                      ? 'bg-(--hue)/12 text-(--hue) ring-(--hue)/50 dark:bg-(--hue)/20'
                       : 'bg-white text-gray-600 ring-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:ring-gray-600 dark:hover:bg-gray-600',
                   ]"
                 >
@@ -170,7 +173,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
               type="button"
               @click="save"
               :disabled="!canSave"
-              class="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
+              class="rm-token rm-btn h-10 rounded-xl px-5 text-sm font-black tracking-wide text-white uppercase disabled:opacity-50"
             >
               {{ isNew ? 'Add the goal' : 'Update' }}
             </button>
@@ -180,6 +183,8 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
     </Transition>
   </Teleport>
 </template>
+
+<style src="./roadmap3d.css"></style>
 
 <style scoped>
 /* The sheet fades in where it stands rather than sliding up. */
@@ -191,9 +196,18 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
 .sheet-leave-to {
   opacity: 0;
 }
+/* The card itself pops open, a touch past full size and back, the way the
+   map's own popups do. Nothing slides. */
+.sheet-enter-active .sheet-panel {
+  transition: transform 0.24s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.sheet-enter-from .sheet-panel {
+  transform: scale(0.92);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .sheet-enter-active,
+  .sheet-enter-active .sheet-panel,
   .sheet-leave-active {
     transition: none;
   }
