@@ -5,7 +5,7 @@ import { MapTrifold, PencilSimple, Plus } from '../../icons'
 import SectionCard from '../common/SectionCard.vue'
 import SelectMenu from '../common/SelectMenu.vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
-import CandyMap from './roadmap/CandyMap.vue'
+import LevelMap from './roadmap/LevelMap.vue'
 import StopSheet from './roadmap/StopSheet.vue'
 import GoalSheet from './roadmap/GoalSheet.vue'
 import { deleteRoadmap, listRoadmaps, saveRoadmap } from '../../api/roadmapService'
@@ -14,8 +14,8 @@ import { addSide, canMove, groupStops, moveStop, progressOf, putStop, removeStop
 
 // Ekkly's own roadmaps, in the console: where Ekkly is heading, the steps
 // taken to get there, and the sidetracks along the way. Each is drawn as a
-// candy map (CandyMap) and changed from it: tap a stop to change it, the
-// dotted sweet at the top of the road to add the next step, the lollipop to
+// level map (LevelMap) and changed from it: tap a stop to change it, the
+// dashed stop at the top of the road to add the next step, the goal to
 // change the goal itself.
 //
 // Every change is shown at once and saved after (lib/platform/roadmaps.js),
@@ -204,19 +204,12 @@ const askDeleteRoadmap = () => {
 
       <div v-if="loading" class="h-[68dvh] min-h-105 animate-pulse bg-gray-100 dark:bg-gray-700/40" aria-busy="true"></div>
 
-      <!-- Nothing yet: the map's own ground, and the way to begin. -->
-      <div
-        v-else-if="!roadmaps.length"
-        class="flex flex-col items-center bg-linear-to-t from-sky-100 via-pink-50 to-violet-100 px-6 py-14 text-center dark:from-indigo-950 dark:via-violet-950 dark:to-fuchsia-950"
-      >
-        <svg viewBox="0 0 120 150" class="h-28 w-24" aria-hidden="true">
-          <rect x="55" y="80" width="10" height="70" rx="5" class="fill-white stroke-violet-200" stroke-width="2" />
-          <circle cx="60" cy="50" r="44" class="fill-pink-400 stroke-pink-600" stroke-width="3" />
-          <circle cx="60" cy="50" r="30" class="fill-none stroke-white" stroke-width="7" />
-          <circle cx="60" cy="50" r="14" class="fill-none stroke-amber-300" stroke-width="7" />
-          <ellipse cx="42" cy="26" rx="13" ry="6" transform="rotate(-30 42 26)" class="fill-white/55" />
-        </svg>
-        <p class="mt-4 text-lg font-black text-gray-900 dark:text-white">No roadmaps yet</p>
+      <!-- Nothing yet, and the way to begin. -->
+      <div v-else-if="!roadmaps.length" class="flex flex-col items-center bg-gray-50 px-6 py-14 text-center dark:bg-gray-900">
+        <span class="flex size-16 items-center justify-center rounded-full bg-primary/10 dark:bg-primary-light/15">
+          <MapTrifold class="size-8 text-primary dark:text-primary-light" />
+        </span>
+        <p class="mt-4 text-lg font-bold text-gray-900 dark:text-white">No roadmaps yet</p>
         <p class="mt-1 max-w-sm text-sm text-gray-600 dark:text-gray-300">
           Name where Ekkly is heading, then add the steps as they are taken, and the sidetracks too.
         </p>
@@ -259,7 +252,7 @@ const askDeleteRoadmap = () => {
           {{ selected.why }}
         </p>
 
-        <CandyMap :roadmap="selected" @open-stop="openStop" @add-step="addStep" @open-goal="editGoal" />
+        <LevelMap :roadmap="selected" @open-stop="openStop" @add-step="addStep" @open-goal="editGoal" />
       </template>
     </SectionCard>
 

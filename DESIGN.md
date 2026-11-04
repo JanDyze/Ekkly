@@ -748,22 +748,22 @@ Church Settings and the platform console share one layout. Copy
   amber bar over every screen to stop (`SeeAsBar`). Only the screens follow;
   the database still knows them as an administrator.
 
-### The roadmap's candy map
+### The roadmap's level map
 
 The console's Roadmaps section
-([CandyMap.vue](src/components/platform/roadmap/CandyMap.vue)) draws Ekkly's
-own roadmap as a level map: a sweet road winding up from Start to a lollipop
-(the end goal), each step a numbered round candy with up to three stars,
-sidetracks as wrapped sweets on dotted trails off the road, and a flag over
+([LevelMap.vue](src/components/platform/roadmap/LevelMap.vue)) draws Ekkly's
+own roadmap the way a puzzle game lays out its levels: a road winding up from
+Start to the end goal, each step a numbered round stop with up to three stars,
+sidetracks as smaller stops on dotted trails off the road, and a flag over
 the first step not yet done. It is read bottom up and opens rolling up to the
 flag.
 
-It is the one deliberately playful page, asked for to look like a candy
-game, so it alone breaks two rules: its candies carry a sheen and a darker
-underside, and its scenery uses Tailwind's named colours rather than the brand
-tokens. Everything around it stays to the rules: the labels, the toolbar and
-the sheets are flat, and the flag, the goal's ribbon and the buttons are
-`primary`. Don't borrow its candies for anything else.
+Only the mapping idea is the game's; the look is Ekkly's. It was first drawn
+as a candy land (lollipops, glossy sweets) and that was not what was asked
+for. The road travelled, the steps done and the flag are `primary`, the rest
+is grey on plain ground, every stop is flat, and the only other colours are
+status ones (a sidetrack taken in teal, one under way in amber, a reached goal
+in amber).
 
 ### Toolbar
 

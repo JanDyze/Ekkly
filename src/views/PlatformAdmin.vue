@@ -199,7 +199,7 @@ const GROUPS = computed(() => [
     label: 'Platform',
     items: [
       {
-        // Where Ekkly itself is heading, drawn as a candy map.
+        // Where Ekkly itself is heading, drawn as a level map.
         key: 'roadmaps',
         label: 'Roadmaps',
         icon: MapTrifold,

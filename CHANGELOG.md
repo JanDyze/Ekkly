@@ -11,6 +11,23 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.10] — 2026-11-04
+
+The console's roadmaps keep the level map, in Ekkly's own look.
+
+### Changed
+
+- **Roadmaps are drawn in Ekkly's colours, not as a candy land.** Same idea —
+  a road winding up to the goal, numbered steps with stars, sidetracks off to
+  the side, a flag where things stand — but flat: the road travelled and the
+  steps done in the brand's colour, the rest grey, and the goal a trophy at
+  the top. One roadmap per goal, chosen at the top.
+
+### Added
+
+- `scripts/seed-mock-roadmap.mjs` puts four mock roadmaps in the console
+  (`--write`), and takes exactly those out again (`--remove --write`).
+
 ## [0.37.9] — 2026-11-04
 
 Ekkly's own roadmap, drawn as a candy map in the platform console.
