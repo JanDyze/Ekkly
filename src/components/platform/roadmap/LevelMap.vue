@@ -423,7 +423,7 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 text-left'
       <!-- The end goal at the top of the road: its name over a large stop. -->
       <button
         type="button"
-        class="group absolute flex -translate-x-1/2 flex-col items-center rounded-2xl focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-primary"
+        class="group absolute flex -translate-x-1/2 flex-col items-center rounded-2xl transition-none focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-primary"
         :style="{ left: `${layout.goal.x}px`, bottom: `${layout.goal.yb - 2}px`, width: `${Math.min(layout.W - 24, 400)}px` }"
         :aria-label="`End goal: ${roadmap.title}${layout.reached ? ', reached' : ''}`"
         @click="emit('open-goal')"
@@ -456,7 +456,10 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 text-left'
 <style scoped>
 /* A stop answers the pointer in colour. It does not slide when the road is
    rearranged, nor the flag glide to the next step: things moving about the
-   map read as fuss, so they are simply in their new place. */
+   map read as fuss, so they are simply in their new place. Every button in
+   the app transitions `all` (style.css), which takes in `left` and
+   `bottom`, so anything placed by them here names what it transitions, or
+   transition-none, or it slides into place as the map opens. */
 .map-stop {
   transition-property: background-color, color, box-shadow, filter;
   transition-duration: 0.15s;

@@ -196,7 +196,7 @@ const ringOffset = (p) => CIRC * (1 - (p.steps ? p.done / p.steps : 0))
         v-for="goal in layout.stops"
         :key="goal.id"
         type="button"
-        class="group absolute flex -translate-x-1/2 flex-col items-center rounded-3xl focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        class="group absolute flex -translate-x-1/2 flex-col items-center rounded-3xl transition-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary"
         :style="{ '--hue': goal.hue, left: `${goal.x}px`, bottom: `${goal.yb}px`, width: `${layout.slotW}px`, height: `${BLOCK_H}px` }"
         :aria-label="`${goal.title}: ${goal.progress.done} of ${goal.progress.steps} steps done${goal.progress.reached ? ', reached' : ''}`"
         @click="emit('open', goal.id)"

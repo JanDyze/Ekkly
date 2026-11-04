@@ -11,6 +11,17 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.16] — 2026-11-04
+
+The roadmaps really stop sliding.
+
+### Fixed
+
+- **Goals no longer slide into place as a roadmap opens**, nor the goal at
+  the top of a road. Every button in the app eases any change over a fifth
+  of a second, and that took in where these are placed, so they slid from a
+  first guess at the screen's width to their real place.
+
 ## [0.37.15] — 2026-11-04
 
 Nothing slides on the roadmaps.
