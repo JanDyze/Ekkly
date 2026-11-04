@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /**
  * Mock roadmaps for the platform console's Roadmaps section, one per goal, so
- * the level map has something to show: one long road with steps done, a flag
- * part way up, sidetracks taken and dropped, and the steps still ahead; and a
- * few shorter goals beside it, so the choice of roadmap at the top has
- * something to choose between.
+ * both maps have something to show. The goals join up (`after`): your own
+ * church using it leads to selling it to a church, which with the mobile app
+ * leads to a hundred churches. The hundred is the long road, with steps done,
+ * a flag part way up, sidetracks taken and dropped, and the steps still
+ * ahead; the others are shorter.
  *
  * Safe by default:
  *   - prints what it would do, and writes nothing, unless --write is given;
@@ -60,6 +61,7 @@ const ROADMAPS = [
     id: 'mock-hundred-churches',
     title: 'A hundred churches on Ekkly',
     why: 'Every one of them spared the lists kept twice and the notes nobody can find, so its people have more time for the ministry itself.',
+    after: ['mock-first-sale', 'mock-mobile-app'],
     stops: [
       step('One church runs on it', 'done', { stars: 3, doneOn: '2025-06-14', note: 'UEC, every Sunday.' }),
       step('Many churches from one deployment', 'done', { stars: 2, doneOn: '2026-09-15', note: 'Each church at an address of its own, its records apart.' }),
@@ -80,6 +82,7 @@ const ROADMAPS = [
     id: 'mock-mobile-app',
     title: 'Ekkly as a mobile app',
     why: 'Most of a church’s people only ever have a phone.',
+    after: [],
     stops: [
       step('Installable from the browser', 'done', { stars: 2, doneOn: '2026-07-20' }),
       step('Works with no signal', 'next', { note: 'Songs and the Bible first, then attendance.' }),
@@ -92,6 +95,7 @@ const ROADMAPS = [
     id: 'mock-first-sale',
     title: 'Sell Ekkly to a church',
     why: 'The first church that pays is the proof it is worth paying for.',
+    after: ['mock-my-church'],
     stops: [
       step('A front door that says what it does', 'done', { stars: 2, doneOn: '2026-10-05' }),
       step('A price for each app', 'done', { stars: 1, doneOn: '2026-10-30' }),
@@ -104,6 +108,7 @@ const ROADMAPS = [
     id: 'mock-my-church',
     title: 'My church uses it every week',
     why: 'If it does not serve our own Sundays, it will not serve anyone else’s.',
+    after: [],
     stops: [
       step('Sunday line-ups in Schedules', 'done', { stars: 3, doneOn: '2026-08-10' }),
       step('Attendance counted every Sunday', 'done', { stars: 2, doneOn: '2026-09-07' }),

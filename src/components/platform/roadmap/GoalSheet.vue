@@ -1,26 +1,36 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { Trash2, Trophy, X } from '../../../icons'
+import { Check, Trash2, Trophy, X } from '../../../icons'
 import { useFocusTrap } from '../../../composables/useFocusTrap'
 
-// Starting a roadmap, or changing its end goal: what the road leads to, and
-// why it is worth the trip. Deleting the whole roadmap lives here too.
+// Starting a goal, or changing one: what its road leads to, why it is worth
+// the trip, and which goals come before it, which is where it stands on the
+// map of every goal (GoalsMap). Deleting the whole roadmap lives here too.
 
 const props = defineProps({
   show: { type: Boolean, default: false },
   // The roadmap being changed, or null for a new one.
   roadmap: { type: Object, default: null },
+  // The goals this one may come after: every other goal but those that
+  // already come after it, which would make a loop.
+  others: { type: Array, default: () => [] },
   saving: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['close', 'save', 'delete'])
 
-const form = ref({ title: '', why: '' })
+const form = ref({ title: '', why: '', after: [] })
 
 watch(
   () => props.show,
   (open) => {
-    if (open) form.value = { title: props.roadmap?.title || '', why: props.roadmap?.why || '' }
+    if (open) {
+      form.value = {
+        title: props.roadmap?.title || '',
+        why: props.roadmap?.why || '',
+        after: [...(props.roadmap?.after || [])],
+      }
+    }
   },
   { immediate: true }
 )
@@ -28,8 +38,19 @@ watch(
 const isNew = computed(() => !props.roadmap)
 const canSave = computed(() => form.value.title.trim().length > 0 && !props.saving)
 
+const toggleAfter = (id) => {
+  const after = form.value.after
+  form.value.after = after.includes(id) ? after.filter((a) => a !== id) : [...after, id]
+}
+
 const save = () => {
-  if (canSave.value) emit('save', { title: form.value.title.trim(), why: form.value.why.trim() })
+  if (!canSave.value) return
+  const allowed = new Set(props.others.map((o) => o.id))
+  emit('save', {
+    title: form.value.title.trim(),
+    why: form.value.why.trim(),
+    after: form.value.after.filter((id) => allowed.has(id)),
+  })
 }
 
 const dialogRef = ref(null)
@@ -61,7 +82,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
               </div>
               <div class="min-w-0">
                 <h2 id="goal-sheet-title" class="truncate text-base font-bold text-gray-900 dark:text-white">
-                  {{ isNew ? 'New roadmap' : 'End goal' }}
+                  {{ isNew ? 'New goal' : 'Goal' }}
                 </h2>
                 <p class="truncate text-xs text-gray-500 dark:text-gray-400">Where the road leads, and why it is worth the trip</p>
               </div>
@@ -99,6 +120,31 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
                 class="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               ></textarea>
             </div>
+
+            <div v-if="others.length">
+              <p class="mb-0.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Comes after</p>
+              <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                The goals that lead into this one. Leave them all off for one that runs on its own.
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="other in others"
+                  :key="other.id"
+                  type="button"
+                  :aria-pressed="form.after.includes(other.id)"
+                  @click="toggleAfter(other.id)"
+                  :class="[
+                    'flex max-w-full items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ring-1 transition-colors',
+                    form.after.includes(other.id)
+                      ? 'bg-primary/10 text-primary ring-primary/40 dark:bg-primary-light/15 dark:text-primary-light dark:ring-primary-light/40'
+                      : 'bg-white text-gray-600 ring-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:ring-gray-600 dark:hover:bg-gray-600',
+                  ]"
+                >
+                  <Check v-if="form.after.includes(other.id)" class="size-4 shrink-0" />
+                  <span class="truncate">{{ other.title }}</span>
+                </button>
+              </div>
+            </div>
           </form>
 
           <div
@@ -126,7 +172,7 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
               :disabled="!canSave"
               class="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
             >
-              {{ isNew ? 'Start the roadmap' : 'Update' }}
+              {{ isNew ? 'Add the goal' : 'Update' }}
             </button>
           </div>
         </div>

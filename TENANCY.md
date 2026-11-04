@@ -41,7 +41,7 @@ Beside the churches sit a few platform collections:
 | `platform/private` | AI model per feature, new church defaults | the console |
 | `platformLog` | everything done from the console | `/api/platform` |
 | `supportRequests` | a church asking for an app, a change, or with feedback | `/api/platform` |
-| `roadmaps` | Ekkly's own roadmaps: an end goal, and the steps and sidetracks taken toward it | the console (Roadmaps) |
+| `roadmaps` | Ekkly's own roadmaps, one per goal: the steps and sidetracks taken toward it, and the goals it comes after | the console (Roadmaps) |
 | `frontDoorDays/{YYYY-MM-DD}` | how many visitors the front door had that day, and how many pressed a call to action | `/api/platform` |
 | `frontDoorLeads` | what a first-time visitor told the welcome: their church, and, if they chose, their name and an email or phone to reach them | `/api/platform` |
 | `frontDoorChats` | conversations visitors start from the front door's chat bubble, each readable only with the secret its visitor was given | `/api/platform` |

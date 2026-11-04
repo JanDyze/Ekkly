@@ -11,6 +11,20 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.11] — 2026-11-04
+
+Every goal on one map, joined where one leads into another.
+
+### Added
+
+- **All goals, in the console's Roadmaps.** The section now opens on a map of
+  every goal: each one a card with how far along its road it is and its next
+  step, and roads between the goals that lead into each other — your own
+  church using it, then selling it to a church, then a hundred churches, with
+  the mobile app running alongside. Open a goal to see its road as before.
+- **"Comes after"** on a goal says which goals lead into it, and places it on
+  the map. A goal can follow several, and several can follow one.
+
 ## [0.37.10] — 2026-11-04
 
 The console's roadmaps keep the level map, in Ekkly's own look.

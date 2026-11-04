@@ -758,6 +758,16 @@ sidetracks as smaller stops on dotted trails off the road, and a flag over
 the first step not yet done. It is read bottom up and opens rolling up to the
 flag.
 
+One road is one goal, because "where we are" and "the next step" only mean
+something on a line. Goals themselves are not a line, so above the roads is
+All goals ([GoalsMap.vue](src/components/platform/roadmap/GoalsMap.vue)), the
+section's home: every goal as a card with a ring of how far along it is and
+its next step, read bottom up too. A goal that comes after others (`after`,
+set in the goal's sheet) stands a row above them, over their middle, joined
+by roads, so goals that lead into each other read as a climb and goals that
+run alongside stand side by side. A road is in `primary` once the goal below
+it is reached. Opening a card opens that goal's road.
+
 Only the mapping idea is the game's; the look is Ekkly's. It was first drawn
 as a candy land (lollipops, glossy sweets) and that was not what was asked
 for. The road travelled, the steps done and the flag are `primary`, the rest

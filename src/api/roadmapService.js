@@ -20,6 +20,7 @@ const normalizeRoadmap = (roadmap) => ({
   id: roadmap.id,
   title: roadmap.title || '',
   why: roadmap.why || '',
+  after: roadmap.after || [],
   stops: (roadmap.stops || []).map(normalizeStop),
   updatedAt: toDate(roadmap.updatedAt),
   updatedBy: roadmap.updatedBy || '',
@@ -28,7 +29,7 @@ const normalizeRoadmap = (roadmap) => ({
 export const listRoadmaps = async () => (await callPlatform('roadmaps')).map(normalizeRoadmap)
 
 /** Creates one when it has no id; otherwise replaces it whole. */
-export const saveRoadmap = async ({ id, title, why, stops }) =>
-  normalizeRoadmap(await callPlatform('saveRoadmap', { id: id || undefined, title, why, stops }))
+export const saveRoadmap = async ({ id, title, why, stops, after = [] }) =>
+  normalizeRoadmap(await callPlatform('saveRoadmap', { id: id || undefined, title, why, stops, after }))
 
 export const deleteRoadmap = (id) => callPlatform('deleteRoadmap', { id })

@@ -1,10 +1,11 @@
 <script setup>
 import { computed, onActivated, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { MapTrifold, PencilSimple, Plus } from '../../icons'
+import { ArrowLeft, MapTrifold, PencilSimple, Plus } from '../../icons'
 import SectionCard from '../common/SectionCard.vue'
 import SelectMenu from '../common/SelectMenu.vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
+import GoalsMap from './roadmap/GoalsMap.vue'
 import LevelMap from './roadmap/LevelMap.vue'
 import StopSheet from './roadmap/StopSheet.vue'
 import GoalSheet from './roadmap/GoalSheet.vue'
@@ -12,11 +13,16 @@ import { deleteRoadmap, listRoadmaps, saveRoadmap } from '../../api/roadmapServi
 import { useToast } from '../../composables/useToast'
 import { addSide, canMove, groupStops, moveStop, progressOf, putStop, removeStop } from '../../utils/roadmap'
 
-// Ekkly's own roadmaps, in the console: where Ekkly is heading, the steps
-// taken to get there, and the sidetracks along the way. Each is drawn as a
-// level map (LevelMap) and changed from it: tap a stop to change it, the
-// dashed stop at the top of the road to add the next step, the goal to
-// change the goal itself.
+// Ekkly's own roadmaps, in the console: where Ekkly is heading. Each goal has
+// a road of its own, the steps taken to it and the sidetracks along the way,
+// and the goals join up: one comes after another, or several run side by
+// side.
+//
+// So the section has two levels. All goals (GoalsMap) is every goal on one
+// map, joined by roads where one leads into the next; opening a goal shows
+// its road (LevelMap), changed from the map itself: tap a stop to change it,
+// the dashed stop at the top of the road to add the next step, the goal to
+// change the goal and what it comes after.
 //
 // Every change is shown at once and saved after (lib/platform/roadmaps.js),
 // put back if the server refuses, so a step marked done moves the flag
@@ -42,14 +48,28 @@ const load = async () => {
 }
 onActivated(load)
 
-// The open roadmap lives in the URL, beside the console's own ?section=.
-const selected = computed(
-  () => roadmaps.value.find((r) => r.id === route.query.roadmap) || roadmaps.value[0] || null
-)
-const choose = (id) => router.replace({ query: { ...route.query, roadmap: id } })
+// The open goal lives in the URL, beside the console's own ?section=; with
+// none, the map of every goal is open.
+const selected = computed(() => roadmaps.value.find((r) => r.id === route.query.roadmap) || null)
 
-const options = computed(() => roadmaps.value.map((r) => ({ value: r.id, label: r.title })))
+// Opening a goal pushes, so back returns to the map of them all; choosing
+// another from the menu replaces.
+const openGoal = (id) => router.push({ query: { ...route.query, roadmap: id } })
+const choose = (id) => {
+  const { roadmap: _drop, ...rest } = route.query
+  router.replace({ query: id ? { ...rest, roadmap: id } : rest })
+}
+const showAll = () => {
+  const { roadmap: _drop, ...rest } = route.query
+  router.push({ query: rest })
+}
+
+const options = computed(() => [
+  { value: '', label: 'All goals' },
+  ...roadmaps.value.map((r) => ({ value: r.id, label: r.title })),
+])
 const progress = computed(() => progressOf(selected.value?.stops || []))
+const reachedCount = computed(() => roadmaps.value.filter((r) => progressOf(r.stops).reached).length)
 
 const replaceLocal = (roadmap) => {
   roadmaps.value = roadmaps.value.map((r) => (r.id === roadmap.id ? roadmap : r))
@@ -77,27 +97,46 @@ const persist = async (stops, fields = {}) => {
 
 const goalSheet = ref({ show: false, isNew: false })
 
-const startRoadmap = () => (goalSheet.value = { show: true, isNew: true })
+const startGoal = () => (goalSheet.value = { show: true, isNew: true })
 const editGoal = () => (goalSheet.value = { show: true, isNew: false })
 
-const saveGoal = async ({ title, why }) => {
+// A goal may come after any other but the ones already after it, near or
+// far, which would close a loop.
+const goalChoices = computed(() => {
+  const self = goalSheet.value.isNew ? null : selected.value
+  if (!self) return roadmaps.value
+  const later = new Set([self.id])
+  let grew = true
+  while (grew) {
+    grew = false
+    roadmaps.value.forEach((r) => {
+      if (!later.has(r.id) && (r.after || []).some((id) => later.has(id))) {
+        later.add(r.id)
+        grew = true
+      }
+    })
+  }
+  return roadmaps.value.filter((r) => !later.has(r.id))
+})
+
+const saveGoal = async ({ title, why, after }) => {
   if (goalSheet.value.isNew) {
     saving.value = true
     try {
-      const created = await saveRoadmap({ title, why, stops: [] })
+      const created = await saveRoadmap({ title, why, after, stops: [] })
       roadmaps.value = [created, ...roadmaps.value]
-      choose(created.id)
+      openGoal(created.id)
       goalSheet.value.show = false
     } catch (error) {
-      console.error('Error starting a roadmap:', error)
-      toast.error(error.message || 'Could not start that roadmap. Please try again.')
+      console.error('Error adding a goal:', error)
+      toast.error(error.message || 'Could not add that goal. Please try again.')
     } finally {
       saving.value = false
     }
     return
   }
   goalSheet.value.show = false
-  await persist(selected.value.stops, { title, why })
+  await persist(selected.value.stops, { title, why, after })
 }
 
 /* ----------------------------------------------------------------- stops */
@@ -165,18 +204,21 @@ const askDeleteRoadmap = () => {
   const roadmap = selected.value
   confirm.value = {
     show: true,
-    title: 'Delete this roadmap?',
-    message: `“${roadmap.title}” and every stop on it will be gone for good.`,
+    title: 'Delete this goal?',
+    message: `“${roadmap.title}” and every stop on its road will be gone for good.`,
     run: async () => {
       goalSheet.value.show = false
       try {
         await deleteRoadmap(roadmap.id)
-        roadmaps.value = roadmaps.value.filter((r) => r.id !== roadmap.id)
-        if (roadmaps.value[0]) choose(roadmaps.value[0].id)
-        toast.success('Roadmap deleted')
+        // The goals that came after it now simply start on their own.
+        roadmaps.value = roadmaps.value
+          .filter((r) => r.id !== roadmap.id)
+          .map((r) => ({ ...r, after: (r.after || []).filter((id) => id !== roadmap.id) }))
+        choose('')
+        toast.success('Goal deleted')
       } catch (error) {
-        console.error('Error deleting the roadmap:', error)
-        toast.error(error.message || 'Could not delete that roadmap. Please try again.')
+        console.error('Error deleting the goal:', error)
+        toast.error(error.message || 'Could not delete that goal. Please try again.')
       }
     },
   }
@@ -188,17 +230,17 @@ const askDeleteRoadmap = () => {
     <SectionCard
       :icon="MapTrifold"
       title="Roadmaps"
-      subtitle="Where Ekkly is heading: the end goal, the steps taken and the sidetracks along the way"
+      subtitle="Where Ekkly is heading: every goal, the steps taken to each and the sidetracks along the way"
     >
       <template #actions>
         <button
           v-if="roadmaps.length"
           type="button"
-          @click="startRoadmap"
+          @click="startGoal"
           class="flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-semibold text-white hover:bg-primary-hover"
         >
           <Plus class="size-4" />
-          <span class="hidden sm:inline">New roadmap</span>
+          <span class="hidden sm:inline">New goal</span>
         </button>
       </template>
 
@@ -209,37 +251,52 @@ const askDeleteRoadmap = () => {
         <span class="flex size-16 items-center justify-center rounded-full bg-primary/10 dark:bg-primary-light/15">
           <MapTrifold class="size-8 text-primary dark:text-primary-light" />
         </span>
-        <p class="mt-4 text-lg font-bold text-gray-900 dark:text-white">No roadmaps yet</p>
+        <p class="mt-4 text-lg font-bold text-gray-900 dark:text-white">No goals yet</p>
         <p class="mt-1 max-w-sm text-sm text-gray-600 dark:text-gray-300">
           Name where Ekkly is heading, then add the steps as they are taken, and the sidetracks too.
         </p>
         <button
           type="button"
-          @click="startRoadmap"
+          @click="startGoal"
           class="mt-5 flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover"
         >
           <Plus class="size-4" />
-          Start a roadmap
+          Add a goal
         </button>
       </div>
 
-      <template v-else-if="selected">
+      <template v-else>
         <div class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-gray-100 px-4 py-3 dark:border-gray-700">
+          <button
+            v-if="selected"
+            type="button"
+            @click="showAll"
+            class="-ml-1 flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            <ArrowLeft class="size-4" />
+            All goals
+          </button>
           <SelectMenu
-            v-if="roadmaps.length > 1"
-            :model-value="selected.id"
+            :model-value="selected?.id || ''"
             :options="options"
-            aria-label="Roadmap"
+            aria-label="Goal"
             field-class="h-9 min-w-48 max-w-full rounded-lg border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             @update:model-value="choose"
           />
           <p class="min-w-0 flex-1 text-sm text-gray-600 dark:text-gray-300">
-            <span class="font-semibold text-gray-900 dark:text-white">{{ progress.done }} of {{ progress.steps }}</span>
-            {{ progress.steps === 1 ? 'step' : 'steps' }} done<template v-if="progress.sides">
-              · {{ progress.sides }} {{ progress.sides === 1 ? 'sidetrack' : 'sidetracks' }}</template
-            >
+            <template v-if="selected">
+              <span class="font-semibold text-gray-900 dark:text-white">{{ progress.done }} of {{ progress.steps }}</span>
+              {{ progress.steps === 1 ? 'step' : 'steps' }} done<template v-if="progress.sides">
+                · {{ progress.sides }} {{ progress.sides === 1 ? 'sidetrack' : 'sidetracks' }}</template
+              >
+            </template>
+            <template v-else>
+              <span class="font-semibold text-gray-900 dark:text-white">{{ roadmaps.length }}</span>
+              {{ roadmaps.length === 1 ? 'goal' : 'goals' }}<template v-if="reachedCount"> · {{ reachedCount }} reached</template>
+            </template>
           </p>
           <button
+            v-if="selected"
             type="button"
             @click="editGoal"
             class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -248,11 +305,12 @@ const askDeleteRoadmap = () => {
             Goal
           </button>
         </div>
-        <p v-if="selected.why" class="border-b border-gray-100 px-4 py-2.5 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300">
+        <p v-if="selected?.why" class="border-b border-gray-100 px-4 py-2.5 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300">
           {{ selected.why }}
         </p>
 
-        <LevelMap :roadmap="selected" @open-stop="openStop" @add-step="addStep" @open-goal="editGoal" />
+        <LevelMap v-if="selected" :roadmap="selected" @open-stop="openStop" @add-step="addStep" @open-goal="editGoal" />
+        <GoalsMap v-else :roadmaps="roadmaps" @open="openGoal" />
       </template>
     </SectionCard>
 
@@ -274,6 +332,7 @@ const askDeleteRoadmap = () => {
     <GoalSheet
       :show="goalSheet.show"
       :roadmap="goalSheet.isNew ? null : selected"
+      :others="goalChoices"
       :saving="saving"
       @close="goalSheet.show = false"
       @save="saveGoal"
