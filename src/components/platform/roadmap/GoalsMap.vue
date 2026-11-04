@@ -1,17 +1,19 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
-import { Trophy } from '../../../icons'
-import { currentStepId, progressOf } from '../../../utils/roadmap'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { Flag, Trophy } from '../../../icons'
+import { goalHue, progressOf } from '../../../utils/roadmap'
 
 // Every goal on one map, the world map above each goal's own road
 // (LevelMap). Read from the bottom up like the roads: a goal that comes after
 // another (its `after`) sits higher, joined to it by a road, so the goals
 // that lead into each other read as a climb and the ones that run side by
-// side stand side by side. A road is in the church's colour once the goal
-// below it is reached.
+// side stand side by side.
 //
-// Each goal is a card with how far along its own road it is and its next
-// step; opening one opens that road.
+// Each goal is a big round stop in its own colour (goalHue), in a soft halo
+// of it, with how many of its steps are done inside and its name
+// underneath; nothing else, so the map reads at a glance. A road takes the
+// colour of the goal below it once that goal is reached. Opening a goal
+// opens its road.
 
 const props = defineProps({
   roadmaps: { type: Array, required: true },
@@ -19,24 +21,32 @@ const props = defineProps({
 
 const emit = defineEmits(['open'])
 
-const uid = useId()
 const scroller = ref(null)
 const width = ref(0)
 const viewH = ref(0)
 let observer = null
 
+// Things glide to a new place only once the map has been laid out at its
+// real size: the first layout is a guess at the width, and sliding from it
+// made the map wobble as it opened.
+const ready = ref(false)
+
 onMounted(() => {
   observer = new ResizeObserver(([entry]) => {
     width.value = entry.contentRect.width
     viewH.value = entry.contentRect.height
+    if (!ready.value) requestAnimationFrame(() => requestAnimationFrame(() => (ready.value = true)))
   })
   observer.observe(scroller.value)
 })
 onBeforeUnmount(() => observer?.disconnect())
 
-const CARD_H = 140
-const ROW = CARD_H + 50
-const PAD = 24
+// A goal's stop: the ring and circle on top, its name in the room under it.
+const RING = 104
+const NAME_H = 44
+const BLOCK_H = RING + NAME_H
+const ROW = BLOCK_H + 48
+const PAD = 28
 
 const clamp = (value, lo, hi) => Math.min(hi, Math.max(lo, value))
 
@@ -63,11 +73,10 @@ const layout = computed(() => {
   goals.forEach(depthOf)
   const deepest = Math.max(0, ...depth.values())
 
+  // Two across on a phone; on a wider screen, as many to a row as fit.
   const GAP = 16
-  // Two across on a phone; on a wider screen, cards at their full width and
-  // as many to a row as fit.
-  const cardW = clamp((W - GAP * 3) / 2, 120, 184)
-  const perRow = Math.max(1, Math.floor((W - GAP) / (cardW + GAP)))
+  const slotW = clamp((W - GAP * 3) / 2, 120, 190)
+  const perRow = Math.max(1, Math.floor((W - GAP) / (slotW + GAP)))
 
   // Rows from the bottom. Within a row, each goal stands over the middle of
   // the goals it comes after, so its road climbs straight up and a road that
@@ -76,13 +85,13 @@ const layout = computed(() => {
   // full for the width carries on above.
   const placed = new Map()
   const rows = []
-  const lo = GAP + cardW / 2
-  const hi = W - GAP - cardW / 2
+  const lo = GAP + slotW / 2
+  const hi = W - GAP - slotW / 2
   const spread = (wanted) => {
     const xs = wanted.map((x) => clamp(x, lo, hi))
-    for (let i = 1; i < xs.length; i++) xs[i] = Math.max(xs[i], xs[i - 1] + cardW + GAP)
+    for (let i = 1; i < xs.length; i++) xs[i] = Math.max(xs[i], xs[i - 1] + slotW + GAP)
     xs[xs.length - 1] = Math.min(xs[xs.length - 1], hi)
-    for (let i = xs.length - 2; i >= 0; i--) xs[i] = Math.min(xs[i], xs[i + 1] - cardW - GAP)
+    for (let i = xs.length - 2; i >= 0; i--) xs[i] = Math.min(xs[i], xs[i + 1] - slotW - GAP)
     return xs
   }
   for (let d = 0; d <= deepest; d++) {
@@ -103,43 +112,37 @@ const layout = computed(() => {
   }
 
   // A short map sits in the middle of the screen rather than at its foot.
-  const contentH = rows.length * ROW - (ROW - CARD_H) + PAD * 2
+  const contentH = rows.length * ROW - (ROW - BLOCK_H) + PAD * 2
   const height = Math.max(contentH, viewH.value)
   const base = PAD + Math.max(0, (viewH.value - contentH) / 2)
 
-  const cards = goals.map((g) => {
+  const stops = goals.map((g) => {
     const p = placed.get(g.id)
-    const progress = progressOf(g.stops)
-    const nextId = currentStepId(g.stops)
-    return {
-      ...g,
-      x: p.x,
-      yb: base + p.row * ROW,
-      progress,
-      next: g.stops.find((s) => s.id === nextId)?.title || '',
-    }
+    return { ...g, x: p.x, yb: base + p.row * ROW, hue: goalHue(g.id), progress: progressOf(g.stops) }
   })
-  const cardById = new Map(cards.map((c) => [c.id, c]))
+  const stopById = new Map(stops.map((s) => [s.id, s]))
 
+  // From the top of the goal below to the foot of the goal above's circle,
+  // passing behind its name.
   const roads = []
-  cards.forEach((c) => {
-    ;(c.after || []).forEach((id) => {
-      const from = cardById.get(id)
-      if (!from || from.yb >= c.yb) return
+  stops.forEach((s) => {
+    ;(s.after || []).forEach((id) => {
+      const from = stopById.get(id)
+      if (!from || from.yb >= s.yb) return
       const x1 = from.x
-      const y1 = height - (from.yb + CARD_H)
-      const x2 = c.x
-      const y2 = height - c.yb
+      const y1 = height - (from.yb + BLOCK_H - 4)
+      const x2 = s.x
+      const y2 = height - (s.yb + NAME_H)
       const mid = (y1 + y2) / 2
       roads.push({
-        key: `${id}-${c.id}`,
+        key: `${id}-${s.id}`,
         d: `M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2}`,
-        done: from.progress.reached,
+        hue: from.progress.reached ? from.hue : '',
       })
     })
   })
 
-  return { W, height, cardW, cards, roads }
+  return { W, height, slotW, stops, roads }
 })
 
 // The map opens at its foot, where the goals begin.
@@ -151,14 +154,22 @@ watch(
   }
 )
 
-// How far along: a ring round the goal's trophy.
-const RING = 2 * Math.PI * 20
-const ringOffset = (p) => RING * (1 - (p.steps ? p.done / p.steps : 0))
+// How far along: a ring round the goal's circle.
+const CIRC = 2 * Math.PI * 48
+const ringOffset = (p) => CIRC * (1 - (p.steps ? p.done / p.steps : 0))
 </script>
 
 <template>
-  <div ref="scroller" class="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-gray-50 dark:bg-gray-900">
+  <div ref="scroller" :class="{ ready }" class="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-white dark:bg-gray-900">
     <div class="relative w-full" :style="{ height: `${layout.height}px` }">
+      <!-- Each goal's soft pool of colour, under everything. -->
+      <span
+        v-for="goal in layout.stops"
+        :key="`pool-${goal.id}`"
+        class="goal-move pointer-events-none absolute size-30 -translate-x-1/2 translate-y-1/2 rounded-full bg-(--hue)/10 dark:bg-(--hue)/15"
+        :style="{ '--hue': goal.hue, left: `${goal.x}px`, bottom: `${goal.yb + NAME_H + RING / 2}px` }"
+      ></span>
+
       <svg
         class="pointer-events-none absolute inset-0"
         :width="layout.W"
@@ -166,84 +177,73 @@ const ringOffset = (p) => RING * (1 - (p.steps ? p.done / p.steps : 0))
         :viewBox="`0 0 ${layout.W} ${layout.height}`"
         aria-hidden="true"
       >
-        <defs>
-          <pattern :id="`ground-${uid}`" width="22" height="22" patternUnits="userSpaceOnUse">
-            <circle cx="11" cy="11" r="1.1" class="fill-gray-300/70 dark:fill-gray-700/70" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" :fill="`url(#ground-${uid})`" />
-
         <g fill="none" stroke-linecap="round">
           <path
             v-for="road in layout.roads"
             :key="`bed-${road.key}`"
             :d="road.d"
-            stroke-width="14"
-            :class="road.done ? 'stroke-primary dark:stroke-primary-light' : 'stroke-gray-200 dark:stroke-gray-700'"
+            stroke-width="16"
+            :style="road.hue ? { stroke: road.hue } : null"
+            :class="road.hue ? '' : 'stroke-gray-200 dark:stroke-gray-700'"
           />
           <path
             v-for="road in layout.roads"
             :key="`line-${road.key}`"
             :d="road.d"
-            stroke-width="2"
-            stroke-dasharray="6 8"
-            :class="road.done ? 'stroke-white/60 dark:stroke-gray-900/50' : 'stroke-white dark:stroke-gray-900'"
+            stroke-width="2.5"
+            stroke-dasharray="7 9"
+            class="stroke-white dark:stroke-gray-900"
+            :class="road.hue ? 'opacity-70' : ''"
           />
         </g>
       </svg>
 
       <button
-        v-for="goal in layout.cards"
+        v-for="goal in layout.stops"
         :key="goal.id"
         type="button"
-        :class="[
-          'goal-card absolute flex flex-col items-center rounded-2xl bg-white px-3 py-2.5 text-center ring-1 transition-colors focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary dark:bg-gray-800',
-          goal.progress.reached
-            ? 'ring-amber-300 hover:ring-amber-400 dark:ring-amber-400/50'
-            : 'ring-gray-200 hover:ring-primary/50 dark:ring-gray-700 dark:hover:ring-primary-light/50',
-        ]"
-        :style="{ left: `${goal.x - layout.cardW / 2}px`, bottom: `${goal.yb}px`, width: `${layout.cardW}px`, height: `${CARD_H}px` }"
+        class="goal-move group absolute flex -translate-x-1/2 flex-col items-center rounded-3xl focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        :style="{ '--hue': goal.hue, left: `${goal.x}px`, bottom: `${goal.yb}px`, width: `${layout.slotW}px`, height: `${BLOCK_H}px` }"
         :aria-label="`${goal.title}: ${goal.progress.done} of ${goal.progress.steps} steps done${goal.progress.reached ? ', reached' : ''}`"
         @click="emit('open', goal.id)"
       >
-        <span class="relative flex size-10 shrink-0 items-center justify-center">
-          <svg viewBox="0 0 48 48" class="absolute inset-0 size-full -rotate-90">
-            <circle cx="24" cy="24" r="20" fill="none" stroke-width="4" class="stroke-gray-200 dark:stroke-gray-700" />
+        <span class="relative flex shrink-0 items-center justify-center" :style="{ width: `${RING}px`, height: `${RING}px` }">
+          <svg viewBox="0 0 104 104" class="absolute inset-0 size-full -rotate-90" aria-hidden="true">
+            <circle cx="52" cy="52" r="48" fill="none" stroke-width="6" class="stroke-(--hue)/20" />
             <circle
-              cx="24"
-              cy="24"
-              r="20"
+              cx="52"
+              cy="52"
+              r="48"
               fill="none"
-              stroke-width="4"
+              stroke-width="6"
               stroke-linecap="round"
-              :stroke-dasharray="RING"
+              :stroke-dasharray="CIRC"
               :stroke-dashoffset="ringOffset(goal.progress)"
-              :class="goal.progress.reached ? 'stroke-amber-400' : 'stroke-primary dark:stroke-primary-light'"
-              class="transition-[stroke-dashoffset] duration-500"
+              class="stroke-(--hue) transition-[stroke-dashoffset] duration-500"
             />
           </svg>
-          <Trophy
-            :class="[
-              'size-5',
-              goal.progress.reached ? 'text-amber-500' : 'text-primary dark:text-primary-light',
-            ]"
-          />
-        </span>
-        <span class="mt-1.5 line-clamp-2 text-sm leading-snug font-semibold text-gray-900 dark:text-white">{{ goal.title }}</span>
-        <span class="mt-auto block w-full">
-          <span class="block text-[11px] text-gray-500 dark:text-gray-400">
-            <template v-if="!goal.progress.steps">No steps yet</template>
-            <template v-else>{{ goal.progress.done }} of {{ goal.progress.steps }} steps</template>
-          </span>
           <span
-            v-if="goal.progress.reached"
-            class="block truncate text-[11px] font-semibold text-amber-600 dark:text-amber-400"
+            class="flex size-21 flex-col items-center justify-center rounded-full bg-(--hue) text-white transition-[filter] group-hover:brightness-110"
           >
-            Reached
+            <template v-if="goal.progress.reached">
+              <Trophy class="size-8" />
+              <span class="mt-0.5 text-[10px] font-bold tracking-wider uppercase">Reached</span>
+            </template>
+            <template v-else-if="goal.progress.steps">
+              <span class="text-2xl leading-none font-black tabular-nums">
+                {{ goal.progress.done }}<span class="text-sm font-bold opacity-75">/{{ goal.progress.steps }}</span>
+              </span>
+              <span class="mt-1 text-[10px] font-semibold opacity-85">steps</span>
+            </template>
+            <Flag v-else class="size-8" />
           </span>
-          <span v-else-if="goal.next" class="block truncate text-[11px] font-medium text-primary dark:text-primary-light">
-            Next: {{ goal.next }}
-          </span>
+        </span>
+        <!-- The name, on a patch of ground so the road arriving from below
+             passes behind it to the circle. -->
+        <span
+          class="mt-2 line-clamp-2 max-w-full rounded-md bg-white px-1.5 text-center text-sm leading-snug font-bold text-gray-900 dark:bg-gray-900 dark:text-white"
+        >
+          {{ goal.title }}
         </span>
       </button>
     </div>
@@ -252,14 +252,14 @@ const ringOffset = (p) => RING * (1 - (p.steps ? p.done / p.steps : 0))
 
 <style scoped>
 /* A goal slides to its new place when the map is rearranged. */
-.goal-card {
-  transition-property: left, bottom, box-shadow;
-  transition-duration: 0.45s, 0.45s, 0.15s;
+.ready .goal-move {
+  transition-property: left, bottom;
+  transition-duration: 0.45s;
   transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .goal-card {
+  .ready .goal-move {
     transition: none;
   }
 }

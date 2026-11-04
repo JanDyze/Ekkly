@@ -331,6 +331,15 @@ const platformRoutes = [
     meta: { requiresAuth: true }
   },
   {
+    // Ekkly's own roadmaps: every goal on one map, and a goal's road at
+    // /platform/roadmaps/<id>. A page of its own off the console, because the
+    // maps need the whole screen.
+    path: '/platform/roadmaps/:id?',
+    name: 'PlatformRoadmaps',
+    component: () => import('../views/PlatformRoadmaps.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     // Ekkly's QR code, to see and download. Public: it is handed out.
     path: '/qr',
     name: 'QrCode',

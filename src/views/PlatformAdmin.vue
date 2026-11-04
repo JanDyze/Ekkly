@@ -40,7 +40,6 @@ import PlatformColoursAdmin from '../components/platform/PlatformColoursAdmin.vu
 import AiAdmin from '../components/platform/AiAdmin.vue'
 import PlatformAdminsAdmin from '../components/platform/PlatformAdminsAdmin.vue'
 import PlatformActivity from '../components/platform/PlatformActivity.vue'
-import RoadmapsAdmin from '../components/platform/RoadmapsAdmin.vue'
 
 // The platform's console: everything the people who run Ekkly do, from saying
 // yes to a new church to choosing which AI model writes up minutes.
@@ -199,12 +198,13 @@ const GROUPS = computed(() => [
     label: 'Platform',
     items: [
       {
-        // Where Ekkly itself is heading, drawn as a level map.
+        // Where Ekkly itself is heading: a page of its own, since its maps
+        // need the whole screen (PlatformRoadmaps.vue).
         key: 'roadmaps',
         label: 'Roadmaps',
         icon: MapTrifold,
-        status: 'The end goal, the steps taken and the sidetracks',
-        component: RoadmapsAdmin,
+        status: 'Every goal, and the road to each',
+        to: '/platform/roadmaps',
       },
       {
         key: 'ai',
@@ -234,13 +234,26 @@ const GROUPS = computed(() => [
 const ITEMS = computed(() => GROUPS.value.flatMap((g) => g.items))
 
 const requested = computed(() =>
-  ITEMS.value.some((item) => item.key === route.query.section) ? route.query.section : ''
+  ITEMS.value.some((item) => item.key === route.query.section && item.component) ? route.query.section : ''
 )
 const activeKey = computed(() => requested.value || (isDesktop.value ? 'requests' : ''))
 const active = computed(() => ITEMS.value.find((item) => item.key === activeKey.value) || null)
 
+// A place that is a page of its own (`to`, Roadmaps) opens that page, and an
+// old link to it as a section is sent on there.
+watch(
+  () => route.query.section,
+  (section) => {
+    const page = ITEMS.value.find((item) => item.key === section && item.to)
+    if (page) router.replace(page.to)
+  },
+  { immediate: true }
+)
+
 // Pushes rather than replaces, so a phone's back gesture returns to the list.
 const openSection = (key) => {
+  const item = ITEMS.value.find((i) => i.key === key)
+  if (item?.to) return router.push(item.to)
   if (key === activeKey.value) return
   router.push({ query: { ...route.query, section: key } })
 }
@@ -371,16 +384,12 @@ const backToList = () => {
         </div>
       </nav>
 
-      <!-- A column, so a section that wants to fill the screen and scroll
-           inside itself (Roadmaps' maps: flex-1 min-h-0) can take exactly the
-           room left. Every other section keeps its own height (shrink-0) and
-           this scrolls as before. -->
-      <main v-if="active" class="flex h-full min-w-0 flex-1 flex-col overflow-y-auto pb-6 *:shrink-0">
+      <main v-if="active" class="h-full min-w-0 flex-1 overflow-y-auto pb-6">
         <button
           v-if="!isDesktop"
           type="button"
           @click="backToList"
-          class="-ml-1 mb-2 flex shrink-0 items-center gap-1 self-start rounded-lg px-1 py-2 text-sm font-medium text-gray-600 dark:text-gray-300"
+          class="-ml-1 mb-2 flex items-center gap-1 rounded-lg px-1 py-2 text-sm font-medium text-gray-600 dark:text-gray-300"
         >
           <ArrowLeft class="h-5 w-5" />
           Console

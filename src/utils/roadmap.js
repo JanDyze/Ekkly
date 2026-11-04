@@ -1,3 +1,5 @@
+import { SECTION_HUES } from '../data/appHues'
+
 // A roadmap's stops are one ordered list: steps on the road, each followed by
 // the sidetracks taken off it. These read and rearrange that list without
 // ever leaving a sidetrack with no step before it.
@@ -108,4 +110,16 @@ export const shortDate = (ymd) => {
   if (!ymd) return ''
   const [y, m, d] = ymd.split('-').map(Number)
   return new Date(y, m - 1, d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+/**
+ * A goal's own colour, from Ekkly's palette (appHues.js), so each goal's road
+ * and its stop on the map of every goal look like a world of their own. Taken
+ * from the goal's id rather than its place in the list, so it never changes
+ * when another goal is added or worked on.
+ */
+export const goalHue = (id = '') => {
+  let n = 7
+  for (const ch of String(id)) n = (n * 31 + ch.charCodeAt(0)) >>> 0
+  return SECTION_HUES[n % SECTION_HUES.length]
 }

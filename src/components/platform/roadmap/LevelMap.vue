@@ -1,7 +1,7 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ArrowBendUpRight, Flag, Plus, Trophy, X } from '../../../icons'
-import { currentStepId, groupStops, progressOf, shortDate } from '../../../utils/roadmap'
+import { currentStepId, goalHue, groupStops, progressOf } from '../../../utils/roadmap'
 
 // A roadmap drawn as a level map, the way a puzzle game lays out its levels:
 // a road winding up the screen from Start to the end goal at the top. Each
@@ -13,7 +13,8 @@ import { currentStepId, groupStops, progressOf, shortDate } from '../../../utils
 // the first step not yet done, which is where the road is now.
 //
 // Only the idea is the game's. The look is Ekkly's own (DESIGN.md, "The
-// roadmap's level map"): flat, the brand's colour, plain ground.
+// roadmap's level map"): flat, in the goal's own colour (goalHue), with
+// its labels as plain words beside the stops.
 //
 // Read from the bottom up, and opened scrolled to the flag. Everything is
 // placed by its distance from the foot of the map, so adding a step at the
@@ -25,16 +26,21 @@ const props = defineProps({
 
 const emit = defineEmits(['open-stop', 'open-goal', 'add-step'])
 
-const uid = useId()
 const scroller = ref(null)
 const width = ref(0)
 const viewH = ref(0)
 let observer = null
 
+// Things glide to a new place only once the map has been laid out at its
+// real size: the first layout is a guess at the width, and sliding from it
+// made the map wobble as it opened.
+const ready = ref(false)
+
 onMounted(() => {
   observer = new ResizeObserver(([entry]) => {
     width.value = entry.contentRect.width
     viewH.value = entry.contentRect.height
+    if (!ready.value) requestAnimationFrame(() => requestAnimationFrame(() => (ready.value = true)))
   })
   observer.observe(scroller.value)
 })
@@ -50,9 +56,9 @@ const SIDE_ROW = 88
 const GOAL_ROOM = 230
 
 const SIDE_LOOK = {
-  done: { tile: 'bg-teal-500 text-white', word: 'taken' },
+  done: { tile: 'bg-(--hue)/15 text-(--hue) dark:bg-(--hue)/25', word: 'taken' },
   open: { tile: 'bg-amber-400 text-amber-950', word: 'on it now' },
-  dropped: { tile: 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400', word: 'dropped' },
+  dropped: { tile: 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500', word: 'dropped' },
 }
 
 const clamp = (value, lo, hi) => Math.min(hi, Math.max(lo, value))
@@ -256,23 +262,33 @@ watch(
   { immediate: true, deep: true }
 )
 
-const stepWord = (step) => {
-  if (step.current) return 'Here now'
-  if (step.done) return step.doneOn ? `Done ${shortDate(step.doneOn)}` : 'Done'
-  return 'Ahead'
-}
+const stepWord = (step) => (step.current ? 'Here now' : step.done ? 'Done' : 'Ahead')
+
+// The goal's own colour, the same as its stop on the map of every goal.
+const hue = computed(() => goalHue(props.roadmap.id))
 
 const labelStyle = (node) => ({
   maxWidth: `${node.labelMax}px`,
   ...(node.labelSide === 'left' ? { right: 'calc(100% + 10px)' } : { left: 'calc(100% + 10px)' }),
 })
 
-const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 rounded-xl bg-white px-2.5 py-1.5 text-left ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700'
+const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 text-left'
 </script>
 
 <template>
-  <div ref="scroller" class="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-gray-50 dark:bg-gray-900">
+  <div
+    ref="scroller"
+    :class="{ ready }"
+    class="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-white dark:bg-gray-900"
+    :style="{ '--hue': hue }"
+  >
     <div class="relative w-full" :style="{ height: `${layout.height}px` }">
+      <!-- A soft pool of the goal's colour where the road ends. -->
+      <span
+        class="pointer-events-none absolute size-72 -translate-x-1/2 translate-y-1/2 rounded-full bg-(--hue)/10 dark:bg-(--hue)/15"
+        :style="{ left: `${layout.goal.x}px`, bottom: `${layout.goal.yb + 40}px` }"
+      ></span>
+
       <svg
         class="pointer-events-none absolute inset-0"
         :width="layout.W"
@@ -280,15 +296,7 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 rounded-xl bg-white px-2.
         :viewBox="`0 0 ${layout.W} ${layout.height}`"
         aria-hidden="true"
       >
-        <defs>
-          <!-- A faint dot grid for ground, like squared paper. -->
-          <pattern :id="`ground-${uid}`" width="22" height="22" patternUnits="userSpaceOnUse">
-            <circle cx="11" cy="11" r="1.1" class="fill-gray-300/70 dark:fill-gray-700/70" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" :fill="`url(#ground-${uid})`" />
-
-        <!-- The road: travelled in the church's colour, the rest grey, with a
+        <!-- The road: travelled in the goal's colour, the rest grey, with a
              dashed line down its middle. -->
         <g fill="none" stroke-linecap="round">
           <path
@@ -296,7 +304,7 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 rounded-xl bg-white px-2.
             :key="`bed-${i}`"
             :d="piece.d"
             stroke-width="20"
-            :class="piece.done ? 'stroke-primary dark:stroke-primary-light' : 'stroke-gray-200 dark:stroke-gray-700'"
+            :class="piece.done ? 'stroke-(--hue)' : 'stroke-gray-100 dark:stroke-gray-800'"
           />
           <path
             v-for="(piece, i) in roadPieces"
@@ -304,7 +312,7 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 rounded-xl bg-white px-2.
             :d="piece.d"
             stroke-width="2.5"
             stroke-dasharray="7 9"
-            :class="piece.done ? 'stroke-white/60 dark:stroke-gray-900/50' : 'stroke-white dark:stroke-gray-900'"
+            :class="piece.done ? 'stroke-white/70 dark:stroke-gray-900/50' : 'stroke-gray-300 dark:stroke-gray-600'"
           />
         </g>
 
@@ -317,13 +325,13 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 rounded-xl bg-white px-2.
           stroke-width="4"
           stroke-linecap="round"
           stroke-dasharray="0.1 9"
-          class="stroke-gray-400 dark:stroke-gray-500"
+          class="stroke-(--hue)/50"
         />
       </svg>
 
       <!-- Start -->
       <div
-        class="pointer-events-none absolute -translate-x-1/2 translate-y-1/2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-600 ring-1 ring-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700"
+        class="pointer-events-none absolute -translate-x-1/2 translate-y-1/2 text-[11px] font-bold tracking-wider text-gray-400 uppercase dark:text-gray-500"
         :style="{ left: `${layout.road[0].x}px`, bottom: `${layout.road[0].yb - 24}px` }"
       >
         Start
@@ -335,12 +343,12 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 rounded-xl bg-white px-2.
         :key="step.id"
         type="button"
         :class="[
-          'map-stop absolute flex -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full text-lg font-bold tabular-nums transition-colors focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-primary',
+          'map-stop absolute flex -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full font-black tabular-nums focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-primary',
           step.current
-            ? 'size-16 bg-primary text-white ring-[6px] ring-primary/20 hover:bg-primary-hover dark:bg-primary-light dark:text-gray-900 dark:ring-primary-light/20'
+            ? 'size-16 bg-(--hue) text-xl text-white ring-8 ring-(--hue)/20 hover:brightness-110'
             : step.done
-              ? 'size-13 bg-primary text-white hover:bg-primary-hover dark:bg-primary-light dark:text-gray-900'
-              : 'size-13 bg-white text-gray-400 ring-2 ring-gray-200 hover:text-primary hover:ring-primary/40 dark:bg-gray-800 dark:text-gray-500 dark:ring-gray-700 dark:hover:text-primary-light',
+              ? 'size-13 bg-(--hue) text-lg text-white hover:brightness-110'
+              : 'size-13 bg-white text-lg text-gray-300 ring-2 ring-gray-200 hover:text-(--hue) hover:ring-(--hue)/50 dark:bg-gray-800 dark:text-gray-600 dark:ring-gray-700',
         ]"
         :style="{ left: `${step.x}px`, bottom: `${step.yb}px` }"
         :aria-label="`Step ${step.n}: ${step.title}. ${stepWord(step)}${step.stars ? `, ${step.stars} of 3 stars` : ''}`"
@@ -360,20 +368,20 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 rounded-xl bg-white px-2.
             ]"
             :style="{ animationDelay: `${(s - 1) * 100}ms` }"
           >
-            <path :d="STAR" :class="s <= step.stars ? 'fill-amber-400' : 'fill-gray-300 dark:fill-gray-600'" />
+            <path :d="STAR" :class="s <= step.stars ? 'fill-amber-400' : 'fill-gray-200 dark:fill-gray-700'" />
           </svg>
         </span>
 
         <span :class="LABEL" :style="labelStyle(step)">
-          <span class="line-clamp-2 text-xs leading-snug font-semibold text-gray-900 dark:text-white">{{ step.title }}</span>
           <span
             :class="[
-              'block text-[11px] leading-tight font-medium',
-              step.current ? 'text-primary dark:text-primary-light' : 'text-gray-500 dark:text-gray-400',
+              'line-clamp-2 text-sm leading-snug font-semibold',
+              step.done || step.current ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500',
             ]"
           >
-            {{ stepWord(step) }}
+            {{ step.title }}
           </span>
+          <span v-if="step.current" class="block text-xs font-bold text-(--hue)">Here now</span>
         </span>
       </button>
 
@@ -383,39 +391,38 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 rounded-xl bg-white px-2.
         :key="side.id"
         type="button"
         :class="[
-          'map-stop absolute flex size-10 -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full ring-4 ring-gray-50 transition-[filter] hover:brightness-95 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary dark:ring-gray-900',
+          'map-stop absolute flex size-9 -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full hover:brightness-95 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary',
           side.look.tile,
         ]"
         :style="{ left: `${side.x}px`, bottom: `${side.yb}px` }"
         :aria-label="`Sidetrack: ${side.title}, ${side.look.word}`"
         @click="emit('open-stop', side.id)"
       >
-        <X v-if="side.status === 'dropped'" class="size-4.5" />
-        <ArrowBendUpRight v-else class="size-4.5" />
+        <X v-if="side.status === 'dropped'" class="size-4" />
+        <ArrowBendUpRight v-else class="size-4" />
 
         <span :class="LABEL" :style="labelStyle(side)">
           <span
             :class="[
-              'line-clamp-2 text-xs leading-snug font-semibold',
-              side.status === 'dropped' ? 'text-gray-500 line-through decoration-gray-400 dark:text-gray-400' : 'text-gray-900 dark:text-white',
+              'line-clamp-2 text-xs leading-snug font-medium',
+              side.status === 'dropped' ? 'text-gray-400 line-through dark:text-gray-500' : 'text-gray-500 dark:text-gray-400',
             ]"
           >
             {{ side.title }}
           </span>
-          <span class="block text-[11px] leading-tight font-medium text-gray-500 dark:text-gray-400">Sidetrack · {{ side.look.word }}</span>
         </span>
       </button>
 
       <!-- The next step, waiting to be named. -->
       <button
         type="button"
-        class="absolute flex size-11 -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full border-2 border-dashed border-gray-300 bg-white text-gray-400 transition-colors hover:border-primary hover:text-primary focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-500 dark:hover:border-primary-light dark:hover:text-primary-light"
+        class="absolute flex size-11 -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full border-2 border-dashed border-gray-300 bg-white text-gray-400 transition-colors hover:border-(--hue) hover:text-(--hue) focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-primary dark:border-gray-600 dark:bg-gray-900 dark:text-gray-500"
         :style="{ left: `${layout.add.x}px`, bottom: `${layout.add.yb}px` }"
         @click="emit('add-step')"
       >
         <Plus class="size-5" />
-        <span :class="[LABEL, 'text-xs font-semibold text-gray-600 dark:text-gray-300']" :style="labelStyle(layout.add)">
-          {{ layout.steps.length ? 'Add the next step' : 'Add the first step' }}
+        <span :class="[LABEL, 'text-sm font-semibold text-gray-400 dark:text-gray-500']" :style="labelStyle(layout.add)">
+          {{ layout.steps.length ? 'Next step' : 'First step' }}
         </span>
       </button>
 
@@ -427,25 +434,10 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 rounded-xl bg-white px-2.
         :aria-label="`End goal: ${roadmap.title}${layout.reached ? ', reached' : ''}`"
         @click="emit('open-goal')"
       >
-        <span
-          :class="[
-            'text-[11px] font-semibold tracking-wider uppercase',
-            layout.reached ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400',
-          ]"
-        >
-          {{ layout.reached ? 'Reached' : 'End goal' }}
-        </span>
-        <span class="mt-0.5 mb-3 line-clamp-2 max-w-full text-center text-base leading-snug font-bold text-gray-900 sm:text-lg dark:text-white">
+        <span class="mb-3 line-clamp-2 max-w-full text-center text-lg leading-snug font-black text-gray-900 dark:text-white">
           {{ roadmap.title }}
         </span>
-        <span
-          :class="[
-            'flex size-20 items-center justify-center rounded-full ring-8 transition-colors',
-            layout.reached
-              ? 'bg-amber-400 text-amber-950 ring-amber-400/25'
-              : 'bg-primary text-white ring-primary/15 group-hover:bg-primary-hover dark:bg-primary-light dark:text-gray-900 dark:ring-primary-light/15',
-          ]"
-        >
+        <span class="flex size-20 items-center justify-center rounded-full bg-(--hue) text-white ring-8 ring-(--hue)/20 transition-[filter] group-hover:brightness-110">
           <Trophy class="size-9" />
         </span>
       </button>
@@ -455,13 +447,13 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 rounded-xl bg-white px-2.
       <div
         v-if="layout.here"
         class="map-stop pointer-events-none absolute flex -translate-x-1/2 flex-col items-center"
-        :style="{ left: `${layout.here.x}px`, bottom: `${layout.here.yb + (layout.here === layout.road[0] ? 20 : 44)}px` }"
+        :style="{ left: `${layout.here.x}px`, bottom: `${layout.here.yb + (layout.here === layout.road[0] ? 20 : 46)}px` }"
         aria-hidden="true"
       >
-        <span class="flex size-9 items-center justify-center rounded-full bg-primary ring-[3px] ring-gray-50 dark:bg-primary-light dark:ring-gray-900">
-          <Flag class="size-5 text-white dark:text-gray-900" />
+        <span class="flex size-9 items-center justify-center rounded-full bg-(--hue) ring-[3px] ring-white dark:ring-gray-900">
+          <Flag class="size-5 text-white" />
         </span>
-        <span class="-mt-1 size-3 rotate-45 bg-primary dark:bg-primary-light"></span>
+        <span class="-mt-1 size-3 rotate-45 bg-(--hue)"></span>
       </div>
     </div>
   </div>
@@ -470,7 +462,7 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 rounded-xl bg-white px-2.
 <style scoped>
 /* Stops slide to their new place when the road is reordered, and the flag
    glides from one step to the next. */
-.map-stop {
+.ready .map-stop {
   transition-property: left, bottom, background-color, color, box-shadow, filter;
   transition-duration: 0.45s, 0.45s, 0.15s, 0.15s, 0.15s, 0.15s;
   transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -489,7 +481,7 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 rounded-xl bg-white px-2.
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .map-stop {
+  .ready .map-stop {
     transition: none;
   }
   .star-in {

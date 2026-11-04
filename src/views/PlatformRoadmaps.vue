@@ -1,28 +1,30 @@
 <script setup>
-import { computed, onActivated, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, MapTrifold, PencilSimple, Plus } from '../../icons'
-import SectionCard from '../common/SectionCard.vue'
-import SelectMenu from '../common/SelectMenu.vue'
-import ConfirmationModal from '../common/ConfirmationModal.vue'
-import GoalsMap from './roadmap/GoalsMap.vue'
-import LevelMap from './roadmap/LevelMap.vue'
-import StopSheet from './roadmap/StopSheet.vue'
-import GoalSheet from './roadmap/GoalSheet.vue'
-import { deleteRoadmap, listRoadmaps, saveRoadmap } from '../../api/roadmapService'
-import { useToast } from '../../composables/useToast'
-import { addSide, canMove, groupStops, moveStop, progressOf, putStop, removeStop } from '../../utils/roadmap'
+import { ArrowLeft, Loader2, MapTrifold, PencilSimple, Plus, ShieldAlert } from '../icons'
+import ConfirmationModal from '../components/common/ConfirmationModal.vue'
+import GoalsMap from '../components/platform/roadmap/GoalsMap.vue'
+import LevelMap from '../components/platform/roadmap/LevelMap.vue'
+import StopSheet from '../components/platform/roadmap/StopSheet.vue'
+import GoalSheet from '../components/platform/roadmap/GoalSheet.vue'
+import { deleteRoadmap, listRoadmaps, saveRoadmap } from '../api/roadmapService'
+import { initAuth, useAuth } from '../composables/useAuth'
+import { isPlatformAdmin } from '../api/platformService'
+import { useToast } from '../composables/useToast'
+import { addSide, canMove, groupStops, moveStop, progressOf, putStop, removeStop } from '../utils/roadmap'
 
-// Ekkly's own roadmaps, in the console: where Ekkly is heading. Each goal has
-// a road of its own, the steps taken to it and the sidetracks along the way,
-// and the goals join up: one comes after another, or several run side by
-// side.
+// Ekkly's own roadmaps, a page of their own off the platform console: where
+// Ekkly is heading. Each goal has a road of its own, the steps taken to it
+// and the sidetracks along the way, and the goals join up: one comes after
+// another, or several run side by side.
 //
-// So the section has two levels. All goals (GoalsMap) is every goal on one
-// map, joined by roads where one leads into the next; opening a goal shows
-// its road (LevelMap), changed from the map itself: tap a stop to change it,
-// the dashed stop at the top of the road to add the next step, the goal to
-// change the goal and what it comes after.
+// Two levels, each the whole screen under a slim bar. /platform/roadmaps is
+// every goal on one map (GoalsMap), joined by roads where one leads into the
+// next; /platform/roadmaps/:id is one goal's road (LevelMap), changed from
+// the map itself: tap a stop to change it, the dashed stop at the top of the
+// road to add the next step, the goal to change the goal and what it comes
+// after. A page rather than a console section, because the maps need the
+// room, and so back and a shared link land on the same goal.
 //
 // Every change is shown at once and saved after (lib/platform/roadmaps.js),
 // put back if the server refuses, so a step marked done moves the flag
@@ -31,43 +33,41 @@ import { addSide, canMove, groupStops, moveStop, progressOf, putStop, removeStop
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const { user } = useAuth()
 
 const roadmaps = ref([])
 const loading = ref(true)
+const allowed = ref(true)
 const saving = ref(false)
 
-const load = async () => {
-  try {
-    roadmaps.value = await listRoadmaps()
-  } catch (error) {
-    console.error('Error loading roadmaps:', error)
-    toast.error(error.message || 'Could not load the roadmaps.')
-  } finally {
-    loading.value = false
-  }
-}
-onActivated(load)
+watch(
+  () => user.value?.uid,
+  async (uid) => {
+    await initAuth()
+    loading.value = true
+    allowed.value = await isPlatformAdmin(uid)
+    if (!allowed.value) {
+      loading.value = false
+      return
+    }
+    try {
+      roadmaps.value = await listRoadmaps()
+    } catch (error) {
+      console.error('Error loading roadmaps:', error)
+      toast.error(error.message || 'Could not load the roadmaps.')
+    } finally {
+      loading.value = false
+    }
+  },
+  { immediate: true }
+)
 
-// The open goal lives in the URL, beside the console's own ?section=; with
-// none, the map of every goal is open.
-const selected = computed(() => roadmaps.value.find((r) => r.id === route.query.roadmap) || null)
+const selected = computed(() => roadmaps.value.find((r) => r.id === route.params.id) || null)
 
-// Opening a goal pushes, so back returns to the map of them all; choosing
-// another from the menu replaces.
-const openGoal = (id) => router.push({ query: { ...route.query, roadmap: id } })
-const choose = (id) => {
-  const { roadmap: _drop, ...rest } = route.query
-  router.replace({ query: id ? { ...rest, roadmap: id } : rest })
-}
-const showAll = () => {
-  const { roadmap: _drop, ...rest } = route.query
-  router.push({ query: rest })
-}
+const HOME = '/platform/roadmaps'
+const openGoal = (id) => router.push(`${HOME}/${id}`)
+const showAll = () => router.push(HOME)
 
-const options = computed(() => [
-  { value: '', label: 'All goals' },
-  ...roadmaps.value.map((r) => ({ value: r.id, label: r.title })),
-])
 const progress = computed(() => progressOf(selected.value?.stops || []))
 const reachedCount = computed(() => roadmaps.value.filter((r) => progressOf(r.stops).reached).length)
 
@@ -214,7 +214,7 @@ const askDeleteRoadmap = () => {
         roadmaps.value = roadmaps.value
           .filter((r) => r.id !== roadmap.id)
           .map((r) => ({ ...r, after: (r.after || []).filter((id) => id !== roadmap.id) }))
-        choose('')
+        router.replace(HOME)
         toast.success('Goal deleted')
       } catch (error) {
         console.error('Error deleting the goal:', error)
@@ -226,94 +226,84 @@ const askDeleteRoadmap = () => {
 </script>
 
 <template>
-  <div class="flex min-h-0 flex-1 flex-col">
-    <SectionCard
-      class="flex min-h-0 flex-1 flex-col"
-      :icon="MapTrifold"
-      title="Roadmaps"
-      subtitle="Where Ekkly is heading: every goal, the steps taken to each and the sidetracks along the way"
+  <div class="flex h-dvh flex-col bg-white dark:bg-gray-900">
+    <!-- A slim bar: the way back, where you are, and the one thing to do. -->
+    <header
+      class="flex shrink-0 items-center gap-2 border-b border-gray-100 px-2 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-4 dark:border-gray-800"
     >
-      <template #actions>
-        <button
-          v-if="roadmaps.length"
-          type="button"
-          @click="startGoal"
-          class="flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-semibold text-white hover:bg-primary-hover"
-        >
-          <Plus class="size-4" />
-          <span class="hidden sm:inline">New goal</span>
-        </button>
-      </template>
+      <button
+        type="button"
+        @click="selected ? showAll() : router.push('/platform')"
+        :aria-label="selected ? 'All goals' : 'Back to the console'"
+        class="flex size-10 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+      >
+        <ArrowLeft class="size-5" />
+      </button>
 
-      <div v-if="loading" class="min-h-0 flex-1 animate-pulse bg-gray-100 dark:bg-gray-700/40" aria-busy="true"></div>
-
-      <!-- Nothing yet, and the way to begin. -->
-      <div v-else-if="!roadmaps.length" class="flex flex-1 flex-col items-center justify-center bg-gray-50 px-6 py-14 text-center dark:bg-gray-900">
-        <span class="flex size-16 items-center justify-center rounded-full bg-primary/10 dark:bg-primary-light/15">
-          <MapTrifold class="size-8 text-primary dark:text-primary-light" />
-        </span>
-        <p class="mt-4 text-lg font-bold text-gray-900 dark:text-white">No goals yet</p>
-        <p class="mt-1 max-w-sm text-sm text-gray-600 dark:text-gray-300">
-          Name where Ekkly is heading, then add the steps as they are taken, and the sidetracks too.
+      <div class="min-w-0 flex-1">
+        <h1 class="truncate text-base font-bold text-gray-900 dark:text-white">
+          {{ selected ? selected.title : 'Roadmaps' }}
+        </h1>
+        <p v-if="!loading && allowed" class="truncate text-xs text-gray-500 dark:text-gray-400">
+          <template v-if="selected">{{ progress.done }} of {{ progress.steps }} steps</template>
+          <template v-else-if="roadmaps.length">
+            {{ roadmaps.length }} {{ roadmaps.length === 1 ? 'goal' : 'goals' }}<template v-if="reachedCount"> · {{ reachedCount }} reached</template>
+          </template>
         </p>
-        <button
-          type="button"
-          @click="startGoal"
-          class="mt-5 flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover"
-        >
-          <Plus class="size-4" />
-          Add a goal
-        </button>
       </div>
 
-      <template v-else>
-        <div class="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-gray-100 px-4 py-3 dark:border-gray-700">
-          <button
-            v-if="selected"
-            type="button"
-            @click="showAll"
-            class="-ml-1 flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-          >
-            <ArrowLeft class="size-4" />
-            All goals
-          </button>
-          <SelectMenu
-            :model-value="selected?.id || ''"
-            :options="options"
-            aria-label="Goal"
-            field-class="h-9 min-w-48 max-w-full rounded-lg border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            @update:model-value="choose"
-          />
-          <p class="min-w-0 flex-1 text-sm text-gray-600 dark:text-gray-300">
-            <template v-if="selected">
-              <span class="font-semibold text-gray-900 dark:text-white">{{ progress.done }} of {{ progress.steps }}</span>
-              {{ progress.steps === 1 ? 'step' : 'steps' }} done<template v-if="progress.sides">
-                · {{ progress.sides }} {{ progress.sides === 1 ? 'sidetrack' : 'sidetracks' }}</template
-              >
-            </template>
-            <template v-else>
-              <span class="font-semibold text-gray-900 dark:text-white">{{ roadmaps.length }}</span>
-              {{ roadmaps.length === 1 ? 'goal' : 'goals' }}<template v-if="reachedCount"> · {{ reachedCount }} reached</template>
-            </template>
-          </p>
-          <button
-            v-if="selected"
-            type="button"
-            @click="editGoal"
-            class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-          >
-            <PencilSimple class="size-4" />
-            Goal
-          </button>
-        </div>
-        <p v-if="selected?.why" class="line-clamp-2 shrink-0 border-b border-gray-100 px-4 py-2.5 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300">
-          {{ selected.why }}
-        </p>
+      <button
+        v-if="selected"
+        type="button"
+        @click="editGoal"
+        aria-label="Change this goal"
+        class="flex size-10 shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+      >
+        <PencilSimple class="size-5" />
+      </button>
+      <button
+        v-else-if="allowed && roadmaps.length"
+        type="button"
+        @click="startGoal"
+        class="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover"
+      >
+        <Plus class="size-4" />
+        New goal
+      </button>
+    </header>
 
-        <LevelMap v-if="selected" :roadmap="selected" @open-stop="openStop" @add-step="addStep" @open-goal="editGoal" />
-        <GoalsMap v-else :roadmaps="roadmaps" @open="openGoal" />
-      </template>
-    </SectionCard>
+    <div v-if="loading" class="flex flex-1 items-center justify-center" aria-busy="true">
+      <Loader2 class="size-6 animate-spin text-gray-300" />
+    </div>
+
+    <div v-else-if="!allowed" class="flex flex-1 flex-col items-center justify-center px-6 text-center">
+      <ShieldAlert class="size-10 text-gray-300 dark:text-gray-600" />
+      <p class="mt-3 text-lg text-gray-700 dark:text-gray-200">Platform administrators only</p>
+    </div>
+
+    <!-- Nothing yet, and the way to begin. -->
+    <div v-else-if="!roadmaps.length" class="flex flex-1 flex-col items-center justify-center px-6 text-center">
+      <span class="flex size-20 items-center justify-center rounded-full bg-primary/10 dark:bg-primary-light/15">
+        <MapTrifold class="size-10 text-primary dark:text-primary-light" />
+      </span>
+      <p class="mt-4 text-xl font-black text-gray-900 dark:text-white">No goals yet</p>
+      <p class="mt-1 max-w-xs text-sm text-gray-500 dark:text-gray-400">
+        Name where Ekkly is heading, then add the steps as they are taken.
+      </p>
+      <button
+        type="button"
+        @click="startGoal"
+        class="mt-5 flex h-11 items-center gap-1.5 rounded-full bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover"
+      >
+        <Plus class="size-4" />
+        Add a goal
+      </button>
+    </div>
+
+    <template v-else>
+      <LevelMap v-if="selected" :roadmap="selected" @open-stop="openStop" @add-step="addStep" @open-goal="editGoal" />
+      <GoalsMap v-else :roadmaps="roadmaps" @open="openGoal" />
+    </template>
 
     <StopSheet
       :show="stopSheet.show"

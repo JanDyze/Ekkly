@@ -11,6 +11,28 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.13] — 2026-11-04
+
+Roadmaps get a page of their own, and colour.
+
+### Changed
+
+- **Roadmaps open on a page of their own**, `/platform/roadmaps`, the whole
+  screen under a slim bar, instead of squeezed beside the console's list. A
+  goal's road has its own address too (`/platform/roadmaps/<goal>`), so back
+  and a shared link land on it. The console's Roadmaps opens the page.
+- **Every goal has a colour of its own**, from Ekkly's palette: its circle on
+  the map of goals, and on its road the stretch travelled, the steps done and
+  the flag.
+- **Less on the screen.** A goal on the map is a big circle with its steps
+  done inside and its name under it, nothing more. On a road, step names are
+  plain words beside the stops, with no boxes or dates, and only the step
+  you are on says "Here now".
+
+### Fixed
+
+- The maps no longer wobble as they open.
+
 ## [0.37.12] — 2026-11-04
 
 Roadmaps fit on one screen.

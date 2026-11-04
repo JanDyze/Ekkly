@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Mock roadmaps for the platform console's Roadmaps section, one per goal, so
+ * Mock roadmaps for the platform's Roadmaps page (/platform/roadmaps), one per goal, so
  * both maps have something to show. The goals join up (`after`): your own
  * church using it leads to selling it to a church, which with the mobile app
  * leads to a hundred churches. The hundred is the long road, with steps done,
@@ -170,7 +170,7 @@ async function main() {
   )
   await batch.commit()
   await log('roadmap.new', `Added ${ROADMAPS.length} mock roadmaps`)
-  console.log('\nAdded. Open /platform?section=roadmaps.')
+  console.log('\nAdded. Open /platform/roadmaps.')
 }
 
 main().catch((error) => {
