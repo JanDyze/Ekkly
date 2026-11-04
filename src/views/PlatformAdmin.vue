@@ -371,12 +371,16 @@ const backToList = () => {
         </div>
       </nav>
 
-      <main v-if="active" class="h-full min-w-0 flex-1 overflow-y-auto pb-6">
+      <!-- A column, so a section that wants to fill the screen and scroll
+           inside itself (Roadmaps' maps: flex-1 min-h-0) can take exactly the
+           room left. Every other section keeps its own height (shrink-0) and
+           this scrolls as before. -->
+      <main v-if="active" class="flex h-full min-w-0 flex-1 flex-col overflow-y-auto pb-6 *:shrink-0">
         <button
           v-if="!isDesktop"
           type="button"
           @click="backToList"
-          class="-ml-1 mb-2 flex items-center gap-1 rounded-lg px-1 py-2 text-sm font-medium text-gray-600 dark:text-gray-300"
+          class="-ml-1 mb-2 flex shrink-0 items-center gap-1 self-start rounded-lg px-1 py-2 text-sm font-medium text-gray-600 dark:text-gray-300"
         >
           <ArrowLeft class="h-5 w-5" />
           Console

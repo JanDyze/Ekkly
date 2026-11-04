@@ -271,7 +271,7 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 rounded-xl bg-white px-2.
 </script>
 
 <template>
-  <div ref="scroller" class="relative h-[68dvh] min-h-105 overflow-x-hidden overflow-y-auto overscroll-contain bg-gray-50 dark:bg-gray-900">
+  <div ref="scroller" class="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-gray-50 dark:bg-gray-900">
     <div class="relative w-full" :style="{ height: `${layout.height}px` }">
       <svg
         class="pointer-events-none absolute inset-0"

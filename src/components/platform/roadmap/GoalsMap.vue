@@ -34,9 +34,9 @@ onMounted(() => {
 })
 onBeforeUnmount(() => observer?.disconnect())
 
-const CARD_H = 150
-const ROW = CARD_H + 84
-const PAD = 40
+const CARD_H = 140
+const ROW = CARD_H + 50
+const PAD = 24
 
 const clamp = (value, lo, hi) => Math.min(hi, Math.max(lo, value))
 
@@ -157,7 +157,7 @@ const ringOffset = (p) => RING * (1 - (p.steps ? p.done / p.steps : 0))
 </script>
 
 <template>
-  <div ref="scroller" class="relative h-[68dvh] min-h-105 overflow-x-hidden overflow-y-auto overscroll-contain bg-gray-50 dark:bg-gray-900">
+  <div ref="scroller" class="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-gray-50 dark:bg-gray-900">
     <div class="relative w-full" :style="{ height: `${layout.height}px` }">
       <svg
         class="pointer-events-none absolute inset-0"
@@ -197,7 +197,7 @@ const ringOffset = (p) => RING * (1 - (p.steps ? p.done / p.steps : 0))
         :key="goal.id"
         type="button"
         :class="[
-          'goal-card absolute flex flex-col items-center rounded-2xl bg-white px-3 py-3 text-center ring-1 transition-colors focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary dark:bg-gray-800',
+          'goal-card absolute flex flex-col items-center rounded-2xl bg-white px-3 py-2.5 text-center ring-1 transition-colors focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary dark:bg-gray-800',
           goal.progress.reached
             ? 'ring-amber-300 hover:ring-amber-400 dark:ring-amber-400/50'
             : 'ring-gray-200 hover:ring-primary/50 dark:ring-gray-700 dark:hover:ring-primary-light/50',
@@ -206,7 +206,7 @@ const ringOffset = (p) => RING * (1 - (p.steps ? p.done / p.steps : 0))
         :aria-label="`${goal.title}: ${goal.progress.done} of ${goal.progress.steps} steps done${goal.progress.reached ? ', reached' : ''}`"
         @click="emit('open', goal.id)"
       >
-        <span class="relative flex size-12 shrink-0 items-center justify-center">
+        <span class="relative flex size-10 shrink-0 items-center justify-center">
           <svg viewBox="0 0 48 48" class="absolute inset-0 size-full -rotate-90">
             <circle cx="24" cy="24" r="20" fill="none" stroke-width="4" class="stroke-gray-200 dark:stroke-gray-700" />
             <circle
@@ -229,7 +229,7 @@ const ringOffset = (p) => RING * (1 - (p.steps ? p.done / p.steps : 0))
             ]"
           />
         </span>
-        <span class="mt-2 line-clamp-2 text-sm leading-snug font-semibold text-gray-900 dark:text-white">{{ goal.title }}</span>
+        <span class="mt-1.5 line-clamp-2 text-sm leading-snug font-semibold text-gray-900 dark:text-white">{{ goal.title }}</span>
         <span class="mt-auto block w-full">
           <span class="block text-[11px] text-gray-500 dark:text-gray-400">
             <template v-if="!goal.progress.steps">No steps yet</template>

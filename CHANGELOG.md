@@ -11,6 +11,17 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.12] — 2026-11-04
+
+Roadmaps fit on one screen.
+
+### Fixed
+
+- **Roadmaps no longer scroll twice.** The map takes exactly the room left
+  under the console's bar, so only the map scrolls, never the page around it;
+  and the goal cards are a little more compact, so a few rows of goals fit
+  without scrolling at all.
+
 ## [0.37.11] — 2026-11-04
 
 Every goal on one map, joined where one leads into another.
