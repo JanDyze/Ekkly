@@ -259,31 +259,14 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
 </template>
 
 <style scoped>
+/* The sheet fades in where it stands rather than sliding up. */
 .sheet-enter-active,
 .sheet-leave-active {
   transition: opacity 0.25s ease;
 }
-.sheet-enter-active .sheet-panel,
-.sheet-leave-active .sheet-panel {
-  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-}
-.sheet-leave-active .sheet-panel {
-  transition-duration: 0.2s;
-  transition-timing-function: ease-in;
-}
 .sheet-enter-from,
 .sheet-leave-to {
   opacity: 0;
-}
-.sheet-enter-from .sheet-panel,
-.sheet-leave-to .sheet-panel {
-  transform: translateY(100%);
-}
-@media (min-width: 640px) {
-  .sheet-enter-from .sheet-panel,
-  .sheet-leave-to .sheet-panel {
-    transform: translateY(0.5rem) scale(0.96);
-  }
 }
 
 /* The stars open out under the choice rather than appearing. */
@@ -300,8 +283,8 @@ useFocusTrap(dialogRef, () => props.show, () => emit('close'))
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sheet-enter-active .sheet-panel,
-  .sheet-leave-active .sheet-panel,
+  .sheet-enter-active,
+  .sheet-leave-active,
   .grow-enter-active,
   .grow-leave-active {
     transition: none;

@@ -11,6 +11,17 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.15] — 2026-11-04
+
+Nothing slides on the roadmaps.
+
+### Changed
+
+- **The roadmaps no longer slide.** Going into a goal and back is a plain
+  fade, the sheets for a step and a goal fade in where they stand instead of
+  sliding up, and steps, goals and the flag are simply in their new place
+  when something changes, rather than gliding there.
+
 ## [0.37.14] — 2026-11-04
 
 Calmer movement on the roadmaps.

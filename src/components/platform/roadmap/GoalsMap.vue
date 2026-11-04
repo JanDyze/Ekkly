@@ -26,16 +26,10 @@ const width = ref(0)
 const viewH = ref(0)
 let observer = null
 
-// Things glide to a new place only once the map has been laid out at its
-// real size: the first layout is a guess at the width, and sliding from it
-// made the map wobble as it opened.
-const ready = ref(false)
-
 onMounted(() => {
   observer = new ResizeObserver(([entry]) => {
     width.value = entry.contentRect.width
     viewH.value = entry.contentRect.height
-    if (!ready.value) requestAnimationFrame(() => requestAnimationFrame(() => (ready.value = true)))
   })
   observer.observe(scroller.value)
 })
@@ -160,13 +154,13 @@ const ringOffset = (p) => CIRC * (1 - (p.steps ? p.done / p.steps : 0))
 </script>
 
 <template>
-  <div ref="scroller" :class="{ ready }" class="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-white dark:bg-gray-900">
+  <div ref="scroller" class="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-white dark:bg-gray-900">
     <div class="relative w-full" :style="{ height: `${layout.height}px` }">
       <!-- Each goal's soft pool of colour, under everything. -->
       <span
         v-for="goal in layout.stops"
         :key="`pool-${goal.id}`"
-        class="goal-move pointer-events-none absolute size-30 -translate-x-1/2 translate-y-1/2 rounded-full bg-(--hue)/10 dark:bg-(--hue)/15"
+        class="pointer-events-none absolute size-30 -translate-x-1/2 translate-y-1/2 rounded-full bg-(--hue)/10 dark:bg-(--hue)/15"
         :style="{ '--hue': goal.hue, left: `${goal.x}px`, bottom: `${goal.yb + NAME_H + RING / 2}px` }"
       ></span>
 
@@ -202,7 +196,7 @@ const ringOffset = (p) => CIRC * (1 - (p.steps ? p.done / p.steps : 0))
         v-for="goal in layout.stops"
         :key="goal.id"
         type="button"
-        class="goal-move group absolute flex -translate-x-1/2 flex-col items-center rounded-3xl focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        class="group absolute flex -translate-x-1/2 flex-col items-center rounded-3xl focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary"
         :style="{ '--hue': goal.hue, left: `${goal.x}px`, bottom: `${goal.yb}px`, width: `${layout.slotW}px`, height: `${BLOCK_H}px` }"
         :aria-label="`${goal.title}: ${goal.progress.done} of ${goal.progress.steps} steps done${goal.progress.reached ? ', reached' : ''}`"
         @click="emit('open', goal.id)"
@@ -250,17 +244,3 @@ const ringOffset = (p) => CIRC * (1 - (p.steps ? p.done / p.steps : 0))
   </div>
 </template>
 
-<style scoped>
-/* A goal slides to its new place when the map is rearranged. */
-.ready .goal-move {
-  transition-property: left, bottom;
-  transition-duration: 0.45s;
-  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ready .goal-move {
-    transition: none;
-  }
-}
-</style>

@@ -781,6 +781,11 @@ It should be fun, which here means colour and room, not decoration:
 - **Words are plain and few.** A step's name sits beside it with no box and
   no date (the sheet has those); only the step you are on says "Here now". A
   goal on the map shows its name and nothing else.
+- **Nothing slides.** Moving between the map of goals and a road is a
+  fade; the sheets fade in where they stand; stops, goals and the flag are
+  simply in their new place when the road changes, and a road opens already
+  at the flag. Sliding things read as fuss here. Only colour answers a
+  pointer, and stars just earned appear.
 - **Flat.** Only the mapping idea is the game's; the look is Ekkly's. It was
   first drawn as a candy land (lollipops, glossy sweets), which was not what
   was asked for, then as grey boxes and labels, which was cluttered and dull.

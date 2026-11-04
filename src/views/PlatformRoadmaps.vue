@@ -300,11 +300,10 @@ const askDeleteRoadmap = () => {
       </button>
     </div>
 
-    <!-- Into a goal and back out: the map in front fades and settles while
-         the one behind fades away, together rather than one after the
-         other. -->
+    <!-- Into a goal and back out: one map fades into the other, together
+         rather than one after the other, and nothing slides. -->
     <div v-else class="relative flex min-h-0 flex-1 flex-col">
-      <Transition name="zoom">
+      <Transition name="fade">
         <LevelMap
           v-if="selected"
           :key="selected.id"
@@ -354,28 +353,23 @@ const askDeleteRoadmap = () => {
 </template>
 
 <style scoped>
-.zoom-enter-active,
-.zoom-leave-active {
-  transition:
-    opacity 0.2s ease,
-    transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
 }
 /* The one leaving stays where it was, under the one arriving. */
-.zoom-leave-active {
+.fade-leave-active {
   position: absolute;
   inset: 0;
 }
-.zoom-enter-from {
-  opacity: 0;
-  transform: scale(0.97);
-}
-.zoom-leave-to {
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .zoom-enter-active,
-  .zoom-leave-active {
+  .fade-enter-active,
+  .fade-leave-active {
     transition: none;
   }
 }

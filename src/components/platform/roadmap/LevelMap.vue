@@ -31,16 +31,10 @@ const width = ref(0)
 const viewH = ref(0)
 let observer = null
 
-// Things glide to a new place only once the map has been laid out at its
-// real size: the first layout is a guess at the width, and sliding from it
-// made the map wobble as it opened.
-const ready = ref(false)
-
 onMounted(() => {
   observer = new ResizeObserver(([entry]) => {
     width.value = entry.contentRect.width
     viewH.value = entry.contentRect.height
-    if (!ready.value) requestAnimationFrame(() => requestAnimationFrame(() => (ready.value = true)))
   })
   observer.observe(scroller.value)
 })
@@ -279,7 +273,6 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 text-left'
 <template>
   <div
     ref="scroller"
-    :class="{ ready }"
     class="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-white dark:bg-gray-900"
     :style="{ '--hue': hue }"
   >
@@ -444,7 +437,7 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 text-left'
       </button>
 
       <!-- Where the road is now: a flag over the first step not yet done.
-           It glides to the next one when a step is finished. -->
+           It moves on when a step is finished. -->
       <div
         v-if="layout.here"
         class="map-stop pointer-events-none absolute flex -translate-x-1/2 flex-col items-center"
@@ -461,12 +454,12 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 text-left'
 </template>
 
 <style scoped>
-/* Stops slide to their new place when the road is reordered, and the flag
-   glides from one step to the next. */
-.ready .map-stop {
-  transition-property: left, bottom, background-color, color, box-shadow, filter;
-  transition-duration: 0.45s, 0.45s, 0.15s, 0.15s, 0.15s, 0.15s;
-  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+/* A stop answers the pointer in colour. It does not slide when the road is
+   rearranged, nor the flag glide to the next step: things moving about the
+   map read as fuss, so they are simply in their new place. */
+.map-stop {
+  transition-property: background-color, color, box-shadow, filter;
+  transition-duration: 0.15s;
 }
 
 /* A star earned just now fades and turns into place. */
@@ -482,7 +475,7 @@ const LABEL = 'absolute top-1/2 w-max -translate-y-1/2 text-left'
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ready .map-stop {
+  .map-stop {
     transition: none;
   }
   .star-in {
