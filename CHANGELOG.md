@@ -11,6 +11,23 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.18] — 2026-11-05
+
+Needs attention on the home gathers what is waiting in every app.
+
+### Added
+
+- **Needs attention on a computer's home now lists what each app is
+  waiting on**, not only your overdue tasks, accounts to link and gatherings
+  to count. A month's line-up still a draft, Sundays with open roles,
+  people asking to join, newcomers nobody has reached yet, things not
+  returned or waiting for repair, a small group's session not logged,
+  meetings still rough notes, action items that never became tasks, and
+  late tasks given to nobody each get a row of their own. Each shows only
+  to whoever can act on it, and opens where it is dealt with. Finances stays
+  in its own app, since gathering the whole book every time the home opens
+  would cost the church too much.
+
 ## [0.37.17] — 2026-11-04
 
 The roadmaps become a game map: chunky 3D pieces and popups.

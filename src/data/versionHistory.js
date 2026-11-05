@@ -8,6 +8,17 @@
 
 export const versionHistory = [
   {
+    version: '0.37.18',
+    date: '2026-11-05',
+    title: 'Everything waiting, in one place',
+    summary: 'On a computer, Needs attention on the home now gathers what every app is waiting on.',
+    highlights: [
+      'Open roles, people asking to join, newcomers to welcome.',
+      'Things not returned, sessions not logged, action items never made tasks.',
+      'Only what you can act on, each a tap from where it is done.',
+    ],
+  },
+  {
     version: '0.37.7',
     date: '2026-10-31',
     title: 'YUNIT out of the way',

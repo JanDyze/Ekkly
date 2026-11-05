@@ -184,6 +184,216 @@ const sampleCount = computed(() => {
 
 /* -------------------------------------------------------------- the deck */
 
+/** "November": a `YYYY-MM` month's name. */
+const monthName = (month) => dateOf(`${month}-01`).toLocaleDateString(undefined, { month: 'long' })
+
+/**
+ * The desktop action centre's rows from inside the apps (useToday): one per
+ * kind of thing waiting, each naming its records and opening where they are
+ * dealt with, in the same shape as the home's own rows. A row only exists
+ * while something is waiting, and only for whoever can act on it, which
+ * useToday has already decided. Keyed by what it covers, so putting one away
+ * lasts until something new joins it.
+ */
+const waitingInApps = () => {
+  const rows = []
+  const row = (fields) =>
+    rows.push({ kind: 'plain', tone: 'warn', dismissible: true, severity: 'pending', ...fields })
+
+  // A Sunday nobody can see yet is the most pressing thing a planner owns.
+  const drafts = today.scheduleDrafts.value
+  if (drafts.length) {
+    row({
+      key: `drafts:${drafts.join(',')}`,
+      icon: CalendarDots,
+      kicker: 'Not published',
+      art: 'schedules-calendar',
+      title: drafts.length === 1 ? `${monthName(drafts[0])}'s line-up is still a draft` : `${plural(drafts.length, 'month', 'months')} still a draft`,
+      detail: 'Nobody else can see it until it is published.',
+      to: { name: 'SchedulesCalendar', params: { month: drafts[0] } },
+      dest: 'lineups',
+      destLabel: 'the calendar, in Schedules',
+      action: 'Publish',
+      records: drafts.map((month) => ({ key: month, label: monthName(month), to: { name: 'SchedulesCalendar', params: { month } } })),
+    })
+  }
+
+  const gaps = today.scheduleGaps.value
+  if (gaps.length) {
+    row({
+      key: `gaps:${gaps.map((gap) => `${gap.date}=${gap.empty.length}`).join(',')}`,
+      icon: CalendarDots,
+      kicker: 'Open roles',
+      art: 'schedules-who',
+      title: gaps.length === 1 ? `${formatShortDate(gaps[0].date)} needs ${plural(gaps[0].empty.length, 'more', 'more')}` : `${plural(gaps.length, 'Sunday', 'Sundays')} with open roles`,
+      to: { name: 'SchedulesSunday', params: { date: gaps[0].date } },
+      dest: 'lineups',
+      destLabel: 'that Sunday in Schedules',
+      action: 'Fill',
+      records: gaps.map((gap) => ({
+        key: gap.date,
+        label: `${formatShortDate(gap.date)} · ${gap.empty.map((role) => role.name).join(', ')}`,
+        to: { name: 'SchedulesSunday', params: { date: gap.date } },
+      })),
+    })
+  }
+
+  // Someone asking to be let in can do nothing until an administrator says yes.
+  const asking = today.joinRequests.value
+  if (asking.length) {
+    row({
+      key: `join:${asking.map((request) => request.uid).join(',')}`,
+      icon: UserPlus,
+      kicker: 'Asking to join',
+      art: 'today-claims',
+      title: `${plural(asking.length, 'person', 'people')} asking to join`,
+      detail: 'They signed in and are waiting to be let into the church.',
+      to: '/accounts',
+      dest: 'accounts',
+      destLabel: 'Accounts',
+      action: 'Review',
+      records: asking.map((request) => ({ key: request.uid, label: request.displayName || request.email || 'Someone', to: '/accounts' })),
+    })
+  }
+
+  const newcomers = today.newcomersWaiting.value
+  if (newcomers.length) {
+    row({
+      key: `newcomers:${newcomers.map(keyOf).join(',')}`,
+      icon: UserPlus,
+      kicker: 'Not yet welcomed',
+      art: 'schedules-welcome',
+      title: `${plural(newcomers.length, 'newcomer', 'newcomers')} nobody has reached`,
+      to: { name: 'SchedulesWelcome' },
+      dest: 'lineups',
+      destLabel: 'Welcome, in Schedules',
+      action: 'Follow up',
+      members: newcomers.slice(0, 2),
+      records: newcomers.map((member) => ({
+        key: String(keyOf(member)),
+        label: getDisplayName(member),
+        to: { name: 'MemberDetails', params: { id: member.id || member.firestoreId } },
+      })),
+    })
+  }
+
+  // A thing not back is a thing missing on the day it is needed.
+  const loans = today.loansOverdue.value
+  if (loans.length) {
+    const holder = (loan) => loan.to || getDisplayName(memberOf(loan.memberId)) || 'someone'
+    row({
+      key: `loans:${loans.map(({ loan }) => loan.id).join(',')}`,
+      icon: ClipboardCheck,
+      kicker: 'Not back yet',
+      art: 'inventory-borrowed',
+      title: loans.length === 1 ? `${loans[0].item.name} is still with ${holder(loans[0].loan)}` : `${plural(loans.length, 'thing', 'things')} not returned`,
+      to: { name: 'InventoryBorrowed' },
+      dest: 'inventory',
+      destLabel: 'Borrowed, in Inventory',
+      severity: 'urgent',
+      action: 'Chase',
+      records: loans.map(({ item, loan }) => ({
+        key: `${item.id}:${loan.id}`,
+        label: `${item.name} · ${holder(loan)}`,
+        to: { name: 'InventoryItem', params: { id: item.id } },
+      })),
+    })
+  }
+
+  const repairs = today.repairs.value
+  if (repairs.length) {
+    row({
+      key: `repairs:${repairs.map((item) => item.id).join(',')}`,
+      icon: ClipboardCheck,
+      kicker: 'Needs repair',
+      art: 'inventory-repair',
+      title: `${plural(repairs.length, 'thing', 'things')} waiting to be fixed`,
+      to: { name: 'InventoryRepair' },
+      dest: 'inventory',
+      destLabel: 'Needs repair, in Inventory',
+      action: 'Fix',
+      records: repairs.map((item) => ({ key: item.id, label: item.name, to: { name: 'InventoryItem', params: { id: item.id } } })),
+    })
+  }
+
+  const sessions = today.unloggedSessions.value
+  if (sessions.length) {
+    row({
+      key: `sessions:${sessions.map(({ group, day }) => `${today.idOfGroup(group)}@${day}`).join(',')}`,
+      icon: ClipboardCheck,
+      kicker: 'Not logged',
+      art: 'smallgroups-sessions',
+      title: sessions.length === 1 ? `${sessions[0].group.name || 'Your group'}'s session` : `${plural(sessions.length, 'session', 'sessions')} not logged`,
+      detail: 'Who came, and what was taught.',
+      to: { name: 'SmallGroupDetails', params: { id: today.idOfGroup(sessions[0].group) } },
+      dest: 'smallgroups',
+      destLabel: 'your group, in Small groups',
+      action: 'Log',
+      records: sessions.map(({ group, day }) => ({
+        key: `${today.idOfGroup(group)}@${day}`,
+        label: `${group.name || 'Your group'} · ${weekday(day)}`,
+        to: { name: 'SmallGroupDetails', params: { id: today.idOfGroup(group) } },
+      })),
+    })
+  }
+
+  const writeUps = today.toWriteUp.value
+  if (writeUps.length) {
+    row({
+      key: `writeup:${writeUps.map(today.idOfMinute).join(',')}`,
+      icon: ClipboardCheck,
+      kicker: 'To write up',
+      art: 'minutes-writeup',
+      title: `${plural(writeUps.length, 'meeting is', 'meetings are')} still rough notes`,
+      to: { name: 'MinutesWriteUp' },
+      dest: 'minutes',
+      destLabel: 'To write up, in Minutes',
+      action: 'Write up',
+      records: writeUps.map((minute) => ({
+        key: today.idOfMinute(minute),
+        label: minute.title || 'Meeting',
+        to: { name: 'MinuteDetails', params: { id: today.idOfMinute(minute) } },
+      })),
+    })
+  }
+
+  const actions = today.actionsNotOnList.value
+  if (actions.length) {
+    row({
+      key: `actions:${actions.length}:${actions[0].key}`,
+      icon: ListChecks,
+      kicker: 'Never made a task',
+      art: 'minutes-actions',
+      title: `${plural(actions.length, 'action item', 'action items')} on nobody's list`,
+      detail: 'Agreed at a meeting, never made a task.',
+      to: { name: 'MinutesActions' },
+      dest: 'minutes',
+      destLabel: 'Action items, in Minutes',
+      action: 'Make tasks',
+      records: actions.map((item) => ({ key: item.key, label: item.task, to: { name: 'MinutesActions' } })),
+    })
+  }
+
+  const unassigned = today.lateUnassigned.value
+  if (unassigned.length) {
+    row({
+      key: `unassigned:${unassigned.map((task) => task.id).join(',')}`,
+      icon: ListChecks,
+      kicker: 'Late, nobody on it',
+      art: 'tasks-everyone',
+      title: `${plural(unassigned.length, 'late task', 'late tasks')} given to nobody`,
+      to: { name: 'Tasks' },
+      dest: 'tasks',
+      destLabel: 'Everyone’s tasks',
+      severity: 'urgent',
+      action: 'Assign',
+      records: unassigned.map((task) => ({ key: String(task.id), label: task.title || 'A task', to: { name: 'Tasks', query: { q: task.title || '' } } })),
+    })
+  }
+
+  return rows
+}
+
 // Unlike an app's own deck, these cards each lead into a different app, so
 // each names where it goes (`dest`): the artwork of the app the tap opens —
 // the app's own, never a section's, so it matches the tile below — shown small
@@ -388,6 +598,12 @@ const cards = computed(() => {
       }),
     })
   }
+
+  // What each app flags as waiting (useToday), on a desktop only: there the
+  // action centre has room for every kind, one row each with its records
+  // under it. A phone's deck is swiped a card at a time, and a dozen more
+  // would bury the few that matter today; each app's own deck has them.
+  if (wide.value) list.push(...waitingInApps())
 
   // What is on: today's, or the next thing this week. Not on a desktop, where
   // the week ahead stands beside Today and already says it (HomeWeek).

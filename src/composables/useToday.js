@@ -7,6 +7,11 @@ import { useRecurringEvents } from './useRecurringEvents'
 import { useTasks } from './useTasks'
 import { useAttendance } from './useAttendance'
 import { usePrayerConcerns } from './usePrayerConcerns'
+import { useInventoryOverview } from './useInventoryOverview'
+import { useSmallGroupsOverview } from './useSmallGroupsOverview'
+import { useMinutesOverview } from './useMinutesOverview'
+import { useFollowUps } from './useFollowUps'
+import { useJoinRequests } from './useJoinRequests'
 import { memberKey } from '../utils/sgUtils'
 import { isAssignedTo, isDueToday, isOverdue } from '../utils/taskUtils'
 import { isCalledOff } from '../../lib/eventStatus'
@@ -44,6 +49,13 @@ export function useToday() {
   const { recurringEvents } = useRecurringEvents(storedEvents, people.members)
   const { aggregatedAttendance } = useAttendance()
   const { prayerConcerns } = usePrayerConcerns()
+  const inventory = useInventoryOverview()
+  const groups = useSmallGroupsOverview()
+  const minutesOverview = useMinutesOverview()
+  const { followUpOf } = useFollowUps()
+  const { joinRequests: allJoinRequests } = useJoinRequests()
+  const { isAdmin } = usePermissions()
+  const joinRequests = computed(() => (isAdmin.value ? allJoinRequests.value : []))
 
   const today = keyOf(new Date())
   const weekEnd = dayAfter(6)
@@ -136,6 +148,43 @@ export function useToday() {
     can('prayer.view') ? prayerConcerns.value.filter((c) => c.status !== 'answered').length : 0
   )
 
+  /* ------------------------------------------------- waiting in the apps */
+
+  // What each app already flags on its own home as waiting on someone, for
+  // the home's Needs attention, so whoever runs a part of the church sees it
+  // without opening that app first. Each asks the app's own overview, so the
+  // home and the app cannot disagree, and each is for whoever can act on it.
+  // Finances is left out on purpose: its overview reads the whole book, and
+  // the home is opened far too often to read that every time.
+
+  /** Months a planner started and nobody else can see yet. */
+  const scheduleDrafts = computed(() => (schedules.canPlan.value ? schedules.drafts.value : []))
+  /** Planned Sundays still to come with a role nobody is on. */
+  const scheduleGaps = computed(() => (schedules.canPlan.value ? schedules.gaps.value.filter((row) => row.planned) : []))
+
+  /** Newcomers nobody has reached out to yet, for whoever follows them up. */
+  const newcomersWaiting = computed(() =>
+    canManage('consolidation')
+      ? people.members.value.filter((m) => m.isMember === false && followUpOf(m.firestoreId || m.id).step === 'new')
+      : []
+  )
+
+  const loansOverdue = computed(() => (inventory.canEdit.value ? inventory.overdue.value : []))
+  const repairs = computed(() => (inventory.canEdit.value ? inventory.needsRepair.value : []))
+
+  /** A group you lead that met this week and was never logged. */
+  const unloggedSessions = computed(() => groups.unlogged.value)
+
+  const toWriteUp = computed(() => (minutesOverview.canEdit.value ? minutesOverview.toWriteUp.value : []))
+  const actionsNotOnList = computed(() => (minutesOverview.canEdit.value ? minutesOverview.notOnList.value : []))
+
+  /** Late tasks given to nobody, for whoever hands tasks out. */
+  const lateUnassigned = computed(() =>
+    canManage('tasks') && capabilityAppEnabled('tasks.view')
+      ? tasks.value.filter((task) => !task.done && isOverdue(task) && !(task.assigneeIds || []).length)
+      : []
+  )
+
   return {
     today,
     people,
@@ -154,5 +203,17 @@ export function useToday() {
     openPrayers,
     claims: people.claims,
     claimsWaiting: people.claimsWaiting,
+    joinRequests,
+    scheduleDrafts,
+    scheduleGaps,
+    newcomersWaiting,
+    loansOverdue,
+    repairs,
+    unloggedSessions,
+    toWriteUp,
+    actionsNotOnList,
+    lateUnassigned,
+    idOfGroup: groups.idOf,
+    idOfMinute: minutesOverview.idOf,
   }
 }
