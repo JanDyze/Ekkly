@@ -33,6 +33,7 @@
  *
  *   node scripts/seed-mock-data.mjs --church uec-c2
  *   node scripts/seed-mock-data.mjs --church uec-c2 --write
+ *   node scripts/seed-mock-data.mjs --church uec-c2 --more --write   (a second set on top)
  *   node scripts/seed-mock-data.mjs --church uec-c2 --remove --write
  */
 import fs from 'node:fs'
@@ -45,7 +46,7 @@ import { PRIVATE_COLLECTION, splitPrivate } from '../lib/memberPrivate.js'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const SEED = 'seed-mock-data'
-const MARK = { mock: true, mockSeed: SEED }
+const MARK = { mock: true, mockSeed: SEED, ...(process.argv.includes('--more') ? { mockMore: true } : {}) }
 
 const arg = (name) => {
   const i = process.argv.indexOf(`--${name}`)
@@ -56,6 +57,12 @@ const flag = (name) => process.argv.includes(`--${name}`)
 const CHURCH_ID = arg('church')
 const WRITE = flag('write')
 const REMOVE = flag('remove')
+// A second set on top of the first, for a fuller church to show: more people,
+// events and prayer, and the minutes, books and sermons a year further back.
+// It carries the same mark, so --remove takes both sets out together. What
+// would only come out as duplicates (inventory, groups, classes, lessons, join
+// requests) is left to the first set.
+const MORE = flag('more')
 
 const loadEnv = () => {
   const file = path.join(ROOT, '.env')
@@ -72,7 +79,7 @@ const loadEnv = () => {
 /* --------------------------------------------------------- randomness, days */
 
 // Seeded, so a second run after --remove makes the same church again.
-let state = 20261023
+let state = MORE ? 20261105 : 20261023
 const random = () => {
   state = (state + 0x6d2b79f5) | 0
   let t = Math.imul(state ^ (state >>> 15), 1 | state)
@@ -347,9 +354,16 @@ async function main() {
   }
 
   const already = await church.collection('members').where('mockSeed', '==', SEED).limit(1).get()
-  if (!already.empty) {
+  if (MORE) {
+    if (already.empty) return console.log('The first set is not here yet. Run without --more first.')
+    const more = await church.collection('members').where('mockMore', '==', true).limit(1).get()
+    if (!more.empty) return console.log('The second set is already here. Run with --remove --write first to start again.')
+  } else if (!already.empty) {
     return console.log('This church already has this mock data. Run with --remove --write first to start again.')
   }
+  // The second set reaches a year further back where the first already
+  // fills the year, so nothing lands twice on the same weeks.
+  const back = MORE ? 364 : 0
 
   // The church's own lists, so every ministry and tag on a record is one the
   // app knows.
@@ -364,7 +378,7 @@ async function main() {
   const tags = tagSnap.docs.map((d) => d.data().name).filter(Boolean)
   const firstId = roll.docs.reduce((max, d) => Math.max(max, Number(d.data().id) || 0), 0) + 1
 
-  const people = makePeople({ count: 80, firstId, ministries, tags })
+  const people = makePeople({ count: MORE ? 120 : 80, firstId, ministries, tags })
   const members = people.filter((p) => p.isMember)
   const adults = members.filter((p) => new Date(p.dateOfBirth) < new Date(day(-18 * 365)))
   const newcomers = people.filter((p) => !p.isMember)
@@ -387,7 +401,9 @@ async function main() {
   // One of each behind and one ahead, spread evenly so every week of the
   // calendar, the coming fortnight and the coming month have some.
   EVENTS.forEach(([title, type, time, location, description], i) => {
-    for (const offset of [-(5 + i * 5), 2 + i * 4]) {
+    // The second set falls on the days between the first's.
+    const offsets = MORE ? [-(3 + i * 5), 4 + i * 4, 60 + i * 4, -(75 + i * 5)] : [-(5 + i * 5), 2 + i * 4]
+    for (const offset of offsets) {
       add('events', { title, type, date: day(offset), time, location, description, audienceTags: [], excludeTags: [], icon: 'Calendar', attendees: 0, isCancelled: false })
     }
   })
@@ -399,10 +415,10 @@ async function main() {
     add('worshipSongs', { title, category, youtubeUrl: '', lyrics: '', notes: '', leaderKeys: {}, createdAt: stamp(day(-between(10, 400))) })
   })
 
-  for (let i = 0; i < 36; i++) {
+  for (let i = 0; i < (MORE ? 60 : 36); i++) {
     const [title, description] = PRAYERS[i % PRAYERS.length]
     const who = pick(people)
-    const date = day(-between(0, 150))
+    const date = day(-between(0, MORE ? 300 : 150))
     const status = i % PRAYERS.length === 14 || chance(0.25) ? 'answered' : chance(0.3) ? 'ongoing' : 'active'
     add('prayerConcerns', {
       title: `${title}: ${who.firstName}`,
@@ -421,7 +437,7 @@ async function main() {
 
   for (let month = 0; month < 12; month++) {
     MEETINGS.slice(0, month % 3 === 0 ? 4 : 2).forEach(([title, location, agenda]) => {
-      const date = day(-month * 30 - between(1, 25))
+      const date = day(-back - month * 30 - between(1, 25))
       const items = some(agenda, Math.min(agenda.length, between(2, 4)))
       const discussions = Object.fromEntries(items.map((a) => [a, pick(DISCUSS)]))
       const decisions = Object.fromEntries(items.filter(() => chance(0.7)).map((a) => [a, pick(DECIDE)]))
@@ -473,7 +489,8 @@ async function main() {
       createdBy: 'mock-seed', createdByName: 'Mock data', updatedBy: 'mock-seed', updatedByName: 'Mock data',
       createdAt: stamp(date), updatedAt: stamp(date),
     })
-  for (let sunday = sundayOf(day(-364)); sunday <= TODAY; sunday = day(7, sunday)) {
+  const booksEnd = MORE ? day(-7, sundayOf(day(-364))) : TODAY
+  for (let sunday = sundayOf(day(-364 - back)); sunday <= booksEnd; sunday = day(7, sunday)) {
     entry(sunday, 'in', 'tithes-offering', 'onsite', 'cash', between(6000, 15000), 'Sunday tithes and offering')
     entry(sunday, 'in', 'tithes-offering', 'online', 'bank', between(800, 4500), 'Online giving')
     if (chance(0.25)) entry(sunday, 'in', 'tithes-offering', 'winning-souls', 'cash', between(500, 2500), 'Offering for winning souls')
@@ -490,7 +507,7 @@ async function main() {
     if (d <= 7 && ['01', '04', '07', '10'].includes(sunday.slice(5, 7))) entry(sunday, 'in', 'other-income', 'bank-interest', 'bank', between(20, 90), 'Bank interest')
   }
 
-  INVENTORY.forEach(([name, category, location, quantity, value], i) => {
+  if (!MORE) INVENTORY.forEach(([name, category, location, quantity, value], i) => {
     const condition = i % 7 === 3 ? 'repair' : i % 5 === 1 ? 'worn' : 'good'
     const loans = i % 6 === 2 ? [{ id: `loan-${i}`, to: '', memberId: ref(pick(adults)), quantity: 1, since: day(-between(3, 40)), due: day(between(-5, 20)), note: 'Borrowed for a family gathering' }] : []
     add('inventory', {
@@ -502,7 +519,7 @@ async function main() {
   })
 
   const groupIds = []
-  GROUPS.forEach(([name, description, meetingDay, meetingTime, language]) => {
+  if (!MORE) GROUPS.forEach(([name, description, meetingDay, meetingTime, language]) => {
     const id = church.collection('smallGroups').doc().id
     groupIds.push(id)
     const leader = pick(adults)
@@ -528,14 +545,14 @@ async function main() {
   })
 
   const classIds = {}
-  CLASSES.forEach(([name, band, ages, room], order) => {
+  if (!MORE) CLASSES.forEach(([name, band, ages, room], order) => {
     const id = church.collection('teachingClasses').doc().id
     classIds[band] ||= []
     classIds[band].push(id)
     add('teachingClasses', { name, band, ages, room, teacherIds: some(adults, 2).map(ref), order, archived: false, createdAt: stamp(day(-200)) }, id)
   })
   const sundays = Array.from({ length: 8 }, (_, i) => day((i - 5) * 7, sundayOf(TODAY)))
-  LESSONS.forEach(([title, band, reference, text, verseRef], i) => {
+  if (!MORE) LESSONS.forEach(([title, band, reference, text, verseRef], i) => {
     // Most are on a class's Sunday around today; every third is a plan in the
     // library, with no date, ready to reuse.
     const dated = i % 3 !== 2
@@ -555,7 +572,7 @@ async function main() {
     })
   })
   const taken = new Set(sermonSnap.docs.map((d) => d.id))
-  Array.from({ length: 12 }, (_, i) => day((i - 8) * 7, sundayOf(TODAY))).forEach((date, i) => {
+  Array.from({ length: 12 }, (_, i) => day((i - (MORE ? 20 : 8)) * 7, sundayOf(TODAY))).forEach((date, i) => {
     if (taken.has(date)) return
     const [title, reference, bigIdea] = SERMONS[i]
     add('sermons', {
@@ -578,7 +595,7 @@ async function main() {
     }, id)
   })
 
-  ;[['Lea', 'Ocampo', 'We moved to Canubing last month and visited on Sunday.'], ['Joel', 'Mangubat', ''], ['Trina', 'Sevilla', 'A friend from work invited me.'], ['Marco', 'Dizon', 'I used to attend years ago.']].forEach(([first, last, message], i) => {
+  ;(MORE ? [] : [['Lea', 'Ocampo', 'We moved to Canubing last month and visited on Sunday.'], ['Joel', 'Mangubat', ''], ['Trina', 'Sevilla', 'A friend from work invited me.'], ['Marco', 'Dizon', 'I used to attend years ago.']]).forEach(([first, last, message], i) => {
     const uid = `mock-join-${i + 1}`
     add('joinRequests', { uid, email: `${first}.${last}@example.com`.toLowerCase(), displayName: `${first} ${last}`, photoURL: '', message, status: 'pending', requestedAt: stamp(day(-i - 1)) }, uid)
   })
