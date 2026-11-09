@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
+  ArrowLeft,
   BookOpen,
   Check,
   ChevronDown,
@@ -94,6 +95,22 @@ const goTo = (slug, chapter, { jump = false } = {}) => {
   const to = { name: 'Bible', params: { slug, chapter: String(chapter) } }
   if (jump) router.push(to)
   else router.replace(to)
+}
+
+/**
+ * Out of the Bible, to wherever it was opened from.
+ *
+ * A jump (the picker, a search result) pushes an entry, so the entry before
+ * this one may be another chapter of this very page. The arrow is for leaving,
+ * not for walking back through chapters one at a time, so it only goes back
+ * when the last page was somewhere else, and otherwise to the home of all
+ * apps. Never a new entry in the history, or the phone's own back would step
+ * forward again (the same way Songs does it).
+ */
+const goBack = () => {
+  const last = window.history.state?.back
+  if (last && !String(last).startsWith('/bible')) router.back()
+  else router.replace('/home')
 }
 
 /* ---------- the text ---------- */
@@ -439,6 +456,19 @@ const showingResults = computed(() => searchable.value)
     <div
       class="flex shrink-0 items-center gap-2 border-b border-gray-200 px-3 pb-2 pt-3 dark:border-gray-700 sm:px-0 sm:pt-0"
     >
+      <!-- The way out. With the app bar hidden here, nothing else on the page
+           leads back, so it has its own, the one every page without a bar
+           carries. -->
+      <button
+        type="button"
+        @click="goBack"
+        aria-label="Back"
+        title="Back"
+        class="shrink-0 rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-primary dark:hover:bg-gray-700"
+      >
+        <ArrowLeft class="h-5 w-5" />
+      </button>
+
       <button
         v-if="!searchOpen"
         @click="openPicker"

@@ -11,6 +11,19 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.20] — 2026-11-09
+
+The Bible has a way back.
+
+### Added
+
+- **A back arrow on the Bible page.** The page has its own header and no bar
+  above it, so there was nothing on it that led out. The arrow sits at the
+  left of the header, the same arrow every other page uses, and takes you back
+  to where you opened the Bible from, or to all your apps if you came in by
+  the address. Jumping to a chapter from the book picker or a search does not
+  make it step back through those chapters one by one: it leaves the Bible.
+
 ## [0.37.19] — 2026-11-09
 
 Adding a small group works on a computer again, and the form looks like the others.
