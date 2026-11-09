@@ -2,7 +2,6 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  ArrowLeft,
   BookOpen,
   Check,
   ChevronDown,
@@ -17,6 +16,7 @@ import { fold, foldText, getBook, loadRemoteChapter, searchBooks } from '../api/
 import { parseReference, formatReference, bookName } from '../utils/bibleRef'
 import { useBiblePlace } from '../composables/useBiblePlace'
 import { useBibleVersion } from '../composables/useBibleVersion'
+import AppArt from '../components/common/AppArt.vue'
 import SearchBar from '../components/common/SearchBar.vue'
 import { useScrollLock } from '../composables/useScrollLock'
 
@@ -457,16 +457,17 @@ const showingResults = computed(() => searchable.value)
       class="flex shrink-0 items-center gap-2 border-b border-gray-200 px-3 pb-2 pt-3 dark:border-gray-700 sm:px-0 sm:pt-0"
     >
       <!-- The way out. With the app bar hidden here, nothing else on the page
-           leads back, so it has its own, the one every page without a bar
-           carries. -->
+           leads back, so it has its own, drawn as the bar's return is drawn
+           everywhere else: a chevron, then the app's own picture (Topbar). -->
       <button
         type="button"
         @click="goBack"
         aria-label="Back"
         title="Back"
-        class="shrink-0 rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-primary dark:hover:bg-gray-700"
+        class="flex shrink-0 items-center gap-0.5 rounded-lg p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
       >
-        <ArrowLeft class="h-5 w-5" />
+        <ChevronLeft class="h-5 w-5 shrink-0 text-gray-500 dark:text-gray-400" />
+        <AppArt app-key="bible" class="h-8 w-8" />
       </button>
 
       <button

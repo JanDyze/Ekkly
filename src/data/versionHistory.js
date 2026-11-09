@@ -8,10 +8,10 @@
 
 export const versionHistory = [
   {
-    version: '0.37.20',
+    version: '0.37.21',
     date: '2026-11-09',
     title: 'A way back from the Bible',
-    summary: 'The Bible page now has a back arrow, like the other pages.',
+    summary: 'The Bible page now has a back button wearing the Bible\'s picture, like the other apps.',
     highlights: [
       'Tap it to go back to where you came from.',
       'Jumping between chapters does not trap you in the Bible.',

@@ -11,6 +11,17 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.21] — 2026-11-09
+
+The Bible's back button looks like every other app's return.
+
+### Changed
+
+- **The Bible's back button now wears the Bible's picture.** It is drawn the
+  way the bar over every other app draws its return: a small chevron, then the
+  app's own picture, in place of a plain arrow. It still goes back to where you
+  came from, or to all your apps if you came in by the address.
+
 ## [0.37.20] — 2026-11-09
 
 The Bible has a way back.
