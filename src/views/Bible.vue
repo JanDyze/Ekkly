@@ -97,22 +97,6 @@ const goTo = (slug, chapter, { jump = false } = {}) => {
   else router.replace(to)
 }
 
-/**
- * Out of the Bible, to wherever it was opened from.
- *
- * A jump (the picker, a search result) pushes an entry, so the entry before
- * this one may be another chapter of this very page. The arrow is for leaving,
- * not for walking back through chapters one at a time, so it only goes back
- * when the last page was somewhere else, and otherwise to the home of all
- * apps. Never a new entry in the history, or the phone's own back would step
- * forward again (the same way Songs does it).
- */
-const goBack = () => {
-  const last = window.history.state?.back
-  if (last && !String(last).startsWith('/bible')) router.back()
-  else router.replace('/home')
-}
-
 /* ---------- the text ---------- */
 
 // The verses on screen, filled by whichever of the two loaders below applies.
@@ -457,18 +441,20 @@ const showingResults = computed(() => searchable.value)
       class="flex shrink-0 items-center gap-2 border-b border-gray-200 px-3 pb-2 pt-3 dark:border-gray-700 sm:px-0 sm:pt-0"
     >
       <!-- The way out. With the app bar hidden here, nothing else on the page
-           leads back, so it has its own, drawn as the bar's return is drawn
-           everywhere else: a chevron, then the app's own picture (Topbar). -->
-      <button
-        type="button"
-        @click="goBack"
-        aria-label="Back"
-        title="Back"
+           leads back, so it has its own, which is the bar's return exactly
+           (Topbar): a chevron, then the app's own picture, to the home of all
+           apps, as it is in every other app. A link rather than a step back
+           through history, so it lands on the home whichever page the Bible
+           was opened from, and however many chapters have been read. -->
+      <router-link
+        to="/home"
+        aria-label="Back to all apps"
+        title="Back to all apps"
         class="flex shrink-0 items-center gap-0.5 rounded-lg p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
       >
         <ChevronLeft class="h-5 w-5 shrink-0 text-gray-500 dark:text-gray-400" />
         <AppArt app-key="bible" class="h-8 w-8" />
-      </button>
+      </router-link>
 
       <button
         v-if="!searchOpen"

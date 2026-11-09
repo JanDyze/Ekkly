@@ -11,6 +11,18 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.22] — 2026-11-09
+
+The Bible's back button goes home, as every other app's does.
+
+### Changed
+
+- **The Bible's back button always goes to the home of all apps.** It used to
+  return to whichever page the Bible was opened from, so opening it from the
+  All apps page and pressing back left you on All apps. It is now the same
+  link the bar over every other app uses, to the home, however you arrived and
+  however many chapters you have read.
+
 ## [0.37.21] — 2026-11-09
 
 The Bible's back button looks like every other app's return.
