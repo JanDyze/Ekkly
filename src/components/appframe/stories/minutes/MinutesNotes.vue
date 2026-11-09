@@ -61,7 +61,7 @@ const typing = computed(() => {
         <!-- The roster, offered under the name being typed. -->
         <div
           v-if="asking.length > 1 && !chosen"
-          class="st-pop absolute left-3 top-[94px] w-52 rounded-xl border border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800"
+          class="st-pop absolute left-3 top-23.5 w-52 rounded-xl border border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800"
         >
           <span
             v-for="(p, i) in MATCHES"

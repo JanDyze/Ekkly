@@ -180,7 +180,7 @@ const SOFT =
     </template>
 
     <div v-if="loading && !items.length" class="flex flex-col gap-3" aria-hidden="true">
-      <div class="aspect-[4/3] animate-pulse rounded-3xl bg-gray-200 dark:bg-gray-700" />
+      <div class="aspect-4/3 animate-pulse rounded-3xl bg-gray-200 dark:bg-gray-700" />
       <div class="h-14 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
     </div>
 
@@ -258,7 +258,7 @@ const SOFT =
           <span class="w-24 shrink-0 text-gray-500 dark:text-gray-400">{{ row.label }}</span>
           <span
             :class="[
-              'min-w-0 flex-1 whitespace-pre-line break-words',
+              'min-w-0 flex-1 whitespace-pre-line wrap-break-word',
               row.warn ? 'font-medium text-amber-700 dark:text-amber-400' : row.muted ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white',
             ]"
           >

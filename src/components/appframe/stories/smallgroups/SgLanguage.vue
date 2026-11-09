@@ -34,7 +34,7 @@ const t = (key) => sgLabel(lang.value, key)
         <span class="inline-flex items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 dark:bg-gray-700">
           <span
             :class="[
-              'min-w-[40px] rounded-md px-2 py-1 text-center text-[11px] font-bold transition-colors',
+              'min-w-10 rounded-md px-2 py-1 text-center text-[11px] font-bold transition-colors',
               lang === 'en' ? 'st-filled bg-primary text-white' : 'text-gray-500 dark:text-gray-400',
             ]"
           >
@@ -42,7 +42,7 @@ const t = (key) => sgLabel(lang.value, key)
           </span>
           <span
             :class="[
-              'relative min-w-[40px] rounded-md px-2 py-1 text-center text-[11px] font-bold transition-colors',
+              'relative min-w-10 rounded-md px-2 py-1 text-center text-[11px] font-bold transition-colors',
               lang === 'tl' ? 'st-filled bg-primary text-white' : 'text-gray-500 dark:text-gray-400',
               tapped ? 'st-tap' : '',
             ]"
@@ -62,13 +62,13 @@ const t = (key) => sgLabel(lang.value, key)
       <div class="flex flex-col gap-3">
         <div class="st-rise" style="--d: 200ms">
           <p :key="lang" class="sg-swap mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('lessonTitle') }}</p>
-          <p class="h-[38px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800">
+          <p class="h-9.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800">
             <span :class="lesson.length < 19 && !still ? 'st-caret' : ''">{{ lesson }}</span>
           </p>
         </div>
         <div class="st-rise" style="--d: 280ms">
           <p :key="lang" class="sg-swap mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('scripture') }}</p>
-          <p class="h-[38px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800">
+          <p class="h-9.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800">
             <span :class="lesson.length === 19 && verse.length < 13 && !still ? 'st-caret' : ''">{{ verse }}</span>
           </p>
         </div>

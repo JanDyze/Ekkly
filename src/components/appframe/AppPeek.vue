@@ -309,7 +309,7 @@ const onLeave = (el, done) => {
         <div v-if="story" class="relative mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col">
           <!-- A bar for each scene, filling as it plays. -->
           <div data-peek-words class="flex gap-1" aria-hidden="true">
-            <span v-for="(scene, i) in story" :key="i" class="h-[3px] flex-1 rounded-full bg-white/30">
+            <span v-for="(scene, i) in story" :key="i" class="h-0.75 flex-1 rounded-full bg-white/30">
               <span class="block h-full origin-left rounded-full bg-white" :style="{ transform: `scaleX(${fill(i)})` }" />
             </span>
           </div>
@@ -350,7 +350,7 @@ const onLeave = (el, done) => {
 
             <!-- After the last scene: what the app is for and what is inside. -->
             <div v-else class="flex flex-1 flex-col items-center justify-center text-center">
-              <span class="peek-in flex size-20 items-center justify-center rounded-[24px] bg-white dark:bg-gray-700">
+              <span class="peek-in flex size-20 items-center justify-center rounded-3xl bg-white dark:bg-gray-700">
                 <AppArt :app-key="shown.art" :play="plays + index" class="size-14" />
               </span>
               <h2 class="peek-in mt-5 text-3xl font-bold leading-tight" style="--d: 80ms">{{ shown.name }}</h2>

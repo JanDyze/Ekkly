@@ -107,7 +107,7 @@ const handleDelete = (event) => {
       <div class="flex items-start gap-2">
         <p
           :class="[
-            'min-w-0 flex-1 text-sm font-medium break-words',
+            'min-w-0 flex-1 text-sm font-medium wrap-break-word',
             task.done
               ? 'text-gray-400 dark:text-gray-500 line-through'
               : 'text-gray-900 dark:text-white'

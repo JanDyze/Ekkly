@@ -264,7 +264,7 @@ const ACTION_DOT = {
                     <dt class="w-28 shrink-0 truncate font-medium text-gray-500 dark:text-gray-400">
                       {{ field }}
                     </dt>
-                    <dd class="min-w-0 flex-1 break-words text-gray-800 dark:text-gray-200">{{ value }}</dd>
+                    <dd class="min-w-0 flex-1 wrap-break-word text-gray-800 dark:text-gray-200">{{ value }}</dd>
                   </div>
                 </dl>
                 <p class="text-gray-400 dark:text-gray-500">

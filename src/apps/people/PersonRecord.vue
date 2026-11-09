@@ -629,7 +629,7 @@ const handleImageUpdate = async (base64Image) => {
                          capped at the card's width so a long title still
                          truncates rather than running off the screen. -->
                     <p
-                      class="sticky left-4 col-span-full mt-2 flex max-w-[min(100%,calc(100vw_-_3.5rem),40rem)] min-w-0 items-center gap-1.5 justify-self-start text-xs font-medium text-gray-700 dark:text-gray-300"
+                      class="sticky left-4 col-span-full mt-2 flex max-w-[min(100%,calc(100vw-3.5rem),40rem)] min-w-0 items-center gap-1.5 justify-self-start text-xs font-medium text-gray-700 dark:text-gray-300"
                     >
                       <component :is="row.icon" class="h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
                       <span class="truncate">{{ row.title }}</span>
@@ -648,11 +648,11 @@ const handleImageUpdate = async (base64Image) => {
                         @click="pickDay(item)"
                         :aria-label="`${item.title}, ${longDay(item.date)}: ${stateWord[item.state]}`"
                         :aria-pressed="pickedDay?.key === item.key"
-                        class="-my-1.5 p-[3px]"
+                        class="-my-1.5 p-0.75"
                       >
                         <span
                           :class="[
-                            'block h-2.5 w-2.5 rounded-[2px]',
+                            'block h-2.5 w-2.5 rounded-xs',
                             ATTENDANCE_STYLE[item.state],
                             pickedDay?.key === item.key
                               ? 'ring-2 ring-primary ring-offset-1 dark:ring-primary-light dark:ring-offset-gray-800'
@@ -705,7 +705,7 @@ const handleImageUpdate = async (base64Image) => {
                   />
                   <p
                     :class="[
-                      'min-w-0 flex-1 whitespace-pre-line break-words text-sm',
+                      'min-w-0 flex-1 whitespace-pre-line wrap-break-word text-sm',
                       fact.text ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500',
                     ]"
                   >

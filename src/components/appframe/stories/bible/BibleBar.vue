@@ -20,7 +20,7 @@ const props = defineProps({
 </script>
 
 <template>
-  <div class="flex h-[64px] shrink-0 items-end gap-2 border-b border-gray-200 px-3 pb-2 dark:border-gray-700">
+  <div class="flex h-16 shrink-0 items-end gap-2 border-b border-gray-200 px-3 pb-2 dark:border-gray-700">
     <template v-if="props.query === null">
       <span
         :class="[

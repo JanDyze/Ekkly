@@ -1220,7 +1220,7 @@ const lineOf = (item) => {
          so a panel ends above them rather than over them. -->
     <main
       :class="['h-full', footerOn ? 'lg:pb-(--hill-band)' : 'lg:pb-5']"
-      class="relative mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:grid lg:h-full lg:max-w-[112rem] lg:grid-cols-1 lg:grid-rows-[minmax(0,1fr)] lg:gap-5 lg:px-6 lg:pt-5">
+      class="relative mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pt-4 sm:pt-6 with-bar:h-auto with-bar:min-h-full lg:grid lg:h-full lg:max-w-448 lg:grid-cols-1 lg:grid-rows-[minmax(0,1fr)] lg:gap-5 lg:px-6 lg:pt-5">
       <!-- 1. Today, most important on top: on a phone, the deck. On a desktop,
            under the greeting and beside the apps: what needs attention
            beside the week. All of it in the one screen: the page never
@@ -1262,7 +1262,7 @@ const lineOf = (item) => {
                    the side showing takes a touch or the keyboard. -->
               <header v-if="panel === 'day'" class="day-flip relative">
                 <div :class="['day-flip-inner relative', dayFlipped && 'is-flipped']">
-                <div class="day-face home-hero relative isolate cursor-pointer overflow-hidden rounded-[24px] border border-black/15 p-4 text-white dark:border-black/40" :inert="dayFlipped || undefined" @click="dayFlipped = true">
+                <div class="day-face home-hero relative isolate cursor-pointer overflow-hidden rounded-3xl border border-black/15 p-4 text-white dark:border-black/40" :inert="dayFlipped || undefined" @click="dayFlipped = true">
                   <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]" aria-hidden="true">
                     <CardPanes />
                   </div>
@@ -1286,7 +1286,7 @@ const lineOf = (item) => {
                     {{ greetingTime }}<template v-if="greetingName">,<br /><span class="block truncate">{{ greetingName }}</span></template>
                   </h1>
                 </div>
-                <div class="day-face day-back home-hero relative isolate cursor-pointer overflow-hidden rounded-[24px] border border-black/15 p-4 dark:border-black/40" :inert="!dayFlipped || undefined" @click="onDayBack">
+                <div class="day-face day-back home-hero relative isolate cursor-pointer overflow-hidden rounded-3xl border border-black/15 p-4 dark:border-black/40" :inert="!dayFlipped || undefined" @click="onDayBack">
                   <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]" aria-hidden="true">
                     <CardPanes />
                   </div>
@@ -1323,7 +1323,7 @@ const lineOf = (item) => {
                 <section
                   v-else
                   aria-labelledby="home-apps"
-                  class="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-900 dark:ring-white/10"
+                  class="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-black/5 dark:bg-gray-900 dark:ring-white/10"
                 >
                   <!-- "See all" opens the All apps page, every app in a grid
                        with room to find one, as "Open calendar" opens the
@@ -1511,7 +1511,7 @@ const lineOf = (item) => {
            menu ("Rearrange home"): a bar over the hills at the foot of the
            screen, where it covers no panel, saying how, with the way back to
            the usual arrangement and Done. Nothing shows the rest of the time. -->
-      <div v-if="wide && homeArranging" class="fixed bottom-4 left-1/2 z-[80] -translate-x-1/2">
+      <div v-if="wide && homeArranging" class="fixed bottom-4 left-1/2 z-80 -translate-x-1/2">
         <div
           role="status"
           class="flex items-center gap-3 rounded-full bg-gray-900 py-1.5 pl-5 pr-1.5 text-sm text-white dark:bg-white dark:text-gray-900"
@@ -1564,7 +1564,7 @@ const lineOf = (item) => {
            what it holds, so it would otherwise be squeezed flat, not scrolled. -->
       <HomeAppCards
         v-else
-        :class="showAllApps || yunitDocked ? ['-mx-0.5 -mt-0.5 shrink auto-rows-max overflow-y-auto overscroll-contain p-0.5 *:shrink-0', showAllApps ? 'min-h-0' : 'min-h-[9rem]', churchOverApps ? 'pb-(--church-room) apps-fade' : yunitDocked ? 'pb-20' : ''] : ''"
+        :class="showAllApps || yunitDocked ? ['-mx-0.5 -mt-0.5 shrink auto-rows-max overflow-y-auto overscroll-contain p-0.5 *:shrink-0', showAllApps ? 'min-h-0' : 'min-h-36', churchOverApps ? 'pb-(--church-room) apps-fade' : yunitDocked ? 'pb-20' : ''] : ''"
         :variant="cardStyle"
         :apps="homeApps"
         :others="homeOthers"
@@ -1621,30 +1621,30 @@ const lineOf = (item) => {
         :style="{ '--lift': churchOverApps ? appsLift : 0 }"
         aria-label="A verse for today"
       >
-        <!-- On a phone, the church on its hill here; a desktop draws it in
-             the footer, the width of the page. -->
+                                                                            
+                                                   
         <HomeScene v-if="homeChurch && !wide" part="land" class="scene scene-lift pointer-events-none absolute inset-0 size-full" />
         <div
           v-if="wide"
           data-foot-grab
-          class="pointer-events-auto absolute bottom-0 z-10 h-[85%] cursor-grab"
+          class="pointer-events-auto bottom-0 z-10 h-[85%] cursor-grab"
           :style="churchGrip"
           title="Drag the church to another column"
           aria-hidden="true"
         />
 
-        <div class="verse-space pointer-events-none absolute inset-x-0 top-0 bottom-(--foot-space)">
-          <!-- With compact cards there is room under the apps, so the verse
-               needs no card: it is set on the picture itself, in the open sky
-               to the left of the church, whole if it fits (eight lines at
-               most), with a soft halo so it reads over cloud. With the other
-               styles the room is tighter and the verse keeps its frosted card
-               at the foot, three lines at most.
-               Either way the reference, then the translation under it,
-               smaller: the reference is what someone would look up.
-               The card stays clear of the home indicator without a bar; with
-               one, the bar's space has cleared it already, so the second term
-               goes negative and the card keeps a plain margin above the bar. -->
+        <div class="verse-space inset-x-0 top-0 bottom-(--foot-space)">
+                                                                             
+                                                                               
+                                                                           
+                                                                              
+                                                                               
+                                                 
+                                                                        
+                                                                     
+                                                                              
+                                                                               
+                                                                                 
           <component
             :is="verseTo ? 'RouterLink' : 'div'"
             v-if="verse"

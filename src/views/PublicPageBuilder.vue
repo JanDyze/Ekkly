@@ -508,7 +508,7 @@ const iconBtn = 'rounded-lg p-2 text-gray-400 hover:bg-gray-100 disabled:opacity
     <div class="flex min-h-0 flex-1">
       <!-- The pane: the list, or the one part you went into. -->
       <div
-        class="flex w-full flex-col overflow-hidden lg:w-[27rem] lg:shrink-0 lg:border-r lg:border-gray-200 lg:dark:border-gray-700"
+        class="flex w-full flex-col overflow-hidden lg:w-108 lg:shrink-0 lg:border-r lg:border-gray-200 lg:dark:border-gray-700"
       >
         <!-- ─────────────────────────── the list ─────────────────────────── -->
         <div v-if="!entered" :class="['min-h-0 flex-1 overflow-y-auto p-4', miniHidden ? '' : 'pb-64 lg:pb-4']">

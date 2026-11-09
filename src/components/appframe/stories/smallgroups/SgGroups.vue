@@ -43,7 +43,7 @@ const GROUPS = [
         <!-- The cover: the group's photo, as the card shows it, darkened at
              the foot so its name reads on any picture. A made-up photo, like
              the rest of the story. -->
-        <div class="relative h-[72px] rounded-t-2xl bg-linear-to-br from-primary/25 via-primary/10 to-primary/5 dark:from-primary/30 dark:via-primary/15 dark:to-gray-800">
+        <div class="relative h-18 rounded-t-2xl bg-linear-to-br from-primary/25 via-primary/10 to-primary/5 dark:from-primary/30 dark:via-primary/15 dark:to-gray-800">
           <img :src="g.cover" alt="" class="absolute inset-0 h-full w-full rounded-t-2xl object-cover" />
           <div class="absolute inset-0 rounded-t-2xl bg-linear-to-t from-black/60 via-black/15 to-transparent" />
           <p class="absolute inset-x-0 bottom-0 truncate px-3 pb-2 text-base font-bold text-white">{{ g.name }}</p>

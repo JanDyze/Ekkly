@@ -175,7 +175,7 @@ const SCROLL = '-mx-3 min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscrol
               type="search"
               enterkeyhint="search"
               placeholder="Find a task…"
-              class="h-[2.875rem] w-full rounded-xl border-0 bg-white pl-10 pr-3 text-sm text-gray-900 ring-1 ring-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white dark:ring-gray-700"
+              class="h-11.5 w-full rounded-xl border-0 bg-white pl-10 pr-3 text-sm text-gray-900 ring-1 ring-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white dark:ring-gray-700"
             />
           </label>
         </form>

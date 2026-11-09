@@ -333,7 +333,7 @@ const removeFromChurch = async (account) => {
       <div
         v-for="i in 4"
         :key="`skeleton-${i}`"
-        class="h-[4.5rem] rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse"
+        class="h-18 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse"
       />
     </div>
 

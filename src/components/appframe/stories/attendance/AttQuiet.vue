@@ -23,7 +23,7 @@ at(2900, () => (tapped.value = true))
 
 <template>
   <div class="px-4 pt-6">
-    <div class="st-rise rounded-[24px] border border-gray-200 bg-white px-4 pb-3.5 pt-3.5 dark:border-gray-700 dark:bg-gray-800">
+    <div class="st-rise rounded-3xl border border-gray-200 bg-white px-4 pb-3.5 pt-3.5 dark:border-gray-700 dark:bg-gray-800">
       <p class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[13px] font-semibold text-primary dark:bg-primary-light/15 dark:text-primary-light">
         <HandWaving class="size-4" />
         Invite them back

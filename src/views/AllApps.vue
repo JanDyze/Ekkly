@@ -920,7 +920,7 @@ const gridStyle = computed(() => ({
       <!-- overscroll-contain: a flick down at the top of this list would
            otherwise be handed to the browser, and Chrome on Android turns
            that into pull-to-refresh. -->
-      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] [&>*]:mx-auto [&>*]:max-w-2xl">
+      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] *:mx-auto *:max-w-2xl">
         <!-- 2. Their home: the five, held and dragged to reorder. -->
         <section v-show="!searching" ref="shelfRef" class="mt-2 scroll-mt-4">
           <div class="mb-2 flex items-end justify-between gap-2 px-1">

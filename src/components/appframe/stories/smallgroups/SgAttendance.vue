@@ -38,8 +38,8 @@ const count = computed(() => present.value.length)
       </div>
       <div class="flex shrink-0 items-center gap-2">
         <span class="inline-flex items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 dark:bg-gray-700">
-          <span class="st-filled min-w-[40px] rounded-md bg-primary px-2 py-1 text-center text-[11px] font-bold text-white">ENG</span>
-          <span class="min-w-[40px] px-2 py-1 text-center text-[11px] font-bold text-gray-500 dark:text-gray-400">TAG</span>
+          <span class="st-filled min-w-10 rounded-md bg-primary px-2 py-1 text-center text-[11px] font-bold text-white">ENG</span>
+          <span class="min-w-10 px-2 py-1 text-center text-[11px] font-bold text-gray-500 dark:text-gray-400">TAG</span>
         </span>
         <X class="size-5 text-gray-400" />
       </div>

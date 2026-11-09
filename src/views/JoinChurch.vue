@@ -95,7 +95,7 @@ const onSignInError = (text) => {
 <template>
   <div class="relative flex min-h-dvh flex-col overflow-hidden bg-gray-900">
     <div
-      class="absolute inset-0 bg-gradient-to-b from-primary/80 via-primary/60 to-gray-900 dark:from-gray-900 dark:via-gray-900 dark:to-black"
+      class="absolute inset-0 bg-linear-to-b from-primary/80 via-primary/60 to-gray-900 dark:from-gray-900 dark:via-gray-900 dark:to-black"
     ></div>
 
     <main class="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-12">

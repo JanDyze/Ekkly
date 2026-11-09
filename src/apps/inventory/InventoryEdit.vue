@@ -162,7 +162,7 @@ const HINT = 'mt-1 text-xs text-gray-500 dark:text-gray-400'
     </ListGroup>
 
     <div v-else-if="editing && !item" class="flex flex-col gap-3" aria-hidden="true">
-      <div class="aspect-[4/3] animate-pulse rounded-2xl bg-gray-200 dark:bg-gray-700" />
+      <div class="aspect-4/3 animate-pulse rounded-2xl bg-gray-200 dark:bg-gray-700" />
       <div class="h-11 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
     </div>
 

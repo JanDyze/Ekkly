@@ -71,7 +71,7 @@ const handleSignedIn = (user) => {
          is dark either way — it has to be, for white type and a white button
          to sit on it — but the theme toggle in the corner is not a no-op. -->
     <div
-      class="absolute inset-0 bg-gradient-to-b from-primary/70 via-primary/55 to-gray-900/95 dark:from-gray-900/70 dark:via-gray-900/85 dark:to-black/95"
+      class="absolute inset-0 bg-linear-to-b from-primary/70 via-primary/55 to-gray-900/95 dark:from-gray-900/70 dark:via-gray-900/85 dark:to-black/95"
     ></div>
     <div class="vignette absolute inset-0"></div>
 

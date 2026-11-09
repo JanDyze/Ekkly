@@ -13,5 +13,5 @@ import WindowLight from '../common/WindowLight.vue'
 </script>
 
 <template>
-  <WindowLight class="absolute -right-5 top-0 aspect-[10/9] h-[96%] w-auto" />
+  <WindowLight class="absolute -right-5 top-0 aspect-10/9 h-[96%] w-auto" />
 </template>

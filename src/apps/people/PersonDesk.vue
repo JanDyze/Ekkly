@@ -328,7 +328,7 @@ const back = computed(() => (props.peopleOpen ? { name: 'PeopleHome' } : { path:
                 v-if="way.value"
                 :href="way.href || undefined"
                 :class="[
-                  'mt-0.5 block text-sm break-words text-gray-900 dark:text-white',
+                  'mt-0.5 block text-sm wrap-break-word text-gray-900 dark:text-white',
                   way.href ? 'hover:text-primary hover:underline dark:hover:text-primary-light' : '',
                 ]"
               >

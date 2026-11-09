@@ -969,7 +969,7 @@ const copyLyrics = async (song) => {
                     >
                       {{ section.label }}
                     </p>
-                    <pre class="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed text-gray-700 dark:text-gray-200">{{ section.text }}</pre>
+                    <pre class="whitespace-pre-wrap wrap-break-word font-sans text-sm leading-relaxed text-gray-700 dark:text-gray-200">{{ section.text }}</pre>
                   </section>
                 </div>
 

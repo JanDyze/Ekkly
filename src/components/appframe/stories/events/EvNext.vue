@@ -27,7 +27,7 @@ at(3100, () => (tapped.value = true))
 <template>
   <div class="flex flex-col gap-3 px-4 pt-6">
     <!-- What is on next, in the church's colour, the week along its foot. -->
-    <div class="st-rise st-filled relative rounded-[24px] border border-black/15 bg-primary px-4 pb-3 pt-3.5 text-white dark:border-black/40">
+    <div class="st-rise st-filled relative rounded-3xl border border-black/15 bg-primary px-4 pb-3 pt-3.5 text-white dark:border-black/40">
       <div class="flex items-start gap-3">
         <div class="min-w-0 flex-1">
           <p class="inline-flex max-w-full rounded-full bg-white/18 px-2.5 py-1 text-[13px] font-semibold">Good morning, Joy</p>
@@ -57,7 +57,7 @@ at(3100, () => (tapped.value = true))
     <!-- A one-off coming up, with who it is for. -->
     <div
       :class="[
-        'st-rise relative rounded-[24px] border bg-white px-4 pb-3 pt-3.5 dark:bg-gray-800',
+        'st-rise relative rounded-3xl border bg-white px-4 pb-3 pt-3.5 dark:bg-gray-800',
         tapped ? 'st-tap border-primary text-primary dark:border-primary-light dark:text-primary-light' : 'border-gray-200 dark:border-gray-700',
       ]"
       style="--d: 1700ms"
