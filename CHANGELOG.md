@@ -11,6 +11,26 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.19] — 2026-11-09
+
+Adding a small group works on a computer again, and the form looks like the others.
+
+### Fixed
+
+- **The New group form can be used on a computer.** Pressing + on the Groups
+  page used to open the form half-hidden below the screen, so a group could
+  not be added. It now opens beside the list, the way a new task or prayer
+  concern does, and Edit on a group's own page opens the same form beside the
+  group. On a phone it is still a sheet from the foot of the screen.
+
+### Changed
+
+- **The group form matches the rest of Ekkly.** The same card and fields as
+  Tasks and Prayer, the meeting day and the leader picked from Ekkly's own
+  list instead of the browser's grey one, Save and Delete along the foot, and
+  Enter in the group's name saves it. Enter in the members' search box only
+  searches.
+
 ## [0.37.18] — 2026-11-05
 
 Needs attention on the home gathers what is waiting in every app.

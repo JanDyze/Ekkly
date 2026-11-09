@@ -8,6 +8,17 @@
 
 export const versionHistory = [
   {
+    version: '0.37.19',
+    date: '2026-11-09',
+    title: 'Add a small group on a computer',
+    summary: 'The New group form opens beside the list again, and looks like the other forms.',
+    highlights: [
+      'Press + on Groups and the form is all there.',
+      'Edit on a group opens it beside the group.',
+      'Pick the meeting day and leader from Ekkly\'s own list.',
+    ],
+  },
+  {
     version: '0.37.18',
     date: '2026-11-05',
     title: 'Everything waiting, in one place',
