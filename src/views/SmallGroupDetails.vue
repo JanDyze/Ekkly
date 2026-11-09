@@ -260,6 +260,7 @@ const sessionsByMonth = computed(() => {
       :back="{ name: 'SmallGroupsAll' }"
       root="/small-groups"
       class="no-print"
+      fill
       desk
     >
       <template #action>
@@ -310,6 +311,12 @@ const sessionsByMonth = computed(() => {
 
       <!-- Body. On a desktop, two columns: the group and its members on the
            left, its sessions, the part that grows, on the right. -->
+      <!-- `fill`: the screen holds still and the group scrolls inside it, so
+           the group's form (AddEditGroupDrawer) can stand beside it on a
+           desktop, as Tasks and Prayer lay theirs out. The two wrappers
+           below close just before the drawers. -->
+      <div class="flex min-h-0 flex-1">
+      <div class="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pb-4">
       <div class="space-y-4 lg:grid lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-5 lg:space-y-0">
         <!-- Identity card. The cover is deliberately a small thumbnail rather
              than a full-bleed banner: at page width a 16:9 hero ran to roughly
@@ -511,8 +518,9 @@ const sessionsByMonth = computed(() => {
           </div>
         </section>
       </div>
-    </AppScreen>
+      </div>
 
+      <!-- Beside the group on a computer, a sheet on a phone. -->
       <SessionEditorDrawer
         v-if="group"
         v-model:show="showSessionDrawer"
@@ -535,6 +543,8 @@ const sessionsByMonth = computed(() => {
         @save="handleGroupSave"
         @delete="confirmDeleteGroup"
       />
+      </div>
+    </AppScreen>
 
     <!-- Blank paper form: mounted only for the duration of a print. -->
     <div v-if="printBlank" class="print-area print-only">

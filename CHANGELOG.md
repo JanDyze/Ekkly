@@ -11,6 +11,62 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.22] — 2026-11-09
+
+The Bible's back button goes home, as every other app's does.
+
+### Changed
+
+- **The Bible's back button always goes to the home of all apps.** It used to
+  return to whichever page the Bible was opened from, so opening it from the
+  All apps page and pressing back left you on All apps. It is now the same
+  link the bar over every other app uses, to the home, however you arrived and
+  however many chapters you have read.
+
+## [0.37.21] — 2026-11-09
+
+The Bible's back button looks like every other app's return.
+
+### Changed
+
+- **The Bible's back button now wears the Bible's picture.** It is drawn the
+  way the bar over every other app draws its return: a small chevron, then the
+  app's own picture, in place of a plain arrow. It still goes back to where you
+  came from, or to all your apps if you came in by the address.
+
+## [0.37.20] — 2026-11-09
+
+The Bible has a way back.
+
+### Added
+
+- **A back arrow on the Bible page.** The page has its own header and no bar
+  above it, so there was nothing on it that led out. The arrow sits at the
+  left of the header, the same arrow every other page uses, and takes you back
+  to where you opened the Bible from, or to all your apps if you came in by
+  the address. Jumping to a chapter from the book picker or a search does not
+  make it step back through those chapters one by one: it leaves the Bible.
+
+## [0.37.19] — 2026-11-09
+
+Adding a small group works on a computer again, and the form looks like the others.
+
+### Fixed
+
+- **The New group form can be used on a computer.** Pressing + on the Groups
+  page used to open the form half-hidden below the screen, so a group could
+  not be added. It now opens beside the list, the way a new task or prayer
+  concern does, and Edit on a group's own page opens the same form beside the
+  group. On a phone it is still a sheet from the foot of the screen.
+
+### Changed
+
+- **The group form matches the rest of Ekkly.** The same card and fields as
+  Tasks and Prayer, the meeting day and the leader picked from Ekkly's own
+  list instead of the browser's grey one, Save and Delete along the foot, and
+  Enter in the group's name saves it. Enter in the members' search box only
+  searches.
+
 ## [0.37.18] — 2026-11-05
 
 Needs attention on the home gathers what is waiting in every app.

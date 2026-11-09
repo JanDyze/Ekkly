@@ -16,6 +16,7 @@ import { fold, foldText, getBook, loadRemoteChapter, searchBooks } from '../api/
 import { parseReference, formatReference, bookName } from '../utils/bibleRef'
 import { useBiblePlace } from '../composables/useBiblePlace'
 import { useBibleVersion } from '../composables/useBibleVersion'
+import AppArt from '../components/common/AppArt.vue'
 import SearchBar from '../components/common/SearchBar.vue'
 import { useScrollLock } from '../composables/useScrollLock'
 
@@ -439,6 +440,22 @@ const showingResults = computed(() => searchable.value)
     <div
       class="flex shrink-0 items-center gap-2 border-b border-gray-200 px-3 pb-2 pt-3 dark:border-gray-700 sm:px-0 sm:pt-0"
     >
+      <!-- The way out. With the app bar hidden here, nothing else on the page
+           leads back, so it has its own, which is the bar's return exactly
+           (Topbar): a chevron, then the app's own picture, to the home of all
+           apps, as it is in every other app. A link rather than a step back
+           through history, so it lands on the home whichever page the Bible
+           was opened from, and however many chapters have been read. -->
+      <router-link
+        to="/home"
+        aria-label="Back to all apps"
+        title="Back to all apps"
+        class="flex shrink-0 items-center gap-0.5 rounded-lg p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+      >
+        <ChevronLeft class="h-5 w-5 shrink-0 text-gray-500 dark:text-gray-400" />
+        <AppArt app-key="bible" class="h-8 w-8" />
+      </router-link>
+
       <button
         v-if="!searchOpen"
         @click="openPicker"

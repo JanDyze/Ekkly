@@ -61,10 +61,13 @@ const clearShown = () => {
     <div class="flex items-center gap-2 mb-2">
       <div class="relative flex-1">
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <!-- Enter here only finishes the search: this sits inside the group
+             form, where Enter in a field saves the group. -->
         <input
           v-model="searchQuery"
           type="search"
           :placeholder="searchLabel"
+          @keydown.enter.prevent
           class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
         />
       </div>
