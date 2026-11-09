@@ -25,7 +25,7 @@ at(2900, () => (tapped.value = true))
 
 <template>
   <div class="px-4 pt-6">
-    <div class="st-rise st-filled rounded-[24px] border border-black/15 bg-primary px-4 pb-3 pt-3.5 text-white dark:border-black/40">
+    <div class="st-rise st-filled rounded-3xl border border-black/15 bg-primary px-4 pb-3 pt-3.5 text-white dark:border-black/40">
       <div class="flex items-start gap-3">
         <div class="min-w-0 flex-1">
           <p class="inline-flex max-w-full rounded-full bg-white/18 px-2.5 py-1 text-[13px] font-semibold">Good morning, Mica</p>

@@ -332,7 +332,7 @@ const sessionsByMonth = computed(() => {
         >
           <div class="flex items-start gap-3 sm:gap-4">
             <div
-              class="relative w-24 sm:w-36 shrink-0 aspect-[16/9] rounded-xl overflow-hidden bg-gradient-to-br from-primary/25 via-primary/10 to-primary/5 dark:from-primary/30 dark:via-primary/15 dark:to-gray-800"
+              class="relative w-24 sm:w-36 shrink-0 aspect-video rounded-xl overflow-hidden bg-linear-to-br from-primary/25 via-primary/10 to-primary/5 dark:from-primary/30 dark:via-primary/15 dark:to-gray-800"
             >
               <img
                 v-if="group.coverPhoto"

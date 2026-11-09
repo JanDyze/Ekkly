@@ -37,7 +37,7 @@ const KEYS = 14
     <p class="st-rise text-xl font-bold">New item</p>
 
     <!-- The photo. Everything behind the keyboard fades once it is cut out. -->
-    <div class="st-rise relative mt-3 h-[190px] rounded-2xl bg-gray-100 dark:bg-gray-800" style="--d: 80ms">
+    <div class="st-rise relative mt-3 h-47.5 rounded-2xl bg-gray-100 dark:bg-gray-800" style="--d: 80ms">
       <div :class="['absolute inset-0 transition-opacity duration-700 motion-reduce:transition-none', cut ? 'opacity-0' : 'opacity-100']" aria-hidden="true">
         <div class="absolute inset-0 rounded-2xl bg-amber-100 dark:bg-amber-950" />
         <div class="absolute left-5 top-4 h-14 w-16 rounded-md bg-sky-200 ring-4 ring-white/70 dark:bg-sky-900 dark:ring-white/10" />
@@ -51,7 +51,7 @@ const KEYS = 14
           <span class="size-1.5 rounded-full bg-emerald-400" />
           <span class="h-1.5 w-8 rounded-full bg-gray-600" />
         </div>
-        <div class="flex h-8 gap-[2px]">
+        <div class="flex h-8 gap-0.5">
           <span v-for="k in KEYS" :key="k" class="flex-1 rounded-b-sm bg-white" />
         </div>
       </div>
@@ -88,7 +88,7 @@ const KEYS = 14
         <p class="px-2.5 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400">As taken</p>
       </div>
     </div>
-    <div v-else class="mt-3 h-[90px]" />
+    <div v-else class="mt-3 h-22.5" />
 
     <div class="mt-3 flex justify-end">
       <span

@@ -59,7 +59,7 @@ const photo = computed(() => SUNDAY[index.value])
     <!-- The menu, under the button that opened it. -->
     <div
       v-if="menu"
-      class="st-pop absolute right-2 top-[60px] w-48 rounded-xl border border-gray-200 bg-white py-1 text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+      class="st-pop absolute right-2 top-15 w-48 rounded-xl border border-gray-200 bg-white py-1 text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
     >
       <span :class="['relative flex items-center gap-2.5 px-3 py-2.5 text-sm', tapCover ? 'st-tap bg-gray-100 text-primary dark:bg-gray-700 dark:text-primary-light' : '']">
         <Image class="size-4 shrink-0 text-gray-400" />

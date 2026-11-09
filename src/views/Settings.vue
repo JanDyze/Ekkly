@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowLeft,
@@ -346,6 +346,29 @@ const backToList = () => {
   router.push({ query: rest })
 }
 
+// The desktop's column of sections has no scrollbar (it was a stripe beside the
+// list), so a fade at its foot says when there is more below instead, the way
+// the home's apps panel does (Apps.vue, appsMore). Measured as it scrolls, as
+// it or its groups change size, and as the sections in it change.
+const navEl = ref(null)
+const navMore = ref(false)
+const measureNav = () => {
+  const el = navEl.value
+  navMore.value = !!el && el.scrollHeight - el.scrollTop - el.clientHeight > 4
+}
+let navObserver = null
+watch(navEl, (el) => {
+  navObserver?.disconnect()
+  if (el instanceof Element && typeof ResizeObserver !== 'undefined') {
+    navObserver = new ResizeObserver(measureNav)
+    navObserver.observe(el)
+    ;[...el.children].forEach((child) => navObserver.observe(child))
+  }
+  measureNav()
+})
+watch(GROUPS, () => nextTick(measureNav))
+onBeforeUnmount(() => navObserver?.disconnect())
+
 // Stamped in from package.json by vite's define. Shown at the foot of
 // settings because the app is installed as a PWA: when someone reports a bug
 // from their phone, the first thing to establish is which build they are
@@ -357,11 +380,17 @@ const { open: openWhatsNew } = useVersionCheck()
 <template>
   <div class="relative h-full lg:flex lg:gap-4">
     <!-- The list. The whole page on a phone until a section is opened; a
-         column of its own on a desktop. -->
+         column of its own on a desktop. The column scrolls without a
+         scrollbar, and fades at its foot while there is more below (the
+         wrapper holds the fade still while the list moves under it). A
+         phone's list is the page itself and keeps the phone's own scrollbar,
+         which already fades. -->
+    <div v-if="isDesktop || !active" class="relative h-full lg:w-72 lg:shrink-0">
     <nav
-      v-if="isDesktop || !active"
+      ref="navEl"
       aria-label="Settings sections"
-      class="h-full overflow-y-auto pt-3 pb-bar! sm:pt-0 lg:w-72 lg:shrink-0"
+      class="h-full overflow-y-auto pt-3 pb-bar! sm:pt-0 lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden"
+      @scroll.passive="measureNav"
     >
       <div v-for="group in GROUPS" :key="group.label" class="mb-4">
         <h2
@@ -435,6 +464,22 @@ const { open: openWhatsNew } = useVersionCheck()
         </button>
       </p>
     </nav>
+
+    <!-- More below: the last rows fading into the page's own white. Not on
+         a phone, nor once the list has been scrolled to its end. -->
+    <Transition
+      enter-from-class="opacity-0"
+      leave-to-class="opacity-0"
+      enter-active-class="transition-opacity duration-200"
+      leave-active-class="transition-opacity duration-150"
+    >
+      <div
+        v-if="isDesktop && navMore"
+        aria-hidden="true"
+        class="settings-more pointer-events-none absolute inset-x-0 bottom-0 h-16"
+      />
+    </Transition>
+    </div>
 
     <!-- The open section. A plain block scroller, deliberately not a flex
          column: a flex item shrinks to fit, and the sections are
@@ -527,5 +572,15 @@ const { open: openWhatsNew } = useVersionCheck()
   .section-leave-to {
     transform: none;
   }
+}
+
+/* The foot of the column of sections while there is more below: the rows
+   fading into the page's own white, as the home's apps panel does
+   (.apps-more in Apps.vue). A light touch, clear only at the very edge. */
+.settings-more {
+  background: linear-gradient(to bottom, transparent, var(--color-white));
+}
+.dark .settings-more {
+  background: linear-gradient(to bottom, transparent, var(--color-gray-900));
 }
 </style>

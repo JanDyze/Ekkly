@@ -62,7 +62,7 @@ const focus = computed(() => (saving.value ? '' : status.value === 'Answered' ? 
         <PrayerField label="Notes" kind="area" :value="note" placeholder="How they are doing, what has changed..." :focused="focus === 'note'" :caret="!still && focus === 'note'" />
 
         <!-- The status's choices, as the phone lists a select's options. -->
-        <div v-if="choosing" class="st-pop absolute inset-x-4 top-[124px] z-10 rounded-lg border border-gray-300 bg-white py-1 dark:border-gray-600 dark:bg-gray-800">
+        <div v-if="choosing" class="st-pop absolute inset-x-4 top-31 z-10 rounded-lg border border-gray-300 bg-white py-1 dark:border-gray-600 dark:bg-gray-800">
           <span
             v-for="s in STATUSES"
             :key="s"

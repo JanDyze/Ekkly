@@ -118,7 +118,7 @@ const ASIDE = {
     </div>
   </section>
 
-  <section v-else class="@container flex min-h-[9rem] flex-1 flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-800/70 dark:ring-white/10">
+  <section v-else class="@container flex min-h-36 flex-1 flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-black/5 dark:bg-gray-800/70 dark:ring-white/10">
     <header class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 pt-2.5 pb-2 dark:border-white/10">
       <h2 class="flex min-w-0 items-center gap-2.5 text-sm font-semibold text-gray-900 dark:text-white">
         <span class="truncate">{{ title }}</span>
@@ -167,7 +167,7 @@ const ASIDE = {
             :to="row.to || undefined"
             :class="[
               'flex min-w-0 items-center gap-3 px-5 py-2',
-              row.to ? 'transition-colors hover:bg-gray-50 focus-visible:bg-gray-50 focus-visible:outline-none dark:hover:bg-white/[0.04] dark:focus-visible:bg-white/[0.04]' : '',
+              row.to ? 'transition-colors hover:bg-gray-50 focus-visible:bg-gray-50 focus-visible:outline-none dark:hover:bg-white/4 dark:focus-visible:bg-white/4' : '',
             ]"
           >
             <slot name="picture" :row="row">

@@ -50,7 +50,7 @@ onUnmounted(() => cancelAnimationFrame(frame))
 
 <template>
   <div class="px-4 pt-5">
-    <div class="st-rise st-filled flex flex-col rounded-[24px] border border-black/15 bg-primary px-4 pb-3 pt-3.5 text-white dark:border-black/40">
+    <div class="st-rise st-filled flex flex-col rounded-3xl border border-black/15 bg-primary px-4 pb-3 pt-3.5 text-white dark:border-black/40">
       <p class="inline-flex self-start rounded-full bg-white/18 px-2.5 py-1 text-[13px] font-semibold">Good morning, Pastor Ben</p>
       <p class="mt-1 leading-none">
         <span class="text-5xl font-bold tabular-nums tracking-tight">{{ count }}</span>
@@ -82,7 +82,7 @@ onUnmounted(() => cancelAnimationFrame(frame))
           <span class="block truncate text-[15px] font-medium leading-snug text-gray-900 dark:text-white">{{ m.label }}</span>
           <span class="mt-0.5 block truncate text-xs text-gray-500 dark:text-gray-400">{{ m.line }}</span>
         </span>
-        <span class="flex w-[68px] shrink-0 items-center gap-2">
+        <span class="flex w-17 shrink-0 items-center gap-2">
           <span class="h-2 flex-1 rounded-full bg-gray-100 dark:bg-gray-700">
             <span
               class="st-grow block h-full rounded-full bg-primary dark:bg-primary-light"

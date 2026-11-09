@@ -52,7 +52,7 @@ const TAGS = [
     <div class="flex flex-col gap-3 p-4">
       <div class="st-rise" style="--d: 100ms">
         <p class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Title <span class="text-red-500">*</span></p>
-        <p class="h-[38px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800">
+        <p class="h-9.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800">
           <span :class="!still && title.length < 10 ? 'st-caret' : ''">{{ title }}</span>
         </p>
       </div>
@@ -60,13 +60,13 @@ const TAGS = [
       <div class="st-rise grid grid-cols-2 gap-3" style="--d: 160ms">
         <div>
           <p class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Date <span class="text-red-500">*</span></p>
-          <p class="h-[38px] truncate rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800">
+          <p class="h-9.5 truncate rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800">
             <span v-if="date" class="st-pop inline-block" style="--d: 0ms">{{ date }}</span>
           </p>
         </div>
         <div>
           <p class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Time</p>
-          <p class="h-[38px] truncate rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800">
+          <p class="h-9.5 truncate rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800">
             <span v-if="time" class="st-pop inline-block" style="--d: 0ms">{{ time }}</span>
           </p>
         </div>
@@ -98,7 +98,7 @@ const TAGS = [
 
       <div class="st-rise" style="--d: 280ms">
         <p class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Location</p>
-        <p class="h-[38px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800">
+        <p class="h-9.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800">
           <span :class="!still && title.length === 10 && place.length < 12 ? 'st-caret' : ''">{{ place }}</span>
         </p>
       </div>

@@ -290,11 +290,11 @@ const WINDOW_OPENS = { start: 1, end: 0.85 }
              background-image would outrank any media query. Each div hands
              both framings over as custom properties and .hero-room picks. -->
         <div
-          class="hero-room absolute inset-x-0 top-0 h-full max-h-[52rem] bg-cover bg-right bg-no-repeat opacity-70 dark:hidden"
+          class="hero-room absolute inset-x-0 top-0 h-full max-h-208 bg-cover bg-right bg-no-repeat opacity-70 dark:hidden"
           :style="{ '--hero-wide': `url(${heroBgLight})`, '--hero-tall': `url(${heroBgLightTall})` }"
         ></div>
         <div
-          class="hero-room absolute inset-x-0 top-0 h-full max-h-[52rem] hidden bg-cover bg-right bg-no-repeat dark:block"
+          class="hero-room absolute inset-x-0 top-0 h-full max-h-208 hidden bg-cover bg-right bg-no-repeat dark:block"
           :style="{ '--hero-wide': `url(${heroBgDark})`, '--hero-tall': `url(${heroBgDarkTall})` }"
         ></div>
       </div>

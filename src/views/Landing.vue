@@ -745,7 +745,7 @@ const year = new Date().getFullYear()
         class="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_55%_at_78%_-5%,rgba(34,184,207,0.28),transparent_72%)]"
       ></div>
       <div
-        class="pointer-events-none absolute -left-24 top-24 h-[26rem] w-[26rem] rounded-t-full border border-white/[0.07]"
+        class="pointer-events-none absolute -left-24 top-24 h-104 w-104 rounded-t-full border border-white/[0.07]"
       ></div>
 
       <div
@@ -814,7 +814,7 @@ const year = new Date().getFullYear()
         <!-- The window. One static photograph, arched, with a hairline arch
              set off behind it. -->
         <div class="lg:col-span-2">
-          <div class="relative mx-auto w-48 sm:w-60 lg:w-full lg:max-w-[19rem]">
+          <div class="relative mx-auto w-48 sm:w-60 lg:w-full lg:max-w-76">
             <div
               class="pointer-events-none absolute -inset-3 rounded-t-full border border-primary-light/25"
             ></div>
@@ -1045,7 +1045,7 @@ const year = new Date().getFullYear()
                 {{ service.name }}
               </p>
               <span
-                class="hidden h-px flex-1 self-end bg-[radial-gradient(circle,currentColor_1px,transparent_1px)] bg-[length:6px_1px] bg-repeat-x text-stone-300 dark:text-gray-700 sm:block"
+                class="hidden h-px flex-1 self-end bg-[radial-gradient(circle,currentColor_1px,transparent_1px)] bg-size-[6px_1px] bg-repeat-x text-stone-300 dark:text-gray-700 sm:block"
               ></span>
               <p
                 v-if="service.when"
@@ -1153,7 +1153,7 @@ const year = new Date().getFullYear()
               ></div>
               <figcaption
                 v-if="photo.album && deckRel(index) === 0"
-                class="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-[#062832]/85 to-transparent px-4 pb-3 pt-10 text-sm font-semibold text-white"
+                class="absolute inset-x-0 bottom-0 truncate bg-linear-to-t from-[#062832]/85 to-transparent px-4 pb-3 pt-10 text-sm font-semibold text-white"
               >
                 {{ photo.album }}
               </figcaption>

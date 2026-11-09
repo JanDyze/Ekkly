@@ -60,7 +60,7 @@ const CARD = {
       <span v-if="passed" class="text-gray-400 dark:text-gray-500"> · {{ passed }} to come back to</span>
     </p>
 
-    <div class="st-rise relative mx-auto mt-2 h-[224px] w-[200px]" style="--d: 200ms">
+    <div class="st-rise relative mx-auto mt-2 h-56 w-50" style="--d: 200ms">
       <!-- Who is next, waiting behind the card being decided. -->
       <div
         v-if="upNext"
@@ -84,7 +84,7 @@ const CARD = {
         <span
           v-if="leaning"
           :class="[
-            'st-pop absolute left-1/2 top-6 z-10 -ml-[64px] w-32 rounded-xl border-4 py-1.5 text-center text-base font-black uppercase tracking-widest',
+            'st-pop absolute left-1/2 top-6 z-10 -ml-16 w-32 rounded-xl border-4 py-1.5 text-center text-base font-black uppercase tracking-widest',
             leaning === 'present'
               ? '-rotate-12 border-emerald-500 bg-emerald-50/90 text-emerald-500 dark:bg-emerald-500/10'
               : 'border-gray-400 bg-gray-50/90 text-gray-500 dark:bg-gray-700/60 dark:text-gray-300',

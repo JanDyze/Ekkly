@@ -48,7 +48,7 @@ const groups = computed(() => grouped(filter.value === 'All' ? LINKS.slice(0, FI
     <!-- The categories, under the filter that opened them. -->
     <div
       v-if="open"
-      class="st-pop absolute right-14 top-[72px] z-10 w-44 rounded-xl border border-gray-100 bg-white py-1.5 dark:border-gray-700 dark:bg-gray-800"
+      class="st-pop absolute right-14 top-18 z-10 w-44 rounded-xl border border-gray-100 bg-white py-1.5 dark:border-gray-700 dark:bg-gray-800"
     >
       <span
         v-for="cat in CATEGORIES.slice(0, 5)"

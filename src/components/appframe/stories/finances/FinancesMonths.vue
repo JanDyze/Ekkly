@@ -41,7 +41,7 @@ const NET = MONTHS.reduce((sum, m) => sum + m.income - m.expenses, 0)
             <span class="st-grow block h-1.5 rounded-full bg-orange-400" :style="{ width: width(m.expenses), '--d': `${480 + i * 200}ms` }" />
           </span>
         </span>
-        <span class="w-[74px] shrink-0 text-right">
+        <span class="w-18.5 shrink-0 text-right">
           <span
             :class="[
               'block text-sm font-semibold tabular-nums',

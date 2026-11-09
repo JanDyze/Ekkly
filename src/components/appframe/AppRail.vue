@@ -81,7 +81,7 @@ onBeforeUnmount(() => shown.value && railCount(-1))
          church's colour over Ekkly's panes of light, as its home's card. -->
     <RouterLink
       :to="{ name: home.name }"
-      class="rail-hero relative isolate flex shrink-0 items-center gap-3 overflow-hidden rounded-[24px] border border-black/15 p-3.5 text-white transition-colors hover:border-black/35 dark:border-black/40"
+      class="rail-hero relative isolate flex shrink-0 items-center gap-3 overflow-hidden rounded-3xl border border-black/15 p-3.5 text-white transition-colors hover:border-black/35 dark:border-black/40"
     >
       <span class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]" aria-hidden="true">
         <CardPanes />
@@ -96,7 +96,7 @@ onBeforeUnmount(() => shown.value && railCount(-1))
     </RouterLink>
 
     <nav
-      class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-800/70 dark:ring-white/10"
+      class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-black/5 dark:bg-gray-800/70 dark:ring-white/10"
       aria-label="Sections"
     >
       <h2 class="shrink-0 border-b border-gray-100 px-5 pt-2.5 pb-2 text-sm font-semibold text-gray-900 dark:border-white/10 dark:text-white">Sections</h2>

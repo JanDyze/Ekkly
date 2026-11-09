@@ -89,7 +89,7 @@ const focus = computed(() => {
         <!-- The roll, offered under the name being typed. -->
         <div
           v-if="picking"
-          class="st-pop absolute inset-x-4 top-[148px] z-10 rounded-lg border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800"
+          class="st-pop absolute inset-x-4 top-37 z-10 rounded-lg border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800"
         >
           <span
             v-for="(p, i) in MATCHES"

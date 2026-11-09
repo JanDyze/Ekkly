@@ -62,14 +62,14 @@ const OPTIONS = [
 
       <div v-if="choice === 'postponed'" class="st-rise" style="--d: 0ms">
         <p class="mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">Moved to <span class="font-normal text-gray-400">(if known)</span></p>
-        <p class="h-[38px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700">
+        <p class="h-9.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700">
           <span v-if="movedTo" class="st-pop inline-block" style="--d: 0ms">{{ movedTo }}</span>
         </p>
       </div>
 
       <div class="st-rise" style="--d: 180ms">
         <p class="mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">Reason <span class="font-normal text-gray-400">(optional)</span></p>
-        <p class="h-[38px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700">
+        <p class="h-9.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700">
           <span v-if="reason || still" :class="!still && reason.length < 19 ? 'st-caret' : ''">{{ reason }}</span>
           <span v-else class="text-gray-400">Typhoon, venue unavailable…</span>
         </p>
@@ -93,7 +93,7 @@ const OPTIONS = [
 
   <!-- Then the Events home, as everyone opening it sees it. -->
   <div v-else class="flex flex-col gap-3 px-4 pt-6">
-    <div class="st-rise relative rounded-[24px] border border-amber-300 bg-amber-50 px-4 pb-3 pt-3.5 text-amber-950 dark:border-amber-500/50 dark:bg-gray-800 dark:text-white">
+    <div class="st-rise relative rounded-3xl border border-amber-300 bg-amber-50 px-4 pb-3 pt-3.5 text-amber-950 dark:border-amber-500/50 dark:bg-gray-800 dark:text-white">
       <div class="flex items-start gap-3">
         <span class="flex size-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-primary/10 leading-none text-primary dark:bg-primary-light/15 dark:text-primary-light">
           <span class="text-[10px] font-bold uppercase">Oct</span>
@@ -119,7 +119,7 @@ const OPTIONS = [
       <ChevronRight class="absolute bottom-4 right-4 size-5 text-gray-300 dark:text-gray-600" />
     </div>
 
-    <div class="st-rise st-filled rounded-[24px] border border-black/15 bg-primary px-4 pb-4 pt-3.5 text-white dark:border-black/40" style="--d: 250ms">
+    <div class="st-rise st-filled rounded-3xl border border-black/15 bg-primary px-4 pb-4 pt-3.5 text-white dark:border-black/40" style="--d: 250ms">
       <p class="inline-flex rounded-full bg-white/18 px-2.5 py-1 text-[13px] font-semibold">Good morning, Joy</p>
       <p class="mt-1 truncate text-[22px] font-bold leading-tight tracking-tight">Sunday Service</p>
       <p class="mt-1 truncate text-sm text-white/75">Today · 9:00 AM · Sanctuary</p>

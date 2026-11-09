@@ -573,7 +573,7 @@ const goBack = () => {
                 </button>
               </div>
               <pre
-                class="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed text-gray-700 dark:text-gray-200"
+                class="whitespace-pre-wrap wrap-break-word font-sans text-sm leading-relaxed text-gray-700 dark:text-gray-200"
                 >{{ slide.text }}</pre
               >
             </div>

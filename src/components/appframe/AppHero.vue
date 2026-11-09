@@ -55,7 +55,7 @@ defineProps({
          so it reads as a watermark on any church's colour. -->
     <div
       aria-hidden="true"
-      class="pointer-events-none absolute -bottom-14 -right-10 -z-10 size-[190px] rotate-12 opacity-[0.13] brightness-0 invert"
+      class="pointer-events-none absolute -bottom-14 -right-10 -z-10 size-47.5 rotate-12 opacity-[0.13] brightness-0 invert"
     >
       <AppArt :app-key="art" class="size-full" />
     </div>

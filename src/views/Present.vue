@@ -1388,7 +1388,7 @@ onUnmounted(() => {
               />
               <pre
                 v-else-if="slide.text"
-                class="whitespace-pre-wrap break-words font-sans text-sm leading-snug text-gray-700 dark:text-gray-200"
+                class="whitespace-pre-wrap wrap-break-word font-sans text-sm leading-snug text-gray-700 dark:text-gray-200"
                 >{{ slide.text }}</pre
               >
               <p v-else class="text-xs italic text-gray-400">

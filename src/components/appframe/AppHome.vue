@@ -238,7 +238,7 @@ const tilesOf = (urgent, rest) =>
             </div>
             <section
               :aria-labelledby="`${scope}-sections`"
-              class="flex min-h-[9rem] flex-1 flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-800/70 dark:ring-white/10"
+              class="flex min-h-36 flex-1 flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-black/5 dark:bg-gray-800/70 dark:ring-white/10"
             >
               <header class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 pt-2.5 pb-2 dark:border-white/10">
                 <h2 :id="`${scope}-sections`" class="text-sm font-semibold text-gray-900 dark:text-white">Sections</h2>
@@ -260,7 +260,7 @@ const tilesOf = (urgent, rest) =>
               :key="panel.id"
               :aria-labelledby="`${scope}-${panel.id}`"
               :class="[
-                '@container flex min-h-[9rem] flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-black/5 dark:bg-gray-800/70 dark:ring-white/10',
+                '@container flex min-h-36 flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-black/5 dark:bg-gray-800/70 dark:ring-white/10',
                 panel.fit,
               ]"
             >

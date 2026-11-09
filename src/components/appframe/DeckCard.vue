@@ -113,7 +113,7 @@ const DETAILS = {
     :type="action && !to ? 'button' : undefined"
     draggable="false"
     :class="[
-      'group relative isolate flex flex-col rounded-[28px] border px-4 pb-3 pt-[15px]',
+      'group relative isolate flex flex-col rounded-[28px] border px-4 pb-3 pt-3.75',
       HEIGHT,
       TONES[tone] || TONES.plain,
       tappable ? ['transition-colors duration-200 ease-out', HOVERS[tone] || HOVERS.plain] : '',

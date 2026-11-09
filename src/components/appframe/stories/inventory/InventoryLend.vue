@@ -30,7 +30,7 @@ at(typed + 900, () => {
 
 <template>
   <div class="relative h-full px-4 pt-6">
-    <div class="st-rise flex h-[130px] items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
+    <div class="st-rise flex h-32.5 items-center justify-center rounded-2xl bg-white ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
       <StoryThing :thing="projector" size="size-24 rounded-2xl" icon="size-14" />
     </div>
     <p class="st-rise mt-3 text-xl font-bold" style="--d: 80ms">Projector</p>

@@ -118,7 +118,7 @@ const handleSave = async (groupData) => {
               :key="`skeleton-${i}`"
               class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
             >
-              <div class="aspect-[16/9] animate-pulse bg-gray-200 dark:bg-gray-700" />
+              <div class="aspect-video animate-pulse bg-gray-200 dark:bg-gray-700" />
               <div class="space-y-3 p-4">
                 <div class="flex items-center gap-2">
                   <div class="h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
