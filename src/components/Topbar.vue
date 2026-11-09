@@ -339,7 +339,10 @@ const openMyProfile = () => {
             <!-- Keyed by app, so moving between apps swaps one picture for the
                  next with a small pop, and the new one plays as it arrives.
                  The two overlap rather than taking turns (out-in), so the new
-                 picture is there at once. -->
+                 picture is there at once. Each branch keys apart from the
+                 others (`icon:` below): Vue forbids two branches of one v-if
+                 sharing a key, a rule the build cannot see once it prefixes
+                 identifiers, but the editor can. -->
             <Transition name="topbar-app">
               <AppArt
                 v-if="currentApp?.art"
@@ -349,7 +352,7 @@ const openMyProfile = () => {
               />
               <component
                 v-else-if="currentApp"
-                :key="currentApp.path"
+                :key="`icon:${currentApp.path}`"
                 :is="currentApp.icon"
                 class="h-7 w-7 m-0.5 text-primary dark:text-primary-light"
               />
