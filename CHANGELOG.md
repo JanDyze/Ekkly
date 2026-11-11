@@ -11,6 +11,20 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.27] — 2026-11-11
+
+New minutes and small-group sessions start on the right day, early in the
+morning too.
+
+### Fixed
+
+- **New minutes and sessions are dated today, whatever the hour.** Before 8am
+  in the Philippines, starting new minutes or logging a small-group session
+  filled in yesterday's date. They now take today's date from your phone or
+  computer.
+- **A session logged on its meeting morning counts as logged.** It was dated
+  the day before, so the group stayed in Needs attention as never logged.
+
 ## [0.37.26] — 2026-11-11
 
 The day's verse is back on the home, and the church can be moved again.

@@ -8,6 +8,16 @@
 
 export const versionHistory = [
   {
+    version: '0.37.27',
+    date: '2026-11-11',
+    title: 'The right date, early too',
+    summary: 'New minutes and small-group sessions are dated today, even before 8 in the morning.',
+    highlights: [
+      'No more yesterday\'s date on an early meeting.',
+      'A session logged that morning no longer shows as never logged.',
+    ],
+  },
+  {
     version: '0.37.26',
     date: '2026-11-11',
     title: 'The verse is back',
