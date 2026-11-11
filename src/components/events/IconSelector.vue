@@ -96,11 +96,15 @@ useFocusTrap(dialogRef, showModal, closeModal)
       </div>
     </button>
 
-    <!-- Modal -->
+    <!-- Teleported, at the sheets' z-100: on a desktop the event editor sits
+         in the page rather than over it, so a picker left inside it opened
+         under the top bar (z-70), its title tucked beneath and the bar still
+         live to click away from a half-made event. -->
+    <Teleport to="body">
     <Transition name="modal">
       <div
         v-if="showModal"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+        class="fixed inset-0 z-100 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
         @click.self="closeModal"
       >
         <div
@@ -178,6 +182,7 @@ useFocusTrap(dialogRef, showModal, closeModal)
         </div>
       </div>
     </Transition>
+    </Teleport>
   </div>
 </template>
 

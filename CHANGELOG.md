@@ -11,6 +11,23 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.25] — 2026-11-11
+
+Picking an event's icon on a computer works properly again.
+
+### Fixed
+
+- **The icon picker opens over the whole screen.** On a computer, choosing an
+  icon for an event opened the picker under the bar along the top: the bar
+  stayed bright and clickable, and on a laptop the top of the picker, with its
+  title and close button, was hidden behind it. It now covers the bar like
+  every other window.
+- **Escape closes only the window on top.** Pressing Escape in the icon picker
+  also closed the event you were writing and threw away what you had typed.
+  Now it closes just the picker, and a second Escape closes the event. The
+  same goes for any window opened over another, such as a confirmation over a
+  form.
+
 ## [0.37.24] — 2026-11-11
 
 The name on the front door's top bar is a size smaller.

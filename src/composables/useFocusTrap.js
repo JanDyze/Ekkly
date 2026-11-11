@@ -4,6 +4,13 @@ import { useScrollLock } from "./useScrollLock";
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+// Dialogs open on top of one another (the icon picker over the event editor,
+// a confirmation over a sheet), and every one of them listens on the
+// document. Only the one opened last answers a key: otherwise Escape closed
+// the editor underneath along with the picker, losing the event, and Tab in a
+// teleported picker was pulled back into the editor every time.
+const openTraps = [];
+
 /**
  * Manages keyboard behavior for a dialog/drawer while it is open: closes it on
  * Escape, moves initial focus into it, and restores focus to whatever
@@ -37,6 +44,7 @@ export function useFocusTrap(containerRef, isActive, onClose, options = {}) {
   };
 
   const handleKeydown = (event) => {
+    if (openTraps[openTraps.length - 1] !== handleKeydown) return;
     if (event.key === "Escape") {
       event.stopPropagation();
       onClose?.();
@@ -65,8 +73,15 @@ export function useFocusTrap(containerRef, isActive, onClose, options = {}) {
     }
   };
 
+  const forget = () => {
+    const at = openTraps.indexOf(handleKeydown);
+    if (at !== -1) openTraps.splice(at, 1);
+  };
+
   const activate = async () => {
     previouslyFocused = document.activeElement;
+    forget();
+    openTraps.push(handleKeydown);
     document.addEventListener("keydown", handleKeydown, true);
     await nextTick();
     const focusable = getFocusable();
@@ -74,6 +89,7 @@ export function useFocusTrap(containerRef, isActive, onClose, options = {}) {
   };
 
   const deactivate = () => {
+    forget();
     document.removeEventListener("keydown", handleKeydown, true);
     if (previouslyFocused && document.body.contains(previouslyFocused)) {
       previouslyFocused.focus();
@@ -91,6 +107,7 @@ export function useFocusTrap(containerRef, isActive, onClose, options = {}) {
   );
 
   onBeforeUnmount(() => {
+    forget();
     document.removeEventListener("keydown", handleKeydown, true);
   });
 }

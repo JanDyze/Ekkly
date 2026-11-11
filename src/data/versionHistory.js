@@ -8,6 +8,16 @@
 
 export const versionHistory = [
   {
+    version: '0.37.25',
+    date: '2026-11-11',
+    title: 'Event icons, fixed',
+    summary: 'On a computer, the icon picker for an event now opens over the whole screen.',
+    highlights: [
+      'Its title and close button are no longer hidden under the top bar.',
+      'Escape closes just the picker, not the event you were writing.',
+    ],
+  },
+  {
     version: '0.37.22',
     date: '2026-11-09',
     title: 'A way back from the Bible',
