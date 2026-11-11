@@ -11,6 +11,19 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.23] — 2026-11-11
+
+The front door's top bar is tidier.
+
+### Changed
+
+- **The logo stands alone on the left, and everything else is on the right.**
+  What's inside, How it works, Pricing and Questions moved over beside the
+  light and dark switch, Console and Get started, with a thin line between the
+  links and the controls. Every link and button on the bar is now the same
+  height and shape, so the bar reads as one row ending on Get started. On a
+  phone it still shows just Pricing, the switch and Get started.
+
 ## [0.37.22] — 2026-11-09
 
 The Bible's back button goes home, as every other app's does.
