@@ -78,7 +78,7 @@ const current = 'text-gray-900 dark:text-white'
          matters, so the eye ends where the reader should. -->
     <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
       <a :href="homePath" class="min-w-0 shrink-0" @click.prevent="home">
-        <PlatformLogo mark-class="h-8 w-8" text-class="text-2xl" />
+        <PlatformLogo mark-class="h-8 w-8" text-class="text-xl" />
       </a>
 
       <div class="flex min-w-0 items-center gap-1 text-gray-600 dark:text-gray-300">

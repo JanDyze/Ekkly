@@ -11,6 +11,16 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.24] — 2026-11-11
+
+The name on the front door's top bar is a size smaller.
+
+### Changed
+
+- **The Ekkly name beside the logo on the front door is a little smaller**, so
+  it sits evenly with the links and buttons across the bar. The window mark
+  beside it keeps its size.
+
 ## [0.37.23] — 2026-11-11
 
 The front door's top bar is tidier.
