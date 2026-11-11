@@ -1588,8 +1588,14 @@ const lineOf = (item) => {
            queries below). The verse is not on it there but a panel of its
            own (HomeVerse), to be put wherever someone likes it. -->
       <!-- Keyed by its column, so it moves when the column does: a Teleport
-           does not follow its target to a new place by itself. -->
-      <Teleport v-if="!wide || homeChurch" :key="footColumn" defer to="#home-left-foot" :disabled="!wide">
+           does not follow its target to a new place by itself.
+           And by the width: a Teleport looks its target up once, when it is
+           made, and the board's foot is there only on a desktop. Made on a
+           phone, it had nowhere to go when the window grew past 1024px, and
+           the home broke until a refresh; made on a desktop, it kept the
+           board's old foot after a trip through the phone's layout, and the
+           church went with it, off the page. -->
+      <Teleport v-if="!wide || homeChurch" :key="`${footColumn}:${wide}`" defer to="#home-left-foot" :disabled="!wide">
       <!-- In front of the apps (churchOverApps) the room is drawn over the
            foot of their list rather than under it: as tall as the list keeps
            free (--church-room), pulled up over it by that and the gap, and

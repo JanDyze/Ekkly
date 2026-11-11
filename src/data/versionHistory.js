@@ -8,6 +8,16 @@
 
 export const versionHistory = [
   {
+    version: '0.37.28',
+    date: '2026-11-11',
+    title: 'A steadier home',
+    summary: 'The home keeps its shape when you turn a tablet or resize the window.',
+    highlights: [
+      'No more squeezed columns or a missing church until you reload.',
+      'The church stays at the foot of the column you put it in.',
+    ],
+  },
+  {
     version: '0.37.27',
     date: '2026-11-11',
     title: 'The right date, early too',

@@ -11,6 +11,22 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.28] — 2026-11-11
+
+The home keeps its shape when the screen changes size.
+
+### Fixed
+
+- **Turning a tablet or resizing the window no longer breaks the home.** With
+  the home open on a narrow screen, widening it to a computer's width (turning
+  an iPad on its side, making a browser window bigger) left the home half
+  rearranged: the computer's columns squeezed onto a phone's width, the church
+  missing, and nothing right again until the page was reloaded. The home now
+  switches cleanly both ways.
+- **The church no longer disappears after a trip through the narrow layout.**
+  Going from a wide window to a narrow one and back could leave the church
+  gone from the foot of its column. It now stays where you put it.
+
 ## [0.37.27] — 2026-11-11
 
 New minutes and small-group sessions start on the right day, early in the
