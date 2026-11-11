@@ -60,7 +60,11 @@ const home = () => {
 // bar stays quiet over the picture; the other front door pages keep theirs.
 const sunday = computed(() => route.path === '/v2')
 
-const link = 'hover:text-gray-900 dark:hover:text-white'
+// Every link and plain button on the bar is the same shape, so the links and
+// the controls after them read as one row rather than two kinds of thing.
+// Their grey comes from the row around them, so the page you are on can be
+// darker without two text colours fighting on one element.
+const item = 'h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white'
 const current = 'text-gray-900 dark:text-white'
 </script>
 
@@ -69,50 +73,59 @@ const current = 'text-gray-900 dark:text-white'
     :class="['front-door-bar sticky top-0 z-40 border-b', sunday ? 'dark border-slate-800 bg-slate-900' : 'border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950']"
     :style="sunday ? { '--color-primary': 'inherit', '--color-primary-hover': 'inherit' } : null"
   >
-    <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
-      <a :href="homePath" class="min-w-0" @click.prevent="home">
-        <PlatformLogo mark-class="h-8 w-8" text-class="text-2xl" />
+    <!-- The logo alone on the left, and everything else together on the
+         right: the links, then the controls, then the one button that
+         matters, so the eye ends where the reader should. -->
+    <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+      <a :href="homePath" class="min-w-0 shrink-0" @click.prevent="home">
+        <PlatformLogo mark-class="h-8 w-8" text-class="text-xl" />
       </a>
-      <nav class="ml-6 hidden items-center gap-6 text-sm font-medium text-gray-600 md:flex dark:text-gray-300">
-        <button v-for="item in SECTIONS" :key="item.id" type="button" :class="link" @click="section(item.id)">{{ item.label }}</button>
-        <RouterLink to="/pricing" :class="[link, route.path === '/pricing' && current]">Pricing</RouterLink>
-        <button type="button" :class="link" @click="section('faq')">Questions</button>
-      </nav>
-      <div class="ml-auto flex items-center gap-1 sm:gap-2">
-        <!-- A phone has no room for the whole menu, but Pricing is its own page
-             now, so it keeps a way there — except on Pricing itself, where the
-             button beside it already carries the plan. -->
-        <RouterLink
-          v-if="!onPricing"
-          to="/pricing"
-          class="flex h-10 items-center rounded-lg px-3 text-sm font-medium text-gray-600 md:hidden dark:text-gray-300"
-        >
-          Pricing
-        </RouterLink>
+
+      <div class="flex min-w-0 items-center gap-1 text-gray-600 dark:text-gray-300">
+        <nav aria-label="Front door" class="flex items-center gap-1">
+          <button
+            v-for="link in SECTIONS"
+            :key="link.id"
+            type="button"
+            :class="[item, 'hidden md:inline-flex']"
+            @click="section(link.id)"
+          >
+            {{ link.label }}
+          </button>
+          <!-- A phone has no room for the whole menu, but Pricing is its own
+               page, so it keeps a way there — except on Pricing itself, where
+               the button beside it already carries the plan. -->
+          <RouterLink
+            to="/pricing"
+            :class="[item, onPricing ? ['hidden md:inline-flex', current] : 'inline-flex']"
+          >
+            Pricing
+          </RouterLink>
+          <button type="button" :class="[item, 'hidden md:inline-flex']" @click="section('faq')">Questions</button>
+        </nav>
+
+        <span class="mx-2 hidden h-5 w-px bg-gray-200 md:block dark:bg-gray-700" aria-hidden="true"></span>
+
         <!-- Not on the Sunday, whose pictures do not change with it. -->
         <button
           v-if="!sunday"
           type="button"
           :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
           :title="isDark ? 'Light mode' : 'Dark mode'"
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+          :class="[item, 'inline-flex w-10 justify-center px-0']"
           @click="toggleTheme($event)"
         >
           <Sun v-if="isDark" class="h-5 w-5" />
           <Moon v-else class="h-5 w-5" />
         </button>
-        <RouterLink
-          v-if="admin"
-          to="/platform"
-          class="hidden h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-gray-600 hover:bg-gray-100 sm:inline-flex dark:text-gray-300 dark:hover:bg-gray-800"
-        >
+        <RouterLink v-if="admin" to="/platform" :class="[item, 'hidden sm:inline-flex']">
           <ShieldCheck class="h-4 w-4" />
           Console
         </RouterLink>
         <RouterLink
           v-if="route.path !== '/start'"
           to="/start"
-          class="inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+          class="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover sm:ml-2"
           @click="signal('start')"
         >
           <template v-if="onPricing && plan.total">

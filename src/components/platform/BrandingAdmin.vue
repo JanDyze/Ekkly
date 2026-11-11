@@ -151,7 +151,7 @@ const input =
     <!-- A small copy of the front door's header, so the words can be judged
          where they will be read. -->
     <div v-if="form" class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700" aria-label="Front door preview">
-      <div class="bg-gradient-to-b from-primary to-primary-hover px-5 py-6">
+      <div class="bg-linear-to-b from-primary to-primary-hover px-5 py-6">
         <p class="flex items-center gap-2">
           <span class="flex items-center justify-center rounded-lg bg-white p-1 ring-1 ring-gray-200 dark:ring-gray-700">
             <img :src="mark" alt="" class="h-5 w-5" />

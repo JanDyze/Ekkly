@@ -437,7 +437,7 @@ const field =
         </div>
 
         <!-- Only a bot fills this in. -->
-        <input v-model="website" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute -left-[9999px] h-px w-px opacity-0" />
+        <input v-model="website" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute -left-2499.75 h-px w-px opacity-0" />
 
         <form
           :class="['shrink-0 px-3 pt-2 sm:pb-3', viewport.keyboard ? 'pb-2' : 'pb-[max(0.75rem,env(safe-area-inset-bottom))]']"

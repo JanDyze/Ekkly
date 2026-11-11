@@ -61,7 +61,7 @@ const place = computed(() => {
         <span
           :class="[
             'absolute size-4 rotate-45 border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
-            place.above ? '-bottom-[9px] border-r-2 border-b-2' : '-top-[9px] border-t-2 border-l-2',
+            place.above ? '-bottom-2.25 border-r-2 border-b-2' : '-top-2.25 border-t-2 border-l-2',
           ]"
           :style="{ left: `${place.tail - 8}px` }"
           aria-hidden="true"

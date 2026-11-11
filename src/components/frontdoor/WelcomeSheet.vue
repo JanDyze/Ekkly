@@ -215,7 +215,7 @@ const skip = 'h-12 rounded-xl px-4 text-sm font-semibold text-gray-500 transitio
           </button>
 
           <!-- Only a bot fills this in. -->
-          <input v-model="website" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute -left-[9999px] h-px w-px opacity-0" />
+          <input v-model="website" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute -left-2499.75 h-px w-px opacity-0" />
 
           <Transition name="step" mode="out-in">
             <!-- Which church? -->
