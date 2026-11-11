@@ -11,6 +11,20 @@ Dates are the commit dates of the work, not tag dates: versions 0.1.0 through
 0.6.0 are reconstructed from history, which had no tags. Tag them retroactively
 with `git tag -a v0.6.0 <sha>` if it ever matters; the shas are listed here.
 
+## [0.37.26] — 2026-11-11
+
+The day's verse is back on the home, and the church can be moved again.
+
+### Fixed
+
+- **The verse for today shows on a phone again.** Since 9 November the home
+  on a phone showed the church on its hill with no verse beside it. It is back,
+  and it still steps aside when the apps fill the screen.
+- **The church at the foot of the home can be picked up on a computer.**
+  Pressing the church to drag it to another column did nothing, while pressing
+  the empty ground to its left picked it up. It is taken by the church itself
+  again.
+
 ## [0.37.25] — 2026-11-11
 
 Picking an event's icon on a computer works properly again.

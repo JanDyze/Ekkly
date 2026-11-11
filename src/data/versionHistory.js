@@ -8,6 +8,16 @@
 
 export const versionHistory = [
   {
+    version: '0.37.26',
+    date: '2026-11-11',
+    title: 'The verse is back',
+    summary: 'The day\'s verse shows beside the church on the home again, on a phone.',
+    highlights: [
+      'It still steps aside when your apps fill the screen.',
+      'On a computer, drag the church itself to move it to another column.',
+    ],
+  },
+  {
     version: '0.37.25',
     date: '2026-11-11',
     title: 'Event icons, fixed',
