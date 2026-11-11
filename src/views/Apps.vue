@@ -1621,30 +1621,30 @@ const lineOf = (item) => {
         :style="{ '--lift': churchOverApps ? appsLift : 0 }"
         aria-label="A verse for today"
       >
-                                                                            
-                                                   
+        <!-- On a phone, the church on its hill here; a desktop draws it in
+             the footer, the width of the page. -->
         <HomeScene v-if="homeChurch && !wide" part="land" class="scene scene-lift pointer-events-none absolute inset-0 size-full" />
         <div
           v-if="wide"
           data-foot-grab
-          class="pointer-events-auto bottom-0 z-10 h-[85%] cursor-grab"
+          class="pointer-events-auto absolute bottom-0 z-10 h-[85%] cursor-grab"
           :style="churchGrip"
           title="Drag the church to another column"
           aria-hidden="true"
         />
 
-        <div class="verse-space inset-x-0 top-0 bottom-(--foot-space)">
-                                                                             
-                                                                               
-                                                                           
-                                                                              
-                                                                               
-                                                 
-                                                                        
-                                                                     
-                                                                              
-                                                                               
-                                                                                 
+        <div class="verse-space pointer-events-none absolute inset-x-0 top-0 bottom-(--foot-space)">
+          <!-- With compact cards there is room under the apps, so the verse
+               needs no card: it is set on the picture itself, in the open sky
+               to the left of the church, whole if it fits (eight lines at
+               most), with a soft halo so it reads over cloud. With the other
+               styles the room is tighter and the verse keeps its frosted card
+               at the foot, three lines at most.
+               Either way the reference, then the translation under it,
+               smaller: the reference is what someone would look up.
+               The card stays clear of the home indicator without a bar; with
+               one, the bar's space has cleared it already, so the second term
+               goes negative and the card keeps a plain margin above the bar. -->
           <component
             :is="verseTo ? 'RouterLink' : 'div'"
             v-if="verse"
