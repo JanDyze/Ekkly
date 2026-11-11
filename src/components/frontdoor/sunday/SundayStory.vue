@@ -654,7 +654,7 @@ const appName = (key) => props.apps[key] || key
     :style="{ height: `${(TOTAL + 1) * 100}svh`, marginTop: `-${size.head}px` }"
     :aria-label="`A Sunday with ${name}`"
   >
-    <div class="sticky top-0 h-dvh overflow-hidden bg-[var(--sunday-ground)]">
+    <div class="sticky top-0 h-dvh overflow-hidden bg-(--sunday-ground)">
       <ChurchInside v-show="insideShown" class="absolute inset-0 h-full w-full" :view-box="inBox" :scene="scene" :church="churchName" />
       <ChurchOutside
         v-show="outside.opacity > 0 && !covered"
@@ -810,7 +810,7 @@ const appName = (key) => props.apps[key] || key
             <p
               v-if="caption"
               :key="caption.key"
-              class="max-w-[40rem] rounded-2xl bg-slate-900/85 px-4 py-2.5 text-center text-[0.95rem] font-semibold leading-snug sm:text-lg lg:px-5 lg:py-3 lg:text-[1.2rem]"
+              class="max-w-160 rounded-2xl bg-slate-900/85 px-4 py-2.5 text-center text-[0.95rem] font-semibold leading-snug sm:text-lg lg:px-5 lg:py-3 lg:text-[1.2rem]"
               aria-hidden="true"
             >
               <span
@@ -828,7 +828,7 @@ const appName = (key) => props.apps[key] || key
            length. -->
       <div
         ref="panel"
-        class="dark absolute inset-x-0 bottom-0 flex min-h-[min(21rem,46dvh)] flex-col rounded-t-2xl bg-slate-900 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 text-white lg:inset-x-auto lg:bottom-6 lg:left-6 lg:min-h-0 lg:w-[min(30vw,32rem)] lg:min-w-[22rem] lg:rounded-2xl lg:p-7"
+        class="dark absolute inset-x-0 bottom-0 flex min-h-[min(21rem,46dvh)] flex-col rounded-t-2xl bg-slate-900 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 text-white lg:inset-x-auto lg:bottom-6 lg:left-6 lg:min-h-0 lg:w-[min(30vw,32rem)] lg:min-w-88 lg:rounded-2xl lg:p-7"
         :style="[{ '--color-primary': 'inherit', '--color-primary-hover': 'inherit' }, size.phone ? null : { top: `${size.head + 20}px` }, cardStyle]"
         @focusin="reveal"
       >
@@ -914,7 +914,7 @@ const appName = (key) => props.apps[key] || key
                     v-for="(key, i) in ORDER"
                     :key="key"
                     type="button"
-                    class="flex h-6 items-center px-[3px]"
+                    class="flex h-6 items-center px-0.75"
                     :title="`${startsAt(key)} · ${WORDS[key].label}`"
                     :aria-label="`${startsAt(key)}, ${WORDS[key].label}`"
                     :aria-current="i === step ? 'step' : undefined"
