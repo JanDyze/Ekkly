@@ -4,6 +4,7 @@ import { X, Save, Plus, Trash2, Search, ChevronDown } from '../../icons'
 import { useMembers } from '../../composables/useMembers'
 import { useMediaQuery } from '../../composables/useMediaQuery'
 import { useFocusTrap } from '../../composables/useFocusTrap'
+import { todayKey } from '../../utils/taskUtils'
 
 const isMobile = useMediaQuery('(max-width: 1023px)')
 
@@ -159,10 +160,11 @@ watch(
   () => props.show,
   (isOpen) => {
     if (isOpen && !props.minuteData.date) {
-      const today = new Date().toISOString().split('T')[0]
+      // Today on the secretary's own calendar, as the Minutes home counts it.
+      // The UTC date it used to take was still yesterday until 8am in Manila.
       emit('update:minuteData', {
         ...props.minuteData,
-        date: today
+        date: todayKey()
       })
     }
   }

@@ -6,6 +6,7 @@ import { useFocusTrap } from '../../composables/useFocusTrap'
 import { useSgLanguage } from '../../composables/useSgLanguage'
 import { getFullName } from '../../utils/memberUtils'
 import { memberKey, rosterMembers } from '../../utils/sgUtils'
+import { todayKey } from '../../utils/taskUtils'
 import { useMyMember } from '../../composables/useMyMember'
 import LanguageToggle from './LanguageToggle.vue'
 import SessionPhotoUploader from './SessionPhotoUploader.vue'
@@ -26,10 +27,11 @@ const { lang, t } = useSgLanguage()
 const { myMemberId } = useMyMember()
 const dialogRef = ref(null)
 
-const today = () => new Date().toISOString().split('T')[0]
-
+// The day on the leader's own calendar. The UTC date it used to take was still
+// yesterday until 8am in Manila, and a session filed the day before its
+// meeting left the group in Needs attention as never logged.
 const blankForm = () => ({
-  date: today(),
+  date: todayKey(),
   startTime: props.group?.meetingTime || '',
   endTime: '',
   venue: props.group?.location || '',

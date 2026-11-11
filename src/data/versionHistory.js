@@ -8,6 +8,26 @@
 
 export const versionHistory = [
   {
+    version: '0.37.28',
+    date: '2026-11-11',
+    title: 'A steadier home',
+    summary: 'The home keeps its shape when you turn a tablet or resize the window.',
+    highlights: [
+      'No more squeezed columns or a missing church until you reload.',
+      'The church stays at the foot of the column you put it in.',
+    ],
+  },
+  {
+    version: '0.37.27',
+    date: '2026-11-11',
+    title: 'The right date, early too',
+    summary: 'New minutes and small-group sessions are dated today, even before 8 in the morning.',
+    highlights: [
+      'No more yesterday\'s date on an early meeting.',
+      'A session logged that morning no longer shows as never logged.',
+    ],
+  },
+  {
     version: '0.37.26',
     date: '2026-11-11',
     title: 'The verse is back',
